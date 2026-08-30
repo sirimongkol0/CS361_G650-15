@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: partner_activity_backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/partner_activity}
+      # File storage: values resolve from the shell / a .env file next to this
+      # compose file at `docker compose up` time; defaults keep local-disk mode.
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      S3_BUCKET: ${S3_BUCKET:-cs361-partner-docs}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    networks:
+      - app_network
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Inside Docker network, SSR fetch must use the backend SERVICE NAME
+        # (localhost = the frontend container itself, not the backend)
+        NEXT_PUBLIC_API_URL: http://partner_activity_backend:8000/api/v1
+        # Browser-side links are opened by the USER's browser (outside Docker),
+        # so they must point at the host-published port, NOT the service name.
+        NEXT_PUBLIC_API_BROWSER_URL: http://localhost:8000/api/v1
+    container_name: partner_activity_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://partner_activity_backend:8000/api/v1
+      NEXT_PUBLIC_API_BROWSER_URL: http://localhost:8000/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app_network
+    ports:
+      - "3000:3000"
+
+networks:
+  app_network:
+    driver: bridge
