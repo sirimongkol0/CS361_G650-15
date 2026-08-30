@@ -1,16 +1,16 @@
-import { getPartners } from '@/lib/api';
-import PartnerCard from '@/components/PartnerCard';
+import { getDocuments, documentDownloadUrl } from '@/lib/api';
+import DocumentCard from '@/components/DocumentCard';
 import Loading from '@/components/Loading';
 import ErrorMessage from '@/components/ErrorMessage';
 import EmptyState from '@/components/EmptyState';
 import { Suspense } from 'react';
 
-async function PartnersContent() {
-  let partners;
+async function DocumentsContent() {
+  let documents;
   let error: string | null = null;
 
   try {
-    partners = await getPartners();
+    documents = await getDocuments();
   } catch (e) {
     if (e instanceof Error && e.message.includes('Failed to fetch')) {
       error = 'Unable to connect to the API. Please ensure the backend is running.';
@@ -23,28 +23,32 @@ async function PartnersContent() {
     return <ErrorMessage message={error} />;
   }
 
-  if (!partners || partners.length === 0) {
-    return <EmptyState message="No partners found." />;
+  if (!documents || documents.length === 0) {
+    return <EmptyState message="No documents found." />;
   }
 
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {partners.map((partner) => (
-        <PartnerCard key={partner.id} partner={partner} />
+      {documents.map((document) => (
+        <DocumentCard
+          key={document.id}
+          document={document}
+          downloadUrl={documentDownloadUrl(document.id)}
+        />
       ))}
     </div>
   );
 }
 
-export default function PartnersPage() {
+export default function DocumentsPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-      <p className="mono-label text-faint mb-3">REGISTRY · PARTNERS</p>
+      <p className="mono-label text-faint mb-3">ARCHIVE · DOCUMENTS</p>
       <h1 className="text-4xl font-semibold tracking-tighter mb-10 pb-8 border-b border-line">
-        Partners
+        Documents
       </h1>
       <Suspense fallback={<Loading />}>
-        <PartnersContent />
+        <DocumentsContent />
       </Suspense>
     </div>
   );
