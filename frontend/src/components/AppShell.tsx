@@ -17,7 +17,6 @@ import {
   MessageSquare, BarChart3, Settings, LogOut, Menu, Bell, Search,
   Users, Shield, Globe, Folder,
 } from 'lucide-react';
-import Footer from '@/components/Footer';
 import { ROLE_NAV, ROLES, useRole, getRoleConfig, type UserRole } from '@/lib/role-context';
 
 /* Map icon string → Lucide component */
@@ -267,7 +266,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto flex flex-col">
           <div className="flex-grow">{children}</div>
-          <Footer />
         </main>
       </div>
     </div>

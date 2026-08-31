@@ -10,13 +10,22 @@ const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150";
 const contentCard = "content-card bg-white rounded-base shadow-card";
 
-const kpis = [
-  { icon: Building2, label: "Stakeholder", value: "48", color: "#8B1538", bg: "#F5D6DE", href: "/partners" },
-  { icon: FileText, label: "MoU / MoA", value: "23", color: "#B45309", bg: "#FEF3C7", href: "/documents" },
-  { icon: CalendarDays, label: "กิจกรรม", value: "156", color: "#1D4ED8", bg: "#DBEAFE", href: "/activities" },
+type Kpi = {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  color: string;
+  bg: string;
+  href?: string;
+};
+
+const kpis: Kpi[] = [
+  { icon: Building2, label: "Stakeholder", value: "48", color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+  { icon: FileText, label: "MoU / MoA", value: "23", color: "#B45309", bg: "#FEF3C7" },
+  { icon: CalendarDays, label: "กิจกรรม", value: "156", color: "#1D4ED8", bg: "#DBEAFE" },
   { icon: GraduationCap, label: "นักศึกษา", value: "32", color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
   { icon: MessageSquare, label: "Feedback", value: "128", color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
-  { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: "2", color: "#B45309", bg: "#FEF3C7", href: "/documents" },
+  { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: "2", color: "#B45309", bg: "#FEF3C7" },
 ];
 
 export default function DashboardStaff() {
@@ -60,21 +69,27 @@ export default function DashboardStaff() {
               <span key={i}> — {d.title} เหลืออีก {d.days} วัน</span>
             ))}
           </div>
-          <Link href="/documents" className="btn text-xs py-1.5 px-3" style={{ background: "#B45309", color: "#fff" }}>ดูรายการ</Link>
         </div>
       )}
 
       {/* KPI row */}
       <div className="grid grid-cols-6 gap-3 mb-6">
-        {kpis.map((s) => (
-          <Link key={s.label} href={s.href} className={`${statCard} block`} style={{ textDecoration: "none", padding: "16px 14px" }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: s.bg }}>
-              <s.icon className="w-4 h-4" style={{ color: s.color }} />
-            </div>
-            <div className="text-xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
-            <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
-          </Link>
-        ))}
+        {kpis.map((s) => {
+          const inner = (
+            <>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: s.bg }}>
+                <s.icon className="w-4 h-4" style={{ color: s.color }} />
+              </div>
+              <div className="text-xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
+              <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
+            </>
+          );
+          return s.href ? (
+            <Link key={s.label} href={s.href} className={`${statCard} block`} style={{ textDecoration: "none", padding: "16px 14px" }}>{inner}</Link>
+          ) : (
+            <div key={s.label} className={statCard} style={{ padding: "16px 14px" }}>{inner}</div>
+          );
+        })}
       </div>
 
       {/* Chart + Recent activities */}
@@ -104,9 +119,6 @@ export default function DashboardStaff() {
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold" style={{ color: "#111827" }}>MoU ที่ต้องติดตาม</h2>
-            <Link href="/documents" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
-              ดูทั้งหมด <ChevronRight className="w-3 h-3" />
-            </Link>
           </div>
           <div className="space-y-3">
             {staffExpiringDocs.map((d, i) => (
@@ -120,7 +132,6 @@ export default function DashboardStaff() {
                 </div>
                 <div className="text-xs mt-1" style={{ color: "#B45309" }}>หมดอายุ {d.expire}</div>
                 <div className="flex gap-2 mt-2.5">
-                  <Link href="/documents/1" className="btn text-xs py-1.5 flex-1 justify-center" style={{ background: "#8B1538", color: "#fff" }}>ดูเอกสาร</Link>
                   <button className="btn btn-outline text-xs py-1.5 flex-1">ต่ออายุ</button>
                 </div>
               </div>
@@ -137,15 +148,12 @@ export default function DashboardStaff() {
       <div className={contentCard}>
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
           <h2 className="font-bold" style={{ color: "#111827" }}>กิจกรรมล่าสุด</h2>
-          <Link href="/activities" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
-            ดูทั้งหมด <ChevronRight className="w-3 h-3" />
-          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)", background: "#F9FAFB" }}>
-                {["ชื่อกิจกรรม", "หน่วยงาน", "วันที่", "สถานะ", ""].map((h) => (
+                {[ "ชื่อกิจกรรม", "หน่วยงาน", "วันที่", "สถานะ" ].map((h) => (
                   <th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{ color: "#6B7280" }}>{h}</th>
                 ))}
               </tr>
@@ -157,9 +165,6 @@ export default function DashboardStaff() {
                   <td className="px-5 py-3.5 text-sm" style={{ color: "#6B7280" }}>{a.org}</td>
                   <td className="px-5 py-3.5 text-sm" style={{ color: "#6B7280" }}>{a.date}</td>
                   <td className="px-5 py-3.5"><span className={`badge ${a.statusColor}`}>{a.status}</span></td>
-                  <td className="px-5 py-3.5">
-                    <Link href="/activities/1" className="btn p-1.5 text-xs" style={{ background: "transparent", color: "#6B7280" }}>ดูรายละเอียด</Link>
-                  </td>
                 </tr>
               ))}
             </tbody>

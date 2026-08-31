@@ -190,7 +190,6 @@ export default function DashboardAdmin() {
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>MoU ที่ต้องติดตาม</h2>
-            <Link href="/documents" className="text-xs" style={{ color: "#8B1538" }}>ดูทั้งหมด →</Link>
           </div>
           <div className="space-y-3">
             {adminWatchMOU.map((m, i) => (

@@ -112,7 +112,7 @@ export default function DashboardPublic() {
             <h2 className="font-bold" style={{ color: "#111827" }}>
               หน่วยงานคู่ความร่วมมือ
             </h2>
-            <Link href="/partners" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
+            <Link href="/stakeholders" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
               ดูทั้งหมด <ChevronRight className="w-3 h-3" />
             </Link>
           </div>

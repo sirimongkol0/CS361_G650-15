@@ -18,18 +18,24 @@ function Stars({ n }: { n: number }) {
   );
 }
 
-const kpis = [
-  { icon: Building2, label: "Stakeholder ที่รับผิดชอบ", value: "3", color: "#8B1538", bg: "#F5D6DE", href: "/partners" },
-  { icon: FileText, label: "MoU / MoA", value: "4", color: "#B45309", bg: "#FEF3C7", href: "/documents" },
-  { icon: CalendarDays, label: "กิจกรรม", value: "8", color: "#1D4ED8", bg: "#DBEAFE", href: "/activities" },
+type Kpi = {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  color: string;
+  bg: string;
+  href?: string;
+};
+
+const kpis: Kpi[] = [
+  { icon: Building2, label: "Stakeholder ที่รับผิดชอบ", value: "3", color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+  { icon: FileText, label: "MoU / MoA", value: "4", color: "#B45309", bg: "#FEF3C7" },
+  { icon: CalendarDays, label: "กิจกรรม", value: "8", color: "#1D4ED8", bg: "#DBEAFE" },
   { icon: GraduationCap, label: "นักศึกษาในโครงการ", value: "12", color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
   { icon: MessageSquare, label: "Feedback ล่าสุด", value: "24", color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
 ];
 
 const quickActions = [
-  { label: "เพิ่มกิจกรรม", href: "/activities", color: "#8B1538", bg: "#F5D6DE" },
-  { label: "บันทึกผลกิจกรรม", href: "/activities/1", color: "#15803D", bg: "#DCFCE7" },
-  { label: "ดู MoU ทั้งหมด", href: "/documents", color: "#B45309", bg: "#FEF3C7" },
   { label: "ดูนักศึกษา", href: "/exchange", color: "#1D4ED8", bg: "#DBEAFE" },
 ];
 
@@ -49,15 +55,22 @@ export default function DashboardTeacher() {
 
       {/* KPI */}
       <div className="grid grid-cols-5 gap-4 mb-6">
-        {kpis.map((s) => (
-          <Link key={s.label} href={s.href} className={`${statCard} block`} style={{ textDecoration: "none" }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
-              <s.icon className="w-4 h-4" style={{ color: s.color }} />
-            </div>
-            <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
-            <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
-          </Link>
-        ))}
+        {kpis.map((s) => {
+          const inner = (
+            <>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
+                <s.icon className="w-4 h-4" style={{ color: s.color }} />
+              </div>
+              <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
+              <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
+            </>
+          );
+          return s.href ? (
+            <Link key={s.label} href={s.href} className={`${statCard} block`} style={{ textDecoration: "none" }}>{inner}</Link>
+          ) : (
+            <div key={s.label} className={statCard}>{inner}</div>
+          );
+        })}
       </div>
 
       {/* Warning: expiring MoU */}
@@ -67,7 +80,6 @@ export default function DashboardTeacher() {
           <span className="font-bold">MoA สหกิจ บ.เทคโนโลยี</span> ใกล้หมดอายุใน{" "}
           <span className="font-bold">15 วัน</span> — กรุณาดำเนินการต่ออายุ
         </p>
-        <Link href="/documents" className="btn btn-accent text-xs py-1.5 px-3 ml-auto">ดูเอกสาร</Link>
       </div>
 
       <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -75,7 +87,7 @@ export default function DashboardTeacher() {
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
             <h2 className="font-bold" style={{ color: "#111827" }}>Stakeholder ที่รับผิดชอบ</h2>
-            <Link href="/partners" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
+            <Link href="/stakeholders" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
               ดูทั้งหมด <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
@@ -92,7 +104,7 @@ export default function DashboardTeacher() {
                   <div className="font-semibold text-sm" style={{ color: "#111827" }}>{s.name}</div>
                   <div className="text-xs" style={{ color: "#9CA3AF" }}>{s.type} • {s.mou} MoU</div>
                 </div>
-                <Link href="/partners/1" className="btn p-1.5 text-xs" style={{ background: "transparent", color: "#6B7280" }}>ดู</Link>
+                <Link href="/stakeholders/1" className="btn p-1.5 text-xs" style={{ background: "transparent", color: "#6B7280" }}>ดู</Link>
               </div>
             ))}
           </div>
@@ -102,9 +114,6 @@ export default function DashboardTeacher() {
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
             <h2 className="font-bold" style={{ color: "#111827" }}>กิจกรรมที่รับผิดชอบ</h2>
-            <Link href="/activities" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
-              ดูทั้งหมด <ChevronRight className="w-3 h-3" />
-            </Link>
           </div>
           <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
             {teacherActivities.map((a, i) => (
