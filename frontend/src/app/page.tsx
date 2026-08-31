@@ -44,13 +44,13 @@ export default function Home() {
         <div className="flex items-center justify-center gap-3">
           <Link
             href="/partners"
-            className="bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:opacity-90 transition-opacity"
+            className="btn btn-primary"
           >
             Browse partners
           </Link>
           <Link
             href="/documents"
-            className="bg-white shadow-ring text-sm font-medium px-5 py-2.5 rounded-md hover:shadow-card transition-shadow"
+            className="btn btn-outline bg-white"
           >
             View documents
           </Link>

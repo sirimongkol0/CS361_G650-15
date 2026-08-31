@@ -1,12 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-feature-settings: 'liga' 1;
-  -webkit-font-smoothing: antialiased;
-  color: #171717;
+/* =============================================
+   THAMMASAT UNIVERSITY COLOR SYSTEM (from legacy/figma-mock)
+   Primary: Crimson Red  #8B1538
+   Accent:  Gold         #C8961E
+   Base:    White + Black/Dark Gray
+   ============================================= */
+:root {
+  --background:          #F7F8FA;
+  --foreground:          #111827;
+  --card:                #FFFFFF;
+
+  --primary:             #8B1538;
+  --primary-foreground:  #FFFFFF;
+  --primary-hover:       #6F1030;
+  --primary-light:       #FDF2F5;
+  --primary-muted:       #F5D6DE;
+
+  --accent:              #C8961E;
+  --accent-light:        #FEF6E4;
+  --accent-muted:        #F5E0A8;
+
+  --muted:               #F3F4F6;
+  --muted-foreground:    #6B7280;
+  --border:              #E5E7EB;
+  --radius:              10px;
+
+  --success:             #15803D;
+  --warning:             #B45309;
+  --danger:              #B91C1C;
+  --info:                #1D4ED8;
 }
 
 html {
@@ -14,15 +41,16 @@ html {
 }
 
 body {
+  font-family: 'Sarabun', 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-#__next {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
 }
 
 main {
@@ -30,14 +58,109 @@ main {
 }
 
 ::selection {
-  background: hsla(212, 100%, 48%, 0.15);
+  background: rgba(139, 21, 56, 0.12);
 }
 
-/* Mono technical label used across the UI */
-.mono-label {
-  font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace;
+/* ---- Scrollbars (from mock) ---- */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+/* ---- Sidebar/nav link style (from mock) ---- */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: #6B7280;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sidebar-link:hover { background: #F3F4F6; color: #111827; }
+.sidebar-link.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ---- Badge system (from mock) ---- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
   font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.badge-crimson { background: var(--primary-muted); color: var(--primary); }
+.badge-gold    { background: var(--accent-muted);  color: #92670A; }
+.badge-blue    { background: #DBEAFE; color: #1D4ED8; }
+.badge-green   { background: #DCFCE7; color: #15803D; }
+.badge-purple  { background: #EDE9FE; color: #6D28D9; }
+.badge-gray    { background: #F3F4F6; color: #4B5563; }
+
+/* ---- Buttons (from mock) ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-accent:hover { background: #A87A18; }
+.btn-secondary {
+  background: var(--primary-muted);
+  color: var(--primary);
+}
+.btn-secondary:hover { background: #EDCAD3; }
+.btn-outline {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { background: var(--muted); }
+
+/* TU gradient strip (sidebar header / topbar accent) */
+.tu-stripe {
+  background: linear-gradient(90deg, var(--primary) 0%, #B8243E 60%, var(--accent) 100%);
+}
+
+/* ---- Small caps technical label (kept from previous UI, restyled) ---- */
+.mono-label {
+  font-family: 'Plus Jakarta Sans', 'Sarabun', system-ui, sans-serif;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  body { font-size: 14px; }
 }

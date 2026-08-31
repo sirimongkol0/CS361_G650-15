@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { Partner } from '@/types/api';
 
+/* Badge palette from the mock's badge system (index.css) */
 const TYPE_STYLES: Record<string, string> = {
-  university: 'bg-blue-50 text-blue-700',
-  government: 'bg-rose-50 text-rose-700',
-  private_company: 'bg-amber-50 text-amber-700',
-  nonprofit: 'bg-emerald-50 text-emerald-700',
-  alumni_network: 'bg-violet-50 text-violet-700',
+  university: 'badge badge-blue',
+  government: 'badge badge-crimson',
+  private_company: 'badge badge-gold',
+  nonprofit: 'badge badge-green',
+  alumni_network: 'badge badge-purple',
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -24,15 +25,15 @@ interface PartnerCardProps {
 export default function PartnerCard({ partner }: PartnerCardProps) {
   const typeKey = partner.type ?? '';
   const typeLabel = TYPE_LABELS[typeKey];
-  const badgeStyle = TYPE_STYLES[typeKey] ?? 'bg-paper text-faint';
+  const badgeStyle = TYPE_STYLES[typeKey] ?? 'badge badge-gray';
   const displayLabel = typeLabel ?? (typeKey ? typeKey.replace(/_/g, ' ').toUpperCase() : 'PARTNER');
 
   return (
-    <div className="bg-white rounded-lg shadow-card hover:shadow-card-hover transition-shadow">
+    <div className="bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all">
       <Link href={`/partners/${partner.id}`} className="group flex flex-col h-full p-6">
         <div className="flex items-start justify-between mb-4 min-h-[24px]">
           <span
-            className={`mono-label px-2 py-0.5 rounded-full ${badgeStyle}`}
+            className={badgeStyle}
             title={typeLabel ? undefined : typeKey}
           >
             {displayLabel}
@@ -41,7 +42,7 @@ export default function PartnerCard({ partner }: PartnerCardProps) {
             <span className="mono-label text-faint pt-0.5">{partner.country}</span>
           )}
         </div>
-        <h3 className="text-xl font-semibold tracking-tight mb-2 leading-snug group-hover:underline underline-offset-4 decoration-line">
+        <h3 className="text-xl font-semibold tracking-tight mb-2 leading-snug group-hover:underline underline-offset-4 decoration-crimson/40">
           {partner.name}
         </h3>
         {partner.description && (
@@ -49,7 +50,7 @@ export default function PartnerCard({ partner }: PartnerCardProps) {
             {partner.description}
           </p>
         )}
-        <p className="mt-auto pt-5 text-sm font-medium text-mute transition-colors group-hover:text-blue-600 group-hover:underline underline-offset-4">
+        <p className="mt-auto pt-5 text-sm font-medium text-crimson transition-colors group-hover:text-crimson-hover group-hover:underline underline-offset-4">
           View details →
         </p>
       </Link>

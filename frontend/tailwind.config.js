@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+// Theme ported from legacy/figma-mock/src/index.css — Thammasat University color system
+// Primary: Crimson Red #8B1538 · Accent: Gold #C8961E · Base: White + Gray
 module.exports = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,38 +10,58 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: '#171717',
-        mute: '#4d4d4d',
-        faint: '#666666',
-        line: '#ebebeb',
-        paper: '#fafafa',
+        // semantic base (mapped to mock tokens)
+        ink: '#111827', // --foreground
+        mute: '#4B5563', // secondary-foreground-ish
+        faint: '#6B7280', // --muted-foreground
+        line: '#E5E7EB', // --border
+        paper: '#F7F8FA', // --background
+        soft: '#F3F4F6', // --muted
+        // TU Crimson (primary)
+        crimson: {
+          DEFAULT: '#8B1538',
+          hover: '#6F1030',
+          light: '#FDF2F5',
+          muted: '#F5D6DE',
+        },
+        // TU Gold (accent)
+        gold: {
+          DEFAULT: '#C8961E',
+          hover: '#A87A18',
+          light: '#FEF6E4',
+          muted: '#F5E0A8',
+          dark: '#92670A',
+        },
       },
       fontFamily: {
         sans: [
-          'Geist',
+          'Sarabun',
+          'Plus Jakarta Sans',
           'system-ui',
           '-apple-system',
           'Segoe UI',
           'Roboto',
           'sans-serif',
         ],
-        mono: [
-          'Geist Mono',
-          'ui-monospace',
-          'SFMono-Regular',
-          'Menlo',
-          'Monaco',
-          'Consolas',
-          'monospace',
+        display: [
+          'Plus Jakarta Sans',
+          'Sarabun',
+          'system-ui',
+          'sans-serif',
         ],
       },
+      borderRadius: {
+        // --radius: 10px (md = base, lg = +4)
+        base: '10px',
+        lg: '14px',
+        md: '10px',
+      },
       boxShadow: {
-        ring: 'rgba(0,0,0,0.08) 0px 0px 0px 1px',
-        lightring: 'rgb(235,235,235) 0px 0px 0px 1px',
-        card:
-          'rgba(0,0,0,0.08) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 2px, rgba(0,0,0,0.04) 0px 8px 8px -8px, #fafafa 0px 0px 0px 1px',
-        'card-hover':
-          'rgba(0,0,0,0.12) 0px 0px 0px 1px, rgba(0,0,0,0.05) 0px 4px 4px, rgba(0,0,0,0.06) 0px 12px 16px -8px, #fafafa 0px 0px 0px 1px',
+        // .stat-card / .content-card from the mock
+        card: '0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px #E5E7EB',
+        'card-hover': '0 4px 14px rgba(0,0,0,0.09), 0 0 0 1px #E5E7EB',
+        lightring: '0 0 0 1px #E5E7EB',
+        ring: '0 0 0 1px #E5E7EB, 0 1px 3px rgba(0,0,0,0.06)',
       },
     },
   },

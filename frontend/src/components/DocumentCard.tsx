@@ -31,11 +31,9 @@ export default function DocumentCard({ document, downloadUrl }: DocumentCardProp
   const label = DOC_TYPE_LABELS[document.docType ?? ''] ?? 'PDF';
 
   return (
-    <div className="bg-white rounded-lg shadow-card hover:shadow-card-hover transition-shadow p-6 flex flex-col">
+    <div className="bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all p-6 flex flex-col">
       <div className="flex items-center justify-between mb-3">
-        <span className="bg-paper shadow-lightring rounded-full px-2.5 py-0.5 mono-label">
-          {label}
-        </span>
+        <span className="badge badge-crimson">{label}</span>
         {sizeKb && <span className="mono-label text-faint">{sizeKb}</span>}
       </div>
       <h3 className="text-base font-semibold tracking-tight leading-snug mb-1">
@@ -56,7 +54,7 @@ export default function DocumentCard({ document, downloadUrl }: DocumentCardProp
           href={downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-ink text-white text-sm font-medium px-4 py-2 rounded-md hover:opacity-90 transition-opacity"
+          className="btn btn-primary"
         >
           Download PDF
         </a>
