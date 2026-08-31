@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import AppShell from "@/components/AppShell";
+import { RoleProvider } from "@/lib/role-context";
 
 export const metadata: Metadata = {
   title: "Partner Activity App",
@@ -29,9 +29,9 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-paper text-ink flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <RoleProvider>
+          <AppShell>{children}</AppShell>
+        </RoleProvider>
       </body>
     </html>
   );
