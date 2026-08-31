@@ -251,9 +251,9 @@ export default function ReportsPage() {
                   </div>
                 </div>
               ))}
-              <Link href="/documents" className="text-xs font-semibold text-crimson hover:underline">
+              <span className="text-xs font-semibold text-crimson">
                 ดูเอกสารทั้งหมด →
-              </Link>
+              </span>
             </div>
           </div>
 

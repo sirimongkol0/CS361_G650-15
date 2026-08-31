@@ -225,14 +225,14 @@ export default function StakeholderDetailPage() {
                       <FileText className="w-5 h-5 text-[#7c3aed]" />
                     </div>
                     <div className="flex-1">
-                      <Link href="/documents/1" className="font-semibold text-sm hover:underline text-ink">{m.title}</Link>
+                      <span className="font-semibold text-sm text-ink">{m.title}</span>
                       <div className="text-xs mt-0.5 text-faint">{m.start} – {m.expire}</div>
                     </div>
                     <span className="badge badge-blue">{m.type}</span>
                     <span className="badge badge-green">ใช้งาน</span>
-                    <Link href="/documents/1" className="btn p-1.5 text-faint hover:bg-soft hover:text-ink">
+                    <span className="btn p-1.5 text-faint">
                       <ArrowUpRight className="w-4 h-4" />
-                    </Link>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -251,7 +251,7 @@ export default function StakeholderDetailPage() {
                       <CalendarDays className="w-5 h-5 text-[#1d4ed8]" />
                     </div>
                     <div className="flex-1">
-                      <Link href="/activities/1" className="font-semibold text-sm hover:underline text-ink">{a.name}</Link>
+                      <span className="font-semibold text-sm text-ink">{a.name}</span>
                       <div className="text-xs mt-0.5 text-faint">{a.date} • {a.participants} ผู้เข้าร่วม</div>
                     </div>
                     <span className={`badge ${a.statusColor}`}>{a.status}</span>
