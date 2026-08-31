@@ -312,3 +312,196 @@ export const adminProfile: AdminProfile = {
   position: "ผู้ดูแลระบบ",
   department: "สำนักงานหลักสูตร",
 };
+
+/* ============================================================
+   PAGES-C (activities / documents pages) mock data
+   Ported from legacy/figma-mock/src/pages/{Activities,ActivityDetail,
+   Documents,DocumentDetail}.tsx
+   ⚠️ MOCK — รอ V2 ต่อ API จริง (lib/api.ts) แล้วจะแทนที่ด้วย fetch
+   ============================================================ */
+
+export interface MockActivity {
+  id: number;
+  name: string;
+  org: string;
+  type: string;
+  date: string;
+  participants: number;
+  /** label ของ MoU/MoA ที่เกี่ยวข้อง (mock) */
+  mou: string;
+  /** id ของเอกสารใน `documents` (mock) — undefined = ไม่มีลิงก์ */
+  mouDocId?: number;
+  status: string;
+  statusColor: string;
+}
+
+export const activities: MockActivity[] = [
+  { id: 1, name: "อบรมเชิงปฏิบัติการ AI for Education", org: "National Taiwan University", type: "อบรม", date: "20 ส.ค. 2568", participants: 45, mou: "MoU NTU 2567", mouDocId: 2, status: "เสร็จสิ้น", statusColor: "badge-green" },
+  { id: 2, name: "สัมมนาวิชาการนวัตกรรมการเรียนการสอน", org: "มหาวิทยาลัยเชียงใหม่", type: "สัมมนา", date: "15 ส.ค. 2568", participants: 80, mou: "MoU มช. 2567", mouDocId: 1, status: "เสร็จสิ้น", statusColor: "badge-green" },
+  { id: 3, name: "การเยี่ยมชมบริษัทและศึกษาดูงาน", org: "บริษัท เทคโนโลยี จำกัด", type: "การเยี่ยมเยือน", date: "10 ส.ค. 2568", participants: 25, mou: "MoA บ.เทคโนฯ", mouDocId: 4, status: "กำลังดำเนินการ", statusColor: "badge-blue" },
+  { id: 4, name: "Workshop Data Science for Business", org: "University of Malaya", type: "อบรม", date: "5 ส.ค. 2568", participants: 30, mou: "MoU UM 2565", mouDocId: 3, status: "กำลังดำเนินการ", statusColor: "badge-blue" },
+  { id: 5, name: "โครงการวิจัยร่วม AI Healthcare", org: "บริษัท ABC จำกัด", type: "การวิจัย", date: "1 ส.ค. 2568", participants: 15, mou: "MoA ABC 2568", mouDocId: 6, status: "วางแผน", statusColor: "badge-purple" },
+  { id: 6, name: "งาน Open Day สัมพันธ์ภาคอุตสาหกรรม", org: "สมาคมผู้ประกอบการ IT ไทย", type: "กิจกรรมวิชาการ", date: "25 ก.ค. 2568", participants: 120, mou: "MoU สมาคม IT", status: "เสร็จสิ้น", statusColor: "badge-green" },
+  { id: 7, name: "นิทรรศการผลงานนักศึกษา Tech Expo", org: "บริษัท เทคโนโลยี จำกัด", type: "กิจกรรมวิชาการ", date: "20 ก.ค. 2568", participants: 200, mou: "MoA บ.เทคโนฯ", mouDocId: 4, status: "เสร็จสิ้น", statusColor: "badge-green" },
+  { id: 8, name: "ประชุมความร่วมมือวิจัยชีวภาพ", org: "Chulabhorn Research Institute", type: "การวิจัย", date: "15 ก.ค. 2568", participants: 18, mou: "MoU CRI 2567", mouDocId: 7, status: "เสร็จสิ้น", statusColor: "badge-green" },
+];
+
+/** สี badge ตามประเภทกิจกรรม (mock) — badge-indigo/yellow ไม่มีในธีมใช้ inline class แทน */
+export const activityTypeColors: Record<string, string> = {
+  "อบรม": "badge-blue",
+  "สัมมนา": "badge-purple",
+  "การเยี่ยมเยือน": "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-[#E0E7FF] text-[#4338CA]",
+  "กิจกรรมวิชาการ": "badge-green",
+  "การวิจัย": "badge-gold",
+  "กิจกรรมร่วมกับหน่วยงานภายนอก": "badge-gray",
+};
+
+export interface MockDocument {
+  id: number;
+  title: string;
+  org: string;
+  type: "MoU" | "MoA";
+  start: string;
+  expire: string;
+  responsible: string;
+  status: "active" | "expiring" | "expired" | "draft";
+  daysLeft: number;
+}
+
+export const documents: MockDocument[] = [
+  { id: 1, title: "MoU ความร่วมมือทางวิชาการ มช.", org: "มหาวิทยาลัยเชียงใหม่", type: "MoU", start: "1 ม.ค. 2567", expire: "31 ธ.ค. 2571", responsible: "ผศ.ดร.วิชัย สอนดี", status: "active", daysLeft: 1200 },
+  { id: 2, title: "MoA แลกเปลี่ยนนักศึกษา NTU", org: "National Taiwan University", type: "MoA", start: "15 มี.ค. 2566", expire: "14 มี.ค. 2569", responsible: "รศ.ดร.นงนุช ประเสริฐ", status: "active", daysLeft: 560 },
+  { id: 3, title: "MoU ความร่วมมือ University of Malaya", org: "University of Malaya", type: "MoU", start: "1 มิ.ย. 2565", expire: "31 พ.ค. 2568", responsible: "ดร.กิตติพงษ์ รักษา", status: "expiring", daysLeft: 25 },
+  { id: 4, title: "MoA สหกิจศึกษา บ.เทคโนโลยี", org: "บริษัท เทคโนโลยี จำกัด", type: "MoA", start: "1 ก.ค. 2565", expire: "30 มิ.ย. 2568", responsible: "ผศ.สุดา วงศ์ดี", status: "expiring", daysLeft: 15 },
+  { id: 5, title: "MoU ความร่วมมือ Waseda University", org: "Waseda University", type: "MoU", start: "1 ก.พ. 2563", expire: "31 ม.ค. 2568", responsible: "รศ.ดร.มานะ ฝึกฝน", status: "expired", daysLeft: -30 },
+  { id: 6, title: "MoA ฝึกงาน บ.ABC จำกัด", org: "บริษัท ABC จำกัด", type: "MoA", start: "1 ส.ค. 2568", expire: "31 ก.ค. 2571", responsible: "ผศ.ดร.ธนา ขยัน", status: "draft", daysLeft: 999 },
+  { id: 7, title: "MoU ความร่วมมือ CRI", org: "Chulabhorn Research Institute", type: "MoU", start: "1 มี.ค. 2567", expire: "28 ก.พ. 2572", responsible: "ดร.นิภา วิจัย", status: "active", daysLeft: 1400 },
+];
+
+export const documentStatusMap: Record<string, { label: string; cls: string }> = {
+  active: { label: "ใช้งาน", cls: "badge-green" },
+  expiring: { label: "ใกล้หมดอายุ", cls: "badge-gold" },
+  expired: { label: "หมดอายุ", cls: "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-[#FEE2E2] text-[#B91C1C]" },
+  draft: { label: "อยู่ระหว่างจัดทำ", cls: "badge-blue" },
+};
+
+/* ---- Activity detail (mock: เนื้อหาเขียนไว้สำหรับกิจกรรม id=1) ---- */
+
+export interface ActivityParticipant {
+  name: string;
+  role: string;
+  avatar: string;
+}
+
+export const activityParticipants: ActivityParticipant[] = [
+  { name: "นายสมศักดิ์ ใจดี", role: "นักศึกษาปริญญาโท", avatar: "สศ" },
+  { name: "นางสาวปวีณา เพ็ชรดี", role: "นักศึกษาปริญญาตรี", avatar: "ปว" },
+  { name: "ดร.กิตติพงษ์ รักษา", role: "อาจารย์ผู้ดูแล", avatar: "กต" },
+  { name: "คุณวิรัช พัฒนา", role: "วิทยากรภายนอก", avatar: "วร" },
+];
+
+export interface ActivityFeedbackItem {
+  name: string;
+  rating: number;
+  comment: string;
+}
+
+export const activityFeedbackList: ActivityFeedbackItem[] = [
+  { name: "นายสมศักดิ์ ใจดี", rating: 5, comment: "เนื้อหาตรงกับความต้องการมาก วิทยากรมีความเชี่ยวชาญสูง และกิจกรรมปฏิบัติ hands-on ช่วยให้เข้าใจได้ดีมาก" },
+  { name: "นางสาวปวีณา เพ็ชรดี", rating: 5, comment: "ได้รับความรู้ใหม่เยอะมาก โดยเฉพาะเรื่อง AI application ในการศึกษา ประทับใจมากค่ะ" },
+  { name: "ผู้เข้าร่วมไม่ประสงค์ออกนาม", rating: 4, comment: "ดีมาก แต่ควรเพิ่มเวลา workshop ให้มากกว่านี้" },
+];
+
+export const activityPhotos: string[] = [
+  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&h=300&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=400&h=300&fit=crop&auto=format",
+  "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=400&h=300&fit=crop&auto=format",
+];
+
+export const activityOutcomeStats = [
+  { label: "ผู้เข้าร่วม", value: "45", sub: "คน", color: "#4f46e5", bg: "#ede9fe" },
+  { label: "คะแนนความพึงพอใจ", value: "4.8", sub: "/ 5.0", color: "#16a34a", bg: "#dcfce7" },
+  { label: "เอกสารประกอบ", value: "12", sub: "ชิ้น", color: "#d97706", bg: "#fef3c7" },
+];
+
+export const activityOutcomes = [
+  "ผู้เข้าร่วม 45 คน สามารถนำ AI tools มาใช้ในการออกแบบบทเรียนได้",
+  "สร้าง prototype AI-assisted learning module จำนวน 8 ชิ้น",
+  "เกิดความร่วมมือวิจัยต่อเนื่องระหว่างสองสถาบัน",
+  "นักศึกษา 3 คนได้รับเชิญเข้าร่วมโปรแกรมแลกเปลี่ยนที่ NTU",
+];
+
+export const activityInfoRows = [
+  { label: "หน่วยงาน", value: "National Taiwan University" },
+  { label: "ประเภท", value: "อบรมเชิงปฏิบัติการ" },
+  { label: "วันที่", value: "20 สิงหาคม 2568" },
+  { label: "เวลา", value: "09:00 – 17:00 น." },
+  { label: "สถานที่", value: "ห้อง 301 อาคารวิจัย NTU" },
+  { label: "ผู้รับผิดชอบ", value: "ผศ.ดร.วิชัย สอนดี" },
+];
+
+export const activityFiles = [
+  "กำหนดการ_AI_Education.pdf",
+  "สไลด์_Workshop.pdf",
+  "รายชื่อผู้เข้าร่วม.xlsx",
+];
+
+/* ---- Document detail (mock: เนื้อหาเขียนไว้สำหรับเอกสาร id=1) ---- */
+
+export interface DocumentTimelineStep {
+  label: string;
+  date: string;
+  done: boolean;
+  current: boolean;
+}
+
+export const documentTimeline: DocumentTimelineStep[] = [
+  { label: "Draft", date: "1 พ.ย. 2566", done: true, current: false },
+  { label: "Review", date: "15 พ.ย. 2566", done: true, current: false },
+  { label: "Signed", date: "1 ม.ค. 2567", done: true, current: false },
+  { label: "Active", date: "1 ม.ค. 2567", done: true, current: true },
+  { label: "Renewal", date: "31 ธ.ค. 2571", done: false, current: false },
+];
+
+export interface DocumentRelatedActivity {
+  /** id ใน `activities` (mock) — undefined = ไม่ทำเป็นลิงก์ (กัน 404) */
+  activityId?: number;
+  name: string;
+  date: string;
+  status: string;
+  statusColor: string;
+}
+
+export const documentRelatedActivities: DocumentRelatedActivity[] = [
+  { activityId: 2, name: "สัมมนาวิชาการนวัตกรรมการเรียนการสอน", date: "15 ส.ค. 2568", status: "เสร็จสิ้น", statusColor: "badge-green" },
+  { activityId: 1, name: "อบรมเชิงปฏิบัติการ AI for Education", date: "20 ส.ค. 2568", status: "กำลังดำเนินการ", statusColor: "badge-blue" },
+  { name: "โครงการวิจัยร่วม Digital Learning", date: "5 ก.ค. 2568", status: "เสร็จสิ้น", statusColor: "badge-green" },
+];
+
+export const documentScope = [
+  "การแลกเปลี่ยนนักศึกษาและบุคลากรระหว่างสองสถาบัน",
+  "การจัดกิจกรรมและโครงการวิชาการร่วมกัน",
+  "การวิจัยและพัฒนาร่วมกันในสาขาที่เกี่ยวข้อง",
+  "การแลกเปลี่ยนข้อมูล ทรัพยากร และองค์ความรู้",
+  "การพัฒนาหลักสูตรและโปรแกรมการเรียนรู้ร่วมกัน",
+  "การสนับสนุนทุนการศึกษาและการฝึกอบรม",
+];
+
+export const documentInfoRows = [
+  { label: "ประเภท", value: "MoU (Memorandum of Understanding)" },
+  { label: "หน่วยงาน", value: "มหาวิทยาลัยเชียงใหม่" },
+  { label: "วันที่เริ่มต้น", value: "1 มกราคม 2567" },
+  { label: "วันหมดอายุ", value: "31 ธันวาคม 2571" },
+  { label: "ระยะเวลา", value: "5 ปี" },
+  { label: "ผู้รับผิดชอบ", value: "ผศ.ดร.วิชัย สอนดี" },
+  { label: "สถานะ", value: "ใช้งาน" },
+  { label: "ผู้ลงนาม (ฝ่ายเรา)", value: "รศ.ดร.ประธาน มหาวิทยาลัย" },
+  { label: "ผู้ลงนาม (หน่วยงาน)", value: "รศ.ดร.สมชาย ใจดี" },
+];
+
+export const documentFile = {
+  name: "MoU_CMU_signed.pdf",
+  meta: "PDF • 3.2 MB • อัปโหลด 1 ม.ค. 2567",
+};
+

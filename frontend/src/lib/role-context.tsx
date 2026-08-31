@@ -82,15 +82,19 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   public: [
     { to: '/dashboard/public', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'ความร่วมมือ', icon: 'globe' },
+    { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
   student: [
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
+    { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/feedback', label: 'Feedback', icon: 'message' },
   ],
   teacher: [
     { to: '/dashboard/teacher', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
+    { to: '/documents', label: 'MoU / MoA', icon: 'file' },
+    { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
     { to: '/feedback', label: 'Feedback', icon: 'message' },
     { to: '/reports', label: 'รายงาน', icon: 'chart' },
@@ -98,6 +102,8 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   staff: [
     { to: '/dashboard/staff', label: 'Dashboard', icon: 'home', end: true },
     { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
+    { to: '/documents', label: 'MoU / MoA', icon: 'file' },
+    { to: '/activities', label: 'Activities', icon: 'calendar' },
     { to: '/exchange', label: 'Student Exchange', icon: 'graduation' },
     { to: '/feedback', label: 'Feedback', icon: 'message' },
     { to: '/reports', label: 'Reports', icon: 'chart' },
@@ -105,6 +111,8 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   admin: [
     { to: '/dashboard/admin', label: 'Executive Dashboard', icon: 'home', end: true },
     { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
+    { to: '/documents', label: 'MoU / MoA', icon: 'file' },
+    { to: '/activities', label: 'Activities', icon: 'calendar' },
     { to: '/exchange', label: 'Student Exchange', icon: 'graduation' },
     { to: '/feedback', label: 'Feedback', icon: 'message' },
     { to: '/reports', label: 'Reports & Analytics', icon: 'chart' },
