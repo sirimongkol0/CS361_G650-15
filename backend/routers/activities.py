@@ -28,6 +28,13 @@ def list_published_activities(db: Session = Depends(database.get_db)):
             "date": activity.date,
             "description": activity.description,
             "activity_type": activity.activity_type,
+            "end_date": activity.end_date,
+            "participants": activity.participants,
+            "location": activity.location,
+            "time": activity.time,
+            "status": activity.status,
+            "is_open": activity.is_open,
+            "mou_document_id": activity.mou_document_id,
             "partner": None
         }
         if activity.partner:
@@ -58,6 +65,13 @@ def get_activity(activity_id: int, db: Session = Depends(database.get_db)):
         "date": activity.date,
         "description": activity.description,
         "activity_type": activity.activity_type,
+        "end_date": activity.end_date,
+        "participants": activity.participants,
+        "location": activity.location,
+        "time": activity.time,
+        "status": activity.status,
+        "is_open": activity.is_open,
+        "mou_document_id": activity.mou_document_id,
         "partner": None
     }
     if activity.partner:
