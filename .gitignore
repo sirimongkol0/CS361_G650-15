@@ -19,3 +19,13 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+
+# Backend runtime artifacts (local dev only)
+backend/local.db
+backend/venv/
+backend/__pycache__/
+backend/routers/__pycache__/
+# storage/ holds real uploaded files (local storage backend, see backend/storage.py)
+# -> ignore contents only, keep the directory via .gitkeep
+backend/storage/*
+!backend/storage/.gitkeep
