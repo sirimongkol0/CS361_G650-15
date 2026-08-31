@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Building2, CalendarDays, Globe, ChevronRight } from "lucide-react";
-import { publicActivities, publicPartners } from "@/lib/mock";
+import { publicActivities as mockPublicActivities, publicPartners as mockPublicPartners } from "@/lib/mock";
+import { loadPublicActivities, loadPublicPartners, useApiData } from "@/lib/api";
 
 // Tailwind-token equivalents of the legacy mock's utility classes
 // (stat-card / content-card / table-row-hover / avatar live in legacy/figma-mock/src/index.css)
@@ -17,6 +18,10 @@ const kpis = [
 ];
 
 export default function DashboardPublic() {
+  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
+  const publicActivities = useApiData(loadPublicActivities, mockPublicActivities);
+  const publicPartners = useApiData(loadPublicPartners, mockPublicPartners);
+
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
       {/* Header */}

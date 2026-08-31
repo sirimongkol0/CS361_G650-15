@@ -13,7 +13,8 @@ import {
   MoreHorizontal,
   Download,
 } from "lucide-react";
-import { documents, documentStatusMap } from "@/lib/mock";
+import { documents as mockDocuments, documentStatusMap } from "@/lib/mock";
+import { loadDocuments, useApiData } from "@/lib/api";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
@@ -25,6 +26,9 @@ export default function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [activeTab, setActiveTab] = useState(tabs[0]);
+
+  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
+  const documents = useApiData(loadDocuments, mockDocuments);
 
   const filtered = documents.filter((d) => {
     const matchSearch =

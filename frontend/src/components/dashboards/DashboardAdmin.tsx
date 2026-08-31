@@ -15,9 +15,10 @@ import {
   adminMonthlyActivities,
   adminStakeholderTypes,
   adminTopCollaborations,
-  adminFeedbackDevelopment,
-  adminWatchMOU,
+  adminFeedbackDevelopment as mockAdminFeedbackDevelopment,
+  adminWatchMOU as mockAdminWatchMOU,
 } from "@/lib/mock";
+import { loadDocuments, loadFeedbackEntries, useApiData } from "@/lib/api";
 
 const statCard = "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover transition-all duration-150";
 const contentCard = "content-card bg-white rounded-base shadow-card";
@@ -49,6 +50,24 @@ const systemActions = [
 
 export default function DashboardAdmin() {
   const [period, setPeriod] = useState("2568");
+
+  // API-first with mock.ts as fallback for the MoU watch list + feedback items.
+  // Chart aggregates stay on mock — the API has no aggregate endpoints.
+  const adminWatchMOU = useApiData(async () => {
+    const docs = await loadDocuments();
+    const watch = docs
+      .filter((d) => d.status === "expiring")
+      .map((d) => ({ title: d.title, org: d.org, days: d.daysLeft }));
+    return watch.length > 0 ? watch : mockAdminWatchMOU;
+  }, mockAdminWatchMOU);
+  const adminFeedbackDevelopment = useApiData(async () => {
+    const feedback = await loadFeedbackEntries();
+    const items = feedback
+      .filter((f) => f.comment)
+      .slice(0, 3)
+      .map((f) => ({ text: f.comment, source: f.source, rating: f.rating }));
+    return items.length > 0 ? items : mockAdminFeedbackDevelopment;
+  }, mockAdminFeedbackDevelopment);
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">

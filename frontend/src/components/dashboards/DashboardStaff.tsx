@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, TrendingUp, ChevronRight, Plus, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { staffMonthlyActivities, staffRecentActivities, staffExpiringDocs } from "@/lib/mock";
+import { staffMonthlyActivities, staffRecentActivities as mockStaffRecentActivities, staffExpiringDocs as mockStaffExpiringDocs } from "@/lib/mock";
+import { loadActivities, loadDocuments, useApiData } from "@/lib/api";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150";
@@ -30,6 +31,16 @@ const kpis: Kpi[] = [
 
 export default function DashboardStaff() {
   const [year, setYear] = useState("2568");
+
+  // API-first with mock.ts as fallback for recent activities + expiring docs.
+  // staffMonthlyActivities (chart) stays on mock — the API has no aggregate endpoint.
+  const staffRecentActivities = useApiData(loadActivities, mockStaffRecentActivities);
+  const staffExpiringDocs = useApiData(async () => {
+    const docs = await loadDocuments();
+    return docs
+      .filter((d) => d.status === "expiring")
+      .map((d) => ({ title: d.title, org: d.org, expire: d.expire, days: d.daysLeft }));
+  }, mockStaffExpiringDocs);
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">

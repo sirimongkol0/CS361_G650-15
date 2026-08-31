@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, ChevronRight, AlertTriangle, Star } from "lucide-react";
-import { teacherStakeholders, teacherActivities, teacherRecentFeedback } from "@/lib/mock";
+import { teacherStakeholders, teacherActivities as mockTeacherActivities, teacherRecentFeedback as mockTeacherFeedback } from "@/lib/mock";
+import { loadActivities, loadFeedbackEntries, useApiData } from "@/lib/api";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
@@ -40,6 +41,11 @@ const quickActions = [
 ];
 
 export default function DashboardTeacher() {
+  // API-first with mock.ts as fallback for activities + recent feedback.
+  // teacherStakeholders stays on mock — the API contract has no MoU counts.
+  const teacherActivities = useApiData(loadActivities, mockTeacherActivities);
+  const teacherRecentFeedback = useApiData(loadFeedbackEntries, mockTeacherFeedback);
+
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
       {/* Header */}

@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { activities, activityTypeColors } from "@/lib/mock";
+import { loadActivities, useApiData } from "@/lib/api";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
@@ -23,7 +24,10 @@ export default function ActivitiesPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filtered = activities.filter((a) => {
+  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
+  const activityList = useApiData(loadActivities, activities);
+
+  const filtered = activityList.filter((a) => {
     const matchSearch =
       a.name.toLowerCase().includes(search.toLowerCase()) ||
       a.org.toLowerCase().includes(search.toLowerCase());
@@ -110,14 +114,14 @@ export default function ActivitiesPage() {
       <div className="flex gap-3 mb-4 flex-wrap items-center">
         <span className="text-sm text-faint">{filtered.length} กิจกรรม</span>
         <span className="badge badge-green">
-          เสร็จสิ้น: {activities.filter((a) => a.status === "เสร็จสิ้น").length}
+          เสร็จสิ้น: {activityList.filter((a) => a.status === "เสร็จสิ้น").length}
         </span>
         <span className="badge badge-blue">
           กำลังดำเนินการ:{" "}
-          {activities.filter((a) => a.status === "กำลังดำเนินการ").length}
+          {activityList.filter((a) => a.status === "กำลังดำเนินการ").length}
         </span>
         <span className="badge badge-purple">
-          วางแผน: {activities.filter((a) => a.status === "วางแผน").length}
+          วางแผน: {activityList.filter((a) => a.status === "วางแผน").length}
         </span>
       </div>
 
@@ -223,7 +227,7 @@ export default function ActivitiesPage() {
         {/* Pagination (mock) */}
         <div className="flex items-center justify-between px-5 py-4 border-t border-line">
           <span className="text-sm text-faint">
-            แสดง 1–{filtered.length} จาก {activities.length} กิจกรรม
+            แสดง 1–{filtered.length} จาก {activityList.length} กิจกรรม
           </span>
           <div className="flex gap-1">
             {[1, 2, 3].map((p) => (

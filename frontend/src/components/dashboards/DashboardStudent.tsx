@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { CalendarDays, GraduationCap, MessageSquare, CheckCircle2, Clock, Star, ChevronRight, Bell } from "lucide-react";
-import { studentProjects, studentUpcomingActivities, studentPendingFeedback, studentExchange } from "@/lib/mock";
+import { studentProjects, studentUpcomingActivities, studentPendingFeedback, studentExchange as mockStudentExchange, type StudentExchangeSummary } from "@/lib/mock";
+import { loadExchangeStudents, useApiData } from "@/lib/api";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
@@ -16,6 +17,15 @@ const summaryCards = [
 ];
 
 export default function DashboardStudent() {
+  // API-first with mock.ts as fallback for the exchange summary card.
+  // studentProjects / upcoming / pending stay on mock — no API endpoints yet.
+  const studentExchange = useApiData<StudentExchangeSummary>(async () => {
+    const s = (await loadExchangeStudents())[0];
+    return s
+      ? { program: s.program, org: s.to, period: s.period, status: s.status }
+      : mockStudentExchange;
+  }, mockStudentExchange);
+
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
       {/* Header */}

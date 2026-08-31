@@ -18,7 +18,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import {
-  activities,
+  activities as mockActivities,
   activityFeedbackList,
   activityFiles,
   activityInfoRows,
@@ -27,6 +27,7 @@ import {
   activityParticipants,
   activityPhotos,
 } from "@/lib/mock";
+import { loadActivities, useApiData } from "@/lib/api";
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -45,7 +46,10 @@ function StarRow({ rating }: { rating: number }) {
 export default function ActivityDetailPage() {
   const params = useParams<{ id: string }>();
   const id = Number(params?.id);
-  const activity = activities.find((a) => a.id === id);
+  // API-first with mock.ts as fallback; the mock list is also the lookup when
+  // the id does not resolve (detail content is written for activity id=1).
+  const activityList = useApiData(loadActivities, mockActivities);
+  const activity = activityList.find((a) => a.id === id);
 
   const name = activity?.name ?? "อบรมเชิงปฏิบัติการ AI for Education";
   const status = activity?.status ?? "เสร็จสิ้น";

@@ -11,9 +11,10 @@ import {
   Send,
   CheckCircle2,
 } from "lucide-react";
-import { feedbackEntries } from "@/lib/mock";
+import { feedbackEntries as mockFeedbackEntries } from "@/lib/mock";
+import { loadFeedbackEntries, useApiData } from "@/lib/api";
 
-type FeedbackEntry = (typeof feedbackEntries)[number];
+type FeedbackEntry = (typeof mockFeedbackEntries)[number];
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -48,8 +49,11 @@ export default function FeedbackPage() {
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
-  const [selectedId, setSelectedId] = useState<number | null>(feedbackEntries[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<number | null>(mockFeedbackEntries[0]?.id ?? null);
   const [replyText, setReplyText] = useState("");
+
+  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
+  const feedbackEntries = useApiData(loadFeedbackEntries, mockFeedbackEntries);
 
   const filtered = feedbackEntries.filter((f: FeedbackEntry) => {
     const matchSearch = f.title.toLowerCase().includes(search.toLowerCase());

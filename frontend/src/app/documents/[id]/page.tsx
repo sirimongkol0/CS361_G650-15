@@ -16,7 +16,7 @@ import {
   Edit,
 } from "lucide-react";
 import {
-  documents,
+  documents as mockDocuments,
   documentFile,
   documentInfoRows,
   documentRelatedActivities,
@@ -24,11 +24,15 @@ import {
   documentTimeline,
   documentStatusMap,
 } from "@/lib/mock";
+import { loadDocuments, useApiData } from "@/lib/api";
 
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
   const id = Number(params?.id);
-  const doc = documents.find((d) => d.id === id);
+  // API-first with mock.ts as fallback; the mock list is also the lookup when
+  // the id does not resolve (detail content is written for document id=1).
+  const documentList = useApiData(loadDocuments, mockDocuments);
+  const doc = documentList.find((d) => d.id === id);
 
   const title = doc?.title ?? "MoU ความร่วมมือทางวิชาการ มช.";
   const statusKey = doc?.status ?? "active";

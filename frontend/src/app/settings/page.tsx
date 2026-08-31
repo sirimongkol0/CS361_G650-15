@@ -14,7 +14,8 @@ import {
   EyeOff,
   Check,
 } from "lucide-react";
-import { adminProfile } from "@/lib/mock";
+import { adminProfile as mockAdminProfile } from "@/lib/mock";
+import { loadAdminProfile, useApiData } from "@/lib/api";
 
 const settingsTabs = [
   { id: "profile", label: "โปรไฟล์", icon: User },
@@ -74,6 +75,9 @@ export default function SettingsPage() {
     dataRetention: true,
   });
   const [saved, setSaved] = useState(false);
+
+  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
+  const adminProfile = useApiData(loadAdminProfile, mockAdminProfile);
 
   const handleSave = () => {
     setSaved(true);
