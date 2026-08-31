@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 
 from config import settings
 from database import engine, Base
-from routers import health, partners, activities, documents
+from routers import health, partners, activities, documents, feedback, exchange, users
 import schemas
 
 # Create tables
@@ -44,3 +44,6 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(partners.router, prefix="/api/v1")
 app.include_router(activities.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
+app.include_router(feedback.router, prefix="/api/v1")
+app.include_router(exchange.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
