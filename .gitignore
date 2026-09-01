@@ -29,3 +29,17 @@ backend/routers/__pycache__/
 # -> ignore contents only, keep the directory via .gitkeep
 backend/storage/*
 !backend/storage/.gitkeep
+backend/storage/agreements/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Private keys — never commit
+*.pem
+
+# Generated doc exports (regenerable from .md sources)
+*.html
+docs-th/*.docx
+docs-th/**/*.docx
+
