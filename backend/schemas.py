@@ -49,6 +49,8 @@ class PartnerResponse(BaseModel):
 
 
 class ActivityPartnerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
 
@@ -90,6 +92,8 @@ class ActivityUpdate(BaseModel):
 
 
 class ActivityResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     date: date
@@ -103,10 +107,6 @@ class ActivityResponse(BaseModel):
     status: Optional[str] = None
     isOpen: Optional[bool] = Field(default=None, validation_alias=AliasChoices('is_open', 'isOpen'), serialization_alias='isOpen')
     mouDocId: Optional[int] = Field(default=None, validation_alias=AliasChoices('mou_document_id', 'mouDocId'), serialization_alias='mouDocId')
-
-    class Config:
-        from_attributes = True
-
 
 class DocumentBase(BaseModel):
     name: str
@@ -252,5 +252,4 @@ DocumentResponse.model_rebuild()
 
 
 class ErrorResponse(BaseModel):
-    status_code: int
     detail: str

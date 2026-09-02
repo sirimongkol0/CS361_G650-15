@@ -1,4 +1,4 @@
-# API Contract V1 (v1.1) — ฉบับภาษาไทย
+# API Contract V1 (v1.2) — ฉบับภาษาไทย
 
 > คำแปลของ `docs/api/v1-api-contract.md` — ตัว endpoint และ field เป็นข้อความภาษาอังกฤษตาม API จริง
 
@@ -44,6 +44,8 @@ Base URL: `/api/v1`
 ### GET /api/v1/partners/{id} — ตัวเดียว, 404 ถ้าไม่มีหรือยังไม่ publish
 
 ### GET /api/v1/activities/ — รายการกิจกรรมที่ publish (เรียงตามวันที่)
+
+`partner` เป็น `null` เมื่อกิจกรรมไม่มีหน่วยงาน หรือเมื่อหน่วยงานที่เชื่อมอยู่ยังไม่ publish เพื่อไม่ให้กิจกรรมที่เผยแพร่แล้วเปิดเผยข้อมูลหน่วยงานฉบับร่างทางอ้อม
 
 ```json
 [
@@ -178,7 +180,9 @@ scope items กับ timeline steps ฝังมาในแต่ละรา�
 
 ## รูปแบบ Error
 
-ตามค่า default ของ FastAPI: `{"detail": "..."}`
+Error ทุกประเภทใช้รูปแบบเดียวกัน: `{"detail": "..."}`
+
+ข้อมูลที่ไม่มีอยู่และข้อมูลที่ยังไม่ publish คืน 404 แบบเดียวกัน เพื่อไม่ให้ผู้ใช้สาธารณะตรวจพบ ID ของฉบับร่างได้ ค่า path ที่ไม่ผ่าน validation คืน `{"detail": "Request validation failed"}` พร้อม 422 และข้อผิดพลาดภายในคืน `{"detail": "Internal server error"}` โดยไม่เปิดเผยรายละเอียดภายใน
 
 | Status | ความหมาย |
 |---|---|
@@ -194,3 +198,4 @@ scope items กับ timeline steps ฝังมาในแต่ละรา�
 - ทุก list endpoint กรอง `is_published = true` ยกเว้น `users` (ไม่มี flag publish)
 - V1 ยังไม่มี authentication; endpoint เขียนมีแค่อัปโหลด/ลบเอกสาร — CRUD ที่เหลือกับ auth เป็นของ V2+
 - วันที่เป็น ISO 8601 — หน้าเว็บแปลงเป็น พ.ศ. (+543) ตอนแสดงผล
+- กำหนด origin ของ Browser ที่เรียก API ได้ผ่าน environment variable `CORS_ORIGINS` แบบคั่นด้วย comma ค่า local เริ่มต้นรองรับ port 3000 และ 3001 ส่วน origin อื่นจะไม่ได้รับ CORS access header

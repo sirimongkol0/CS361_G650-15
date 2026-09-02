@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException
 
 from config import settings
 from database import engine, Base
@@ -13,21 +14,33 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Partner Activity API")
 
-# CORS middleware for localhost:3000
+# CORS origins are environment-driven so local/demo frontends can use the
+# same image without a code change.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Keep application errors on the documented ``{"detail": ...}`` shape."""
+    detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=schemas.ErrorResponse(detail=detail).model_dump(),
+        headers=exc.headers,
+    )
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
         status_code=422,
-        content=schemas.ErrorResponse(status_code=422, detail=str(exc.errors())).dict()
+        content=schemas.ErrorResponse(detail="Request validation failed").model_dump(),
     )
 
 
@@ -35,7 +48,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def generic_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
-        content=schemas.ErrorResponse(status_code=500, detail="Internal server error").dict()
+        content=schemas.ErrorResponse(detail="Internal server error").model_dump(),
     )
 
 
