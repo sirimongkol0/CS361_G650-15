@@ -4,17 +4,11 @@
 // NEXT_PUBLIC_API_URL       — server-side (SSR) base URL
 // NEXT_PUBLIC_API_BROWSER_URL — browser-side base URL (falls back to the above)
 //
-// Every loader here maps the raw API payload into the view shapes the pages
-// already consume (previously sourced from lib/mock.ts). On any failure —
-// network error, 404 (some endpoints are still rolling out), non-OK status,
-// empty/malformed payload — the loader falls back to the mock data so pages
-// always render (same behaviour as before the API integration).
+// Public loaders are strict: failures and empty results are surfaced to the UI.
+// Mock fallbacks remain only in the older internal/prototype loaders.
 
-import { useEffect, useState } from "react";
+import { type DependencyList, useEffect, useState } from "react";
 import {
-  publicActivities,
-  publicPartners,
-  activities as mockActivities,
   documents as mockDocuments,
   feedbackEntries as mockFeedback,
   exchangeStudents as mockExchange,
@@ -41,8 +35,17 @@ function apiBase(): string {
 
 const API_TIMEOUT_MS = 5000;
 
-/** GET a JSON list from the API; throws on any failure (caller decides fallback). */
-async function apiGetList<T>(path: string): Promise<T[]> {
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+async function apiGet<T>(path: string): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
@@ -51,13 +54,26 @@ async function apiGetList<T>(path: string): Promise<T[]> {
       headers: { Accept: "application/json" },
       cache: "no-store",
     });
-    if (!res.ok) throw new Error(`API ${path} -> HTTP ${res.status}`);
-    const data = await res.json();
-    if (!Array.isArray(data)) throw new Error(`API ${path} -> unexpected payload`);
-    return data as T[];
+    if (!res.ok) {
+      throw new ApiError(`API ${path} -> HTTP ${res.status}`, res.status);
+    }
+    return (await res.json()) as T;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("API request timed out");
+    }
+    throw new ApiError("Unable to connect to the API");
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** GET a JSON list from the API; throws on any failure (caller decides fallback). */
+async function apiGetList<T>(path: string): Promise<T[]> {
+  const data = await apiGet<unknown>(path);
+  if (!Array.isArray(data)) throw new ApiError(`API ${path} -> unexpected payload`);
+  return data as T[];
 }
 
 /**
@@ -140,6 +156,13 @@ interface RawActivity {
   date: string; // ISO
   description?: string | null;
   activity_type?: string | null;
+  endDate?: string | null;
+  participants?: number | null;
+  location?: string | null;
+  time?: string | null;
+  status?: string | null;
+  isOpen?: boolean | null;
+  mouDocId?: number | null;
   partner?: { id: number; name: string } | null;
 }
 
@@ -224,16 +247,42 @@ function partnerInitials(name: string): string {
   return name.trim().slice(0, 2);
 }
 
-function mapPartner(raw: RawPartner, index: number): PublicPartner {
+export interface PartnerView extends PublicPartner {
+  id: number;
+  description: string;
+  websiteUrl: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+}
+
+export interface ActivityView extends MockActivity {
+  description: string;
+  location: string | null;
+  time: string | null;
+  endDate: string | null;
+  partnerId: number | null;
+  isOpen: boolean;
+}
+
+export interface PublicActivityView extends PublicActivity {
+  id: number;
+}
+
+function mapPartner(raw: RawPartner, index: number): PartnerView {
   const palette = PARTNER_PALETTE[index % PARTNER_PALETTE.length];
   const country = raw.country ? COUNTRY_LABELS[raw.country] ?? raw.country : "—";
   return {
+    id: raw.id,
     name: raw.name,
     type: raw.type ?? "—",
     country,
     initials: partnerInitials(raw.name),
     bg: palette.bg,
     color: palette.color,
+    description: raw.description ?? "",
+    websiteUrl: raw.websiteUrl ?? null,
+    contactName: raw.contactName ?? null,
+    contactEmail: raw.contactEmail ?? null,
   };
 }
 
@@ -247,8 +296,16 @@ function deriveActivityStatus(dateIso?: string | null): { status: string; status
   return { status: "วางแผน", statusColor: "badge-purple" };
 }
 
-function mapActivity(raw: RawActivity): MockActivity {
-  const { status, statusColor } = deriveActivityStatus(raw.date);
+function mapActivity(raw: RawActivity): ActivityView {
+  const derived = deriveActivityStatus(raw.date);
+  const status = raw.status ?? derived.status;
+  const statusColor =
+    status === "เสร็จสิ้น"
+      ? "badge-green"
+      : status === "วางแผน"
+        ? "badge-purple"
+        : "badge-blue";
+  const activityDate = new Date(raw.date).getTime();
   return {
     id: raw.id,
     name: raw.name,
@@ -256,10 +313,17 @@ function mapActivity(raw: RawActivity): MockActivity {
     type: raw.activity_type || "กิจกรรมวิชาการ",
     date: formatThaiDate(raw.date),
     // API contract has no participant count — display 0 until the field exists.
-    participants: 0,
-    mou: "",
+    participants: raw.participants ?? 0,
+    mou: raw.mouDocId != null ? `เอกสาร #${raw.mouDocId}` : "—",
+    mouDocId: raw.mouDocId ?? undefined,
     status,
     statusColor,
+    description: raw.description ?? "",
+    location: raw.location ?? null,
+    time: raw.time ?? null,
+    endDate: raw.endDate ?? null,
+    partnerId: raw.partner?.id ?? null,
+    isOpen: raw.isOpen ?? (!isNaN(activityDate) && activityDate >= Date.now()),
   };
 }
 
@@ -320,42 +384,45 @@ function mapAdminProfile(raw: RawUser): AdminProfile {
   };
 }
 
-// ---------- Loaders (API first, mock.ts as fallback) ----------
+// ---------- Loaders ----------
 
 /** GET /partners/ -> public partner list (published partners only, per API). */
-export function loadPublicPartners(): Promise<PublicPartner[]> {
-  return safeLoad<PublicPartner[]>(
-    "/partners/",
-    (raw) => (raw as RawPartner[]).map(mapPartner),
-    publicPartners
-  );
+export async function loadPublicPartners(): Promise<PartnerView[]> {
+  const raw = await apiGetList<RawPartner>("/partners/");
+  return raw.map(mapPartner);
 }
 
-/** GET /activities/ -> activities list mapped to the MockActivity view shape. */
-export function loadActivities(): Promise<MockActivity[]> {
-  return safeLoad<MockActivity[]>(
-    "/activities/",
-    (raw) => (raw as RawActivity[]).map(mapActivity),
-    mockActivities
-  );
+/** GET /partners/{id} -> one published partner. Draft/missing records are 404. */
+export async function loadPublicPartner(id: number): Promise<PartnerView> {
+  const raw = await apiGet<RawPartner>(`/partners/${id}`);
+  return mapPartner(raw, id);
+}
+
+/** GET /activities/ -> published activities. No public mock fallback is allowed. */
+export async function loadActivities(): Promise<ActivityView[]> {
+  const raw = await apiGetList<RawActivity>("/activities/");
+  return raw.map(mapActivity);
+}
+
+/** GET /activities/{id} -> one published activity. Draft/missing records are 404. */
+export async function loadActivity(id: number): Promise<ActivityView> {
+  const raw = await apiGet<RawActivity>(`/activities/${id}`);
+  return mapActivity(raw);
 }
 
 /** GET /activities/ -> public activity cards for the public dashboard. */
-export function loadPublicActivities(): Promise<PublicActivity[]> {
-  return safeLoad<PublicActivity[]>(
-    "/activities/",
-    (raw) =>
-      (raw as RawActivity[]).map((a) => {
-        const t = new Date(a.date).getTime();
-        return {
-          name: a.name,
-          org: a.partner?.name ?? "—",
-          date: formatThaiDate(a.date),
-          open: !isNaN(t) && t >= Date.now(),
-        };
-      }),
-    publicActivities
-  );
+export async function loadPublicActivities(): Promise<PublicActivityView[]> {
+  const raw = await apiGetList<RawActivity>("/activities/");
+  return raw.map((a) => {
+    const t = new Date(a.date).getTime();
+    return {
+      id: a.id,
+      name: a.name,
+      org: a.partner?.name ?? "—",
+      date: formatThaiDate(a.date),
+      open: a.isOpen ?? (!isNaN(t) && t >= Date.now()),
+    };
+  });
 }
 
 /** GET /documents/ (+ /partners/ join for org names) -> documents list. */
@@ -451,4 +518,46 @@ export function useApiData<T>(loader: () => Promise<T>, fallback: T): T {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return data;
+}
+
+export type ApiResource<T> =
+  | { status: "loading"; data: null; error: null; retry: () => void }
+  | { status: "success"; data: T; error: null; retry: () => void }
+  | { status: "error"; data: null; error: ApiError; retry: () => void };
+
+/** Strict API state for public UI: never substitutes prototype/mock data. */
+export function useApiResource<T>(
+  loader: () => Promise<T>,
+  dependencies: DependencyList = []
+): ApiResource<T> {
+  const [attempt, setAttempt] = useState(0);
+  const [state, setState] = useState<
+    | { status: "loading"; data: null; error: null }
+    | { status: "success"; data: T; error: null }
+    | { status: "error"; data: null; error: ApiError }
+  >({ status: "loading", data: null, error: null });
+
+  useEffect(() => {
+    let alive = true;
+    setState({ status: "loading", data: null, error: null });
+    loader()
+      .then((data) => {
+        if (alive) setState({ status: "success", data, error: null });
+      })
+      .catch((error: unknown) => {
+        if (!alive) return;
+        setState({
+          status: "error",
+          data: null,
+          error: error instanceof ApiError ? error : new ApiError("Unexpected API error"),
+        });
+      });
+    return () => {
+      alive = false;
+    };
+    // The caller supplies dependencies explicitly; attempt is the user-triggered retry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...dependencies, attempt]);
+
+  return { ...state, retry: () => setAttempt((value) => value + 1) } as ApiResource<T>;
 }
