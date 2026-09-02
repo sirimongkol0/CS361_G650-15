@@ -5,9 +5,10 @@ Mirrors the mock data 1:1 so the API can replace the frontend's temporary
 mock file without changing the UI. Additive/idempotent: existing rows (matched
 by name / title) are skipped, nothing is updated or deleted.
 
-Safety: the real .env points at the production RDS. This script REFUSES to run
-against any PostgreSQL database whose name is not "partner_activity_mock"
-unless you pass --yes. Use --database-url to point somewhere else, e.g.:
+Safety: this script REFUSES to run against any PostgreSQL database whose name
+is not "partner_activity_mock" unless you pass --yes. The Compose seed service
+uses --yes only with its private local PostgreSQL service. For manual runs, use
+--database-url to point at a disposable database, e.g.:
 
     python seed_mock.py --database-url sqlite:///./mock_seed_check.db
 
