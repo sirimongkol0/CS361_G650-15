@@ -2,117 +2,124 @@
 
 ## Prerequisites
 
-- Docker + Docker Compose (recommended path), **or**
-- Python 3.11+, Node.js 20+, and access to a PostgreSQL database
+- Docker Engine or Docker Desktop with Docker Compose v2 (recommended), or
+- Python 3.11+, Node.js 20+, and PostgreSQL 15+ for running processes manually.
 
-## Option A — Docker Compose (full stack)
+## Option A — clean-checkout Docker Compose
 
-1. Configure the environment file next to `docker-compose.yml`
-   (`.env`, gitignored):
+No cloud database, AWS credentials or local language runtimes are required.
+From the repository root:
 
-   ```
-   DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<database>
-   STORAGE_BACKEND=local            # or s3
-   S3_BUCKET=cs361-partner-docs     # when STORAGE_BACKEND=s3
-   AWS_REGION=ap-southeast-1
-   AWS_ACCESS_KEY_ID=<scoped key>   # only for s3
-   AWS_SECRET_ACCESS_KEY=<scoped secret>
-   ```
+```bash
+docker compose up --build -d
+docker compose ps --all
+python scripts/smoke_test.py
+```
 
-2. Start everything:
+Compose starts the services in this order:
 
-   ```bash
-   docker compose up --build -d
-   ```
+1. PostgreSQL becomes healthy.
+2. The one-shot `seed` service creates the schema and inserts the development
+   dataset. It must exit with code 0.
+3. The backend starts and becomes healthy only after it can query PostgreSQL.
+4. The frontend starts after the backend is healthy.
 
-3. Verify:
+Expected endpoints:
 
-   | URL | Expect |
-   |---|---|
-   | http://localhost:8000/api/v1/health | `{"status":"healthy"}` |
-   | http://localhost:3000 | frontend (redirects to /login) |
-   | http://localhost:3000/activities | activity list backed by the API |
+| URL | Expected result |
+|---|---|
+| http://localhost:8000/api/v1/health | `{"status":"healthy"}` |
+| http://localhost:8000/docs | Swagger UI |
+| http://localhost:3000 | redirects to `/dashboard/public` |
+| http://localhost:3000/activities | seeded activity list |
 
-Notes:
+The checked-in defaults are development-only and contain no production
+credentials. You do not need an `.env` file. To change ports or local database
+credentials, copy `.env.example` to `.env` and edit it. When changing
+`BACKEND_PORT`, also make `PUBLIC_API_URL` use that port because this URL is
+embedded in the browser bundle.
 
-- Inside the compose network the frontend calls the backend by service name;
-  browser-side links use the published port 8000. Both are injected as build
-  args in `docker-compose.yml`.
-- The frontend publishes on host port **3000**.
-- Stop with `docker compose down` (containers only) — data lives in RDS/S3,
-  so nothing is lost.
+Useful lifecycle commands:
 
-## Option B — Local processes (faster iteration)
+```bash
+# Inspect the one-shot seed and application logs
+docker compose logs seed backend frontend
 
-1. **Database** — point `DATABASE_URL` at any PostgreSQL instance.
-2. **Backend**:
+# Stop containers but preserve the PostgreSQL and upload volumes
+docker compose down
+
+# Delete containers and all local development data, then recreate from scratch
+docker compose down --volumes
+docker compose up --build -d
+```
+
+The PostgreSQL port is published only on `127.0.0.1`. Local file storage is the
+default; the Compose flow never connects to RDS or S3.
+
+## Option B — local processes
+
+1. Backend (SQLite is the safe zero-config default):
 
    ```bash
    cd backend
-   python -m venv venv && venv/Scripts/pip install -r requirements.txt   # Windows
-   cp .env.example .env   # then edit values
+   python -m venv venv
+   # Windows: venv/Scripts/pip install -r requirements.txt
+   # macOS/Linux: venv/bin/pip install -r requirements.txt
+   copy .env.example .env
    venv/Scripts/python -m uvicorn main:app --reload --port 8000
    ```
 
-   Swagger docs: http://localhost:8000/docs
+   On macOS/Linux, use `cp` instead of `copy` and `venv/bin/python` instead of
+   `venv/Scripts/python`. To use PostgreSQL, change `DATABASE_URL` in
+   `backend/.env`.
 
-3. **Frontend**:
+2. Frontend:
 
    ```bash
    cd frontend
    npm install
-   npm run dev   # http://localhost:3000
+   npm run dev
    ```
 
-## Seeding
+## Schema and seed verification
 
-Two seed scripts exist (`backend/` namespace, run from `backend/`):
-
-| Script | Target | Data |
-|---|---|---|
-| `database/seed/seed.py` (via `backend/seed.py` entry) | any DB from `DATABASE_URL` | Real TU stakeholder data (partners, activities, template PDFs uploaded to storage) |
-| `seed_mock.py` | **only** sqlite or a `*_mock` database | Frontend mock dataset (8 partners, 10 activities, 7 documents, feedback, exchange, admin) |
+Compose seeds the frontend-compatible dataset automatically. The seed is
+additive and idempotent: running it again creates no duplicate rows.
 
 ```bash
-# mock dataset into the mock database (safety-guarded)
-venv/Scripts/python seed_mock.py --database-url "$MOCK_DATABASE_URL" --yes
+# With the Compose database running; the second run reports zero inserts
+docker compose run --rm seed
 
-# idempotent: running again inserts 0 new rows
+# Real TU sample data for a separately configured local database
+python backend/seed.py
 ```
 
-`seed_mock.py` writes document metadata only. For downloadable documents on
-S3, upload placeholder PDFs once (see `mock/agreements/mock-doc-*.pdf` keys),
-or run with `STORAGE_BACKEND=local` so downloads serve from disk.
+Schema definitions and constraints live in `backend/models.py`. See
+`database/schema/README.md` for the integrity rules. The V1 setup uses
+SQLAlchemy `create_all` for clean/additive schema creation; it is not a
+replacement for production migration tooling.
 
-## Running Tests
+## Tests
 
 ```bash
 cd backend
-DATABASE_URL="postgresql://app_user:app_password@localhost:5432/partner_activity_test" \
-STORAGE_BACKEND=local \
-venv/Scripts/python -m pytest tests/ -q
+python -m pytest tests/ -q
+
+# Full-stack check after docker compose up
+cd ..
+python scripts/smoke_test.py
 ```
 
-- Tests create/drop tables per test; they need a **disposable** database.
-- With no `.env` present, storage defaults to `local` — CI runs without any
-  AWS credentials.
-
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push/PR:
-
-1. **backend-test** — Postgres 15 service container, install
-   `requirements.txt`, `pytest tests/ -v` with a disposable `DATABASE_URL`.
-2. **frontend-build** — `npm install`, `npm run build` with
-   `NEXT_PUBLIC_API_URL` set.
-
-Both jobs are hermetic: no `.env`, no AWS keys, no RDS access.
+`test_seed_and_schema.py` creates a clean schema, runs the seed twice, compares
+table counts, verifies relationships and exercises database constraints. CI
+also builds a clean Compose stack and runs the smoke script.
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `Error response from daemon: Conflict. The container name ... already in use` | Old container holding the name | `docker rm -f <name>` then `docker compose up` again |
-| Frontend renders mock data forever | Backend unreachable | Check `curl http://localhost:8000/api/v1/health`; pages fall back to mock by design |
-| Document download returns 500 | Metadata row exists but file missing in storage | Upload the file to the bucket/path in `storageKey`, or re-upload the document |
-| 404 on list endpoints that should have data | Rows are `is_published=false` | Publish rows or check you seeded the DB the backend is pointed at |
+| `seed` exits non-zero | schema, constraint or database startup problem | `docker compose logs seed database` |
+| backend remains unhealthy | it cannot query PostgreSQL | `docker compose logs backend database` |
+| port already allocated | another local service uses 3000, 8000 or 5432 | copy `.env.example` to `.env`, change the port, and update `PUBLIC_API_URL` if needed |
+| a fresh database is required | named volume still contains prior local data | `docker compose down --volumes`, then start again |
+| seeded document download is 404 | mock seed stores document metadata only | upload a PDF through the API; local uploads persist in `backend_storage` |

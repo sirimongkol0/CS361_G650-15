@@ -1,111 +1,123 @@
-# คู่มือติดตั้ง V1 (ฉบับภาษาไทย)
+# คู่มือติดตั้ง V1
 
-> คำแปลของ `docs/setup/README.md`
+## สิ่งที่ต้องมี
 
-## สิ่งที่ต้องมีก่อน
+- Docker Engine หรือ Docker Desktop ที่มี Docker Compose v2 (วิธีแนะนำ) หรือ
+- Python 3.11+, Node.js 20+ และ PostgreSQL 15+ สำหรับรันแต่ละ process เอง
 
-- Docker + Docker Compose (แนะนำ) **หรือ**
-- Python 3.11+, Node.js 20+, และ PostgreSQL ที่เข้าถึงได้
+## วิธี A — Docker Compose จาก clean checkout
 
-## ทางเลือก A — Docker Compose (ครบทั้งระบบ)
+ไม่ต้องมีฐานข้อมูลบน cloud, AWS credentials หรือ language runtime ในเครื่อง
+ให้รันจาก root ของ repository:
 
-1. สร้างไฟล์ `.env` ข้าง `docker-compose.yml` (ไฟล์นี้ถูก gitignore):
+```bash
+docker compose up --build -d
+docker compose ps --all
+python scripts/smoke_test.py
+```
 
-   ```
-   DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<database>
-   STORAGE_BACKEND=local            # หรือ s3
-   S3_BUCKET=cs361-partner-docs     # เมื่อใช้ s3
-   AWS_REGION=ap-southeast-1
-   AWS_ACCESS_KEY_ID=<key แบบจำกัดสิทธิ์>
-   AWS_SECRET_ACCESS_KEY=<secret>
-   ```
+Compose เริ่ม service ตามลำดับต่อไปนี้:
 
-2. สั่งรัน:
+1. รอ PostgreSQL healthy
+2. `seed` service แบบ one-shot สร้าง schema และเพิ่มข้อมูล development แล้วต้อง
+   จบด้วย exit code 0
+3. backend เริ่มทำงานและจะ healthy ต่อเมื่อ query PostgreSQL ได้จริง
+4. frontend เริ่มเมื่อ backend healthy แล้ว
 
-   ```bash
-   docker compose up --build -d
-   ```
+จุดตรวจสอบ:
 
-3. ตรวจว่าพร้อมใช้:
+| URL | ผลที่ควรได้ |
+|---|---|
+| http://localhost:8000/api/v1/health | `{"status":"healthy"}` |
+| http://localhost:8000/docs | Swagger UI |
+| http://localhost:3000 | redirect ไป `/dashboard/public` |
+| http://localhost:3000/activities | รายการกิจกรรมที่ seed แล้ว |
 
-   | URL | ที่ควรเห็น |
-   |---|---|
-   | http://localhost:8000/api/v1/health | `{"status":"healthy"}` |
-   | http://localhost:3000 | หน้าเว็บ (redirect ไป /login) |
-   | http://localhost:3000/activities | รายการกิจกรรมจาก API |
+ค่า default ที่ commit ไว้ใช้สำหรับ development เท่านั้นและไม่มี production
+credential จึงไม่จำเป็นต้องมีไฟล์ `.env` ถ้าต้องการเปลี่ยน port หรือ credential
+ของฐานข้อมูล local ให้คัดลอก `.env.example` เป็น `.env` แล้วแก้ค่า หากเปลี่ยน
+`BACKEND_PORT` ต้องเปลี่ยน port ใน `PUBLIC_API_URL` ให้ตรงกันด้วย เพราะ URL นี้
+ถูกฝังใน browser bundle
 
-ข้อควรรู้:
+คำสั่งจัดการระบบ:
 
-- ใน network ของ compose, frontend เรียก backend ด้วยชื่อ service แต่ลิงก์ฝั่ง browser ใช้ port ที่ publish ไว้ (8000) — ค่าทั้งสองถูก inject ตอน build ใน `docker-compose.yml`
-- frontend publish ที่ host port **3000**
-- หยุดด้วย `docker compose down` — ข้อมูลอยู่ที่ RDS/S3 ไม่หาย
+```bash
+# ตรวจ log ของ seed และ application
+docker compose logs seed backend frontend
 
-## ทางเลือก B — รันแยก process (สำหรับแก้โค้ดบ่อย ๆ)
+# หยุด container แต่เก็บข้อมูล PostgreSQL และไฟล์ upload ไว้
+docker compose down
 
-1. **ฐานข้อมูล** — ชี้ `DATABASE_URL` ไปที่ PostgreSQL ใดก็ได้
-2. **Backend**:
+# ลบ container และข้อมูล development ในเครื่องทั้งหมด แล้วสร้างใหม่
+docker compose down --volumes
+docker compose up --build -d
+```
+
+PostgreSQL เปิด port เฉพาะ `127.0.0.1` และใช้ local file storage เป็นค่า default
+ขั้นตอน Compose นี้ไม่เชื่อมต่อ RDS หรือ S3
+
+## วิธี B — รัน process เอง
+
+1. Backend (ค่า default เป็น SQLite จึงเริ่มได้โดยไม่ต้องตั้งค่า):
 
    ```bash
    cd backend
-   python -m venv venv && venv/Scripts/pip install -r requirements.txt   # Windows
-   copy .env.example .env   # แล้วแก้ค่าข้างใน
+   python -m venv venv
+   venv/Scripts/pip install -r requirements.txt
+   copy .env.example .env
    venv/Scripts/python -m uvicorn main:app --reload --port 8000
    ```
 
-   Swagger docs: http://localhost:8000/docs
+   บน macOS/Linux ให้ใช้ `cp`, `venv/bin/pip` และ `venv/bin/python` หากต้องการ
+   ใช้ PostgreSQL ให้แก้ `DATABASE_URL` ใน `backend/.env`
 
-3. **Frontend**:
+2. Frontend:
 
    ```bash
    cd frontend
    npm install
-   npm run dev   # http://localhost:3000
+   npm run dev
    ```
 
-## การ Seed ข้อมูล
+## ตรวจ schema และ seed
 
-มี seed script อยู่ 2 ตัว (รันจากโฟลเดอร์ `backend/`):
-
-| Script | เป้าหมาย | ข้อมูล |
-|---|---|---|
-| `database/seed/seed.py` | db จาก `DATABASE_URL` | ข้อมูล TU จริง (partners, activities, PDF template อัปโหลดเข้า storage) |
-| `seed_mock.py` | **เฉพาะ** sqlite หรือ db ที่ลงท้าย `_mock` | ชุดข้อมูล mock ของ frontend (8 partners, 10 activities, 7 documents, feedback, exchange, admin) |
+Compose จะ seed ชุดข้อมูลที่ตรงกับ frontend ให้อัตโนมัติ การ seed เป็นแบบ
+additive และ idempotent คือรันซ้ำแล้วไม่สร้างแถวซ้ำ
 
 ```bash
-# seed mock ลง mockdb (มี safety guard)
-venv/Scripts/python seed_mock.py --database-url "$MOCK_DATABASE_URL" --yes
+# เมื่อ Compose database กำลังรัน รอบที่สองต้องรายงานว่า insert 0
+docker compose run --rm seed
 
-# ทำซ้ำได้: รันรอบสองจะเพิ่ม 0 แถว
+# ชุดข้อมูล TU จริง สำหรับ local database ที่ตั้งค่าแยกไว้
+python backend/seed.py
 ```
 
-`seed_mock.py` เขียนแค่ metadata ของเอกสาร — ถ้าอยากให้ดาวน์โหลดได้จริงบน S3 ต้องอัปโหลดไฟล์ PDF เพิ่ม (ดู key แบบ `mock/agreements/mock-doc-*.pdf`) หรือใช้ `STORAGE_BACKEND=local` เพื่อ serve จากดิสก์
+schema และ constraints อยู่ใน `backend/models.py` รายละเอียดกฎความถูกต้องอยู่ที่
+`database/schema/README.md` ใน V1 ใช้ SQLAlchemy `create_all` สำหรับสร้าง schema
+ใหม่และการเปลี่ยนแบบ additive เท่านั้น ไม่ได้ใช้แทน migration tool สำหรับ
+production
 
-## การรัน Test
+## การทดสอบ
 
 ```bash
 cd backend
-DATABASE_URL="postgresql://app_user:app_password@localhost:5432/partner_activity_test" ^
-STORAGE_BACKEND=local ^
-venv/Scripts/python -m pytest tests/ -q
+python -m pytest tests/ -q
+
+# ตรวจ full stack หลัง docker compose up
+cd ..
+python scripts/smoke_test.py
 ```
 
-- Test สร้าง/ลบตารางเองทุกเคส — ต้องใช้ **database แยกที่ทิ้งได้**
-- ถ้าไม่มีไฟล์ `.env` storage จะ default เป็น `local` — CI รันโดยไม่ต้องมี AWS key เลย
+`test_seed_and_schema.py` สร้าง schema ใหม่ รัน seed สองรอบ เทียบจำนวนแถว ตรวจ
+relationships และทดสอบ constraints ส่วน CI จะ build Compose จาก clean checkout
+และรัน smoke script ด้วย
 
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) รันทุก push/PR:
-
-1. **backend-test** — service container Postgres 15, ติดตั้ง `requirements.txt`, `pytest tests/ -v` ด้วย `DATABASE_URL` แบบใช้ครั้งเดียว
-2. **frontend-build** — `npm install`, `npm run build` โดยตั้ง `NEXT_PUBLIC_API_URL`
-
-ทั้งสอง job เป็น hermetic: ไม่มี `.env`, ไม่มี AWS key, ไม่แตะ RDS
-
-## แก้ปัญหาที่เจอบ่อย
+## แก้ปัญหาที่พบบ่อย
 
 | อาการ | สาเหตุ | วิธีแก้ |
 |---|---|---|
-| `Error response from daemon: Conflict. The container name ... already in use` | container เก่าค้างชื่อซ้ำ | `docker rm -f <ชื่อ>` แล้ว `docker compose up` ใหม่ |
-| หน้าเว็บโชว์ mock ตลอด ไม่เปลี่ยน | backend เข้าถึงไม่ได้ | ทดสอบ `curl http://localhost:8000/api/v1/health`; หน้าเว็บ fallback เป็น mock ตามดีไซน์ |
-| ดาวน์โหลดเอกสารได้ 500 | มีแถว metadata แต่ไฟล์ไม่อยู่ใน storage | อัปโหลดไฟล์ไปยัง bucket/path ตาม `storageKey` หรืออัปโหลดเอกสารใหม่ |
-| list endpoint คืน 404 ทั้งที่ควรมีข้อมูล | แถวยัง `is_published=false` | เปิด publish หรือเช็คว่า seed ลง db เดียวกับที่ backend ชี้อยู่ |
+| `seed` จบด้วย code ที่ไม่ใช่ 0 | schema, constraint หรือ database startup มีปัญหา | `docker compose logs seed database` |
+| backend ไม่ healthy | backend query PostgreSQL ไม่ได้ | `docker compose logs backend database` |
+| port ถูกใช้อยู่ | service อื่นใช้ 3000, 8000 หรือ 5432 | คัดลอก `.env.example` เป็น `.env`, เปลี่ยน port และแก้ `PUBLIC_API_URL` หากจำเป็น |
+| ต้องการฐานข้อมูลใหม่จริง ๆ | named volume ยังเก็บข้อมูลเดิม | `docker compose down --volumes` แล้วเริ่มใหม่ |
+| ดาวน์โหลดเอกสารที่ seed แล้วได้ 404 | mock seed เก็บเฉพาะ metadata | อัปโหลด PDF ผ่าน API โดยไฟล์ local จะอยู่ใน `backend_storage` |
