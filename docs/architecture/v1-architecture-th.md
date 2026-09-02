@@ -1,69 +1,90 @@
-# สถาปัตยกรรม V1 (ฉบับภาษาไทย)
+# สถาปัตยกรรม V1
 
-> เอกสารนี้เป็นคำแปลภาษาไทยของ `docs/architecture/v1-architecture.md` เพื่อการศึกษา — ต้นฉบับภาษาอังกฤษเป็น reference ทางการ
+## ระบบที่รองรับ
 
-## ภาพรวมระบบ
+V1 เป็นระบบข้อมูลสาธารณะสามชั้น ผู้ใช้ทั่วไปดูได้เฉพาะหน่วยงานคู่ความร่วมมือ
+และกิจกรรมที่เผยแพร่แล้วผ่าน Next.js โดย FastAPI เป็นขอบเขตบังคับใช้สัญญา API
+และสถานะเผยแพร่ ส่วน PostgreSQL จัดเก็บข้อมูลเชิงสัมพันธ์ ไฟล์เอกสารในเครื่อง
+อยู่ใน Docker volume และ production สามารถเลือก S3 ได้
 
-V1 เป็นระบบเว็บ 3 ชั้น (three-tier) สำหรับบริหารความร่วมมือระหว่างประเทศของ ม.ธรรมศาสตร์:  frontend ด้วย Next.js, backend ด้วย FastAPI ที่เปิด REST API แบบมีเวอร์ชัน (`/api/v1`), และฐานข้อมูล PostgreSQL พร้อม S3 เก็บไฟล์เอกสาร
+![สถาปัตยกรรมที่รองรับของ PCSMS V1](v1-architecture-diagram.svg)
 
-```
-                         ┌──────────────────────────────────────────┐
-                         │                 Browser                  │
-                         └───────────────┬──────────────────────────┘
-                                         │ HTTP
-                    ┌────────────────────┴─────────────────────┐
-                    │              Next.js (SSR)               │
-                    │  ทุกหน้า fetch /api/v1 ตอน render        │
-                    │  lib/api.ts — fetch wrapper + mapper     │
-                    │  fallback: lib/mock.ts ถ้า API ล่ม       │
-                    └────────────────────┬─────────────────────┘
-                                         │ REST (JSON) /api/v1
-                    ┌────────────────────┴─────────────────────┐
-                    │             FastAPI backend              │
-                    │  routers: health, partners, activities,  │
-                    │  documents, feedback, exchange, users    │
-                    │  schemas.py — DTO แบบ camelCase          │
-                    │  storage.py — เลือก S3 หรือ local disk   │
-                    └───────┬──────────────────────┬───────────┘
-                            │ SQLAlchemy ORM       │ put/get/delete
-                 ┌──────────┴──────────┐   ┌───────┴──────────────┐
-                 │  PostgreSQL (RDS)   │   │  S3 bucket           │
-                 │  partner_activity_  │   │  cs361-partner-docs  │
-                 │  mock (mockdb สาธิต)│   │  เก็บแค่ไฟล์ PDF     │
-                 │  partner_activity_  │   │  1 key ต่อ 1 เอกสาร  │
-                 │  v1 (ข้อมูลจริง)    │   └──────────────────────┘
-                 └─────────────────────┘
+```text
+Browser
+  | HTTP :3000                         public GET /api/v1 :8000
+  v                                               |
+Next.js 16 (App Router, โหลดข้อมูลฝั่ง client) ---+
+  | - dashboard และหน้า list/detail สาธารณะ
+  | - loading / empty / error / retry ชัดเจน
+  | - public flow ที่รองรับไม่ fallback เป็น mock
+  v
+FastAPI + Pydantic DTOs
+  | - error คงรูป {"detail": ...}
+  | - บังคับ is_published ทั้ง list, detail และ partner ที่ซ้อนใน activity
+  | - health จะผ่านต่อเมื่อ query ฐานข้อมูลสำเร็จ
+  +---------------- SQLAlchemy ----------------> PostgreSQL 16
+  +---------------- storage abstraction ------> local volume | S3
 ```
 
-## หน้าที่ของแต่ละชั้น
+Docker Compose สร้าง `database`, `seed` แบบ one-shot ที่รันซ้ำได้, `backend`
+และ `frontend` ตามลำดับ dependency ส่วน browser เรียก `PUBLIC_API_URL` ที่เข้า
+ถึงได้จาก host ขณะที่ container สื่อสารผ่าน network แยกของ Compose และเปิด
+database port เฉพาะ `127.0.0.1`
+
+## ชั้นระบบและหน้าที่
 
 | ชั้น | เทคโนโลยี | หน้าที่ |
 |---|---|---|
-| Frontend | Next.js 14 + TypeScript, Tailwind | หน้าเว็บ, dashboard แยกตาม role, การแสดงผลทั้งหมด ดึงข้อมูลจาก `/api/v1` ฝั่ง server; แสดงจาก `mock.ts` ก่อน แล้วสลับเป็นข้อมูลจริงเมื่อ fetch สำเร็จ — ถ้า API ล่มใช้ mock ต่อ |
-| API | FastAPI + Pydantic v2 | REST ภายใต้ `/api/v1` Routers ทำงานบาง ๆ; response เป็น DTO camelCase แปลงจาก ORM ที่เป็น snake_case การกรองเฉพาะของที่ publish (`is_published`) อยู่ที่ชั้นนี้ |
-| ฐานข้อมูล | SQLAlchemy + PostgreSQL (RDS) | ข้อมูลเชิงความสัมพันธ์: partners, activities, documents (+ ตารางลูก scope/timeline), feedbacks, exchange students, admin profiles — ทุกคอลัมน์ที่เพิ่มเพื่อรองรับ mock เป็น nullable และ additive |
-| Object storage | S3 (IAM แบบจำกัดสิทธิ์) | เก็บไฟล์ PDF เท่านั้น — ไม่เก็บใน database สิทธิ์ key จำกัดแค่ Get/Put ใต้ `cs361-partner-docs/*` |
-| CI | GitHub Actions | push ครั้งไหนรัน 2 jobs: backend pytest (บน Postgres service ไม่ต้องมี `.env`) และ frontend `next build` |
+| Frontend | Next.js 16.3.4, React 18, TypeScript, Tailwind | เมนูและหน้าสาธารณะ โดย loader ของ partner/activity มีสถานะ loading, success, empty และ error แบบชัดเจน |
+| API | FastAPI, Pydantic v2 | REST `/api/v1`, แยก DTO จาก ORM, กรองสถานะเผยแพร่ และคงรูปแบบ error |
+| Persistence | SQLAlchemy, PostgreSQL 16 | ข้อมูล partner, activity, document และตารางลูก พร้อม constraints, indexes และกฎลบ foreign key |
+| Object storage | local volume หรือ S3 | เก็บ bytes ของเอกสาร ส่วน PostgreSQL เก็บ metadata และ storage key |
+| Verification | pytest, Compose smoke test, Next production build | ทดสอบ API/schema แบบแยกข้อมูล และเส้นทาง integration ตั้งแต่ database ถึง frontend |
 
-## Design Decisions สำคัญ
+## การตัดสินใจสำคัญ
 
-1. **ขยาย schema แบบ additive-only** — field ที่เพิ่มเพื่อให้ตรงกับหน้าจอ (participants, location, mouDocId, ผู้ลงนาม ฯลฯ) เพิ่มเป็นคอลัมน์ nullable และตารางลูกใหม่ ไม่แก้/ลบของเดิม ทำให้ seed และ test เก่ายังทำงานเหมือนเดิม (pytest 23/23 ก่อนและหลัง)
-2. **แยกฐานข้อมูล mock กับของจริงบน RDS เครื่องเดียว** — `partner_activity_v1` เก็บข้อมูล TU จริง, `partner_activity_mock` เก็บชุดข้อมูล mock ของ frontend schema เดียวกัน สลับกันแค่เปลี่ยน `DATABASE_URL` — ข้อมูลจริงไม่เคยถูกปนเปื้อน
-3. **ไฟล์อยู่ S3, metadata อยู่ Postgres** — ตาราง `documents` เก็บแค่ `storage_key` ตัวไฟล์ stream ผ่าน backend เข้า storage (เลือกได้ `STORAGE_BACKEND=s3|local`) ทำให้ dump ฐานข้อมูลเล็กและเร็ว
-4. **Render จาก mock ก่อน แล้วสลับของจริง** — ทุกหน้าแสดงจาก `lib/mock.ts` ตั้งแต่ first paint แล้วค่อยสลับเป็นข้อมูล API เมื่อ fetch สำเร็จ — API ล่มหน้าเว็บไม่พัง (แสดง mock เหมือนเดิม)
-5. **แยก data กับ decoration** — database เก็บข้อมูล (ชื่อ, วันที่, status เป็นข้อความตรงตัว) ส่วนตัวตกแต่ง (initials, สี badge, emoji ธง) คำนวณฝั่ง frontend — เปลี่ยนธีมไม่ต้องแตะฐานข้อมูล
-6. **คำนวณ status แทนเก็บค้างไว้** — สถานะ `expiring/expired` และ `daysLeft` ของเอกสาร คำนวณจาก `expiryDate` ตอน render ไม่เก็บลง db — ไม่มีวันเก่าค้าง
+1. **API เป็นขอบเขตการเผยแพร่** - list/detail กรอง `is_published` และ activity
+   ที่เผยแพร่แล้วต้องไม่เผย partner ฉบับร่างผ่านข้อมูลซ้อน ID ที่ไม่มีหรือยังไม่
+   เผยแพร่คืน 404 รูปแบบเดียวกัน ไม่เลือกวิธีซ่อนเพียงลิงก์ใน UI เพราะผู้เรียก API
+   สามารถข้าม UI ได้
+2. **Public route แสดงความล้มเหลวตรงไปตรงมา** - หน้า partner/activity และ public
+   dashboard เริ่มจาก loading, อธิบายกรณีว่าง และให้ retry เมื่อ error การ fallback
+   เป็น mock แบบเดิมคงไว้เฉพาะหน้าต้นแบบนอก public flow เพราะถ้าใช้ในหน้าสาธารณะ
+   จะซ่อน API failure และอาจทำให้เข้าใจสถานะเผยแพร่ผิด
+3. **สภาพแวดล้อม local รวมฐานข้อมูล** - Compose ใช้ PostgreSQL 16 และ seed
+   one-shot แทนการพึ่งฐานข้อมูล `localhost` ที่ไม่ได้จัดเตรียมไว้ พร้อม health-based
+   dependencies เพื่อให้ลำดับเริ่มระบบแน่นอน
+4. **Schema และ seed รันซ้ำได้** - model ระบุ natural keys, domain checks,
+   indexes, relationships และ delete behavior ส่วน seed เป็นแบบ additive และ
+   idempotent โดย `create_all` ใช้สำหรับ clean V1 setup; migration production อยู่
+   นอกขอบเขต V1
+5. **Tests แยกข้อมูลจากกัน** - API tests override database dependency ด้วย
+   in-memory SQLite ใหม่ที่ใช้ `StaticPool`; schema/seed tests ใช้ฐานชั่วคราวของตน
+   จึงไม่ขึ้นกับลำดับการรัน
+6. **ที่อยู่สำหรับ browser กับ server แยกกัน** - browser resolve ชื่อ service ของ
+   Compose ไม่ได้ จึงฝัง `PUBLIC_API_URL` ที่ host เข้าถึงได้ ส่วน backend/database
+   สื่อสารบน Compose network
 
-## Flow การดาวน์โหลดเอกสาร
+## เส้นทางคำขอสาธารณะ
 
+```text
+ผู้ใช้ทั่วไป
+  -> /stakeholders, /stakeholders/{id}, /activities, /activities/{id}
+  -> strict loader ใน frontend/src/lib/api.ts
+  -> GET /api/v1/partners[/id] หรือ /activities[/id]
+  -> FastAPI กรอง is_published และแปลง ORM เป็น DTO
+  -> PostgreSQL
+  -> ข้อมูลสำเร็จ | list ว่าง | 404/error ที่คงรูป
+  -> frontend แสดง success | empty | error พร้อม retry
 ```
-Browser → GET /api/v1/documents/{id}/download
-        → backend หา storage_key จาก Postgres
-        → storage.get_file(key) stream ไฟล์จาก S3
-        → 200 พร้อม Content-Disposition: attachment
-```
 
-## ขอบเขตของ V1
+## ขอบเขต V1
 
-- อ่านอย่างเดียวสำหรับข้อมูลสาธารณะ + อัปโหลด/ลบเอกสาร ยังไม่มี auth, ยังไม่มี CRUD ของ partner/activity (เป็นของ V2+)
-- กราฟ dashboard และข้อมูลส่วนตัวนักศึกษายังเป็น mock ฝั่ง frontend โดยออกแบบ (ยังไม่มี endpoint aggregate)
+- รองรับ: public dashboard, partner/activity list และ detail ที่เผยแพร่แล้ว,
+  full stack ในเครื่องที่สร้างซ้ำได้ และหลักฐาน API/schema/security
+- มีอยู่แต่ไม่ใช่ผลลัพธ์สาธารณะนี้: การจัดการเอกสารและหน้าต้นแบบตาม role สำหรับ
+  feedback, exchange, reports, settings และ users
+- authentication, authorization และ partner/activity write workflow เป็น V2+
+
+ดูการเชื่อมโยงผลลัพธ์กับโค้ดและ tests ใน
+[ดัชนีหลักฐาน V1](../evidence/v1-readiness.md)

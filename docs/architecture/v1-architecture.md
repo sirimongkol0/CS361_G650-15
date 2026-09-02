@@ -1,87 +1,92 @@
 # V1 Architecture
 
-## System Overview
+## Supported system
 
-V1 is a three-tier web system for managing TU's international partnerships:
-a Next.js frontend, a FastAPI backend exposing a versioned REST API, and a
-PostgreSQL database with S3 object storage for document files.
+V1 is a three-tier public information service. Anonymous users browse only
+published partner and activity data through a Next.js frontend. FastAPI owns
+the public contract and publication boundary; PostgreSQL owns relational data.
+Local document bytes use a Docker volume, while production may select S3.
 
-```
-                         ┌──────────────────────────────────────────┐
-                         │                 Browser                  │
-                         └───────────────┬──────────────────────────┘
-                                         │ HTTP
-                    ┌────────────────────┴─────────────────────┐
-                    │              Next.js (SSR)               │
-                    │  src/app — pages fetch /api/v1 at render │
-                    │  lib/api.ts — fetch wrapper + mappers    │
-                    │  fallback: lib/mock.ts when API is down  │
-                    └────────────────────┬─────────────────────┘
-                                         │ REST (JSON) /api/v1
-                    ┌────────────────────┴─────────────────────┐
-                    │             FastAPI backend              │
-                    │  routers: health, partners, activities,  │
-                    │  documents, feedback, exchange, users    │
-                    │  schemas.py — camelCase DTOs             │
-                    │  storage.py — S3 | local-disk backend    │
-                    └───────┬──────────────────────┬───────────┘
-                            │ SQLAlchemy ORM       │ put/get/delete
-                 ┌──────────┴──────────┐   ┌───────┴──────────────┐
-                 │  PostgreSQL (RDS)   │   │  S3 bucket           │
-                 │  partner_activity_  │   │  cs361-partner-docs  │
-                 │  mock (demo/mockdb) │   │  PDF bytes only,     │
-                 │  partner_activity_  │   │  keys per document   │
-                 │  v1 (real data)     │   └──────────────────────┘
-                 └─────────────────────┘
+![PCSMS V1 supported architecture](v1-architecture-diagram.svg)
+
+```text
+Browser
+  | HTTP :3000                         public GET /api/v1 :8000
+  v                                               |
+Next.js 16 (App Router, client data loading) -----+
+  | - public dashboard, partner/activity list + detail
+  | - explicit loading / empty / error / retry
+  | - no mock fallback on the supported public flow
+  v
+FastAPI + Pydantic DTOs
+  | - stable {"detail": ...} errors
+  | - is_published enforced for list, detail and nested partner data
+  | - health is healthy only after a database probe succeeds
+  +---------------- SQLAlchemy ----------------> PostgreSQL 16
+  +---------------- storage abstraction ------> local volume | S3
 ```
 
-## Layers & Responsibilities
+Docker Compose creates `database`, a one-shot idempotent `seed`, `backend`
+and `frontend` in dependency order. The browser calls the host-reachable
+`PUBLIC_API_URL`; containers share an isolated Compose network. The database
+port is bound only to `127.0.0.1`.
 
-| Layer | Tech | Responsibility |
+## Layers and responsibilities
+
+| Layer | Technology | Responsibility |
 |---|---|---|
-| Frontend | Next.js 14 + TypeScript, Tailwind | Pages, role dashboards, all presentation. Fetches `/api/v1` server-side; renders from `mock.ts` first, swaps in live data on success, keeps mock on failure. |
-| API | FastAPI + Pydantic v2 | Versioned REST under `/api/v1`. Routers are thin; response shapes are camelCase DTOs mapped from snake_case ORM models. Publication filtering (`is_published`) lives here. |
-| Persistence | SQLAlchemy + PostgreSQL (RDS) | Relational data: partners, activities, documents (+ scope/timeline children), feedbacks, exchange students, admin profiles. All mock-coverage columns are nullable and additive. |
-| Object storage | S3 (scoped IAM) | PDF bytes only — never in the database. Scoped credential may Get/Put objects under `cs361-partner-docs/*`; delete-by-key denied by policy. |
-| CI | GitHub Actions | Two jobs per push: backend pytest (Postgres service, no `.env` — local storage default) and frontend `next build`. |
+| Frontend | Next.js 16.3.4, React 18, TypeScript, Tailwind | Public navigation and presentation. Public partner/activity loaders are strict and model loading, success, empty and error as explicit states. |
+| API | FastAPI, Pydantic v2 | Versioned REST under `/api/v1`; DTOs isolate ORM details; publication filtering and stable error responses are enforced here. |
+| Persistence | SQLAlchemy, PostgreSQL 16 | Partners, activities, documents and child records with constraints, indexes and explicit foreign-key delete behavior. |
+| Object storage | local volume or S3 | Document bytes; PostgreSQL stores metadata and storage keys only. |
+| Verification | pytest, Compose smoke test, Next production build | Isolated API/schema tests plus a clean database-seed-backend-frontend integration path. |
 
-## Key Design Decisions
+## Key decisions
 
-1. **Additive-only schema growth.** V1 mock-parity fields
-   (`participants`, `location`, `mouDocId`, document signers, etc.) were added
-   as nullable columns/child tables instead of altering existing columns, so
-   older seeds and tests keep working unchanged (pytest 23/23 before and after).
-2. **Separated mock vs real databases on one RDS instance.**
-   `partner_activity_v1` holds real TU data; `partner_activity_mock` holds the
-   frontend mock dataset. Same schema, swap by changing `DATABASE_URL` only —
-   nothing else moves, and the real dataset is never contaminated.
-3. **Bytes in S3, metadata in Postgres.** The `documents` table stores only
-   `storage_key`; uploads stream through the backend to the storage backend
-   (`STORAGE_BACKEND=s3|local`), keeping DB dumps small and replication fast.
-4. **Mock-first rendering with live swap.** Every data page renders from
-   `lib/mock.ts` on first paint, then swaps to API data when the fetch
-   succeeds. If the API is down, pages stay byte-identical to the mock —
-   the UI never breaks because of the backend.
-5. **UI data vs UI decoration split.** Database stores data (names, dates,
-   statuses as verbatim labels); visual identity (initials, badge colors,
-   flag emojis) is derived in the frontend mapper, so a theme change never
-   touches the database.
-6. **Derived status over stored drift.** Document `expiring/expired` states
-   and `daysLeft` are computed from `expiryDate` at render time instead of
-   being cached, so nothing goes stale.
+1. **The API is the publication boundary.** Lists and details filter
+   `is_published`; a published activity cannot expose a draft partner through
+   its nested summary. Missing and unpublished IDs deliberately return the
+   same 404 shape. Relying only on hidden UI links was rejected because API
+   callers could bypass them.
+2. **Public routes fail visibly.** Partner/activity pages and the public
+   dashboard start in loading state, render empty data explicitly and offer a
+   retry after errors. The earlier mock-first fallback remains only on
+   prototype pages outside the supported public V1 flow; using it publicly was
+   rejected because it hid API failures and could misrepresent publication.
+3. **Local V1 includes its database.** Compose runs PostgreSQL 16 and a
+   one-shot seed instead of requiring an undocumented database on host
+   `localhost`. Health-based dependencies make startup deterministic.
+4. **Schema and seed are repeatable.** Natural keys, domain checks, indexes,
+   relationships and delete behavior are declared in the models. The
+   development seed is additive and idempotent. `create_all` supports clean V1
+   setup; production migrations remain a post-V1 concern.
+5. **Tests are isolated.** API tests override the database dependency with a
+   fresh in-memory SQLite database using `StaticPool`; schema/seed tests use
+   their own temporary database. This avoids order-dependent shared state.
+6. **Browser and server addresses are distinct.** A browser cannot resolve a
+   Compose service name, so `PUBLIC_API_URL` is embedded as a host-reachable
+   URL. Backend/database traffic stays on the Compose network.
 
-## Data Flow (document download)
+## Public request flow
 
+```text
+anonymous browser
+  -> /stakeholders, /stakeholders/{id}, /activities, /activities/{id}
+  -> strict loader in frontend/src/lib/api.ts
+  -> GET /api/v1/partners[/id] or /activities[/id]
+  -> FastAPI filters is_published and maps ORM rows to DTOs
+  -> PostgreSQL
+  -> success data | empty list | stable 404/error
+  -> explicit frontend success | empty | error + retry state
 ```
-Browser → GET /api/v1/documents/{id}/download
-        → backend looks up storage_key in Postgres
-        → storage.get_file(key) streams bytes from S3
-        → 200 with Content-Disposition: attachment
-```
 
-## V1 Scope Boundary
+## V1 boundary
 
-- Read-only public data + document upload/delete. No auth, no partner/activity
-  CRUD (V2+).
-- Dashboard charts and student personal data remain frontend mock — no
-  aggregate endpoints yet by design.
+- Supported: anonymous public dashboard; published partner/activity list and
+  detail; repeatable local stack; API/schema/security verification.
+- Existing but outside this public outcome: document management and
+  prototype role pages for feedback, exchange, reports, settings and users.
+- Authentication, authorization and partner/activity write workflows are V2+.
+
+See [the evidence index](../evidence/v1-readiness.md) for the mapping from
+outcomes to current code and tests.

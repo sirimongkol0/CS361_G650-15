@@ -1,4 +1,4 @@
-# V1 API Contract (v1.1)
+# V1 API Contract (v1.2)
 
 ## Overview
 
@@ -8,7 +8,7 @@ and delete (DELETE), which power the document management flow.
 
 Base URL: `/api/v1`
 
-- Server-to-server (inside Docker network): `http://partner_activity_backend:8000/api/v1`
+- Server-to-server (inside Docker network): `http://backend:8000/api/v1`
 - Browser (outside Docker): `http://localhost:8000/api/v1`
 
 Changelog vs initial draft: added activity mock-coverage fields
@@ -59,7 +59,6 @@ List all **published** partners.
 
 Field notes: `type` is one of `university | government | private_company |
 nonprofit | alumni_network` (nullable). UI maps these to Thai labels.
-
 ### GET /api/v1/partners/{id}
 
 Single published partner. **404** if missing or unpublished:
@@ -74,6 +73,8 @@ Single published partner. **404** if missing or unpublished:
 
 List all **published** activities ordered by `date`, each with a nested
 partner summary (`null` when the activity has no partner).
+The summary is also `null` when the linked partner is not published; a
+published activity never exposes a draft partner indirectly.
 
 **200 OK**
 
@@ -254,7 +255,18 @@ List admin/staff profiles (settings page).
 
 ## Error Format
 
-FastAPI default body, `{"detail": "..."}`.
+Every API error uses one stable body shape:
+
+```json
+{ "detail": "Partner not found" }
+```
+
+Missing and unpublished records deliberately return the same 404 response so
+the public endpoint cannot be used to discover draft record identifiers. A
+request with an invalid path parameter returns
+`{"detail": "Request validation failed"}` with status 422. Unexpected server
+errors return `{"detail": "Internal server error"}` without leaking internal
+exception details.
 
 | Status | Meaning |
 |---|---|
@@ -273,3 +285,6 @@ FastAPI default body, `{"detail": "..."}`.
   upload/delete. Partner/activity CRUD and auth arrive in V2+.
 - Dates are ISO 8601 `YYYY-MM-DD`; Thai display strings (+543 era) are
   produced by the frontend.
+- Browser origins are configured through the comma-separated `CORS_ORIGINS`
+  environment variable. The local default allows ports 3000 and 3001; other
+  origins receive no CORS access header.
