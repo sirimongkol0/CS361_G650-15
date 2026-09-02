@@ -8,6 +8,11 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     DEBUG: bool = False
 
+    # Comma-separated browser origins allowed to call the public API.
+    # Keep this explicit rather than using "*" so credentialed requests do
+    # not accidentally become available from arbitrary sites.
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
+
     # File storage: files live OUTSIDE the database (S3 or local disk).
     STORAGE_BACKEND: str = "local"   # "local" (dev/test/CI) | "s3" (production)
     S3_BUCKET: str = ""              # required when STORAGE_BACKEND=s3
@@ -19,6 +24,11 @@ class Settings(BaseSettings):
     LOCAL_STORAGE_DIR: str = "./storage"  # used when STORAGE_BACKEND=local
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Return normalized, non-empty origins from ``CORS_ORIGINS``."""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
 
 @lru_cache()
