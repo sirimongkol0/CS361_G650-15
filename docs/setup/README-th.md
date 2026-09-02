@@ -3,7 +3,7 @@
 ## สิ่งที่ต้องมี
 
 - Docker Engine หรือ Docker Desktop ที่มี Docker Compose v2 (วิธีแนะนำ) หรือ
-- Python 3.11+, Node.js 20+ และ PostgreSQL 15+ สำหรับรันแต่ละ process เอง
+- Python 3.11+, Node.js 20.9+ และ PostgreSQL 16+ สำหรับรันแต่ละ process เอง
 
 ## วิธี A — Docker Compose จาก clean checkout
 
@@ -11,7 +11,7 @@
 ให้รันจาก root ของ repository:
 
 ```bash
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose ps --all
 python scripts/smoke_test.py
 ```
@@ -50,7 +50,7 @@ docker compose down
 
 # ลบ container และข้อมูล development ในเครื่องทั้งหมด แล้วสร้างใหม่
 docker compose down --volumes
-docker compose up --build -d
+docker compose up --build -d --wait
 ```
 
 PostgreSQL เปิด port เฉพาะ `127.0.0.1` และใช้ local file storage เป็นค่า default

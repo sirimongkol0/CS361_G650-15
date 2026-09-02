@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Docker Engine or Docker Desktop with Docker Compose v2 (recommended), or
-- Python 3.11+, Node.js 20+, and PostgreSQL 15+ for running processes manually.
+- Python 3.11+, Node.js 20.9+, and PostgreSQL 16+ for running processes manually.
 
 ## Option A — clean-checkout Docker Compose
 
@@ -11,7 +11,7 @@ No cloud database, AWS credentials or local language runtimes are required.
 From the repository root:
 
 ```bash
-docker compose up --build -d
+docker compose up --build -d --wait
 docker compose ps --all
 python scripts/smoke_test.py
 ```
@@ -50,7 +50,7 @@ docker compose down
 
 # Delete containers and all local development data, then recreate from scratch
 docker compose down --volumes
-docker compose up --build -d
+docker compose up --build -d --wait
 ```
 
 The PostgreSQL port is published only on `127.0.0.1`. Local file storage is the

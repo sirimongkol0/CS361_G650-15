@@ -8,7 +8,7 @@ and delete (DELETE), which power the document management flow.
 
 Base URL: `/api/v1`
 
-- Server-to-server (inside Docker network): `http://partner_activity_backend:8000/api/v1`
+- Server-to-server (inside Docker network): `http://backend:8000/api/v1`
 - Browser (outside Docker): `http://localhost:8000/api/v1`
 
 Changelog vs initial draft: added activity mock-coverage fields

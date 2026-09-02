@@ -8,7 +8,7 @@ API แบบสาธารณะเน้นการอ่าน ส่วน
 
 Base URL: `/api/v1`
 
-- ภายใน Docker network: `http://partner_activity_backend:8000/api/v1`
+- ภายใน Docker network: `http://backend:8000/api/v1`
 - จาก Browser: `http://localhost:8000/api/v1`
 
 สิ่งที่เพิ่มจากเวอร์ชันแรก: field ฝั่ง activities (`endDate`, `participants`, `location`, `time`, `status`, `isOpen`, `mouDocId`), field lifecycle ของ documents (`responsible`, `status`, `signerOur`, `signerPartner`, `scopeItems`, `timelineSteps`) และ resource ใหม่ 3 ตัว: feedback, exchange, users — ทั้งหมดเป็น optional/nullable ไม่ทำลายความเข้ากันได้กับเดิม
