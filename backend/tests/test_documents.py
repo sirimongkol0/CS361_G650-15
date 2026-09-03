@@ -5,35 +5,8 @@ download round-trip, delete, and list filtering.
 """
 import io
 
-import pytest
-from fastapi.testclient import TestClient
-
-import main
 import models
-from database import get_db, SessionLocal, engine, Base
-
-
-@pytest.fixture(scope="function", autouse=True)
-def setup_database(tmp_path, monkeypatch):
-    """Isolated DB + isolated local storage dir per test."""
-    Base.metadata.create_all(bind=engine)
-    monkeypatch.setattr("config.settings.LOCAL_STORAGE_DIR", str(tmp_path))
-    yield
-    Base.metadata.drop_all(bind=engine)
-
-
-@pytest.fixture()
-def db_session():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@pytest.fixture()
-def client():
-    return TestClient(main.app)
+from database import SessionLocal
 
 
 PDF_BYTES = b"%PDF-1.4 fake pdf content for testing"
@@ -56,7 +29,7 @@ def test_upload_and_download_roundtrip(client, db_session):
     assert body["storageKey"].startswith("documents/")
 
     # Bytes must NOT be in the database -- only metadata
-    doc = db_session.query(models.Document).get(body["id"])
+    doc = db_session.get(models.Document, body["id"])
     assert doc.storage_key == body["storageKey"]
 
     dl = client.get(f"/api/v1/documents/{body['id']}/download")
@@ -86,13 +59,13 @@ def test_delete_document_removes_row_and_file(client, db_session):
 
     del_resp = client.delete(f"/api/v1/documents/{doc_id}")
     assert del_resp.status_code == 204
-    assert db_session.query(models.Document).get(doc_id) is None
+    assert db_session.get(models.Document, doc_id) is None
 
 
 def test_list_documents_only_published(client, db_session):
     r1 = _upload(client, filename="a.pdf")
     doc_id = r1.json()["id"]
-    doc = db_session.query(models.Document).get(doc_id)
+    doc = db_session.get(models.Document, doc_id)
     doc.is_published = False
     db_session.commit()
 

@@ -13,17 +13,21 @@ router = APIRouter(prefix="/partners", tags=["partners"])
 def list_published_partners(db: Session = Depends(database.get_db)):
     """List all published partners."""
     partners = db.query(models.Partner).filter(
-        models.Partner.is_published == True
+        models.Partner.is_published.is_(True)
     ).all()
     return partners
 
 
-@router.get("/{partner_id}", response_model=schemas.PartnerResponse)
+@router.get(
+    "/{partner_id}",
+    response_model=schemas.PartnerResponse,
+    responses={404: {"model": schemas.ErrorResponse}},
+)
 def get_partner(partner_id: int, db: Session = Depends(database.get_db)):
     """Get a specific published partner by ID. Returns 404 if not found or draft."""
     partner = db.query(models.Partner).filter(
         models.Partner.id == partner_id,
-        models.Partner.is_published == True
+        models.Partner.is_published.is_(True),
     ).first()
 
     if partner is None:

@@ -16,4 +16,10 @@ export DATABASE_URL="postgresql://user:pass@endpoint:5432/dbname"
 python database/seed/seed.py
 ```
 
-The script is **idempotent** — running it multiple times creates no duplicates. It uses `name` (Partner) and `name` (Activity) as uniqueness keys.
+The script is **idempotent** — running it multiple times creates no duplicates.
+Database constraints also protect the seed natural keys. For the complete local
+Compose demo, the one-shot `seed` service runs `backend/seed_mock.py`; it
+initializes the schema and inserts the frontend-compatible dataset before the
+backend starts. Re-running `docker compose up` leaves the row counts unchanged.
+
+Automated verification lives in `backend/tests/test_seed_and_schema.py`.

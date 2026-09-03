@@ -67,7 +67,7 @@ export const ROLES: RoleConfig[] = [
 ];
 
 export function getRoleConfig(role: UserRole): RoleConfig {
-  return ROLES.find((r) => r.id === role) ?? ROLES[4];
+  return ROLES.find((r) => r.id === role) ?? ROLES[0];
 }
 
 /* ---- Sidebar nav definition per role (Next.js routes only) ---- */
@@ -129,16 +129,16 @@ interface RoleContextType {
 }
 
 const RoleContext = createContext<RoleContextType>({
-  role: 'admin',
+  role: 'public',
   setRole: () => {},
-  config: ROLES[4],
+  config: ROLES[0],
 });
 
 const STORAGE_KEY = 'pcsms_role';
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  // SSR-safe: default to admin on the server, hydrate from localStorage after mount.
-  const [role, setRoleState] = useState<UserRole>('admin');
+  // SSR-safe and least-privilege: anonymous/new sessions start in the public role.
+  const [role, setRoleState] = useState<UserRole>('public');
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as UserRole | null;

@@ -1,56 +1,75 @@
-# เทคโนโลยีและการตัดสินใจของ V1 (ฉบับภาษาไทย)
+# เทคโนโลยีและการตัดสินใจของ V1
 
-> คำแปลของ `docs/decisions/v1-tech-stack.md`
+## ชุดเทคโนโลยี
 
-## Stack ที่ใช้
-
-| ชั้น | ที่เลือก | เวอร์ชัน | เหตุผล |
+| ชั้น | ตัวเลือก | เวอร์ชัน / รูปแบบ | เหตุผล |
 |---|---|---|---|
-| Frontend | Next.js (App Router) + TypeScript | 14.x | SSR ทำให้ first paint เร็ว; framework เดียวจบทั้งหน้าเว็บและชั้นดึง API; App Router ตรงโครงสร้างหน้า/role ของโปรเจค |
-| Styling | Tailwind CSS | 3.x | mock ของทีมดีไซน์ใช้ utility-class ตรง ๆ port ได้โดยไม่ต้องพังทลายเป็น component library |
-| API | FastAPI + Pydantic v2 | latest stable | มี OpenAPI docs อัตโนมัติ, alias แปลง snake_case ↔ camelCase, dependency injection สำหรับ db session |
-| ORM | SQLAlchemy | 2.x | models ตัวเดียวใช้ร่วมทั้ง API, seed, test; `create_all` sync schema ใน dev/CI โดยไม่ต้องพึ่ง migration tool ใน V1 |
-| ฐานข้อมูล | PostgreSQL บน RDS | 16.x | managed, เข้ากับ service container ใน CI (`postgres:15`), ปลอดภัยกับการเพิ่มคอลัมน์ nullable |
-| Object storage | AWS S3 | — | PDF เป็น blob ใหญ่ — S3 ทำให้ db เหลือแต่ metadata ใช้ IAM แบบจำกัดสิทธิ์ (`cs361-partner-s3`) Get/Put เฉพาะ `cs361-partner-docs/*` |
-| Local dev | Docker Compose | — | คำสั่งเดียวได้ backend + frontend พร้อม network ถูกต้อง; แยก `NEXT_PUBLIC_API_URL` (server) กับ `NEXT_PUBLIC_API_BROWSER_URL` (browser) |
-| CI | GitHub Actions | — | ฟรีสำหรับ repo; รัน backend pytest บน `postgres:15` และ `next build` ทุก push — ไม่ต้องมี `.env` |
-| Testing | pytest + FastAPI TestClient | — | 23 tests: endpoint contract, การกรอง publish, validation อัปโหลด (413/415), download round-trip, delete cleanup |
+| Frontend | Next.js App Router, React, TypeScript | Next 16.3.4, React 18 | รักษาโครงสร้างหน้าเดิม, build แบบ type-safe และสร้าง standalone image ได้ โดย Next 16.3.4 แก้ high-severity advisories ที่ npm รายงาน ณ วันที่ตรวจ |
+| Styling | Tailwind CSS | 3.x | ใช้ UI เดิมต่อได้โดยไม่ต้องเปลี่ยน component library |
+| API | FastAPI, Pydantic v2 | Python 3.11+ | มี OpenAPI แบบ versioned, database dependency และ DTO aliases ชัดเจน |
+| ORM | SQLAlchemy | 2.x | ประกาศ relationships, constraints และ indexes ร่วมกันระหว่าง runtime, seed และ tests |
+| ฐานข้อมูล | PostgreSQL | 16.x | ใช้ major เดียวกันใน Compose และ CI และรองรับโมเดลสถานะเผยแพร่ |
+| Storage | local volume หรือ AWS S3 | เลือกด้วย environment | local/CI ไม่ต้องมี cloud credential ส่วน production แยก bytes ออกจากฐานข้อมูล |
+| Verification | pytest, Docker Compose smoke, Next build | backend 31 tests และ full-stack smoke | ครอบคลุม contract, publication filtering, schema/seed และเส้นทาง runtime ที่รองรับ |
 
-## การตัดสินใจ & Trade-offs
+## การตัดสินใจและทางเลือกที่ไม่เลือก
 
-### 1. เพิ่ม schema แบบ additive แทนรื้อ schema ใหม่
-field สำหรับรองรับหน้าจอ เพิ่มเป็นคอลัมน์ nullable และตารางลูก ไม่ reshaping ตารางเดิม
-- **ได้:** seed/test เดิมไม่พัง, pytest เขียวตลอด, ฐานข้อมูลของจริงไม่กระทบ
-- **เสีย:** บางคอลัมน์ยังว่างในแถวข้อมูลจริงจนกว่าจะมีข้อมูลจริงมาเติม; อาจต้องมีรอบ cleanup ภายหลัง
+### Public route โหลดจาก API แบบ strict
 
-### 2. สอง logical databases บน RDS อินสแตนซ์เดียว
-`partner_activity_v1` (ข้อมูลจริง) กับ `partner_activity_mock` (ชุด mock) ใช้ schema เดียวกัน สลับด้วย `DATABASE_URL`
-- **ได้:** สาธิตด้วยข้อมูลตรงหน้าจอโดยไม่แตะของจริง; สลับกลับแค่บรรทัดเดียว; reversible สุด ๆ (ลบ mock db ทิ้งก็จบ)
-- **เสีย:** ต้องระวังตอน seed สองฐาน (แก้ด้วย `seed_mock.py` ที่ปฏิเสธฐานอื่นที่ไม่ใช่ mock ถ้าไม่ใส่ `--yes`)
+public dashboard และหน้า partner/activity list/detail ใช้ strict loader พร้อม
+สถานะ loading, empty, error และ retry
 
-### 3. Frontend render จาก mock ก่อน
-ทุกหน้าแสดง `lib/mock.ts` ทันที แล้วสลับเป็นผล API เมื่อ fetch สำเร็จ — API ล่มก็คง mock ไว้
-- **ได้:** หน้าเว็บไม่มีวันดูพังตอน backend ล่ม; first paint ทันที; ตอน demo ไม่เสียหน้า
-- **เสีย:** อาจเห็นจังหวะ content เปลี่ยน; ต้องรักษา mock ให้ตรง shape API (จุดเชื่อมอยู่ที่ `lib/api.ts` ไฟล์เดียว)
+- เลือกเพื่อให้ผู้ใช้แยกข้อมูลจริงที่เผยแพร่แล้วออกจากคำขอที่ล้มเหลวได้
+- ไม่เลือก silent mock fallback สำหรับ public route เพราะซ่อน outage และไม่ใช่
+  หลักฐานการทำงานจาก backend ถึง database
+- หน้าต้นแบบตาม role ที่ยังอยู่นอกผลลัพธ์ V1 อาจคง fallback ไว้ชั่วคราว
 
-### 4. Default storage เป็น local สำหรับ test/CI, S3 เฉพาะ production
-`STORAGE_BACKEND=local` เป็นค่า default ของโค้ด; `.env` เลือกเป็น s3 เอง — CI ไม่มี secrets ก็รันได้
-- **ได้:** CI รันโดยไม่ต้องมี AWS credentials แม้แต่ตัวเดียว; test เป็น hermetic
-- **เสีย:** พฤติกรรม local กับ S3 ต่างกันเล็กน้อย (เช่น 404 เมื่อไฟล์หาย) — ครอบด้วย test ฝั่ง local path
+### บังคับสถานะเผยแพร่ที่ API
 
-### 5. เก็บ status เป็นข้อความตรงตัว แทน enum สำหรับ UI
-label ไทย (`เสร็จสิ้น` ฯลฯ) เก็บเป็น string ตรงกับ mock เป๊ะ
-- **ได้:** ไม่มี mapping คลาดเคลื่อนระหว่าง mock กับ API; sort/filter ง่าย
-- **เสีย:** ถ้าเปลี่ยนข้อความต้องแก้ข้อมูล; i18n ไว้เวอร์ชันหน้า (trade-off ที่รู้ตัว ไม่ใช่ลืม)
+FastAPI กรอง `is_published` ทั้ง list/detail และไม่ส่ง draft partner ที่ซ้อนใน
+published activity โดย ID ที่ไม่มีและ draft ใช้ 404 body เดียวกัน
 
-### 6. คำนวณ document status แทนเก็บ
-`expiring/expired` กับ `daysLeft` คำนวณจาก `expiryDate` ตอน render
-- **ได้:** ไม่มีข้อมูลเก่าค้าง; ไม่ต้องมี cron ใน V1
-- **เสีย:** มีการคำนวณเล็ก ๆ ต่อ request (น้อยมากในสเกล V1)
+- เลือกเพื่อให้ทุก client ได้การป้องกันเดียวกัน
+- ไม่เลือกการซ่อนเฉพาะใน UI เพราะผู้เรียก API โดยตรงข้ามเมนูได้
 
-## สิ่งที่ V1 ตัดออกโดยตั้งใจ (→ V2+)
+### Compose ครบทั้งระบบ
 
-- Authentication/authorization (หน้า login ยังเป็น mock role picker)
-- Write endpoints ของ partner/activity และหน้าจัดการ admin
-- Flow ส่ง feedback (ตอนนี้เป็น read-only)
-- Endpoint สำหรับกราฟ/aggregate (dashboard ยังใช้ mock)
+Compose มี PostgreSQL, seed แบบ one-shot/idempotent, FastAPI และ Next.js พร้อม
+health-based dependencies
+
+- เลือกเพื่อให้ clean checkout เริ่มระบบได้ด้วยคำสั่งตามเอกสารเพียงชุดเดียว
+- ไม่เลือกพึ่ง PostgreSQL อื่นบน host เพราะ schema, credential และ readiness
+  ทำซ้ำไม่ได้
+- credential เริ่มต้นใช้เฉพาะ development, bind ฐานข้อมูลที่ loopback และไม่ commit
+  production secret
+
+### Schema V1 แบบ additive พร้อม integrity
+
+SQLAlchemy คง field ที่เข้ากันได้และ nullable พร้อมเพิ่ม natural-key uniqueness,
+domain checks, indexes และ foreign-key delete behavior โดย `create_all` และ seed
+ที่ idempotent รองรับ clean V1 environment
+
+- เลือกเพื่อรักษารูปข้อมูลเดิมพร้อมทำให้ environment ใหม่แน่นอน
+- ไม่เลือก clean-schema rewrite ที่ทำลาย compatibility ใน V1 ส่วน production
+  migration แบบ versioned เป็นงานหลัง V1
+
+### Tests แยกจากข้อมูลจริง
+
+API tests override database dependency ด้วย in-memory SQLite ใหม่ผ่าน
+`StaticPool` และ schema/seed checks ใช้ฐานชั่วคราวแยก
+
+- เลือกเพื่อตัด state ที่ขึ้นกับลำดับและเครื่องนักพัฒนา
+- ไม่เลือกใช้ application database ร่วม เพราะข้อมูลอาจรั่วระหว่าง tests หรือแตะ
+  ข้อมูลของผู้พัฒนา
+
+### Storage abstraction
+
+ฐานข้อมูลเก็บ document metadata และ storage key ส่วน bytes อยู่ใน local volume
+หรือ S3
+
+- เลือกเพื่อให้ local/CI เป็น hermetic และ production scale ได้
+- ไม่เลือกเก็บ binary ขนาดใหญ่ใน PostgreSQL เพราะทำให้ backup โตและผูก file
+  delivery กับ relational query
+
+ดู [สถาปัตยกรรม V1](../architecture/v1-architecture-th.md) และ
+[ดัชนีหลักฐาน](../evidence/v1-readiness.md)

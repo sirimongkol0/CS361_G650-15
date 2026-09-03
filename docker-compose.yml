@@ -1,54 +1,100 @@
-version: '3.8'
-
 services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pcsms}
+      POSTGRES_USER: ${POSTGRES_USER:-pcsms}
+      # Development-only credential. Override it in .env on shared machines.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pcsms_local_only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    ports:
+      # Bind to loopback so the development database is not exposed publicly.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment: &backend_environment
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-pcsms}:${POSTGRES_PASSWORD:-pcsms_local_only}@database:5432/${POSTGRES_DB:-pcsms}
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_DIR: /app/storage
+    command: ["python", "seed_mock.py", "--yes"]
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - backend_storage:/app/storage
+    networks:
+      - app_network
+    restart: "no"
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: partner_activity_backend
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/partner_activity}
-      # File storage: values resolve from the shell / a .env file next to this
-      # compose file at `docker compose up` time; defaults keep local-disk mode.
-      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
-      S3_BUCKET: ${S3_BUCKET:-cs361-partner-docs}
-      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+    environment: *backend_environment
+    depends_on:
+      database:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     networks:
       - app_network
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - backend_storage:/app/storage
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8000/api/v1/health"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 10s
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Inside Docker network, SSR fetch must use the backend SERVICE NAME
-        # (localhost = the frontend container itself, not the backend)
-        NEXT_PUBLIC_API_URL: http://partner_activity_backend:8000/api/v1
-        # Browser-side links are opened by the USER's browser (outside Docker),
-        # so they must point at the host-published port, NOT the service name.
-        NEXT_PUBLIC_API_BROWSER_URL: http://localhost:8000/api/v1
-    container_name: partner_activity_frontend
+        # Browser-side data loading must use a host-reachable address.
+        NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_API_BROWSER_URL: ${PUBLIC_API_URL:-http://localhost:8000/api/v1}
     environment:
-      NEXT_PUBLIC_API_URL: http://partner_activity_backend:8000/api/v1
-      NEXT_PUBLIC_API_BROWSER_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_API_BROWSER_URL: ${PUBLIC_API_URL:-http://localhost:8000/api/v1}
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - app_network
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
+    healthcheck:
+      # Use IPv4 explicitly: Alpine may resolve localhost to ::1 while Next.js
+      # standalone is bound to 0.0.0.0, which makes a healthy app look down.
+      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1:3000/dashboard/public || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
 
 networks:
   app_network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  backend_storage:
