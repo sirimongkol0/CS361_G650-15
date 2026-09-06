@@ -32,7 +32,8 @@ def _public_activity(activity: models.Activity) -> dict:
         "time": activity.time,
         "status": activity.status,
         "is_open": activity.is_open,
-        "mou_document_id": activity.mou_document_id,
+        "mou_document_id": (activity.mou_document_id
+                            if activity.mou_document and activity.mou_document.is_published else None),
         "partner": public_partner,
     }
 
@@ -41,7 +42,7 @@ def _public_activity(activity: models.Activity) -> dict:
 def list_published_activities(db: Session = Depends(database.get_db)):
     """List all published activities ordered by date ascending."""
     activities = db.query(models.Activity).options(
-        joinedload(models.Activity.partner)
+        joinedload(models.Activity.partner), joinedload(models.Activity.mou_document)
     ).filter(
         models.Activity.is_published.is_(True)
     ).order_by(
@@ -59,7 +60,7 @@ def list_published_activities(db: Session = Depends(database.get_db)):
 def get_activity(activity_id: int, db: Session = Depends(database.get_db)):
     """Get a specific published activity by ID. Returns 404 if not found or draft."""
     activity = db.query(models.Activity).options(
-        joinedload(models.Activity.partner)
+        joinedload(models.Activity.partner), joinedload(models.Activity.mou_document)
     ).filter(
         models.Activity.id == activity_id,
         models.Activity.is_published.is_(True),

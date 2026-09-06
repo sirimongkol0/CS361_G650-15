@@ -8,11 +8,16 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.engine import make_url
 
 
 # This must be set before importing database/main because settings and the
 # SQLAlchemy engine are created at module import time.
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", "sqlite://")
+os.environ["STORAGE_BACKEND"] = "local"
+test_url = make_url(os.environ["DATABASE_URL"])
+if test_url.get_backend_name() != "sqlite" and not (test_url.database or "").endswith("_test"):
+    raise RuntimeError("Destructive tests require a dedicated database ending in _test")
 
 from database import Base, SessionLocal, engine  # noqa: E402
 from main import app  # noqa: E402

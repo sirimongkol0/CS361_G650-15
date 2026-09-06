@@ -23,6 +23,9 @@ jobs:
       - name: Verify database-backed API and frontend
         run: python scripts/smoke_test.py --attempts 60 --delay 2
 
+      - name: Verify V2 relationships and seeded PDF downloads
+        run: python scripts/verify_v2_api.py
+
       - name: Show container state and logs on failure
         if: failure()
         run: |
@@ -72,6 +75,12 @@ jobs:
           TEST_DATABASE_URL: postgresql://app_user:app_password@localhost:5432/partner_activity_test
         run: |
           pytest tests/ -v
+
+      - name: Run SQLite migration and API tests
+        working-directory: ./backend
+        env:
+          TEST_DATABASE_URL: sqlite://
+        run: pytest tests/ -q
 
   frontend-build:
     runs-on: ubuntu-latest

@@ -3,7 +3,7 @@
 
 Mirrors the mock data 1:1 so the API can replace the frontend's temporary
 mock file without changing the UI. Additive/idempotent: existing rows (matched
-by name / title) are skipped, nothing is updated or deleted.
+by name / title) are skipped. Mock file metadata is filled when absent.
 
 Safety: this script REFUSES to run against any PostgreSQL database whose name
 is not "partner_activity_mock" unless you pass --yes. The Compose seed service
@@ -12,15 +12,15 @@ uses --yes only with its private local PostgreSQL service. For manual runs, use
 
     python seed_mock.py --database-url sqlite:///./mock_seed_check.db
 
-Documents are seeded as metadata-only rows (placeholder storage keys); no file
-bytes are uploaded to S3/local storage. Downloading a seeded mock document
-returns 404 -- that is expected for mock data.
+Documents use a clearly labelled sample PDF fixture through the configured
+storage backend. These files are test examples, not official agreements.
 """
 
 import argparse
 import os
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
+from pathlib import Path
 
 # Make backend modules importable no matter where the script is run from
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sqlalchemy.orm import Session
 
 import models
+import storage
 from database import SessionLocal, Base, engine
 from config import settings
 
@@ -47,8 +48,8 @@ PARTNERS = [
     {"name": "สมาคมผู้ประกอบการ IT ไทย", "type": "nonprofit", "country": "ไทย"},
 ]
 
-# Mock documents 1..7 (MockDocument). storage_key is a placeholder; no bytes
-# are uploaded (mock data only). daysLeft is derived from expiry at query time.
+# Mock documents 1..7 use sample PDF fixtures, not official agreements.
+# daysLeft is derived from expiry at query time.
 DOCUMENTS = [
     {"key": 1, "name": "MoU ความร่วมมือทางวิชาการ มช.", "doc_type": "mou",
      "partner": "มหาวิทยาลัยเชียงใหม่", "effective": date(2024, 1, 1), "expiry": date(2028, 12, 31),
@@ -74,7 +75,7 @@ DOCUMENTS = [
      "responsible": "ดร.นิภา วิจัย", "status": "active"},
 ]
 
-# Detail-page content for document 1 (mock documentScope / documentTimeline)
+# Detail-page content for document 1 (mock documentScope)
 DOCUMENT_1_SCOPE = [
     "การแลกเปลี่ยนนักศึกษาและบุคลากรระหว่างสองสถาบัน",
     "การจัดกิจกรรมและโครงการวิชาการร่วมกัน",
@@ -82,15 +83,6 @@ DOCUMENT_1_SCOPE = [
     "การแลกเปลี่ยนข้อมูล ทรัพยากร และองค์ความรู้",
     "การพัฒนาหลักสูตรและโปรแกรมการเรียนรู้ร่วมกัน",
     "การสนับสนุนทุนการศึกษาและการฝึกอบรม",
-]
-
-DOCUMENT_1_TIMELINE = [
-    # label, date, done, current
-    ("Draft", date(2023, 11, 1), True, False),
-    ("Review", date(2023, 11, 15), True, False),
-    ("Signed", date(2024, 1, 1), True, False),
-    ("Active", date(2024, 1, 1), True, True),
-    ("Renewal", date(2028, 12, 31), False, False),
 ]
 
 # Mock activities 1..8 (MockActivity) + public-dashboard open flags.
@@ -222,13 +214,13 @@ def seed(session: Session) -> None:
             partners_by_name[partner.name] = partner
             inserted["partners"] += 1
 
-    # --- Documents (metadata only -- no file bytes for mock data) ---
+    # --- Documents ---
     for dd in DOCUMENTS:
         if dd["name"] in docs_by_name:
             continue
         doc = models.Document(
             name=dd["name"],
-            storage_key=f"mock/agreements/mock-doc-{dd['key']}.pdf",  # placeholder, bytes not uploaded
+            storage_key=f"mock/agreements/mock-doc-{dd['key']}.pdf",
             mime_type="application/pdf",
             size_bytes=None,
             is_published=True,
@@ -246,17 +238,29 @@ def seed(session: Session) -> None:
         docs_by_name[doc.name] = doc
         inserted["documents"] += 1
 
-    # Detail-page children of mock document 1 (scope bullets + lifecycle timeline)
+    # Repair only files in this seed's reserved namespace. Keep real documents intact.
+    sample = Path(__file__).with_name("fixtures").joinpath("v2-sample.pdf").read_bytes()
+    for dd in DOCUMENTS:
+        doc = docs_by_name[dd["name"]]
+        expected_key = f"mock/agreements/mock-doc-{dd['key']}.pdf"
+        if doc.storage_key != expected_key:
+            continue
+        try:
+            file_bytes = storage.get_file(expected_key)
+        except storage.StorageError:
+            storage.put_file(expected_key, sample)
+            file_bytes = sample
+            doc.uploaded_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        if doc.file_name is None:
+            doc.file_name = expected_key.rsplit("/", 1)[-1]
+        if doc.size_bytes is None:
+            doc.size_bytes = len(file_bytes)
+
+    # Detail-page children of mock document 1 (scope bullets)
     doc1 = docs_by_name[DOCUMENTS[0]["name"]]
     if not doc1.scope_items:
         for pos, text in enumerate(DOCUMENT_1_SCOPE):
             session.add(models.DocumentScopeItem(document_id=doc1.id, position=pos, text=text))
-    if not doc1.timeline_steps:
-        for pos, (label, d, done, current) in enumerate(DOCUMENT_1_TIMELINE):
-            session.add(models.DocumentTimelineStep(
-                document_id=doc1.id, position=pos, label=label, date=d,
-                done=done, current=current))
-
     # --- Activities ---
     for ad in ACTIVITIES:
         exists = session.query(models.Activity).filter(
@@ -271,6 +275,7 @@ def seed(session: Session) -> None:
             is_published=True,
             partner_id=partners_by_name[ad["partner"]].id if ad.get("partner") else None,
             activity_type=ad.get("type"),
+            end_date=ad.get("end_date"),
             participants=ad.get("participants"),
             location=ad.get("location"),
             time=ad.get("time"),
