@@ -27,6 +27,9 @@ def test_upload_and_download_roundtrip(client, db_session):
     assert body["mimeType"] == "application/pdf"
     assert body["sizeBytes"] == len(PDF_BYTES)
     assert body["storageKey"].startswith("documents/")
+    assert body["fileName"] == "report.pdf"
+    assert body["uploadedAt"] is not None
+    assert "timelineSteps" not in body
 
     # Bytes must NOT be in the database -- only metadata
     doc = db_session.get(models.Document, body["id"])

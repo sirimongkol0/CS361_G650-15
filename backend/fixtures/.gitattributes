@@ -1,0 +1,2 @@
+# Keep this tiny test fixture in ordinary Git so clean CI checkouts can seed it.
+v2-sample.pdf -filter -diff -merge -text

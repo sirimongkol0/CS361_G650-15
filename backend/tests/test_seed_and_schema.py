@@ -27,7 +27,6 @@ def _counts(session):
         "exchange_students": session.query(models.ExchangeStudent).count(),
         "admin_profiles": session.query(models.AdminProfile).count(),
         "scope_items": session.query(models.DocumentScopeItem).count(),
-        "timeline_steps": session.query(models.DocumentTimelineStep).count(),
     }
 
 
@@ -48,7 +47,6 @@ def test_mock_seed_is_idempotent_and_relationships_resolve():
             "exchange_students": len(seed_mock.EXCHANGE_STUDENTS),
             "admin_profiles": 1,
             "scope_items": len(seed_mock.DOCUMENT_1_SCOPE),
-            "timeline_steps": len(seed_mock.DOCUMENT_1_TIMELINE),
         }
 
         assert all(activity.partner is not None for activity in session.query(models.Activity))
@@ -73,9 +71,7 @@ def test_natural_keys_and_domain_checks_are_enforced():
         session.commit()
 
         session.add(models.Partner(name="Unique partner", is_published=False))
-        with pytest.raises(IntegrityError):
-            session.commit()
-        session.rollback()
+        session.commit()  # V2 permits stakeholders with the same name.
 
         session.add(
             models.Activity(

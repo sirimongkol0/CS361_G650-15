@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, AliasChoices
 from typing import Optional, List
-from datetime import date
+from datetime import date, datetime
 
 # Alias for annotations: pydantic 2.5.3 mis-resolves a field literally named
 # "date" annotated as Optional[date] (annotation collapses to NoneType).
@@ -57,11 +57,11 @@ class ActivityPartnerResponse(BaseModel):
 
 class ActivityBase(BaseModel):
     name: str
-    date: date
+    date: Optional[datetime_date] = None
     description: Optional[str] = None
     activity_type: Optional[str] = None
     # --- frontend mock (pages-C) coverage: all optional -> backwards compatible ---
-    end_date: Optional[date] = None
+    end_date: Optional[datetime_date] = None
     participants: Optional[int] = None
     location: Optional[str] = None
     time: Optional[str] = None
@@ -77,12 +77,12 @@ class ActivityCreate(ActivityBase):
 
 class ActivityUpdate(BaseModel):
     name: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[datetime_date] = None
     description: Optional[str] = None
     is_published: Optional[bool] = None
     partner_id: Optional[int] = None
     activity_type: Optional[str] = None
-    end_date: Optional[date] = None
+    end_date: Optional[datetime_date] = None
     participants: Optional[int] = None
     location: Optional[str] = None
     time: Optional[str] = None
@@ -96,11 +96,11 @@ class ActivityResponse(BaseModel):
 
     id: int
     name: str
-    date: date
+    date: Optional[datetime_date] = None
     description: Optional[str] = None
     activity_type: Optional[str] = None
     partner: Optional[ActivityPartnerResponse] = None
-    endDate: Optional[date] = Field(default=None, validation_alias=AliasChoices('end_date', 'endDate'), serialization_alias='endDate')
+    endDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('end_date', 'endDate'), serialization_alias='endDate')
     participants: Optional[int] = None
     location: Optional[str] = None
     time: Optional[str] = None
@@ -135,8 +135,10 @@ class DocumentResponse(BaseModel):
         validation_alias=AliasChoices('size_bytes', 'sizeBytes'),
         serialization_alias='sizeBytes'
     )
-    effectiveDate: Optional[date] = Field(default=None, validation_alias=AliasChoices('effective_date', 'effectiveDate'), serialization_alias='effectiveDate')
-    expiryDate: Optional[date] = Field(default=None, validation_alias=AliasChoices('expiry_date', 'expiryDate'), serialization_alias='expiryDate')
+    fileName: Optional[str] = Field(default=None, validation_alias=AliasChoices('file_name', 'fileName'))
+    uploadedAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('uploaded_at', 'uploadedAt'))
+    effectiveDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('effective_date', 'effectiveDate'), serialization_alias='effectiveDate')
+    expiryDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('expiry_date', 'expiryDate'), serialization_alias='expiryDate')
     partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
     # --- frontend mock (pages-C) coverage: all optional -> backwards compatible ---
     responsible: Optional[str] = None
@@ -146,35 +148,21 @@ class DocumentResponse(BaseModel):
     scopeItems: Optional[List['DocumentScopeItemResponse']] = Field(
         default=None, validation_alias=AliasChoices('scope_items', 'scopeItems'), serialization_alias='scopeItems'
     )
-    timelineSteps: Optional[List['DocumentTimelineStepResponse']] = Field(
-        default=None, validation_alias=AliasChoices('timeline_steps', 'timelineSteps'), serialization_alias='timelineSteps'
-    )
 
 
 class DocumentScopeItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    position: int = 0
+    position: Optional[int] = None
     text: str
-
-
-class DocumentTimelineStepResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    position: int = 0
-    label: str
-    date: Optional[datetime_date] = None
-    done: bool = False
-    current: bool = False
 
 
 class FeedbackCreate(BaseModel):
     title: str
     source: Optional[str] = None
     rating: Optional[int] = None
-    date: Optional[date] = None
+    date: Optional[datetime_date] = None
     status: Optional[str] = None
     comment: Optional[str] = None
     is_published: bool = False
@@ -201,8 +189,8 @@ class ExchangeStudentCreate(BaseModel):
     type: Optional[str] = None          # outbound | inbound
     from_program: Optional[str] = None
     to_organization: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: Optional[datetime_date] = None
+    end_date: Optional[datetime_date] = None
     program: Optional[str] = None
     status: Optional[str] = None
     is_published: bool = False
@@ -218,8 +206,8 @@ class ExchangeStudentResponse(BaseModel):
     type: Optional[str] = None
     fromProgram: Optional[str] = Field(default=None, validation_alias=AliasChoices('from_program', 'fromProgram'), serialization_alias='fromProgram')
     toOrganization: Optional[str] = Field(default=None, validation_alias=AliasChoices('to_organization', 'toOrganization'), serialization_alias='toOrganization')
-    startDate: Optional[date] = Field(default=None, validation_alias=AliasChoices('start_date', 'startDate'), serialization_alias='startDate')
-    endDate: Optional[date] = Field(default=None, validation_alias=AliasChoices('end_date', 'endDate'), serialization_alias='endDate')
+    startDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('start_date', 'startDate'), serialization_alias='startDate')
+    endDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('end_date', 'endDate'), serialization_alias='endDate')
     program: Optional[str] = None
     status: Optional[str] = None
     partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
@@ -247,7 +235,7 @@ class AdminProfileResponse(BaseModel):
     department: Optional[str] = None
 
 
-# Resolve forward references (scopeItems / timelineSteps declared before their models)
+# Resolve forward references (scopeItems declared before their models)
 DocumentResponse.model_rebuild()
 
 

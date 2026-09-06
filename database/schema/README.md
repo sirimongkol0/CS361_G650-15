@@ -1,18 +1,56 @@
-# Database schema
+# Database schema (V2)
 
-The V1 schema is defined once in `backend/models.py` with SQLAlchemy. Both the
-application startup and seed commands call `Base.metadata.create_all`, so a
-clean SQLite or PostgreSQL database can be initialized without RDS or a SQL
-dump. V1 only supports additive schema changes; a migration tool is required
-before destructive production migrations are introduced.
+`backend/models.py` defines four V2 core tables: `partners`, `documents`,
+`document_scope_items`, and `activities`.
 
-Core integrity rules are enforced by the database:
+The three main entities have `is_published BOOLEAN NOT NULL DEFAULT false`.
+Scope items follow the parent document publication flag. Descriptions, URLs,
+and scope text use TEXT. Names are required but may repeat. Activity dates,
+scope positions, and document file metadata may be null. Document uploads store
+`file_name` and `uploaded_at` (UTC); unknown historical values remain null.
 
-- stable natural keys for seeded partners, documents, activities and feedback;
-- foreign keys use `SET NULL` for optional parent links and `CASCADE` for
-  document scope/timeline children;
-- ratings, counts, positions and date ranges have check constraints;
-- required identity/date/publish fields are non-null.
+Optional partner/document links use ON DELETE SET NULL; scope children use
+ON DELETE CASCADE. Count, position and date-order checks remain enforced.
+`document_timeline_steps` is retired. Optional `partner_contacts` and
+`activity_files` are not included. Existing feedback, exchange and profile
+tables belong to other features and remain available.
 
-Run `pytest tests/test_seed_and_schema.py -q` from `backend/` to verify schema
-creation, constraints, relationship resolution and two-pass seed idempotency.
+## Existing databases
+
+`create_all` creates missing tables only; it does not upgrade existing columns.
+Install `backend/requirements.txt`, stop applications using the target database,
+take a PostgreSQL backup/snapshot, then run from the repository root:
+
+```bash
+python backend/migrate_v2.py
+```
+
+This uses the root `.env` / environment `DATABASE_URL`. Check the database name:
+`partner_activity` and `partner_activity_v1` are different databases. Running
+from `backend/` loads its separate `.env`. An explicit `--database-url` is also
+supported; avoid placing credentials in shell history.
+
+The migration supports SQLite and PostgreSQL, retains core rows and IDs,
+repairs foreign keys, converts null publication flags to false, and removes
+the timeline table and its contents. Missing required names or invalid domain
+data cause transaction rollback. Repeating the migration is supported.
+SQLite file backups are created automatically by the CLI before migration.
+
+## Verification
+
+```bash
+cd backend
+pytest tests -q
+```
+
+Tests use isolated SQLite and local file storage. Migration tests cover row
+preservation, relationships, defaults, nullability, timeline removal,
+unrelated table preservation, and repeat execution.
+
+For PostgreSQL tests, set `TEST_DATABASE_URL` to a dedicated database whose
+name ends in `_test`. Tests create/drop tables, so the test runner rejects
+other PostgreSQL names. CI runs both PostgreSQL and SQLite, including empty
+and populated legacy schema migration and transaction rollback checks.
+
+See `docs/api/v2-field-contract.md` for the contract to review before merge,
+and `database/seed/README.md` for repeatable seed/download commands.

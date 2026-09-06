@@ -45,3 +45,4 @@ __pycache__/
 docs-th/*.docx
 docs-th/**/*.docx
 
+*.pre-v2-*.bak

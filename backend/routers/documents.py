@@ -1,6 +1,7 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List
 
 import database
@@ -18,10 +19,18 @@ ALLOWED_MIME_TYPES = {"application/pdf"}
 @router.get("/", response_model=List[schemas.DocumentResponse])
 def list_documents(db: Session = Depends(database.get_db)):
     """List all published documents."""
-    docs = db.query(models.Document).filter(
+    docs = db.query(models.Document).options(
+        joinedload(models.Document.partner), selectinload(models.Document.scope_items)
+    ).filter(
         models.Document.is_published == True  # noqa: E712
     ).order_by(models.Document.id.desc()).all()
-    return docs
+    result = []
+    for doc in docs:
+        data = schemas.DocumentResponse.model_validate(doc).model_dump()
+        if doc.partner is None or not doc.partner.is_published:
+            data["partnerId"] = None
+        result.append(data)
+    return result
 
 
 @router.post("/", response_model=schemas.DocumentResponse, status_code=201)
@@ -48,6 +57,8 @@ async def upload_document(
     doc = models.Document(
         name=name or file.filename,
         storage_key=key,
+        file_name=file.filename,
+        uploaded_at=datetime.now(timezone.utc).replace(tzinfo=None),
         mime_type=file.content_type,
         size_bytes=len(data),
         is_published=True,
@@ -65,7 +76,7 @@ def download_document(document_id: int, db: Session = Depends(database.get_db)):
         models.Document.id == document_id,
         models.Document.is_published == True  # noqa: E712
     ).first()
-    if doc is None:
+    if doc is None or not doc.storage_key:
         raise HTTPException(status_code=404, detail="Document not found")
 
     try:
@@ -89,7 +100,8 @@ def delete_document(document_id: int, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=404, detail="Document not found")
 
     try:
-        storage.delete_file(doc.storage_key)
+        if doc.storage_key:
+            storage.delete_file(doc.storage_key)
     except StorageError:
         pass  # keep DB consistent even if the blob already vanished
 

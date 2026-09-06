@@ -3,10 +3,12 @@ from sqlalchemy import (
     CheckConstraint,
     Column,
     Date,
+    DateTime,
+    Text,
+    false,
     ForeignKey,
     Integer,
     String,
-    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from database import Base
@@ -16,14 +18,14 @@ class Partner(Base):
     __tablename__ = "partners"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True, nullable=False)
-    description = Column(String, nullable=True)
-    logo_url = Column(String, nullable=True)
-    is_published = Column(Boolean, default=False, nullable=False)
+    name = Column(String, index=True, nullable=False)
+    description = Column(Text, nullable=True)
+    logo_url = Column(Text, nullable=True)
+    is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
     # --- real-world stakeholder metadata (all nullable -> backwards compatible) ---
     type = Column(String, nullable=True)            # university | government | private_company | nonprofit | alumni_network
     country = Column(String, nullable=True)
-    website_url = Column(String, nullable=True)
+    website_url = Column(Text, nullable=True)
     contact_name = Column(String, nullable=True)    # coordinator / liaison
     contact_email = Column(String, nullable=True)
 
@@ -43,13 +45,15 @@ class Document(Base):
         ),
     )
 
-    name = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, index=True, nullable=False)
     # Key inside the storage backend (S3 object key or local relative path).
     # The file bytes themselves live in S3/local disk -- never in the database.
-    storage_key = Column(String, unique=True, nullable=False)
-    mime_type = Column(String, default="application/pdf", nullable=False)
+    storage_key = Column(String, nullable=True)
+    file_name = Column(String, nullable=True)
+    uploaded_at = Column(DateTime, nullable=True)
+    mime_type = Column(String, nullable=True)
     size_bytes = Column(Integer)
-    is_published = Column(Boolean, default=False, nullable=False)
+    is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
     # --- agreement lifecycle metadata (all nullable -> backwards compatible) ---
     doc_type = Column(String, nullable=True)        # mou | moa | template | announcement
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
@@ -67,10 +71,6 @@ class Document(Base):
         "DocumentScopeItem", back_populates="document",
         order_by="DocumentScopeItem.position", cascade="all, delete-orphan",
     )
-    timeline_steps = relationship(
-        "DocumentTimelineStep", back_populates="document",
-        order_by="DocumentTimelineStep.position", cascade="all, delete-orphan",
-    )
     mou_activities = relationship(
         "Activity", back_populates="mou_document", passive_deletes=True,
         foreign_keys="Activity.mou_document_id",
@@ -81,7 +81,6 @@ class Activity(Base):
     __tablename__ = "activities"
 
     __table_args__ = (
-        UniqueConstraint("name", "date", name="uq_activities_name_date"),
         CheckConstraint("participants IS NULL OR participants >= 0", name="ck_activities_participants_nonnegative"),
         CheckConstraint(
             "end_date IS NULL OR end_date >= date",
@@ -91,9 +90,9 @@ class Activity(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True, nullable=False)
-    date = Column(Date, index=True, nullable=False)
-    description = Column(String, nullable=True)
-    is_published = Column(Boolean, default=False, nullable=False)
+    date = Column(Date, index=True, nullable=True)
+    description = Column(Text, nullable=True)
+    is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     # --- activity classification (nullable -> backwards compatible) ---
     activity_type = Column(String, nullable=True)   # exchange | internship | cooperative_education | academic_event | workshop
@@ -174,39 +173,15 @@ class DocumentScopeItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     __table_args__ = (
-        UniqueConstraint("document_id", "position", name="uq_document_scope_position"),
         CheckConstraint("position >= 0", name="ck_document_scope_position_nonnegative"),
     )
 
-    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-    position = Column(Integer, default=0, nullable=False)  # display order
-    text = Column(String, nullable=False)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=True)
+    position = Column(Integer, nullable=True)  # display order
+    text = Column(Text, nullable=False)
 
     document = relationship(
         "Document", back_populates="scope_items"
-    )
-
-
-class DocumentTimelineStep(Base):
-    """Agreement lifecycle step (mock documentTimeline: Draft -> Review -> Signed -> Active -> Renewal)."""
-
-    __tablename__ = "document_timeline_steps"
-
-    id = Column(Integer, primary_key=True, index=True)
-    __table_args__ = (
-        UniqueConstraint("document_id", "position", name="uq_document_timeline_position"),
-        CheckConstraint("position >= 0", name="ck_document_timeline_position_nonnegative"),
-    )
-
-    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-    position = Column(Integer, default=0, nullable=False)  # display order
-    label = Column(String, nullable=False)           # Draft | Review | Signed | Active | Renewal
-    date = Column(Date, nullable=True)
-    done = Column(Boolean, default=False, nullable=False)
-    current = Column(Boolean, default=False, nullable=False)
-
-    document = relationship(
-        "Document", back_populates="timeline_steps"
     )
 
 
