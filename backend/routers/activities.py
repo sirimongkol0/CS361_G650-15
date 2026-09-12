@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
+from datetime import date
 from typing import List
 
 import database
@@ -39,17 +41,74 @@ def _public_activity(activity: models.Activity) -> dict:
 
 
 @router.get("/", response_model=List[schemas.ActivityResponse])
-def list_published_activities(db: Session = Depends(database.get_db)):
-    """List all published activities ordered by date ascending."""
-    activities = db.query(models.Activity).options(
-        joinedload(models.Activity.partner), joinedload(models.Activity.mou_document)
-    ).filter(
-        models.Activity.is_published.is_(True)
-    ).order_by(
-        models.Activity.date.asc()
-    ).all()
-    
-    return [_public_activity(activity) for activity in activities]
+def list_published_activities(
+    search: str | None = None,
+    activity_type: str | None = None,
+    status: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    db: Session = Depends(database.get_db),
+):
+    """List, search and filter published activities."""
+
+    query = (
+        db.query(models.Activity)
+        .options(
+            joinedload(models.Activity.partner),
+            joinedload(models.Activity.mou_document),
+        )
+        .filter(models.Activity.is_published.is_(True))
+    )
+
+    # Search by activity name
+    if search and search.strip():
+        query = query.filter(
+            models.Activity.name.ilike(
+                f"%{search.strip()}%"
+            )
+        )
+
+    # Filter by activity type
+    if activity_type:
+        query = query.filter(
+            models.Activity.activity_type == activity_type
+        )
+
+    # Filter by status
+    if status:
+        query = query.filter(
+            models.Activity.status == status
+        )
+
+    # The activity must end on or after date_from.
+    # If there is no end_date, use the activity start date.
+    if date_from:
+        query = query.filter(
+            or_(
+                models.Activity.end_date >= date_from,
+                and_(
+                    models.Activity.end_date.is_(None),
+                    models.Activity.date >= date_from,
+                ),
+            )
+        )
+
+    # The activity must start on or before date_to.
+    if date_to:
+        query = query.filter(
+            models.Activity.date <= date_to
+        )
+
+    activities = (
+        query
+        .order_by(models.Activity.date.asc())
+        .all()
+    )
+
+    return [
+        _public_activity(activity)
+        for activity in activities
+    ]
 
 
 @router.get(

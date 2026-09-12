@@ -289,6 +289,233 @@ class TestActivities:
         assert "is_open" not in data
         assert "mou_document_id" not in data
 
+    def test_search_activities_by_name_case_insensitive(self):
+        db = SessionLocal()
+        db.add_all([
+            models.Activity(
+                name="International Workshop",
+                date=date(2024, 1, 1),
+                is_published=True,
+            ),
+            models.Activity(
+                name="Student Exchange",
+                date=date(2024, 1, 2),
+                is_published=True,
+            ),
+        ])
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/api/v1/activities/",
+            params={"search": "WORKSHOP"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "International Workshop"
+
+
+    def test_filter_activities_by_type(self):
+        db = SessionLocal()
+        db.add_all([
+            models.Activity(
+                name="Workshop Activity",
+                date=date(2024, 1, 1),
+                activity_type="workshop",
+                is_published=True,
+            ),
+            models.Activity(
+                name="Exchange Activity",
+                date=date(2024, 1, 2),
+                activity_type="exchange",
+                is_published=True,
+            ),
+        ])
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/api/v1/activities/",
+            params={"activity_type": "workshop"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "Workshop Activity"
+        assert data[0]["activity_type"] == "workshop"
+
+
+    def test_filter_activities_by_status(self):
+        db = SessionLocal()
+        db.add_all([
+            models.Activity(
+                name="Completed Activity",
+                date=date(2024, 1, 1),
+                status="เสร็จสิ้น",
+                is_published=True,
+            ),
+            models.Activity(
+                name="Planned Activity",
+                date=date(2024, 1, 2),
+                status="วางแผน",
+                is_published=True,
+            ),
+        ])
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/api/v1/activities/",
+            params={"status": "เสร็จสิ้น"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "Completed Activity"
+        assert data[0]["status"] == "เสร็จสิ้น"
+
+
+    def test_filter_activities_by_overlapping_date_range(self):
+        db = SessionLocal()
+        db.add_all([
+            # จบก่อนช่วงที่ค้นหา จึงต้องไม่แสดง
+            models.Activity(
+                name="Before Range",
+                date=date(2024, 1, 1),
+                end_date=date(2024, 1, 5),
+                is_published=True,
+            ),
+            # เริ่มก่อน แต่สิ้นสุดอยู่ในช่วงที่ค้นหา จึงต้องแสดง
+            models.Activity(
+                name="Overlapping Range",
+                date=date(2024, 1, 5),
+                end_date=date(2024, 1, 15),
+                is_published=True,
+            ),
+            # กิจกรรมวันเดียวที่อยู่ในช่วง จึงต้องแสดง
+            models.Activity(
+                name="Single Day In Range",
+                date=date(2024, 1, 20),
+                end_date=None,
+                is_published=True,
+            ),
+            # เริ่มหลังช่วงที่ค้นหา จึงต้องไม่แสดง
+            models.Activity(
+                name="After Range",
+                date=date(2024, 2, 1),
+                is_published=True,
+            ),
+        ])
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/api/v1/activities/",
+            params={
+                "date_from": "2024-01-10",
+                "date_to": "2024-01-31",
+            },
+        )
+
+        assert response.status_code == 200
+        names = [item["name"] for item in response.json()]
+
+        assert names == [
+            "Overlapping Range",
+            "Single Day In Range",
+        ]
+
+
+    def test_search_and_filters_work_together_without_exposing_draft(self):
+        db = SessionLocal()
+        db.add_all([
+            # ตรงทุกเงื่อนไขและ Published จึงต้องแสดง
+            models.Activity(
+                name="Python Workshop",
+                date=date(2024, 6, 10),
+                activity_type="workshop",
+                status="วางแผน",
+                is_published=True,
+            ),
+            # ชื่อตรง แต่ประเภทไม่ตรง
+            models.Activity(
+                name="Python Exchange",
+                date=date(2024, 6, 11),
+                activity_type="exchange",
+                status="วางแผน",
+                is_published=True,
+            ),
+            # ตรงทุกเงื่อนไขแต่เป็น Draft จึงต้องไม่แสดง
+            models.Activity(
+                name="Draft Python Workshop",
+                date=date(2024, 6, 12),
+                activity_type="workshop",
+                status="วางแผน",
+                is_published=False,
+            ),
+            # ตรงทุกอย่างยกเว้นช่วงเวลา
+            models.Activity(
+                name="Old Python Workshop",
+                date=date(2023, 6, 10),
+                activity_type="workshop",
+                status="วางแผน",
+                is_published=True,
+            ),
+        ])
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/api/v1/activities/",
+            params={
+                "search": "python",
+                "activity_type": "workshop",
+                "status": "วางแผน",
+                "date_from": "2024-01-01",
+                "date_to": "2024-12-31",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "Python Workshop"
+
+
+    def test_search_with_no_result_returns_empty_list(self):
+        db = SessionLocal()
+        db.add(
+            models.Activity(
+                name="Existing Activity",
+                date=date(2024, 1, 1),
+                is_published=True,
+            )
+        )
+        db.commit()
+        db.close()
+
+        response = client.get(
+            "/api/v1/activities/",
+            params={"search": "something-that-does-not-exist"},
+        )
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+
+    def test_invalid_filter_date_returns_422(self):
+        response = client.get(
+            "/api/v1/activities/",
+            params={"date_from": "not-a-date"},
+        )
+
+        assert response.status_code == 422
+        assert "detail" in response.json()
+
 
 class TestPublicContractErrorsAndCors:
     def test_missing_and_unpublished_use_same_error_shape(self):
