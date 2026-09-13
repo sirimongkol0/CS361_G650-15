@@ -17,6 +17,8 @@ export default function ActivitiesPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [orgFilter, setOrgFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const activities = useApiResource(loadActivities);
 
   const data = activities.status === "success" ? activities.data : [];
@@ -24,13 +26,58 @@ export default function ActivitiesPage() {
   const organizations = useMemo(() => Array.from(new Set(data.map((item) => item.org))), [data]);
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("th");
-    return data.filter((item) =>
-      (!query || item.name.toLocaleLowerCase("th").includes(query) || item.org.toLocaleLowerCase("th").includes(query)) &&
-      (typeFilter === "all" || item.type === typeFilter) &&
-      (orgFilter === "all" || item.org === orgFilter) &&
-      (statusFilter === "all" || item.status === statusFilter)
-    );
-  }, [data, orgFilter, search, statusFilter, typeFilter]);
+    const rangeStart = dateFrom ? new Date(dateFrom).getTime() : null;
+    const rangeEnd = dateTo ? new Date(dateTo).getTime() : null;
+
+    return data.filter((item) => {
+      const activityStart = item.startDate
+        ? new Date(item.startDate).getTime()
+        : NaN;
+
+      const activityEnd = item.endDate
+        ? new Date(item.endDate).getTime()
+        : activityStart;
+
+      const matchesSearch =
+        !query ||
+        item.name.toLocaleLowerCase("th").includes(query) ||
+        item.org.toLocaleLowerCase("th").includes(query);
+
+      const matchesType =
+        typeFilter === "all" || item.type === typeFilter;
+
+      const matchesOrganization =
+        orgFilter === "all" || item.org === orgFilter;
+
+      const matchesStatus =
+        statusFilter === "all" || item.status === statusFilter;
+
+      const matchesDateFrom =
+        rangeStart === null ||
+        (!Number.isNaN(activityEnd) && activityEnd >= rangeStart);
+
+      const matchesDateTo =
+        rangeEnd === null ||
+        (!Number.isNaN(activityStart) && activityStart <= rangeEnd);
+
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesOrganization &&
+        matchesStatus &&
+        matchesDateFrom &&
+        matchesDateTo
+      );
+    });
+  }, [
+    data,
+    search,
+    typeFilter,
+    orgFilter,
+    statusFilter,
+    dateFrom,
+    dateTo,
+  ]);
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -77,6 +124,38 @@ export default function ActivitiesPage() {
                 <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
                 <option value="วางแผน">วางแผน</option>
               </select>
+              <input
+                type="date"
+                className={`${inputCls} !w-auto`}
+                aria-label="วันที่เริ่มต้น"
+                value={dateFrom}
+                max={dateTo || undefined}
+                onChange={(event) => setDateFrom(event.target.value)}
+              />
+
+              <input
+                type="date"
+                className={`${inputCls} !w-auto`}
+                aria-label="วันที่สิ้นสุด"
+                value={dateTo}
+                min={dateFrom || undefined}
+                onChange={(event) => setDateTo(event.target.value)}
+              />
+
+              <button
+                type="button"
+                className="btn btn-outline whitespace-nowrap"
+                onClick={() => {
+                  setSearch("");
+                  setTypeFilter("all");
+                  setOrgFilter("all");
+                  setStatusFilter("all");
+                  setDateFrom("");
+                  setDateTo("");
+                }}
+              >
+                ล้างตัวกรอง
+              </button>
             </div>
           </div>
 

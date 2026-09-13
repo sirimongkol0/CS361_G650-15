@@ -259,6 +259,7 @@ export interface ActivityView extends MockActivity {
   description: string;
   location: string | null;
   time: string | null;
+  startDate: string | null;
   endDate: string | null;
   partnerId: number | null;
   isOpen: boolean;
@@ -321,6 +322,7 @@ function mapActivity(raw: RawActivity): ActivityView {
     description: raw.description ?? "",
     location: raw.location ?? null,
     time: raw.time ?? null,
+    startDate: raw.date ?? null,
     endDate: raw.endDate ?? null,
     partnerId: raw.partner?.id ?? null,
     isOpen: raw.isOpen ?? (!isNaN(activityDate) && activityDate >= Date.now()),
