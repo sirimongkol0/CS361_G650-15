@@ -7,20 +7,51 @@ from datetime import date, datetime
 datetime_date = date
 
 
+# ==========================================
+# Common Error Response
+# ==========================================
+class ErrorResponse(BaseModel):
+    detail: str
+
+
+# ==========================================
+# Contact Person Schemas (ผู้ประสานงาน)
+# ==========================================
+class ContactPersonBase(BaseModel):
+    name: str = Field(..., description="ชื่อ-นามสกุล ผู้ประสานงาน")
+    position: Optional[str] = Field(None, description="ตำแหน่ง")
+    email: Optional[str] = Field(None, description="อีเมลติดต่อ")
+    phone: Optional[str] = Field(None, description="เบอร์โทรศัพท์")
+    is_public: bool = Field(True, description="สถานะอนุญาตให้แสดงข้อมูลต่อสาธารณะ")
+
+class ContactPersonResponse(ContactPersonBase):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+
+
+# ==========================================
+# Partner / Stakeholder Schemas (หน่วยงาน)
+# ==========================================
 class PartnerBase(BaseModel):
-    name: str
-    description: Optional[str] = None
-    logo_url: Optional[str] = None
+    name: str = Field(..., description="ชื่อหน่วยงานคู่ความร่วมมือ / Stakeholder")
+    description: Optional[str] = Field(None, description="รายละเอียดหน่วยงาน")
     type: Optional[str] = None
-    country: Optional[str] = None
-    website_url: Optional[str] = None
+    category: str = Field(..., description="ประเภทหน่วยงาน (เช่น สถาบันการศึกษา, ภาคเอกชน, ภาครัฐ)")
+    country: Optional[str] = Field(None, description="ประเทศ")
     contact_name: Optional[str] = None
     contact_email: Optional[str] = None
-
+    logo_url: Optional[str] = Field(None, description="URL โลโก้หน่วยงาน")
+    website_url: Optional[str] = Field(None, description="เว็บไซต์หน่วยงาน")
+    is_published: bool = Field(True, description="สถานะการเผยแพร่ข้อมูล")
 
 class PartnerCreate(PartnerBase):
     is_published: bool = False
-
 
 class PartnerUpdate(BaseModel):
     name: Optional[str] = None
@@ -33,19 +64,43 @@ class PartnerUpdate(BaseModel):
     contact_email: Optional[str] = None
     is_published: Optional[bool] = None
 
-
 class PartnerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     description: Optional[str] = None
-    logoUrl: Optional[str] = Field(validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
+    logoUrl: Optional[str] = Field(None, validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
     type: Optional[str] = None
     country: Optional[str] = None
     websiteUrl: Optional[str] = Field(default=None, validation_alias=AliasChoices('website_url', 'websiteUrl'), serialization_alias='websiteUrl')
     contactName: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_name', 'contactName'), serialization_alias='contactName')
     contactEmail: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_email', 'contactEmail'), serialization_alias='contactEmail')
+
+class PartnerDetailResponse(PartnerBase):
+    id: int
+    contacts: List[ContactPersonResponse] = Field(default_factory=list, description="รายการผู้ประสานงานที่อนุญาตให้แสดงผล")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class PartnerListResponse(BaseModel):
+    items: List[PartnerDetailResponse]
+    total: int
+    page: int
+    size: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
 
 
 class ActivityPartnerResponse(BaseModel):
@@ -53,7 +108,6 @@ class ActivityPartnerResponse(BaseModel):
 
     id: int
     name: str
-
 
 class ActivityBase(BaseModel):
     name: str
@@ -68,7 +122,6 @@ class ActivityBase(BaseModel):
     status: Optional[str] = None
     is_open: Optional[bool] = None
     mou_document_id: Optional[int] = None
-
 
 class ActivityCreate(ActivityBase):
     is_published: bool = False
@@ -238,6 +291,3 @@ class AdminProfileResponse(BaseModel):
 # Resolve forward references (scopeItems declared before their models)
 DocumentResponse.model_rebuild()
 
-
-class ErrorResponse(BaseModel):
-    detail: str
