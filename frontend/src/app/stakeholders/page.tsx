@@ -1,31 +1,112 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronRight, MoreHorizontal, Plus, Search } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
-import { loadPublicPartners, useApiResource } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
+interface ContactPerson {
+  id: number;
+  name: string;
+  position?: string;
+  email?: string;
+  phone?: string;
+  is_public: boolean;
+}
+
+interface Stakeholder {
+  id: number;
+  name: string;
+  category: string;
+  type?: string;
+  country?: string;
+  description?: string;
+  website_url?: string;
+  logo_url?: string;
+  contacts: ContactPerson[];
+  contactName?: string;
+  contactEmail?: string;
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// ฟังก์ชันช่วยสุ่มสีและสร้าง อักษรย่อ (Initials) สำหรับ Avatar ในตาราง
+function getAvatarProps(name: string) {
+  const colors = [
+    { bg: "#E0F2FE", color: "#0369A1" },
+    { bg: "#DCFCE7", color: "#15803D" },
+    { bg: "#FFE4E6", color: "#BE123C" },
+    { bg: "#FEF3C7", color: "#B45309" },
+    { bg: "#F3E8FF", color: "#6B21A8" },
+  ];
+  const charCode = name ? name.charCodeAt(0) : 0;
+  const colorScheme = colors[charCode % colors.length];
+  const initials = name ? name.slice(0, 2).toUpperCase() : "--";
+  return { ...colorScheme, initials };
+}
+
 export default function StakeholdersPage() {
   const { role } = useRole();
+  const [data, setData] = useState<Stakeholder[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
-  const partners = useApiResource(loadPublicPartners);
 
-  const data = partners.status === "success" ? partners.data : [];
+  // ดึงข้อมูลจาก API V2 จริง
+  const fetchStakeholders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/stakeholders?size=100`);
+      if (!res.ok) {
+        throw new Error(`เกิดข้อผิดพลาดในการดึงข้อมูล (HTTP ${res.status})`);
+      }
+      const result = await res.json();
+      
+      // แปลงข้อมูล V2 ให้พร้อมแสดงผลบน UI เดิม
+      const items = (result.items || result || []).map((item: any) => {
+        const firstContact = item.contacts && item.contacts.length > 0 ? item.contacts[0] : null;
+        const avatar = getAvatarProps(item.name);
+        return {
+          ...item,
+          type: item.category || item.type || "ทั่วไป",
+          country: item.country || "—",
+          contactName: firstContact ? firstContact.name : (item.contact_name || "—"),
+          contactEmail: firstContact ? firstContact.email : (item.contact_email || "—"),
+          bg: avatar.bg,
+          color: avatar.color,
+          initials: avatar.initials,
+        };
+      });
+
+      setData(items);
+    } catch (err: any) {
+      setError(err.message || "ไม่สามารถดึงข้อมูลได้");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStakeholders();
+  }, [fetchStakeholders]);
+
   const types = useMemo(
-    () => Array.from(new Set(data.map((item) => item.type).filter((value) => value !== "—"))),
+    () => Array.from(new Set(data.map((item) => item.type).filter((value) => value && value !== "—"))),
     [data]
   );
   const countries = useMemo(
-    () => Array.from(new Set(data.map((item) => item.country).filter((value) => value !== "—"))),
+    () => Array.from(new Set(data.map((item) => item.country).filter((value) => value && value !== "—"))),
     [data]
   );
+
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("th");
     return data.filter((item) => {
@@ -43,6 +124,7 @@ export default function StakeholdersPage() {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
+      {/* Header & Breadcrumb */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
@@ -64,11 +146,17 @@ export default function StakeholdersPage() {
         )}
       </div>
 
-      {partners.status === "loading" && <LoadingState title="กำลังโหลดหน่วยงาน" />}
-      {partners.status === "error" && <ErrorState error={partners.error} onRetry={partners.retry} />}
-      {partners.status === "success" && partners.data.length === 0 && <EmptyState />}
+      {/* Loading State */}
+      {loading && <LoadingState title="กำลังโหลดหน่วยงาน" />}
 
-      {partners.status === "success" && partners.data.length > 0 && (
+      {/* Error State with Retry */}
+      {!loading && error && <ErrorState error={error} onRetry={fetchStakeholders} />}
+
+      {/* Empty State */}
+      {!loading && !error && data.length === 0 && <EmptyState />}
+
+      {/* Content Table */}
+      {!loading && !error && data.length > 0 && (
         <>
           <div className="bg-white border border-line rounded-lg shadow-card p-4 mb-5">
             <div className="flex flex-wrap gap-3 items-center">
@@ -125,8 +213,8 @@ export default function StakeholdersPage() {
                         </td>
                         <td className="px-4 py-4"><span className="badge bg-[#E0E7FF] text-[#4338CA]">{item.type}</span></td>
                         <td className="px-4 py-4 text-sm text-faint">{item.country}</td>
-                        <td className="px-4 py-4 text-sm text-faint">{item.contactName ?? "—"}</td>
-                        <td className="px-4 py-4 text-sm text-faint">{item.contactEmail ?? "—"}</td>
+                        <td className="px-4 py-4 text-sm text-faint">{item.contactName}</td>
+                        <td className="px-4 py-4 text-sm text-faint">{item.contactEmail}</td>
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-1">
                             <Link href={`/stakeholders/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
@@ -149,3 +237,8 @@ export default function StakeholdersPage() {
     </div>
   );
 }
+
+
+
+
+
