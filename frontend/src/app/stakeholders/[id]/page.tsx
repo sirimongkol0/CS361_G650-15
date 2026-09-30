@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ChevronRight, ExternalLink, Globe, Mail, MapPin } from "lucide-react";
 import { ErrorState, LoadingState } from "@/components/data-states";
+import { RelatedRecords } from "@/components/related-records";
 import { SourceLinks } from "@/components/source-links";
 import { ApiError, loadPublicPartner, useApiResource } from "@/lib/api";
 
@@ -84,6 +85,10 @@ export default function StakeholderDetailPage() {
             {item.websiteUrl && <div><dt className="text-xs font-semibold text-faint">เว็บไซต์</dt><dd className="mt-1 break-all text-mute">{website ? <a href={website} target="_blank" rel="noreferrer" className="text-crimson hover:underline">{item.websiteUrl}</a> : item.websiteUrl}</dd></div>}
           </dl>
         </aside>}
+      </div>
+      <div className="grid gap-5 mt-5 lg:grid-cols-2">
+        <RelatedRecords kind="agreements" partnerId={item.id} />
+        <RelatedRecords kind="activities" partnerId={item.id} />
       </div>
       <div className="mt-5"><SourceLinks sources={item.sources} /></div>
     </div>

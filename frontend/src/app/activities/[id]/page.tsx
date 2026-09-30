@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Calendar, ChevronRight, Clock, FileText, MapPin, Users } from "lucide-react";
-import { ErrorState, LoadingState } from "@/components/data-states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { ApiError, formatThaiDate, loadActivity, useApiResource } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
 
@@ -88,7 +88,7 @@ export default function ActivityDetailPage() {
               <div><dt className="text-xs font-semibold text-faint">เปิดรับสมัคร</dt><dd className="mt-1 text-mute">{item.isOpen ? "เปิด" : "ปิด"}</dd></div>
             </dl>
           </section>
-          {item.mouDocId !== undefined && (
+          {item.mouDocId != null && (
             <section className="bg-white border border-line rounded-lg shadow-card p-5">
               <h2 className="font-bold mb-3 text-ink">เอกสารที่เกี่ยวข้อง</h2>
               <Link href={`/documents/${item.mouDocId}`} className="flex items-center gap-2 text-sm font-semibold text-crimson hover:underline">
@@ -96,6 +96,7 @@ export default function ActivityDetailPage() {
               </Link>
             </section>
           )}
+          {item.mouDocId == null && <EmptyState compact title="ยังไม่มีข้อตกลงที่เกี่ยวข้องที่เผยแพร่" />}
         </aside>
       </div>
     </div>

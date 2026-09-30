@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from public_visibility import partner_criteria
 from sqlalchemy.orm import Session, selectinload
 from typing import List
 
@@ -19,13 +19,7 @@ def list_published_partners(
     query = db.query(models.Partner).options(
         selectinload(models.Partner.sources)
     ).filter(
-        models.Partner.is_published.is_(True),
-        func.length(func.trim(models.Partner.name)) > 0,
-        func.length(func.trim(models.Partner.type)) > 0,
-        func.length(func.trim(models.Partner.description)) > 0,
-        func.length(func.trim(models.Partner.website_url)) > 0,
-        models.Partner.country_code.is_not(None),
-        models.Partner.sources.any(models.Source.verification_status == "verified"),
+        *partner_criteria(),
     )
     if search and search.strip():
         query = query.filter(models.Partner.name.ilike(f"%{search.strip()}%"))
@@ -61,13 +55,7 @@ def get_partner(partner_id: int, db: Session = Depends(database.get_db)):
         selectinload(models.Partner.sources)
     ).filter(
         models.Partner.id == partner_id,
-        models.Partner.is_published.is_(True),
-        func.length(func.trim(models.Partner.name)) > 0,
-        func.length(func.trim(models.Partner.type)) > 0,
-        func.length(func.trim(models.Partner.description)) > 0,
-        func.length(func.trim(models.Partner.website_url)) > 0,
-        models.Partner.country_code.is_not(None),
-        models.Partner.sources.any(models.Source.verification_status == "verified"),
+        *partner_criteria(),
     ).first()
 
     if partner is None:

@@ -2,9 +2,10 @@ from datetime import date, datetime, timezone
 from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import Response
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload, with_loader_criteria
 from typing import List
-from sqlalchemy import func, or_
+from sqlalchemy import and_
+from public_visibility import partner_criteria, document_criteria
 
 import database
 import models
@@ -19,20 +20,14 @@ ALLOWED_MIME_TYPES = {"application/pdf"}
 
 
 def public_document_conditions():
-    return (
-        models.Document.is_published.is_(True),
-        func.length(func.trim(models.Document.name)) > 0,
-        models.Document.document_kind.is_not(None),
-        models.Document.file_availability.is_not(None),
-        or_(models.Document.file_availability != "available", models.Document.storage_key.is_not(None)),
-        models.Document.sources.any(models.Source.verification_status == "verified"),
-    )
+    return document_criteria()
 
 
 def _public_documents(db):
     return db.query(models.Document).options(
         joinedload(models.Document.partner).selectinload(models.Partner.sources), selectinload(models.Document.scope_items),
         selectinload(models.Document.sources),
+        with_loader_criteria(models.Partner, and_(*partner_criteria())),
     ).filter(*public_document_conditions())
 
 
@@ -41,12 +36,7 @@ def _response(doc):
     response.sources = [schemas.SourceResponse.model_validate(source)
                         for source in doc.sources if source.verification_status == "verified"]
     partner = doc.partner
-    # Only link to partners that can actually be opened through the public API.
-    visible = (partner is not None and partner.is_published and partner.name.strip()
-               and partner.type and partner.type.strip() and partner.description
-               and partner.description.strip() and partner.website_url
-               and partner.website_url.strip() and partner.country_code
-               and any(s.verification_status == "verified" for s in partner.sources))
+    visible = partner is not None
     response.partnerId = partner.id if visible else None
     response.partner = schemas.ActivityPartnerResponse(id=partner.id, name=partner.name) if visible else None
     return response

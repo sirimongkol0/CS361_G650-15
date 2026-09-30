@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, with_loader_criteria
 from datetime import date
 from typing import List
+
+from public_visibility import partner_criteria, document_criteria
 
 import database
 import models
@@ -56,6 +58,8 @@ def list_published_activities(
         .options(
             joinedload(models.Activity.partner),
             joinedload(models.Activity.mou_document),
+            with_loader_criteria(models.Partner, and_(*partner_criteria())),
+            with_loader_criteria(models.Document, and_(*document_criteria())),
         )
         .filter(models.Activity.is_published.is_(True))
     )
@@ -119,7 +123,9 @@ def list_published_activities(
 def get_activity(activity_id: int, db: Session = Depends(database.get_db)):
     """Get a specific published activity by ID. Returns 404 if not found or draft."""
     activity = db.query(models.Activity).options(
-        joinedload(models.Activity.partner), joinedload(models.Activity.mou_document)
+        joinedload(models.Activity.partner), joinedload(models.Activity.mou_document),
+        with_loader_criteria(models.Partner, and_(*partner_criteria())),
+        with_loader_criteria(models.Document, and_(*document_criteria())),
     ).filter(
         models.Activity.id == activity_id,
         models.Activity.is_published.is_(True),
