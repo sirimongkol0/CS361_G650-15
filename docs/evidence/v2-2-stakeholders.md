@@ -30,11 +30,12 @@ The migration test proves existing contact publication defaults to false.
 Run the browser regression against `npm run dev -- --port 3102 --webpack`:
 
 ```powershell
+cd frontend
 # Install Playwright in the test environment, or set PLAYWRIGHT_MODULE to an
 # existing Playwright package path. Install its Chromium browser if needed.
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
-node frontend/tests/public-repository.cjs
+node tests/public-repository.cjs
 ```
 
 Browser fixtures are isolated through request interception. Backend tests use
