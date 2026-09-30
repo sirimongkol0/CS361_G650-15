@@ -11,9 +11,12 @@ router = APIRouter(prefix="/partners", tags=["partners"])
 
 
 @router.get("/", response_model=List[schemas.PartnerResponse])
-def list_published_partners(db: Session = Depends(database.get_db)):
+def list_published_partners(
+    search: str | None = None, partner_type: str | None = None,
+    country: str | None = None, db: Session = Depends(database.get_db),
+):
     """List published partners that have complete identity data and a verified source."""
-    partners = db.query(models.Partner).options(
+    query = db.query(models.Partner).options(
         selectinload(models.Partner.sources)
     ).filter(
         models.Partner.is_published.is_(True),
@@ -23,7 +26,14 @@ def list_published_partners(db: Session = Depends(database.get_db)):
         func.length(func.trim(models.Partner.website_url)) > 0,
         models.Partner.country_code.is_not(None),
         models.Partner.sources.any(models.Source.verification_status == "verified"),
-    ).all()
+    )
+    if search and search.strip():
+        query = query.filter(models.Partner.name.ilike(f"%{search.strip()}%"))
+    if partner_type:
+        query = query.filter(models.Partner.type == partner_type)
+    if country:
+        query = query.filter(models.Partner.country == country)
+    partners = query.order_by(models.Partner.id.asc()).all()
     return [_response(partner) for partner in partners]
 
 

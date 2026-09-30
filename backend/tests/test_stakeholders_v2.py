@@ -33,6 +33,13 @@ def test_list_detail_refresh_and_explicit_contact_permission(client, db_session)
     assert approved_row["contactEmail"] == "contact@example.test"
     assert client.get(f"/api/v1/partners/{draft.id}").status_code == 404
     assert client.get("/api/v1/partners/999999").status_code == 404
+    filtered = client.get("/api/v1/partners/", params={
+        "search": "Approved", "partner_type": "government", "country": "Japan",
+    }).json()
+    assert [row["id"] for row in filtered] == [approved.id]
+    assert client.get("/api/v1/partners/", params={
+        "search": "Approved", "partner_type": "university", "country": "Japan",
+    }).json() == []
 
 
 def test_refresh_reads_changed_metadata_and_revoked_permission(client, db_session):

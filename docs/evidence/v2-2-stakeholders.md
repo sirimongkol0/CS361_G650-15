@@ -36,3 +36,13 @@ node frontend/tests/public-repository.cjs
 Browser fixtures are isolated through request interception. Backend tests use
 an isolated SQLite database and verify actual database reads, metadata changes,
 contact permission revocation, pending-source exclusion and draft 404s.
+
+## Integration with the existing feature branch
+
+The branch retains remote commits `8b0dc6b` and `2380ec6` through a merge.
+Their server search/filter behavior is adapted to the agreed `Partner.type`
+schema and the existing `/api/v1/partners/` list contract (`search`,
+`partner_type`, `country`). The earlier `category`/`contacts` fields and
+`/api/stakeholders` paths do not exist in the merged V2-1 model/router setup.
+Conflict resolution keeps the tested strict loaders, API aliases, explicit
+contact permission and error states while preserving the remote history.
