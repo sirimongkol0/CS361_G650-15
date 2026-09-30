@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List
+from sqlalchemy import func, or_
 
 import database
 import models
@@ -16,21 +18,73 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_MIME_TYPES = {"application/pdf"}
 
 
+def public_document_conditions():
+    return (
+        models.Document.is_published.is_(True),
+        func.length(func.trim(models.Document.name)) > 0,
+        models.Document.document_kind.is_not(None),
+        models.Document.file_availability.is_not(None),
+        or_(models.Document.file_availability != "available", models.Document.storage_key.is_not(None)),
+        models.Document.sources.any(models.Source.verification_status == "verified"),
+    )
+
+
+def _public_documents(db):
+    return db.query(models.Document).options(
+        joinedload(models.Document.partner).selectinload(models.Partner.sources), selectinload(models.Document.scope_items),
+        selectinload(models.Document.sources),
+    ).filter(*public_document_conditions())
+
+
+def _response(doc):
+    response = schemas.DocumentResponse.model_validate(doc)
+    response.sources = [schemas.SourceResponse.model_validate(source)
+                        for source in doc.sources if source.verification_status == "verified"]
+    partner = doc.partner
+    # Only link to partners that can actually be opened through the public API.
+    visible = (partner is not None and partner.is_published and partner.name.strip()
+               and partner.type and partner.type.strip() and partner.description
+               and partner.description.strip() and partner.website_url
+               and partner.website_url.strip() and partner.country_code
+               and any(s.verification_status == "verified" for s in partner.sources))
+    response.partnerId = partner.id if visible else None
+    response.partner = schemas.ActivityPartnerResponse(id=partner.id, name=partner.name) if visible else None
+    return response
+
+
 @router.get("/", response_model=List[schemas.DocumentResponse])
-def list_documents(db: Session = Depends(database.get_db)):
-    """List all published documents."""
-    docs = db.query(models.Document).options(
-        joinedload(models.Document.partner), selectinload(models.Document.scope_items)
-    ).filter(
-        models.Document.is_published == True  # noqa: E712
-    ).order_by(models.Document.id.desc()).all()
-    result = []
-    for doc in docs:
-        data = schemas.DocumentResponse.model_validate(doc).model_dump()
-        if doc.partner is None or not doc.partner.is_published:
-            data["partnerId"] = None
-        result.append(data)
-    return result
+def list_documents(
+    search: str | None = None, status: str | None = None,
+    doc_type: str | None = None, date_from: date | None = None,
+    date_to: date | None = None, db: Session = Depends(database.get_db),
+):
+    """Inclusive overlap with the agreement's effective period.
+
+    Unknown boundaries do not match a requested boundary.
+    """
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must not exceed date_to")
+    query = _public_documents(db)
+    if search and search.strip():
+        query = query.filter(models.Document.name.ilike(f"%{search.strip()}%"))
+    if status:
+        query = query.filter(models.Document.status == status)
+    if doc_type:
+        query = query.filter(models.Document.doc_type == doc_type)
+    if date_from:
+        query = query.filter(models.Document.expiry_date >= date_from)
+    if date_to:
+        query = query.filter(models.Document.effective_date <= date_to)
+    return [_response(doc) for doc in query.order_by(models.Document.id.desc()).all()]
+
+
+@router.get("/{document_id}", response_model=schemas.DocumentResponse,
+            responses={404: {"model": schemas.ErrorResponse}})
+def get_document(document_id: int, db: Session = Depends(database.get_db)):
+    doc = _public_documents(db).filter(models.Document.id == document_id).first()
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return _response(doc)
 
 
 @router.post("/", response_model=schemas.DocumentResponse, status_code=201)
@@ -61,7 +115,10 @@ async def upload_document(
         uploaded_at=datetime.now(timezone.utc).replace(tzinfo=None),
         mime_type=file.content_type,
         size_bytes=len(data),
-        is_published=True,
+        document_kind="other",
+        file_availability="available",
+        # Keep new uploads private until their provenance is attached and verified.
+        is_published=False,
     )
     db.add(doc)
     db.commit()
@@ -72,9 +129,9 @@ async def upload_document(
 @router.get("/{document_id}/download")
 def download_document(document_id: int, db: Session = Depends(database.get_db)):
     """Download a document by streaming its bytes from the storage backend."""
-    doc = db.query(models.Document).filter(
+    doc = _public_documents(db).filter(
         models.Document.id == document_id,
-        models.Document.is_published == True  # noqa: E712
+        models.Document.file_availability == "available",
     ).first()
     if doc is None or not doc.storage_key:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -84,11 +141,11 @@ def download_document(document_id: int, db: Session = Depends(database.get_db)):
     except StorageError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-    filename = doc.storage_key.rsplit("/", 1)[-1]
+    filename = doc.file_name or doc.storage_key.rsplit("/", 1)[-1]
     return Response(
         content=data,
         media_type=doc.mime_type or "application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"attachment; filename=\"document-{doc.id}.pdf\"; filename*=UTF-8''{quote(filename, safe='')}"},
     )
 
 

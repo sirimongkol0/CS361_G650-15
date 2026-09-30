@@ -1,6 +1,7 @@
 """V2 schema, seed and public contract checks on SQLite or TEST_DATABASE_URL."""
 
 import pytest
+from datetime import date, datetime, timezone
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
@@ -9,6 +10,17 @@ import seed_mock
 import storage
 from database import Base, engine
 from migrate_v2 import migrate, CORE_TABLES
+
+
+def verified_source(suffix="fixture"):
+    return models.Source(
+        source_url=f"https://official.example.test/{suffix}",
+        source_title="Verified test source",
+        source_publisher="Fixture",
+        source_type="official_page",
+        source_checked_at=datetime(2026, 9, 27, tzinfo=timezone.utc),
+        verification_status="verified",
+    )
 
 
 def test_fresh_migration_creates_core_schema_and_repeats():
@@ -36,6 +48,17 @@ def test_seed_twice_downloads_pdfs_and_resolves_relationships(db_session, client
     assert before == {d.id: (d.storage_key, d.uploaded_at) for d in db_session.query(models.Document)}
     assert len({p.type for p in db_session.query(models.Partner)}) > 1
     assert len({a.date for a in db_session.query(models.Activity)}) > 1
+    source = verified_source("seed-contract")
+    for document in db_session.query(models.Document):
+        document.document_kind = "agreement" if document.doc_type in {"mou", "moa"} else "template"
+        document.file_availability = "available"
+        document.sources.append(source)
+    for activity in db_session.query(models.Activity):
+        if activity.date is not None:
+            activity.date_kind = "event"
+            activity.date_precision = "day"
+            activity.sources.append(source)
+    db_session.commit()
     docs = client.get('/api/v1/documents/')
     assert docs.status_code == 200
     assert len(docs.json()) == len(seed_mock.DOCUMENTS)
@@ -58,10 +81,15 @@ def test_seed_twice_downloads_pdfs_and_resolves_relationships(db_session, client
 def test_draft_links_and_scope_are_not_exposed(db_session, client):
     partner = models.Partner(name='Draft partner')
     draft = models.Document(name='Draft agreement', partner=partner)
-    public = models.Document(name='Public agreement', partner=partner, is_published=True)
+    source = verified_source("draft-links")
+    public = models.Document(
+        name='Public agreement', partner=partner, is_published=True,
+        document_kind="agreement", file_availability="metadata_only", sources=[source],
+    )
     draft.scope_items.append(models.DocumentScopeItem(position=0, text='Private scope'))
     activity = models.Activity(name='Published activity', is_published=True,
-                               partner=partner, mou_document=draft)
+                               partner=partner, mou_document=draft, date=date(2026, 9, 27),
+                               date_kind="event", date_precision="day", sources=[source])
     db_session.add_all([draft, public, activity])
     db_session.commit()
     docs = client.get('/api/v1/documents/').json()
@@ -100,7 +128,10 @@ def test_foreign_keys_and_delete_behaviour(db_session):
 
 
 def test_metadata_only_document_can_be_read_and_deleted(db_session, client):
-    document = models.Document(name='No attachment', is_published=True)
+    document = models.Document(
+        name='No attachment', is_published=True, document_kind="agreement",
+        file_availability="metadata_only", sources=[verified_source("metadata-only")],
+    )
     db_session.add(document)
     db_session.commit()
     doc_id = document.id
