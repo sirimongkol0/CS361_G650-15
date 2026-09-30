@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 import models
+import seed_mock
 
 
 def make_partner(name, **values):
@@ -63,3 +64,12 @@ def test_pending_source_does_not_publish_partner(client, db_session):
     db_session.commit()
     assert client.get("/api/v1/partners/").json() == []
     assert client.get(f"/api/v1/partners/{partner.id}").status_code == 404
+
+
+def test_development_seed_is_public_and_repeatable(client, db_session):
+    seed_mock.seed(db_session)
+    before = client.get("/api/v1/partners/").json()
+    seed_mock.seed(db_session)
+    assert len(before) == len(seed_mock.PARTNERS)
+    assert before == client.get("/api/v1/partners/").json()
+    assert all(row["sources"][0]["sourceType"] == "demo_fixture" for row in before)
