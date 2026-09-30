@@ -11,8 +11,11 @@ const partners = [
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
+    let releaseLoading;
+    const loadingGate = new Promise(resolve => { releaseLoading = resolve; });
     let fail = false, empty = false;
     await page.route('**/api/v1/partners/**', async route => {
+      await loadingGate;
       const path = new URL(route.request().url()).pathname;
       const id = Number(path.split('/').pop());
       const row = partners.find(p => p.id === id);
@@ -20,6 +23,8 @@ const partners = [
       await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(status !== 200 ? { detail: 'Test error' } : id ? row : empty ? [] : partners) });
     });
     await page.goto(`${base}/stakeholders`);
+    await page.getByText('กำลังโหลดหน่วยงาน', { exact: true }).waitFor();
+    releaseLoading();
     await page.getByRole('link', { name: 'Alpha University', exact: true }).waitFor();
     await page.getByPlaceholder('ค้นหาหน่วยงานหรือผู้ติดต่อ...').fill('Beta');
     const filters = page.locator('select[aria-label]');
