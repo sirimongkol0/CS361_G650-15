@@ -153,6 +153,7 @@ class DocumentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    partner: Optional[ActivityPartnerResponse] = None
     name: str
     docType: Optional[str] = Field(default=None, validation_alias=AliasChoices('doc_type', 'docType'), serialization_alias='docType')
     documentKind: Optional[Literal['agreement', 'template', 'procedure', 'announcement', 'other']] = Field(default=None, validation_alias=AliasChoices('document_kind', 'documentKind'), serialization_alias='documentKind')

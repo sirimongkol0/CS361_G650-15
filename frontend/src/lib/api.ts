@@ -192,6 +192,17 @@ interface RawDocument {
   effectiveDate?: string | null; // ISO
   expiryDate?: string | null; // ISO
   partnerId?: number | null;
+  partner?: { id: number; name: string } | null;
+  documentKind?: string | null;
+  fileAvailability?: string | null;
+  sources?: RawSource[] | null;
+  responsible?: string | null;
+  status?: string | null;
+  signerOur?: string | null;
+  signerPartner?: string | null;
+  scopeItems?: Array<{ id?: number; text: string; position?: number | null }> | null;
+  fileName?: string | null;
+  uploadedAt?: string | null;
 }
 
 interface RawFeedback {
@@ -392,22 +403,66 @@ function mapActivity(raw: RawActivity): ActivityView {
   };
 }
 
-function mapDocument(raw: RawDocument, partnerName?: string | null): MockDocument {
+export interface DocumentView {
+  id: number;
+  title: string;
+  org: string | null;
+  type: string | null;
+  documentKind: string | null;
+  effectiveDate: string | null;
+  expiryDate: string | null;
+  start: string | null;
+  expire: string | null;
+  responsible: string | null;
+  status: string | null;
+  daysLeft: number | null;
+  fileAvailability: string;
+  fileAvailabilityLabel: string;
+  downloadable: boolean;
+  sources: SourceView[];
+  signerOur: string | null;
+  signerPartner: string | null;
+  scopeItems: string[];
+  fileName: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  partnerId: number | null;
+}
+
+function mapDocument(raw: RawDocument, partnerName?: string | null): DocumentView {
   const left = daysUntil(raw.expiryDate);
-  const daysLeft = left ?? 0;
-  const status: MockDocument["status"] =
-    left === null ? "active" : left < 0 ? "expired" : left <= 30 ? "expiring" : "active";
-  const docType = (raw.docType ?? "").toUpperCase();
+  const status = raw.status ?? null;
+  const availability = raw.fileAvailability ?? (raw.storageKey ? "available" : "metadata_only");
+  const kind = raw.documentKind ?? raw.docType ?? null;
   return {
     id: raw.id,
     title: raw.name,
-    org: partnerName ?? "—",
-    type: docType.includes("MOA") ? "MoA" : "MoU",
-    start: formatThaiDate(raw.effectiveDate),
-    expire: formatThaiDate(raw.expiryDate),
-    responsible: "—",
+    org: raw.partner?.name ?? partnerName ?? null,
+    effectiveDate: raw.effectiveDate ?? null,
+    expiryDate: raw.expiryDate ?? null,
+    type: (raw.docType ?? kind)?.toUpperCase() ?? null,
+    documentKind: kind,
+    start: raw.effectiveDate ? formatThaiDate(raw.effectiveDate) : null,
+    expire: raw.expiryDate ? formatThaiDate(raw.expiryDate) : null,
+    responsible: raw.responsible ?? null,
     status,
-    daysLeft,
+    daysLeft: left,
+    fileAvailability: availability,
+    fileAvailabilityLabel:
+      availability === "available" && Boolean(raw.storageKey)
+        ? "ไฟล์พร้อมดาวน์โหลด"
+        : availability === "unavailable"
+          ? "ไฟล์ไม่พร้อมใช้งาน"
+          : "มีเฉพาะข้อมูล",
+    downloadable: Boolean(raw.storageKey) && availability === "available",
+    sources: mapSources(raw.sources),
+    signerOur: raw.signerOur ?? null,
+    signerPartner: raw.signerPartner ?? null,
+    scopeItems: raw.scopeItems?.map((item) => item.text) ?? [],
+    fileName: raw.fileName ?? null,
+    mimeType: raw.mimeType ?? null,
+    sizeBytes: raw.sizeBytes ?? null,
+    partnerId: raw.partnerId ?? null,
   };
 }
 
@@ -491,26 +546,16 @@ export async function loadPublicActivities(): Promise<PublicActivityView[]> {
 }
 
 /** GET /documents/ (+ /partners/ join for org names) -> documents list. */
-export function loadDocuments(): Promise<MockDocument[]> {
-  return safeLoad<MockDocument[]>(
-    "/documents/",
-    async (raw) => {
-      let partnerNames = new Map<number, string>();
-      try {
-        const partners = await apiGetList<RawPartner>("/partners/");
-        partnerNames = new Map(partners.map((p) => [p.id, p.name]));
-      } catch {
-        // Partner join is optional — org shows "—" without it.
-      }
-      return (raw as RawDocument[]).map((d) =>
-        mapDocument(d, d.partnerId != null ? partnerNames.get(d.partnerId) : undefined)
-      );
-    },
-    mockDocuments
-  );
+export async function loadDocuments(): Promise<DocumentView[]> {
+  const raw = await apiGetList<RawDocument>("/documents/");
+  return raw.map(document => mapDocument(document));
 }
 
-/** GET /feedback/ (+ /activities/ join for activity names) -> feedback entries. */
+export async function loadDocument(id: number): Promise<DocumentView> {
+  return mapDocument(await apiGet<RawDocument>(`/documents/${id}`));
+}
+
+/** GET /feedback//** GET /feedback/ (+ /activities/ join for activity names) -> feedback entries. */
 export function loadFeedbackEntries(): Promise<FeedbackEntry[]> {
   return safeLoad<FeedbackEntry[]>(
     "/feedback/",

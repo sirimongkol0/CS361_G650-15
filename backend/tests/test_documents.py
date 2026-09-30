@@ -4,6 +4,7 @@ Covers: upload happy path, mime-type rejection, size limit,
 download round-trip, delete, and list filtering.
 """
 import io
+from datetime import datetime, timezone
 
 import models
 from database import SessionLocal
@@ -34,6 +35,14 @@ def test_upload_and_download_roundtrip(client, db_session):
     # Bytes must NOT be in the database -- only metadata
     doc = db_session.get(models.Document, body["id"])
     assert doc.storage_key == body["storageKey"]
+    doc.sources.append(models.Source(
+        source_url="https://test.example.test/uploaded-document-source",
+        source_type="official_document",
+        source_checked_at=datetime(2026, 9, 27, tzinfo=timezone.utc),
+        verification_status="verified",
+    ))
+    doc.is_published = True
+    db_session.commit()
 
     dl = client.get(f"/api/v1/documents/{body['id']}/download")
     assert dl.status_code == 200
