@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ChevronRight, FileText } from "lucide-react";
 import { ErrorState, LoadingState } from "@/components/data-states";
+import { RelatedRecords } from "@/components/related-records";
 import { SourceLinks } from "@/components/source-links";
 import { ApiError, loadDocument, useApiResource } from "@/lib/api";
 
@@ -82,6 +83,7 @@ return (
             </section>
           )}
 
+          <RelatedRecords kind="activities" documentId={doc.id} />
           <SourceLinks sources={doc.sources} />
         </div>
 
