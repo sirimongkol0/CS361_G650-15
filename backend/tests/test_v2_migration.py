@@ -48,6 +48,7 @@ def test_migrate_preserves_rows_and_can_repeat(migration_engine):
         assert c.execute(text('SELECT text FROM document_scope_items WHERE id=9')).scalar_one() == 'Cooperation'
         assert c.execute(text('SELECT partner_id FROM unrelated')).scalar_one() == 7
         assert c.execute(text('SELECT is_published FROM partners WHERE id=7')).scalar_one() == 0
+        assert c.execute(text('SELECT contact_is_public FROM partners WHERE id=7')).scalar_one() == 0
         c.execute(text("INSERT INTO partners (name) VALUES ('Partner')"))
         c.execute(text("INSERT INTO documents (name) VALUES ('Agreement')"))
         c.execute(text("INSERT INTO activities (name) VALUES ('Unscheduled')"))

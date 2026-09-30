@@ -17,7 +17,10 @@ from database import Base
 import models  # noqa: F401 -- register the target schema
 
 
-CORE_TABLES = ("partners", "documents", "document_scope_items", "activities")
+CORE_TABLES = (
+    "partners", "documents", "document_scope_items", "activities", "sources",
+    "partner_sources", "activity_sources", "document_sources",
+)
 NAMING = {"uq": "uq_%(table_name)s_%(column_0_name)s",
           "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s"}
 
