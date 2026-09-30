@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MoreHorizontal, Plus, Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { loadPublicPartners, useApiResource } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
@@ -19,11 +19,11 @@ export default function StakeholdersPage() {
 
   const data = partners.status === "success" ? partners.data : [];
   const types = useMemo(
-    () => Array.from(new Set(data.map((item) => item.type).filter((value) => value !== "—"))),
+    () => Array.from(new Set(data.map((item) => item.type).filter((value): value is string => Boolean(value)))),
     [data]
   );
   const countries = useMemo(
-    () => Array.from(new Set(data.map((item) => item.country).filter((value) => value !== "—"))),
+    () => Array.from(new Set(data.map((item) => item.country).filter((value): value is string => Boolean(value)))),
     [data]
   );
   const filtered = useMemo(() => {
@@ -57,11 +57,6 @@ export default function StakeholdersPage() {
               : "ข้อมูลหน่วยงานและ Stakeholder ที่เกี่ยวข้อง"}
           </p>
         </div>
-        {role !== "public" && (
-          <button className="btn btn-primary gap-2" type="button">
-            <Plus className="w-4 h-4" /> เพิ่มหน่วยงาน
-          </button>
-        )}
       </div>
 
       {partners.status === "loading" && <LoadingState title="กำลังโหลดหน่วยงาน" />}
@@ -81,14 +76,17 @@ export default function StakeholdersPage() {
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเภทหน่วยงาน" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
                 <option value="all">ประเภท: ทั้งหมด</option>
                 {types.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเทศ" value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
                 <option value="all">ประเทศ: ทั้งหมด</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
+              <button type="button" className="btn btn-outline" onClick={() => {
+                setSearch(""); setTypeFilter("all"); setCountryFilter("all");
+              }}>ล้างตัวกรอง</button>
             </div>
           </div>
 
@@ -121,20 +119,16 @@ export default function StakeholdersPage() {
                             <Link href={`/stakeholders/${item.id}`} className="text-sm font-semibold hover:underline text-ink">
                               {item.name}
                             </Link>
+                            {item.sources.length > 0 && <a href={item.sources[0].url} target="_blank" rel="noreferrer" className="text-[11px] text-crimson hover:underline">แหล่งยืนยัน {item.sources.length}</a>}
                           </div>
                         </td>
-                        <td className="px-4 py-4"><span className="badge bg-[#E0E7FF] text-[#4338CA]">{item.type}</span></td>
+                        <td className="px-4 py-4">{item.type && <span className="badge bg-[#E0E7FF] text-[#4338CA]">{item.type}</span>}</td>
                         <td className="px-4 py-4 text-sm text-faint">{item.country}</td>
-                        <td className="px-4 py-4 text-sm text-faint">{item.contactName ?? "—"}</td>
-                        <td className="px-4 py-4 text-sm text-faint">{item.contactEmail ?? "—"}</td>
+                        <td className="px-4 py-4 text-sm text-faint">{item.contactName}</td>
+                        <td className="px-4 py-4 text-sm text-faint">{item.contactEmail}</td>
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-1">
                             <Link href={`/stakeholders/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
-                            {role !== "public" && (
-                              <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" type="button" aria-label={`จัดการ ${item.name}`}>
-                                <MoreHorizontal className="w-4 h-4" />
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>

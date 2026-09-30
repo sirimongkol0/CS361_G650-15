@@ -207,8 +207,17 @@ def seed(session: Session) -> None:
                 "feedbacks": 0, "exchange_students": 0}
     for pd in PARTNERS:
         if pd["name"] not in partners_by_name:
+            source_url = f"https://pcsms-demo.example.test/partners/{len(partners_by_name) + 1}"
+            fixture_source = models.Source(
+                source_url=source_url, source_title="Synthetic PCSMS demo fixture (not an official source)",
+                source_type="demo_fixture", verification_status="verified",
+                source_checked_at=datetime.now(timezone.utc),
+            )
             partner = models.Partner(name=pd["name"], type=pd["type"],
-                                     country=pd["country"], is_published=True)
+                                     country=pd["country"], is_published=True,
+                                     country_code={"ไทย": "TH", "ไต้หวัน": "TW", "มาเลเซีย": "MY", "ญี่ปุ่น": "JP"}[pd["country"]],
+                                     description="Synthetic demonstration record, not verified institutional information.",
+                                     website_url=source_url, sources=[fixture_source])
             session.add(partner)
             session.flush()
             partners_by_name[partner.name] = partner

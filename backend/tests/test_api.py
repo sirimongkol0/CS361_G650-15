@@ -4,6 +4,41 @@ from datetime import date
 from main import app
 from database import SessionLocal
 import models
+from datetime import datetime, timezone
+
+_test_source_counter = 0
+
+
+def _attach_test_source(entity):
+    global _test_source_counter
+    _test_source_counter += 1
+    entity.sources.append(models.Source(
+        source_url=f"https://test.example.test/api-source-{_test_source_counter}",
+        source_type="official_page",
+        source_checked_at=datetime(2026, 9, 27, tzinfo=timezone.utc),
+        verification_status="verified",
+    ))
+    return entity
+
+
+def _partner(**values):
+    partner = models.Partner(**values)
+    if partner.is_published:
+        partner.type = partner.type or "university"
+        partner.country_code = partner.country_code or "US"
+        partner.description = partner.description or "Verified partner description"
+        partner.website_url = partner.website_url or "https://example.com/partner"
+        _attach_test_source(partner)
+    return partner
+
+
+def _activity(**values):
+    activity = models.Activity(**values)
+    if activity.is_published:
+        activity.date_kind = activity.date_kind or "event"
+        activity.date_precision = activity.date_precision or "day"
+        _attach_test_source(activity)
+    return activity
 
 client = TestClient(app)
 
@@ -24,7 +59,7 @@ class TestPartners:
     def test_list_published_partners_only_published(self):
         db = SessionLocal()
         # Create published partner
-        pub_partner = models.Partner(
+        pub_partner = _partner(
             name="Published Partner",
             logo_url="https://example.com/logo.png",
             contact_name="Private Coordinator",
@@ -32,7 +67,7 @@ class TestPartners:
             is_published=True,
         )
         # Create draft partner
-        draft_partner = models.Partner(name="Draft Partner", logo_url="https://example.com/draft.png", is_published=False)
+        draft_partner = _partner(name="Draft Partner", logo_url="https://example.com/draft.png", is_published=False)
         db.add(pub_partner)
         db.add(draft_partner)
         db.commit()
@@ -43,16 +78,16 @@ class TestPartners:
         assert len(data) == 1
         assert data[0]["name"] == "Published Partner"
         assert data[0]["logoUrl"] == "https://example.com/logo.png"
-        assert data[0]["description"] is None
+        assert data[0]["description"] == "Verified partner description"
         assert "logo_url" not in data[0]
         assert "is_published" not in data[0]
-        assert data[0]["contactName"] == "Private Coordinator"
-        assert data[0]["contactEmail"] == "private@example.com"
+        assert data[0]["contactName"] is None
+        assert data[0]["contactEmail"] is None
         db.close()
 
     def test_get_partner_valid(self):
         db = SessionLocal()
-        partner = models.Partner(name="Test Partner", logo_url="https://example.com/test.png", is_published=True)
+        partner = _partner(name="Test Partner", logo_url="https://example.com/test.png", is_published=True)
         db.add(partner)
         db.commit()
         partner_id = partner.id
@@ -66,7 +101,7 @@ class TestPartners:
 
     def test_get_partner_with_description(self):
         db = SessionLocal()
-        partner = models.Partner(
+        partner = _partner(
             name="Test Partner",
             description="A test partner description.",
             logo_url="https://example.com/test.png",
@@ -82,17 +117,17 @@ class TestPartners:
         data = response.json()
         assert data["description"] == "A test partner description."
 
-    def test_get_partner_without_description_returns_null(self):
+    def test_get_partner_without_description_returns_404(self):
         db = SessionLocal()
-        partner = models.Partner(name="No Desc Partner", is_published=True)
+        partner = _partner(name="No Desc Partner", is_published=True)
+        partner.description = None
         db.add(partner)
         db.commit()
         partner_id = partner.id
         db.close()
 
         response = client.get(f"/api/v1/partners/{partner_id}")
-        assert response.status_code == 200
-        assert response.json()["description"] is None
+        assert response.status_code == 404
 
     def test_get_partner_not_found(self):
         response = client.get("/api/v1/partners/9999")
@@ -102,7 +137,7 @@ class TestPartners:
 
     def test_get_partner_draft_returns_404(self):
         db = SessionLocal()
-        draft_partner = models.Partner(name="Draft Partner", logo_url="https://example.com/draft.png", is_published=False)
+        draft_partner = _partner(name="Draft Partner", logo_url="https://example.com/draft.png", is_published=False)
         db.add(draft_partner)
         db.commit()
         partner_id = draft_partner.id
@@ -122,9 +157,9 @@ class TestActivities:
     def test_list_published_activities_ordered_by_date_asc(self):
         db = SessionLocal()
         # Create activities with different dates
-        activity3 = models.Activity(name="Activity 3", date=date(2024, 1, 15), is_published=True)
-        activity1 = models.Activity(name="Activity 1", date=date(2024, 1, 1), is_published=True)
-        activity2 = models.Activity(name="Activity 2", date=date(2024, 1, 10), is_published=True)
+        activity3 = _activity(name="Activity 3", date=date(2024, 1, 15), is_published=True)
+        activity1 = _activity(name="Activity 1", date=date(2024, 1, 1), is_published=True)
+        activity2 = _activity(name="Activity 2", date=date(2024, 1, 10), is_published=True)
         db.add(activity3)
         db.add(activity1)
         db.add(activity2)
@@ -142,8 +177,8 @@ class TestActivities:
 
     def test_list_published_activities_only_published(self):
         db = SessionLocal()
-        pub_activity = models.Activity(name="Published Activity", date=date(2024, 1, 1), is_published=True)
-        draft_activity = models.Activity(name="Draft Activity", date=date(2024, 1, 2), is_published=False)
+        pub_activity = _activity(name="Published Activity", date=date(2024, 1, 1), is_published=True)
+        draft_activity = _activity(name="Draft Activity", date=date(2024, 1, 2), is_published=False)
         db.add(pub_activity)
         db.add(draft_activity)
         db.commit()
@@ -157,12 +192,12 @@ class TestActivities:
 
     def test_activity_with_partner(self):
         db = SessionLocal()
-        partner = models.Partner(name="Partner for Activity", logo_url="https://example.com/partner.png", is_published=True)
+        partner = _partner(name="Partner for Activity", logo_url="https://example.com/partner.png", is_published=True)
         db.add(partner)
         db.commit()
         partner_id = partner.id  # Save ID before closing
         
-        activity = models.Activity(name="Activity with Partner", date=date(2024, 1, 1), is_published=True, partner_id=partner_id)
+        activity = _activity(name="Activity with Partner", date=date(2024, 1, 1), is_published=True, partner_id=partner_id)
         db.add(activity)
         db.commit()
         activity_id = activity.id
@@ -178,13 +213,13 @@ class TestActivities:
 
     def test_activity_does_not_expose_draft_partner(self):
         db = SessionLocal()
-        draft_partner = models.Partner(
+        draft_partner = _partner(
             name="Draft Partner",
             is_published=False,
         )
         db.add(draft_partner)
         db.flush()
-        activity = models.Activity(
+        activity = _activity(
             name="Published Activity",
             date=date(2024, 1, 1),
             is_published=True,
@@ -205,7 +240,7 @@ class TestActivities:
 
     def test_activity_without_partner(self):
         db = SessionLocal()
-        activity = models.Activity(name="Activity without Partner", date=date(2024, 1, 1), is_published=True, partner_id=None)
+        activity = _activity(name="Activity without Partner", date=date(2024, 1, 1), is_published=True, partner_id=None)
         db.add(activity)
         db.commit()
         activity_id = activity.id
@@ -218,7 +253,7 @@ class TestActivities:
 
     def test_activity_with_description(self):
         db = SessionLocal()
-        activity = models.Activity(
+        activity = _activity(
             name="Described Activity",
             date=date(2024, 1, 1),
             description="An activity with a full description.",
@@ -235,7 +270,7 @@ class TestActivities:
 
     def test_activity_without_description_returns_null(self):
         db = SessionLocal()
-        activity = models.Activity(name="No Desc Activity", date=date(2024, 1, 1), is_published=True)
+        activity = _activity(name="No Desc Activity", date=date(2024, 1, 1), is_published=True)
         db.add(activity)
         db.commit()
         activity_id = activity.id
@@ -253,7 +288,7 @@ class TestActivities:
 
     def test_get_activity_draft_returns_404(self):
         db = SessionLocal()
-        draft_activity = models.Activity(name="Draft Activity", date=date(2024, 1, 1), is_published=False)
+        draft_activity = _activity(name="Draft Activity", date=date(2024, 1, 1), is_published=False)
         db.add(draft_activity)
         db.commit()
         activity_id = draft_activity.id
@@ -265,7 +300,7 @@ class TestActivities:
 
     def test_activity_response_uses_contract_aliases(self):
         db = SessionLocal()
-        activity = models.Activity(
+        activity = _activity(
             name="Aliased Activity",
             date=date(2024, 1, 1),
             end_date=date(2024, 1, 2),
@@ -292,12 +327,12 @@ class TestActivities:
     def test_search_activities_by_name_case_insensitive(self):
         db = SessionLocal()
         db.add_all([
-            models.Activity(
+            _activity(
                 name="International Workshop",
                 date=date(2024, 1, 1),
                 is_published=True,
             ),
-            models.Activity(
+            _activity(
                 name="Student Exchange",
                 date=date(2024, 1, 2),
                 is_published=True,
@@ -320,13 +355,13 @@ class TestActivities:
     def test_filter_activities_by_type(self):
         db = SessionLocal()
         db.add_all([
-            models.Activity(
+            _activity(
                 name="Workshop Activity",
                 date=date(2024, 1, 1),
                 activity_type="workshop",
                 is_published=True,
             ),
-            models.Activity(
+            _activity(
                 name="Exchange Activity",
                 date=date(2024, 1, 2),
                 activity_type="exchange",
@@ -351,13 +386,13 @@ class TestActivities:
     def test_filter_activities_by_status(self):
         db = SessionLocal()
         db.add_all([
-            models.Activity(
+            _activity(
                 name="Completed Activity",
                 date=date(2024, 1, 1),
                 status="เสร็จสิ้น",
                 is_published=True,
             ),
-            models.Activity(
+            _activity(
                 name="Planned Activity",
                 date=date(2024, 1, 2),
                 status="วางแผน",
@@ -383,28 +418,28 @@ class TestActivities:
         db = SessionLocal()
         db.add_all([
             # จบก่อนช่วงที่ค้นหา จึงต้องไม่แสดง
-            models.Activity(
+            _activity(
                 name="Before Range",
                 date=date(2024, 1, 1),
                 end_date=date(2024, 1, 5),
                 is_published=True,
             ),
             # เริ่มก่อน แต่สิ้นสุดอยู่ในช่วงที่ค้นหา จึงต้องแสดง
-            models.Activity(
+            _activity(
                 name="Overlapping Range",
                 date=date(2024, 1, 5),
                 end_date=date(2024, 1, 15),
                 is_published=True,
             ),
             # กิจกรรมวันเดียวที่อยู่ในช่วง จึงต้องแสดง
-            models.Activity(
+            _activity(
                 name="Single Day In Range",
                 date=date(2024, 1, 20),
                 end_date=None,
                 is_published=True,
             ),
             # เริ่มหลังช่วงที่ค้นหา จึงต้องไม่แสดง
-            models.Activity(
+            _activity(
                 name="After Range",
                 date=date(2024, 2, 1),
                 is_published=True,
@@ -434,7 +469,7 @@ class TestActivities:
         db = SessionLocal()
         db.add_all([
             # ตรงทุกเงื่อนไขและ Published จึงต้องแสดง
-            models.Activity(
+            _activity(
                 name="Python Workshop",
                 date=date(2024, 6, 10),
                 activity_type="workshop",
@@ -442,7 +477,7 @@ class TestActivities:
                 is_published=True,
             ),
             # ชื่อตรง แต่ประเภทไม่ตรง
-            models.Activity(
+            _activity(
                 name="Python Exchange",
                 date=date(2024, 6, 11),
                 activity_type="exchange",
@@ -450,7 +485,7 @@ class TestActivities:
                 is_published=True,
             ),
             # ตรงทุกเงื่อนไขแต่เป็น Draft จึงต้องไม่แสดง
-            models.Activity(
+            _activity(
                 name="Draft Python Workshop",
                 date=date(2024, 6, 12),
                 activity_type="workshop",
@@ -458,7 +493,7 @@ class TestActivities:
                 is_published=False,
             ),
             # ตรงทุกอย่างยกเว้นช่วงเวลา
-            models.Activity(
+            _activity(
                 name="Old Python Workshop",
                 date=date(2023, 6, 10),
                 activity_type="workshop",
@@ -489,7 +524,7 @@ class TestActivities:
     def test_search_with_no_result_returns_empty_list(self):
         db = SessionLocal()
         db.add(
-            models.Activity(
+            _activity(
                 name="Existing Activity",
                 date=date(2024, 1, 1),
                 is_published=True,
@@ -520,7 +555,7 @@ class TestActivities:
 class TestPublicContractErrorsAndCors:
     def test_missing_and_unpublished_use_same_error_shape(self):
         db = SessionLocal()
-        draft_partner = models.Partner(name="Draft", is_published=False)
+        draft_partner = _partner(name="Draft", is_published=False)
         db.add(draft_partner)
         db.commit()
         draft_id = draft_partner.id

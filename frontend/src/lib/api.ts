@@ -145,9 +145,25 @@ interface RawPartner {
   logoUrl?: string | null;
   type?: string | null;
   country?: string | null;
+  countryCode?: string | null;
   websiteUrl?: string | null;
   contactName?: string | null;
   contactEmail?: string | null;
+  sources?: RawSource[] | null;
+}
+
+interface RawSource {
+  sourceUrl?: string;
+  sourceTitle?: string | null;
+  sourcePublisher?: string | null;
+  sourceType?: string | null;
+  sourceCheckedAt?: string | null;
+  sourceLocator?: string | null;
+  // Accept the earlier API draft while the backend contract rolls out.
+  url?: string;
+  title?: string | null;
+  label?: string | null;
+  publisher?: string | null;
 }
 
 interface RawActivity {
@@ -239,6 +255,13 @@ const COUNTRY_LABELS: Record<string, string> = {
   "ญี่ปุ่น": "🇯🇵 ญี่ปุ่น",
 };
 
+const COUNTRY_CODE_LABELS: Record<string, string> = {
+  TH: "🇹🇭 ไทย", TW: "🇹🇼 ไต้หวัน", MY: "🇲🇾 มาเลเซีย", JP: "🇯🇵 ญี่ปุ่น",
+  US: "🇺🇸 สหรัฐอเมริกา", GB: "🇬🇧 สหราชอาณาจักร", KR: "🇰🇷 เกาหลีใต้",
+  VN: "🇻🇳 เวียดนาม", IN: "🇮🇳 อินเดีย", AU: "🇦🇺 ออสเตรเลีย", OM: "🇴🇲 โอมาน",
+  CN: "🇨🇳 จีน", ID: "🇮🇩 อินโดนีเซีย", IS: "🇮🇸 ไอซ์แลนด์",
+};
+
 function partnerInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length >= 2 && /^[\x00-\x7F]/.test(name)) {
@@ -247,12 +270,29 @@ function partnerInitials(name: string): string {
   return name.trim().slice(0, 2);
 }
 
-export interface PartnerView extends PublicPartner {
+export interface SourceView {
+  url: string;
+  title: string;
+  publisher: string | null;
+  sourceType: string | null;
+  checkedAt: string | null;
+  locator: string | null;
+}
+
+export interface PartnerView {
   id: number;
+  name: string;
+  type: string | null;
+  country: string | null;
+  countryCode: string | null;
+  initials: string;
+  bg: string;
+  color: string;
   description: string;
   websiteUrl: string | null;
   contactName: string | null;
   contactEmail: string | null;
+  sources: SourceView[];
 }
 
 export interface ActivityView extends MockActivity {
@@ -271,12 +311,18 @@ export interface PublicActivityView extends PublicActivity {
 
 function mapPartner(raw: RawPartner, index: number): PartnerView {
   const palette = PARTNER_PALETTE[index % PARTNER_PALETTE.length];
-  const country = raw.country ? COUNTRY_LABELS[raw.country] ?? raw.country : "—";
+  const countryCode = raw.countryCode?.toUpperCase() ?? null;
+  const country = raw.country
+    ? COUNTRY_LABELS[raw.country] ?? raw.country
+    : countryCode
+      ? COUNTRY_CODE_LABELS[countryCode] ?? countryCode
+      : null;
   return {
     id: raw.id,
     name: raw.name,
-    type: raw.type ?? "—",
+    type: raw.type ?? null,
     country,
+    countryCode,
     initials: partnerInitials(raw.name),
     bg: palette.bg,
     color: palette.color,
@@ -284,7 +330,24 @@ function mapPartner(raw: RawPartner, index: number): PartnerView {
     websiteUrl: raw.websiteUrl ?? null,
     contactName: raw.contactName ?? null,
     contactEmail: raw.contactEmail ?? null,
+    sources: mapSources(raw.sources),
   };
+}
+
+function mapSources(sources?: RawSource[] | null): SourceView[] {
+  return (sources ?? [])
+    .flatMap((source) => {
+      const url = source.sourceUrl ?? source.url;
+      if (!url || !/^https?:\/\//i.test(url)) return [];
+      return [{
+        url,
+        title: source.sourceTitle ?? source.title ?? source.label ?? source.sourcePublisher ?? source.publisher ?? url,
+        publisher: source.sourcePublisher ?? source.publisher ?? null,
+        sourceType: source.sourceType ?? null,
+        checkedAt: source.sourceCheckedAt ?? null,
+        locator: source.sourceLocator ?? null,
+      }];
+    });
 }
 
 /** Derive a display status for an activity from its date (API has no status field). */
