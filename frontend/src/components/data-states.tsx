@@ -8,8 +8,8 @@ interface StateProps {
 }
 
 const container = (compact: boolean) =>
-  `flex flex-col items-center justify-center text-center rounded-lg border border-line bg-white ${
-    compact ? "px-4 py-8" : "px-6 py-14 shadow-card"
+  `flex flex-col items-center justify-center text-center rounded-base bg-white ${
+    compact ? "border border-line px-4 py-8" : "px-6 py-14 shadow-card"
   }`;
 
 export function LoadingState({

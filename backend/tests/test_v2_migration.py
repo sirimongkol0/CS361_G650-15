@@ -79,3 +79,33 @@ def test_migration_replaces_true_publication_default(migration_engine):
     with engine.begin() as c:
         c.execute(text("INSERT INTO partners (id, name) VALUES (1, 'Unpublished by default')"))
         assert c.execute(text('SELECT is_published FROM partners')).scalar_one() == False
+
+
+def test_migration_adds_scope_level_column_and_constraint_idempotently(migration_engine):
+    engine = migration_engine
+    tables = ('partners', 'documents', 'activities')
+    with engine.begin() as c:
+        c.exec_driver_sql('CREATE TABLE partners (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, is_published BOOLEAN NOT NULL DEFAULT false)')
+        c.exec_driver_sql("INSERT INTO partners (id, name) VALUES (1, 'Existing partner')")
+        c.exec_driver_sql('CREATE TABLE documents (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, is_published BOOLEAN NOT NULL DEFAULT false)')
+        c.exec_driver_sql("INSERT INTO documents (id, name) VALUES (2, 'Existing agreement')")
+        c.exec_driver_sql('CREATE TABLE activities (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, is_published BOOLEAN NOT NULL DEFAULT false)')
+        c.exec_driver_sql("INSERT INTO activities (id, name) VALUES (3, 'Existing activity')")
+    migrate(engine)
+    migrate(engine)
+    with engine.begin() as c:
+        inspector = inspect(c)
+        for name in tables:
+            columns = {col['name']: col for col in inspector.get_columns(name)}
+            assert columns['scope_level']['nullable'] is True
+            assert f'ck_{name}_scope_level' in {x['name'] for x in inspector.get_check_constraints(name)}
+            # Existing rows stay unclassified (NULL) instead of being guessed.
+            assert c.execute(text(f'SELECT scope_level FROM {name}')).scalar_one() is None
+    for name in tables:
+        with pytest.raises(IntegrityError):
+            with engine.begin() as c:
+                c.execute(text(f"INSERT INTO {name} (id, name, scope_level) VALUES (100, 'Bad level', 'department')"))
+        with engine.begin() as c:
+            # Legacy tables have no id sequence on PostgreSQL, so ids are explicit.
+            for offset, level in enumerate(('program', 'faculty', 'university', None)):
+                c.execute(text(f"INSERT INTO {name} (id, name, scope_level) VALUES (:id, 'Level {level}', :level)"), {'id': 101 + offset, 'level': level})

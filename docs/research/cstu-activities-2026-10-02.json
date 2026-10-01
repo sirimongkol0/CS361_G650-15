@@ -1,0 +1,305 @@
+{
+  "activities": [
+    {
+      "key": "nvidia-local-ai-workshop-2026",
+      "name": "NVIDIA Powers the World’s AI, And Yours: Unlocked",
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับ NVIDIA, SVOA, ECTI และคณะพาณิชยศาสตร์และการบัญชี มธ. จัดเวิร์กช็อปทดลองใช้ GPU และเครื่องมือ Local AI พร้อมกิจกรรมสร้าง AI Agent และนำเสนอผลงาน",
+      "activity_type": "student_workshop_competition",
+      "date": "2026-07-09",
+      "date_kind": "event_date",
+      "date_precision": "day",
+      "end_date": null,
+      "time": "09:00–16:00",
+      "location": "อาคาร SC3 ชั้น 4 ห้อง 402 มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+      "participants": "นักศึกษามหาวิทยาลัยธรรมศาสตร์ นักศึกษาจากสถาบันอื่น และนักเรียนมัธยมปลาย; ไม่ระบุจำนวน",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "NVIDIA; SVOA; สมาคม ECTI; คณะพาณิชยศาสตร์และการบัญชี มหาวิทยาลัยธรรมศาสตร์",
+      "partner_website_url": null,
+      "partner_type": "บริษัทและสมาคมวิชาชีพ",
+      "partner_country_code": null,
+      "cstu_evidence": "ข่าวทางการระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้ร่วมจัดกิจกรรม ณ ศูนย์รังสิต",
+      "sources": [
+        {
+          "url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/",
+          "title": "คณะวิทยาศาสตร์และเทคโนโลยี มธ. ร่วมกับภาคีเครือข่าย จัดกิจกรรม NVIDIA Powers the World’s AI, And Yours: Unlocked",
+          "publisher": "SCI-TU คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_event_report",
+          "locator": "ย่อหน้าแรกระบุวัน เวลา สถานที่ และผู้ร่วมจัด; ย่อหน้าถัดไประบุรูปแบบกิจกรรมและผู้เข้าร่วม",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "posn-computer-camp-2-2026",
+      "name": "โครงการอบรมค่ายคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2 ประจำปี 2569",
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ มธ. รับผิดชอบจัดค่ายคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2 สำหรับนักเรียนที่ผ่านค่าย 1 เพื่อฝึกวิเคราะห์โจทย์และเขียนโปรแกรมเตรียมสู่การแข่งขันระดับประเทศ",
+      "activity_type": "engineering_camp",
+      "date": "2026-03-04",
+      "date_kind": "event_start_date",
+      "date_precision": "day",
+      "end_date": "2026-03-20",
+      "time": "08:30–18:30",
+      "location": "สาขาวิชาวิทยาการคอมพิวเตอร์ อาคารบรรยายรวม 2 คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+      "participants": "นักเรียนมัธยมในเขตกรุงเทพมหานครที่ผ่านการอบรมค่าย 1 จากศูนย์ สอวน. โรงเรียนสามเสนวิทยาลัย",
+      "status": null,
+      "is_open": null,
+      "partner_name": "มูลนิธิส่งเสริมโอลิมปิกวิชาการและพัฒนามาตรฐานวิทยาศาสตร์ศึกษา (สอวน.)",
+      "partner_website_url": null,
+      "partner_type": "มูลนิธิ",
+      "partner_country_code": "TH",
+      "cstu_evidence": "ข่าวทางการระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ มธ. ได้รับมอบหมายเป็นศูนย์รับผิดชอบจัดค่าย 2 ที่ศูนย์รังสิต",
+      "sources": [
+        {
+          "url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C%E0%B8%AF-%E0%B8%A1%E0%B8%98-%E0%B9%80%E0%B8%9B%E0%B8%B4%E0%B8%94%E0%B8%84%E0%B9%88%E0%B8%B2%E0%B8%A2%E0%B8%84%E0%B8%AD/",
+          "title": "คณะวิทย์ฯ มธ. เปิดค่ายคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2",
+          "publisher": "SCI-TU คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_event_announcement",
+          "locator": "ย่อหน้า 2–4 ระบุวันเปิดค่าย ช่วงจัดอบรม ผู้ดำเนินการ สถานที่ และกลุ่มผู้เข้าอบรม",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "ipb-csagri-summer-course-2022",
+      "name": "International Summer Course CSAgri IPB 2022",
+      "description": "นักศึกษาปริญญาตรี CSTU เข้าร่วมหลักสูตรระยะสั้นด้านเกษตรกรรมและ IoT เรียนรู้การใช้ Arduino และแนวทางทำโครงงาน โดยมีผู้เข้าร่วมได้รับรางวัล Best International Participant",
+      "activity_type": "exchange",
+      "date": "2022-09-09",
+      "date_kind": "event_start_date",
+      "date_precision": "day",
+      "end_date": "2022-09-17",
+      "time": null,
+      "location": "Institut Pertanian Bogor (IPB), ประเทศอินโดนีเซีย",
+      "participants": "นักศึกษาปริญญาตรี CSTU; แหล่งข่าวระบุผู้เข้าร่วมอย่างน้อย 2 คน",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "Institut Pertanian Bogor (IPB University)",
+      "partner_website_url": null,
+      "partner_type": "มหาวิทยาลัย",
+      "partner_country_code": "ID",
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือของสาขาระบุว่านักศึกษาปริญญาตรีสาขาวิทยาการคอมพิวเตอร์เข้าร่วมกิจกรรมโดยตรง",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/partnership-th/",
+          "title": "เครือข่ายความร่วมมือ",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_partnership_report",
+          "locator": "ย่อหน้า 5–6 ระบุผู้เข้าร่วมระดับปริญญาตรี กำหนดวันที่ 9–17 กันยายน 2565 และเนื้อหาหลักสูตร",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "ucsd-international-summer-research-2022",
+      "name": "International Summer Research Program (ISRP) ที่ UC San Diego",
+      "description": "นักศึกษาปริญญาตรี CSTU เข้าร่วมโครงการวิจัยภาคฤดูร้อน เรียนรู้การควบคุมหุ่นยนต์ด้วย ROS และระบบระบุตำแหน่ง Marvelmind โดยได้รับทุนสนับสนุน outbound จากคณะวิทยาศาสตร์และเทคโนโลยี",
+      "activity_type": "exchange",
+      "date": "2022-06-26",
+      "date_kind": "event_start_date",
+      "date_precision": "day",
+      "end_date": "2022-08-27",
+      "time": null,
+      "location": "University of California, San Diego, สหรัฐอเมริกา",
+      "participants": "นักศึกษาปริญญาตรี CSTU 1 คน",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "University of California, San Diego (UC San Diego)",
+      "partner_website_url": null,
+      "partner_type": "มหาวิทยาลัย",
+      "partner_country_code": "US",
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือระบุผู้เข้าร่วมเป็นนักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์ พร้อมช่วงวันที่และกิจกรรมวิจัย",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/partnership-th/",
+          "title": "เครือข่ายความร่วมมือ",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_partnership_report",
+          "locator": "ย่อหน้า 8–9 ระบุการเข้าร่วม ISRP วันที่ 26 มิถุนายน–27 สิงหาคม 2565 และหัวข้องานวิจัย",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "kbtg-university-roadshow-2020",
+      "name": "KBTG University Roadshow",
+      "description": "ทีมผู้เชี่ยวชาญจาก KBTG แนะนำองค์กรและแลกเปลี่ยนความรู้กับนักศึกษาสาขาวิชาวิทยาการคอมพิวเตอร์",
+      "activity_type": "seminar",
+      "date": "2020-10",
+      "date_kind": "event_month",
+      "date_precision": "month",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": "นักศึกษาสาขาวิชาวิทยาการคอมพิวเตอร์; ไม่ระบุจำนวน",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "บริษัท KBTG จำกัด",
+      "partner_website_url": null,
+      "partner_type": "บริษัทเทคโนโลยี",
+      "partner_country_code": "TH",
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือของสาขาระบุว่าบริษัทนำทีมมาแนะนำองค์กรและแลกเปลี่ยนความรู้กับนักศึกษาในกิจกรรมนี้",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/partnership-th/",
+          "title": "เครือข่ายความร่วมมือ",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_partnership_report",
+          "locator": "ย่อหน้า 14 ระบุชื่อกิจกรรม ผู้จัด และเดือนตุลาคม 2563 โดยไม่ระบุวัน",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "aist-undergraduate-research-exchange-2020",
+      "name": "แลกเปลี่ยนทำวิจัยที่ AIST ประเทศญี่ปุ่น",
+      "description": "นักศึกษาปริญญาตรี CSTU เข้าร่วมแลกเปลี่ยนเพื่อทำวิจัยที่สถาบันวิทยาศาสตร์และเทคโนโลยีอุตสาหกรรมขั้นสูงแห่งชาติของญี่ปุ่น โดยมีบริษัท King Power Click ระบุอยู่ในบริบทของรายการบนหน้าเครือข่ายความร่วมมือ",
+      "activity_type": "exchange",
+      "date": "2020-06-10",
+      "date_kind": "event_start_date",
+      "date_precision": "day",
+      "end_date": "2020-08-17",
+      "time": null,
+      "location": "National Institute of Advanced Industrial Science and Technology (AIST), Tsukuba, Japan",
+      "participants": "นักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์ 2 คน",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "National Institute of Advanced Industrial Science and Technology (AIST)",
+      "partner_website_url": null,
+      "partner_type": "สถาบันวิจัย",
+      "partner_country_code": "JP",
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือระบุชื่อหลักสูตรปริญญาตรี CSTU ของนักศึกษาที่ไปทำวิจัย ช่วงวันที่ และสถานที่ที่ AIST",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/partnership-th/",
+          "title": "เครือข่ายความร่วมมือ",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_partnership_report",
+          "locator": "ย่อหน้า 16 ระบุ AIST, Tsukuba, ประเทศญี่ปุ่น และช่วงวันที่ 10 มิถุนายน–17 สิงหาคม 2563",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "democratizing-ai-cp-group-seminar-2020",
+      "name": "Democratizing A.I. – How a computer scientist can help narrow social inequality",
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์จัดสัมมนาร่วมกับผู้เชี่ยวชาญจากกลุ่มธุรกิจ Feed Ingredients Trading Business Group ของเครือ CP แลกเปลี่ยนเรื่องการใช้เศรษฐศาสตร์ คอมพิวเตอร์ และการวิเคราะห์ข้อมูลเพื่อสร้างแบบจำลองอุปสงค์และอุปทานสินค้าเกษตร",
+      "activity_type": "seminar",
+      "date": "2020-02-24",
+      "date_kind": "event_date",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "Feed Ingredients Trading Business Group (C.P. Group)",
+      "partner_website_url": null,
+      "partner_type": "กลุ่มธุรกิจ",
+      "partner_country_code": "TH",
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้จัดสัมมนา และระบุวิทยากรผู้เชี่ยวชาญจากบริษัทคู่ร่วมกิจกรรม",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/partnership-th/",
+          "title": "เครือข่ายความร่วมมือ",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_partnership_report",
+          "locator": "ย่อหน้า 18 ระบุวันที่ 24 กุมภาพันธ์ 2563 หัวข้อ และบริษัทผู้เชี่ยวชาญร่วมแลกเปลี่ยน",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "nsc-2021-cstu-finalist",
+      "name": "การแข่งขันพัฒนาโปรแกรมคอมพิวเตอร์แห่งประเทศไทย ครั้งที่ 23 (NSC 2021)",
+      "description": "โครงงานจากทีมสาขาวิชาวิทยาการคอมพิวเตอร์ ศูนย์รังสิต ผ่านเข้าสู่รอบชิงชนะเลิศการแข่งขัน NSC 2021; หน้าแหล่งข่าวไม่ได้ระบุวันแข่งขันรอบชิงชนะเลิศ",
+      "activity_type": "student_workshop_competition",
+      "date": "2021-02-15",
+      "date_kind": "announcement_date",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": "ทีมโครงงานระดับปริญญาตรีจากศูนย์รังสิต 1 ทีม",
+      "status": null,
+      "is_open": null,
+      "partner_name": null,
+      "partner_website_url": null,
+      "partner_type": null,
+      "partner_country_code": null,
+      "cstu_evidence": "ข่าวของสาขาระบุชัดว่าหนึ่งในทีมที่เข้ารอบชิงชนะเลิศมาจากสาขาวิชาวิทยาการคอมพิวเตอร์ ศูนย์รังสิต",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/2021/02/15/nsc-2021/",
+          "title": "NSC 2021",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_competition_report",
+          "locator": "บรรทัดหัวเรื่องระบุวันประกาศ 15 กุมภาพันธ์ 2564; ย่อหน้า 3 ระบุทีมศูนย์รังสิตผ่านเข้ารอบ; ไม่พบวันแข่งขันจริง",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "scb-young-talent-business-plan-2015",
+      "name": "SCB Young Talent ครั้งที่ 2: ประกวดแผนธุรกิจหัวข้อ Balance Inquiry",
+      "description": "ทีมนักศึกษาวิทยาการคอมพิวเตอร์ มธ. นำเสนอแนวคิดและต้นแบบแอปตรวจสอบยอดเงินในโครงการ SCB Young Talent และได้รับรางวัลชนะเลิศ",
+      "activity_type": "student_workshop_competition",
+      "date": "2015-08-03",
+      "date_kind": "event_date",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": "สำนักงานใหญ่ธนาคารไทยพาณิชย์, กรุงเทพฯ",
+      "participants": "ทีมนักศึกษาวิทยาการคอมพิวเตอร์ระดับปริญญาตรี 4 คน",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "ธนาคารไทยพาณิชย์ (SCB)",
+      "partner_website_url": null,
+      "partner_type": "ธนาคาร",
+      "partner_country_code": "TH",
+      "cstu_evidence": "รายงานของสาขาระบุทีมนักศึกษาปี 3 จากภาควิชาวิทยาการคอมพิวเตอร์ มธ. และวันจัดประกวดที่สำนักงานใหญ่ SCB",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/2021/02/15/scb-young-talent/",
+          "title": "SCB young talent",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_competition_report",
+          "locator": "ย่อหน้าสุดท้ายระบุวันจัด 3 สิงหาคม 2558, ผู้จัด, สถานที่ระดับสำนักงานใหญ่ และผลรางวัล",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    },
+    {
+      "key": "google-hackfair-bangkok-2015",
+      "name": "Google HackFair Bangkok",
+      "description": "ทีมจากภาควิชาวิทยาการคอมพิวเตอร์ มธ. นำผลงาน Augmented Reality using Tango Tablet ไปจัดแสดงในงาน Google HackFair Bangkok และได้รับรางวัล Judge’s Choice Award",
+      "activity_type": "student_workshop_competition",
+      "date": "2015-12-19",
+      "date_kind": "event_date",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": "Cyber World Tower, กรุงเทพฯ",
+      "participants": "ทีมจากภาควิชาวิทยาการคอมพิวเตอร์ มธ.; ประกอบด้วยนักศึกษาและอาจารย์ โดยไม่บันทึกชื่อบุคคล",
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_name": "Google",
+      "partner_website_url": null,
+      "partner_type": "บริษัทเทคโนโลยี",
+      "partner_country_code": null,
+      "cstu_evidence": "รายงานทางการระบุทีมจากภาควิชาวิทยาการคอมพิวเตอร์ มธ. ส่งผลงานและได้รับรางวัลในงานโดยตรง",
+      "sources": [
+        {
+          "url": "https://cs.sci.tu.ac.th/judges-choice-award-%E0%B9%83%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%99-google-hackfair-bangkok/",
+          "title": "Judge’s Choice Award ในงาน Google HackFair Bangkok",
+          "publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+          "type": "official_competition_report",
+          "locator": "เนื้อหาระบุวันงาน 19 ธันวาคม 2558 สถานที่ และผลงานที่ได้รับรางวัล Judge’s Choice Award",
+          "checked_at": "2026-10-01T17:51:26Z"
+        }
+      ]
+    }
+  ],
+  "rejected": []
+}

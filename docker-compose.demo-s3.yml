@@ -1,0 +1,8 @@
+# Use only after upload_demo_s3.py verifies all six objects.
+# docker compose -f docker-compose.demo.yml -f docker-compose.demo-s3.yml up -d --wait
+# Seed still uses its isolated local volume; only the serving API switches to S3.
+services:
+  backend:
+    env_file: .env.demo-s3
+    environment:
+      STORAGE_BACKEND: s3

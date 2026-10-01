@@ -1,0 +1,609 @@
+[
+  {
+    "id": 35,
+    "name": "พิธีลงนาม MOU ธรรมศาสตร์–การนิคมอุตสาหกรรมแห่งประเทศไทย",
+    "date": "2024-07-30",
+    "description": "มหาวิทยาลัยธรรมศาสตร์และ กนอ. ลงนาม MOU เพื่อสนับสนุนการพัฒนาและการศึกษาของนักศึกษา สหกิจศึกษาและการฝึกงาน กิจกรรมนักศึกษา ความร่วมมือด้านการวิจัย และการบริการวิชาการแก่สังคม",
+    "activity_type": "official_event",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 292,
+      "name": "การนิคมอุตสาหกรรมแห่งประเทศไทย"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "ห้องประชุมปรีดี พนมยงค์ ชั้น 3 อาคารโดมบริหาร มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": 19,
+    "sources": [
+      {
+        "id": 65,
+        "sourceUrl": "https://www.ieat.go.th/en/ieat-news/8857",
+        "sourceTitle": "กนอ. และมหาวิทยาลัยธรรมศาสตร์ลงนาม MOU",
+        "sourcePublisher": "การนิคมอุตสาหกรรมแห่งประเทศไทย",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-30T19:10:55.268358Z",
+        "sourceLocator": "รายงานการลงนามเมื่อ 30 ก.ค. 2567 และระบุวัตถุประสงค์ด้านการศึกษา การฝึกงาน สหกิจศึกษา กิจกรรมนักศึกษา การแลกเปลี่ยนข้อมูล และความร่วมมือด้านการวิจัย"
+      },
+      {
+        "id": 50,
+        "sourceUrl": "https://tu.ac.th/en/tu-collaborates-with-ieat-to-promote-cooperative-education/",
+        "sourceTitle": "มธ. ร่วมมือกับ กนอ. ส่งเสริมสหกิจศึกษา",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่า มธ. และ กนอ. ลงนาม MOU เมื่อ 30 ก.ค. 2567"
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "name": "พิธีลงนาม MOU SIIT–โซนี่ ดีไวซ์ เทคโนโลยี (ประเทศไทย)",
+    "date": "2025-05-14",
+    "description": "SIIT และโซนี่ ดีไวซ์ เทคโนโลยี (ประเทศไทย) ลงนาม MOU สนับสนุนความร่วมมือทางวิชาการ การวิจัยและพัฒนาเทคโนโลยี และการฝึกอบรมเตรียมความพร้อมนักศึกษาสู่อุตสาหกรรมเทคโนโลยีขั้นสูง",
+    "activity_type": "official_event",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 295,
+      "name": "บริษัท โซนี่ ดีไวซ์ เทคโนโลยี (ประเทศไทย) จำกัด"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": 22,
+    "sources": [
+      {
+        "id": 53,
+        "sourceUrl": "https://mta-sts.siit.tu.ac.th/page_bx.php?cid=20&cno=957&show=",
+        "sourceTitle": "พิธีลงนาม MOU ระหว่าง SIIT และโซนี่ ดีไวซ์ เทคโนโลยี (ประเทศไทย)",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.044166Z",
+        "sourceLocator": "SIIT รายงานพิธีลงนาม MOU เมื่อ 14 พ.ค. 2568"
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "name": "พิธีลงนาม MOU ธรรมศาสตร์–การไฟฟ้านครหลวง",
+    "date": "2025-09-02",
+    "description": "มหาวิทยาลัยธรรมศาสตร์และการไฟฟ้านครหลวงลงนาม MOU สนับสนุนการพัฒนาพลังงานสะอาด การอนุรักษ์พลังงาน และงานด้านการพัฒนาที่ยั่งยืนของมหาวิทยาลัย",
+    "activity_type": "official_event",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 293,
+      "name": "การไฟฟ้านครหลวง"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "มหาวิทยาลัยธรรมศาสตร์ ท่าพระจันทร์",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": 28,
+    "sources": [
+      {
+        "id": 59,
+        "sourceUrl": "https://cis.tu.ac.th/uploads/ci/2568/PDF/02-09-68-MEA-TU2025.pdf",
+        "sourceTitle": "ข่าวพิธีลงนาม MOU มธ.–กฟน.",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.478085Z",
+        "sourceLocator": "เอกสาร PDF ของวิทยาลัยสหวิทยาการ มธ. ระบุวันลงนาม MOU เป็นวันที่ 2 ก.ย. 2568 (เป็นข่าวประชาสัมพันธ์ ไม่ใช่ตัวสัญญาที่ลงนาม)"
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "name": "พิธีลงนาม MOU ธรรมศาสตร์–กลุ่มเซ็นทรัล",
+    "date": "2025-09-24",
+    "description": "มหาวิทยาลัยธรรมศาสตร์และกลุ่มเซ็นทรัลลงนาม MOU ด้านการเรียนรู้ของนักศึกษาและการเตรียมความพร้อมสู่การทำงาน รวมถึงการพัฒนามาตรฐานผลิตภัณฑ์และอาชีพที่ยั่งยืนสำหรับชุมชนและกลุ่มเปราะบาง",
+    "activity_type": "official_event",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 296,
+      "name": "กลุ่มเซ็นทรัล"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "อาคารดิ ออฟฟิศเศส แอท เซ็นทรัลเวิลด์ กรุงเทพฯ",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": 29,
+    "sources": [
+      {
+        "id": 60,
+        "sourceUrl": "https://web.sa.ict.tu.ac.th/en/thammasat-250968-mou-central-group",
+        "sourceTitle": "MOU ธรรมศาสตร์และกลุ่มเซ็นทรัล",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.548744Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าพิธีลงนามจัดขึ้นเมื่อ 24 ก.ย. 2568"
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "name": "พิธีลงนาม MOU ธรรมศาสตร์–ธนาคารกรุงเทพ ด้านบริการนักศึกษาและระบบนิเวศดิจิทัล",
+    "date": "2025-11-28",
+    "description": "มหาวิทยาลัยธรรมศาสตร์และธนาคารกรุงเทพลงนาม MOU เพื่อพัฒนาบริการชำระเงินและบัตรประจำตัวนักศึกษา และพัฒนาระบบนิเวศดิจิทัลของมหาวิทยาลัย",
+    "activity_type": "official_event",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 297,
+      "name": "ธนาคารกรุงเทพ จำกัด (มหาชน)"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": 30,
+    "sources": [
+      {
+        "id": 61,
+        "sourceUrl": "https://tu.ac.th/en/thammasat-and-bangkok-bank-form-smart-university-digital-ecosystem-partnership/",
+        "sourceTitle": "ความร่วมมือธรรมศาสตร์และธนาคารกรุงเทพ",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.618955Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าลงนาม MOU เมื่อ 28 พ.ย. 2568 และให้บริการครอบคลุมปีการศึกษา 2568–2572 ไม่ระบุวันหมดอายุที่แน่นอน"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "name": "ธรรมศาสตร์และมหาวิทยาลัยนิวเม็กซิโกขยายโอกาสทางวิชาการระดับโลก",
+    "date": "2026-03-09",
+    "description": "การขยายโอกาสทางวิชาการระดับโลก ระหว่างมหาวิทยาลัยธรรมศาสตร์กับ University of New Mexico ประเทศสหรัฐอเมริกา",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 311,
+      "name": "มหาวิทยาลัยนิวเม็กซิโก"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 39,
+        "sourceUrl": "https://oia.tu.ac.th/thammasat-and-the-university-of-new-mexico-expand-global-academic-opportunities/",
+        "sourceTitle": "ธรรมศาสตร์และมหาวิทยาลัยนิวเม็กซิโกขยายโอกาสทางวิชาการระดับโลก",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วันที่จัดกิจกรรมตามประกาศทางการ: 9 มี.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "name": "ธรรมศาสตร์และ QUB หารือต่อเนื่องเรื่องการขยายความร่วมมือ",
+    "date": "2026-05-08",
+    "description": "การประชุมติดตามผลเพื่อขยายความร่วมมือ ระหว่างมหาวิทยาลัยธรรมศาสตร์กับ Queen's University Belfast (QUB) สหราชอาณาจักร",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 313,
+      "name": "มหาวิทยาลัยควีนส์เบลฟาสต์ (QUB)"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 40,
+        "sourceUrl": "https://oia.tu.ac.th/thammasat-and-qub-hold-follow-up-discussion-on-expanding-collaboration/",
+        "sourceTitle": "ธรรมศาสตร์และ QUB หารือต่อเนื่องเรื่องการขยายความร่วมมือ",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วันที่จัดกิจกรรมตามประกาศทางการ: 8 พ.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "name": "พิธีลงนาม MOU ธรรมศาสตร์–เมืองพัทยา",
+    "date": "2026-05-14",
+    "description": "มหาวิทยาลัยธรรมศาสตร์และเมืองพัทยาลงนาม MOU ความร่วมมือทางวิชาการ ครอบคลุมการศึกษา การวิจัย การพัฒนาศักยภาพบุคลากรและนักศึกษา และการพัฒนาเมืองและสังคม",
+    "activity_type": "official_event",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 294,
+      "name": "เมืองพัทยา"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "โรงแรมไบรท์ตัน แกรนด์ พัทยา จังหวัดชลบุรี",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": 31,
+    "sources": [
+      {
+        "id": 62,
+        "sourceUrl": "https://tu.ac.th/en/tu02220569/",
+        "sourceTitle": "ธรรมศาสตร์และเมืองพัทยาร่วมมือกัน",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.687491Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าลงนามข้อตกลงเมื่อ 14 พ.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "name": "C.V. Raman Global University และธรรมศาสตร์หารือต่อเนื่องเพื่อขยายความร่วมมือ",
+    "date": "2026-05-28",
+    "description": "การประชุมติดตามผลเพื่อสำรวจความร่วมมือเพิ่มเติม ระหว่าง C.V. Raman Global University (อินเดีย) กับมหาวิทยาลัยธรรมศาสตร์",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 312,
+      "name": "C.V. Raman Global University"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 41,
+        "sourceUrl": "https://oia.tu.ac.th/c-v-raman-global-university-and-thammasat-hold-follow-up-discussion-to-explore-further-collaboration/",
+        "sourceTitle": "C.V. Raman Global University และธรรมศาสตร์หารือต่อเนื่องเพื่อขยายความร่วมมือ",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วันที่จัดกิจกรรมตามประกาศทางการ: 28 พ.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "name": "ธรรมศาสตร์และ UNSW หารือขยายความร่วมมือทางวิชาการ",
+    "date": "2026-06-23",
+    "description": "การหารือขยายความร่วมมือทางวิชาการระหว่างมหาวิทยาลัยธรรมศาสตร์กับ University of New South Wales (UNSW) ประเทศออสเตรเลีย",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 310,
+      "name": "มหาวิทยาลัยนิวเซาท์เวลส์ (UNSW)"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 38,
+        "sourceUrl": "https://oia.tu.ac.th/thammasat-and-unsw-discuss-expanding-academic-ties/",
+        "sourceTitle": "ธรรมศาสตร์และ UNSW หารือขยายความร่วมมือทางวิชาการ",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วันที่จัดกิจกรรมตามประกาศทางการ: 23 มิ.ย. 2569"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "name": "ธรรมศาสตร์หารือความร่วมมือทางวิชาการกับ NU รัฐสุลต่านโอมาน",
+    "date": "2026-06-25",
+    "description": "การหารือความร่วมมือทางวิชาการระหว่างมหาวิทยาลัยธรรมศาสตร์กับ National University (NU) สุลต่านโอมาน",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 309,
+      "name": "มหาวิทยาลัยแห่งชาติวิทยาศาสตร์และเทคโนโลยี (NU) โอมาน"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 37,
+        "sourceUrl": "https://tu.ac.th/tu01260869/",
+        "sourceTitle": "ธรรมศาสตร์หารือความร่วมมือทางวิชาการกับ NU รัฐสุลต่านโอมาน",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วันที่จัดกิจกรรมตามประกาศทางการ: 25 มิ.ย. 2569"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "name": "ผู้บริหารธรรมศาสตร์และ UC Merced หารือขยายความร่วมมือทางวิชาการและการแลกเปลี่ยนนักศึกษา",
+    "date": "2026-07-06",
+    "description": "ผู้บริหารมหาวิทยาลัยธรรมศาสตร์และ University of California, Merced หารือขยายความร่วมมือทางวิชาการและการแลกเปลี่ยนนักศึกษา",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 308,
+      "name": "มหาวิทยาลัยแคลิฟอร์เนีย เมอร์เซด (UC Merced)"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 36,
+        "sourceUrl": "https://oia.tu.ac.th/leaders-of-thammasat-and-uc-merced-discuss-expanding-academic-and-student-exchanges/",
+        "sourceTitle": "ผู้บริหารธรรมศาสตร์และ UC Merced หารือขยายความร่วมมือทางวิชาการและการแลกเปลี่ยนนักศึกษา",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วันที่จัดกิจกรรมตามประกาศทางการ: 6 ก.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "name": "Station C Glocal Solvathon 2026",
+    "date": "2026-07-19",
+    "description": "กิจกรรมเวิร์กช็อปและการแข่งขันนานาชาติที่นักศึกษา School of Global Studies เข้าร่วม",
+    "activity_type": "student_workshop_competition",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 300,
+      "name": "มหาวิทยาลัยฮัลลิม"
+    },
+    "endDate": "2026-07-26",
+    "participants": null,
+    "location": "มหาวิทยาลัยฮัลลิม เมืองชุนชอน สาธารณรัฐเกาหลี",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 49,
+        "sourceUrl": "https://sgs.tu.ac.th/news/school-of-global-studies-students-participate-in-the-2026-station-c-glocal-solvathon-at-hallym-university-republic-of-korea/",
+        "sourceTitle": "Station C Glocal Solvathon 2026 ณ มหาวิทยาลัยฮัลลิม",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "วิทยาลัยโลกคดีศึกษา มธ. รายงานการเข้าร่วมกิจกรรมระหว่างวันที่ 19–26 ก.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "name": "ค่ายฤดูร้อน APSCO CubeSat 2026",
+    "date": "2026-08-12",
+    "description": "ค่ายและการแข่งขันด้าน CubeSat ที่นักศึกษามหาวิทยาลัยธรรมศาสตร์เป็นตัวแทนประเทศไทย",
+    "activity_type": "engineering_camp",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 316,
+      "name": "องค์การความร่วมมือด้านอวกาศแห่งเอเชีย-แปซิฟิก (APSCO)"
+    },
+    "endDate": "2026-08-25",
+    "participants": null,
+    "location": null,
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 48,
+        "sourceUrl": "https://tu.ac.th/en/tu03280869/",
+        "sourceTitle": "ค่ายฤดูร้อน APSCO CubeSat 2026",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "มธ. รายงานวันจัดค่ายเป็นวันที่ 12–25 ส.ค. 2569"
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "name": "มหาวิทยาลัยเกียวโตซังเงียวเยือนเพื่อขยายความร่วมมือทางวิชาการ",
+    "date": "2026-08-27",
+    "description": "หารือการขยายความร่วมมือและการจัดทำ MOU ระดับมหาวิทยาลัยในอนาคต; ยังไม่ใช่พิธีลงนาม",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 299,
+      "name": "มหาวิทยาลัยเกียวโตซังเงียว"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 46,
+        "sourceUrl": "https://oia.tu.ac.th/thammasat-and-kyoto-sangyo-university-explore-expanded-academic-collaboration/",
+        "sourceTitle": "ธรรมศาสตร์และมหาวิทยาลัยเกียวโตซังเงียวหารือขยายความร่วมมือทางวิชาการ",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "OIA รายงานการเยี่ยมชมและการหารือเกี่ยวกับการจัดทำ MOU ระดับมหาวิทยาลัยในอนาคต"
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "name": "สัมมนา Erasmus+ Thailand 2026 การเสริมสร้างศักยภาพการอุดมศึกษา",
+    "date": "2026-08-28",
+    "description": "สัมมนาเพื่อเตรียมสถาบันอุดมศึกษาไทยในการพัฒนาข้อเสนอโครงการ Erasmus+ ประเภท Capacity Building in Higher Education (CBHE)\n\nผู้จัดร่วม: กองการต่างประเทศ สำนักงานปลัดกระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม; มหาวิทยาลัยธรรมศาสตร์; คณะผู้แทนสหภาพยุโรปประจำประเทศไทย\n\nกิจกรรมประกอบด้วยการบรรยาย การเสวนาประสบการณ์โครงการ CBHE การพัฒนาข้อเสนอโครงการ และการสร้างเครือข่ายความร่วมมือ มีผู้เข้าร่วมมากกว่า 100 คนจากสถาบันอุดมศึกษาทั่วประเทศ",
+    "activity_type": "seminar",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 318,
+      "name": "สำนักงานปลัดกระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "โรงแรมโนโวเทล กรุงเทพ สยามสแควร์",
+    "time": null,
+    "status": "เสร็จสิ้น",
+    "isOpen": false,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 47,
+        "sourceUrl": "https://fph.tu.ac.th/en/08312026-1/",
+        "sourceTitle": "สัมมนา Erasmus+ Thailand 2026 การเสริมสร้างศักยภาพการอุดมศึกษา (CBHE)",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "ประกาศของคณะสาธารณสุขศาสตร์ มธ. ระบุวันและสถานที่จัดสัมมนา"
+      },
+      {
+        "id": 80,
+        "sourceUrl": "https://ops.go.th/en/inter-news-announcement/inter-news/item/15358-erasmus-thailand-2026-cbhe",
+        "sourceTitle": "อว. จับมือ มธ. และสหภาพยุโรป จัดสัมมนา Erasmus+ Thailand 2026",
+        "sourcePublisher": "สำนักงานปลัดกระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-10-01T17:22:19.544429Z",
+        "sourceLocator": "ข่าววันที่ 31 สิงหาคม 2569 ระบุผู้จัดร่วม วันที่และสถานที่จัดงาน และผู้เข้าร่วมมากกว่า 100 คน"
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "name": "ประชุมความร่วมมือระหว่างมหาวิทยาลัยสุราบายาและคณะสาธารณสุขศาสตร์ มธ.",
+    "date": "2026-09-01",
+    "description": "หารือความร่วมมือด้านหลักสูตรบัณฑิตศึกษาและการแลกเปลี่ยนกับ Universitas Surabaya",
+    "activity_type": "collaboration_meeting",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 298,
+      "name": "มหาวิทยาลัยสุราบายา"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "ห้อง 1033 อาคารปิยชาติ 1 มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 43,
+        "sourceUrl": "https://tu.ac.th/news07070969/",
+        "sourceTitle": "ความร่วมมือระหว่างมหาวิทยาลัยสุราบายาและคณะสาธารณสุขศาสตร์ มธ.",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "ข่าว มธ. รายงานการประชุมเมื่อ 1 ก.ย. 2569 ณ ห้อง 1033 อาคารปิยชาติ 1"
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "name": "ศูนย์การแพทย์คาเมดะเยือนคณะแพทยศาสตร์ มธ. เชิงวิชาการ",
+    "date": "2026-09-07",
+    "description": "การเยือนและแลกเปลี่ยนด้านแพทยศาสตรศึกษา การพัฒนาวิชาการ และความร่วมมือระดับสถาบัน",
+    "activity_type": "academic_visit",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 314,
+      "name": "ศูนย์การแพทย์คาเมดะ"
+    },
+    "endDate": null,
+    "participants": null,
+    "location": "คณะแพทยศาสตร์ มหาวิทยาลัยธรรมศาสตร์",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 44,
+        "sourceUrl": "https://med.tu.ac.th/medth/?p=124708",
+        "sourceTitle": "ศูนย์การแพทย์คาเมดะเยือนคณะแพทยศาสตร์ มธ.",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "ประกาศของคณะแพทยศาสตร์ มธ. ระบุวันเยี่ยมชมเป็นวันที่ 7 ก.ย. 2569"
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "name": "ไทยศึกษาในญี่ปุ่น: บทสนทนาข้ามพรมแดน",
+    "date": "2026-09-10",
+    "description": "การประชุมวิชาการนานาชาติด้านไทยศึกษา จัดร่วมกับ Japanese Society for Thai Studies",
+    "activity_type": "international_conference",
+    "dateKind": "event",
+    "datePrecision": "day",
+    "partner": {
+      "id": 315,
+      "name": "สมาคมไทยศึกษาแห่งญี่ปุ่น (JSTS)"
+    },
+    "endDate": "2026-09-11",
+    "participants": null,
+    "location": "ห้องคึกฤทธิ์ ปราโมช สถาบันไทยคดีศึกษา มหาวิทยาลัยธรรมศาสตร์ ท่าพระจันทร์",
+    "time": null,
+    "status": null,
+    "isOpen": null,
+    "mouDocId": null,
+    "sources": [
+      {
+        "id": 45,
+        "sourceUrl": "https://tkri.tu.ac.th/tsj2026/",
+        "sourceTitle": "ไทยศึกษาในญี่ปุ่น: บทสนทนาข้ามพรมแดน",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.833057Z",
+        "sourceLocator": "หน้ากิจกรรมทางการระบุวันจัดการประชุมเป็นวันที่ 10–11 ก.ย. 2569"
+      }
+    ]
+  }
+]

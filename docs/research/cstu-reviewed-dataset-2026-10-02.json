@@ -1,0 +1,679 @@
+{
+  "schema_version": 1,
+  "target_database": "cstu_collaboration",
+  "reviewed": true,
+  "research_date": "2026-10-02",
+  "sources": [
+    {
+      "source_url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/",
+      "source_title": "คณะวิทยาศาสตร์และเทคโนโลยี มธ. ร่วมกับภาคีเครือข่าย จัดกิจกรรม NVIDIA Powers the World’s AI, And Yours: Unlocked",
+      "source_publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "ข่าวกิจกรรม 9 กรกฎาคม 2569 เวลา 09.00–16.00 น. ที่ SC3 ห้อง 402 ศูนย์รังสิต; ระบุ CSTU, NVIDIA, SVOA และ ECTI เป็นผู้ร่วมจัด"
+    },
+    {
+      "source_url": "https://www.nvidia.com/en-us/about-nvidia/",
+      "source_title": "About NVIDIA",
+      "source_publisher": "NVIDIA",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "About NVIDIA; company overview"
+    },
+    {
+      "source_url": "https://www.svoa.co.th/",
+      "source_title": "SVOA Public Company Limited",
+      "source_publisher": "SVOA Public Company Limited",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "หน้าแรกและข้อมูลเกี่ยวกับบริษัท"
+    },
+    {
+      "source_url": "https://ecti-thailand.org/",
+      "source_title": "ECTI Association",
+      "source_publisher": "ECTI Association",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "หน้าแรกและคำอธิบายชื่อ/ภารกิจของสมาคม"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/partnership-th/",
+      "source_title": "เครือข่ายความร่วมมือ",
+      "source_publisher": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "ส่วน IPB CSAgri 2022, UC San Diego ISRP 2022, KBTG Roadshow ตุลาคม 2563, AIST และสัมมนา AI ของ CP; เป็นประวัติกิจกรรมตามปีในหน้าเว็บ ไม่ยืนยัน MoU หรือสถานะปัจจุบัน"
+    },
+    {
+      "source_url": "https://www.kbtg.tech/",
+      "source_title": "KASIKORN Business-Technology Group | KBTG",
+      "source_publisher": "KBTG",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "หน้าแรก ระบุชื่อองค์กร KBTG"
+    },
+    {
+      "source_url": "https://www.ipb.ac.id/en/",
+      "source_title": "IPB University",
+      "source_publisher": "IPB University",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "เว็บไซต์ทางการของ IPB University"
+    },
+    {
+      "source_url": "https://ucsd.edu/about/index.html",
+      "source_title": "About UC San Diego",
+      "source_publisher": "University of California San Diego",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "About UC San Diego; ภารกิจและข้อมูลมหาวิทยาลัย"
+    },
+    {
+      "source_url": "https://www.aist.go.jp/index_en.html",
+      "source_title": "National Institute of Advanced Industrial Science and Technology (AIST)",
+      "source_publisher": "AIST",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "เว็บไซต์ทางการ AIST; เมนู About AIST และ Research Results"
+    },
+    {
+      "source_url": "https://www.cpgroupglobal.com/en/about-cp-group/our-business",
+      "source_title": "Our Business",
+      "source_publisher": "Charoen Pokphand Group",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:52:27Z",
+      "source_locator": "ส่วน Agro-Industry and Food; ระบุกลุ่มธุรกิจ Feed Ingredients Trading และ Bangkok Produce Merchandising เป็นหน่วยธุรกิจที่เกี่ยวข้อง"
+    },
+    {
+      "source_url": "https://www.dcu.ie/computing",
+      "source_title": "School of Computing",
+      "source_publisher": "Dublin City University",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:51:21Z",
+      "source_locator": "Official school profile; states it offers BSc in Computer Science"
+    },
+    {
+      "source_url": "https://sci.tu.ac.th/sci-tu-%E0%B8%81%E0%B8%B1%E0%B8%9A-school-of-computing-dublin-city-university-%E0%B8%A3%E0%B9%88%E0%B8%A7%E0%B8%A1%E0%B8%A5%E0%B8%87%E0%B8%99%E0%B8%B2%E0%B8%A1%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97/",
+      "source_title": "SCI-TU กับ School of Computing, Dublin City University ร่วมลงนามบันทึกความร่วมมือทางวิชาการ (MOU) เพื่อพัฒนางานวิจัย รวมถึงการแลกเปลี่ยนนักศึกษาระหว่างทั้งสองสถาบัน",
+      "source_publisher": "Faculty of Science and Technology, Thammasat University (SCI-TU)",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T17:51:21Z",
+      "source_locator": "Lines 47–56: dated 3 Feb 2023; dean of SCI-TU signed with DCU School of Computing representative; purpose includes research development, student exchange, joint programs, and computer science expertise; รอยืนยันการครอบคลุมหลักสูตรปริญญาตรี CSTU ศูนย์รังสิต; วันลงนามไม่ถูกใช้แทนวันเริ่มมีผล"
+    },
+    {
+      "source_url": "https://www.yarsi.ac.id/akademik/fakultas-teknologi-informasi",
+      "source_title": "Fakultas Teknologi Informasi",
+      "source_publisher": "Universitas YARSI",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:51:21Z",
+      "source_locator": "Official faculty profile; identifies Faculty of Information Technology and its programs"
+    },
+    {
+      "source_url": "https://sci.tu.ac.th/news-2022-6-22/",
+      "source_title": "SCI-TU ลงนามบันทึกความร่วมมือทางวิชาการกับ Faculty of Information Technology, Yarsi University ประเทศอินโดนีเซีย",
+      "source_publisher": "Faculty of Science and Technology, Thammasat University (SCI-TU)",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T17:51:21Z",
+      "source_locator": "Lines 48–52: dated 22 Jun 2022; Computer Science faculty joined the visit; SCI-TU and YARSI Faculty of IT signed an academic MOU for academic, research, and student development cooperation; รอยืนยันการครอบคลุมหลักสูตรปริญญาตรี CSTU ศูนย์รังสิต; วันลงนามไม่ถูกใช้แทนวันเริ่มมีผล"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/2021/02/15/scb-young-talent/",
+      "source_title": "SCB young talent",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T17:51:26Z",
+      "source_locator": "ย่อหน้าสุดท้ายระบุวันจัด 3 สิงหาคม 2558, ผู้จัด, สถานที่ระดับสำนักงานใหญ่ และผลรางวัล"
+    },
+    {
+      "source_url": "https://www.scb.co.th/en/about-us",
+      "source_title": "About SCB",
+      "source_publisher": "ธนาคารไทยพาณิชย์ (SCB)",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:56:45.049312Z",
+      "source_locator": "หน้าเว็บไซต์ทางการขององค์กร"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/judges-choice-award-%E0%B9%83%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%99-google-hackfair-bangkok/",
+      "source_title": "Judge’s Choice Award ในงาน Google HackFair Bangkok",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T17:51:26Z",
+      "source_locator": "ข่าวทีม CSTU ใน Google HackFair; วันที่ 19 ธันวาคม 2558 และชื่อวันในสัปดาห์ขัดกัน; ระดับการศึกษาไม่ระบุ จึงยังไม่เผยแพร่"
+    },
+    {
+      "source_url": "https://about.google/",
+      "source_title": "About Google",
+      "source_publisher": "Google",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T17:56:45.049312Z",
+      "source_locator": "หน้าเว็บไซต์ทางการขององค์กร"
+    },
+    {
+      "source_url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C%E0%B8%AF-%E0%B8%A1%E0%B8%98-%E0%B9%80%E0%B8%9B%E0%B8%B4%E0%B8%94%E0%B8%84%E0%B9%88%E0%B8%B2%E0%B8%A2%E0%B8%84%E0%B8%AD/",
+      "source_title": "คณะวิทย์ฯ มธ. เปิดค่ายคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2",
+      "source_publisher": "SCI-TU คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T17:51:26Z",
+      "source_locator": "ย่อหน้า 2–4 ระบุวันเปิดค่าย ช่วงจัดอบรม ผู้ดำเนินการ สถานที่ และกลุ่มผู้เข้าอบรม"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/2021/02/15/nsc-2021/",
+      "source_title": "NSC 2021",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T17:51:26Z",
+      "source_locator": "บรรทัดหัวเรื่องระบุวันประกาศ 15 กุมภาพันธ์ 2564; ย่อหน้า 3 ระบุทีมศูนย์รังสิตผ่านเข้ารอบ; ไม่พบวันแข่งขันจริง"
+    }
+  ],
+  "partners": [
+    {
+      "key": "nvidia",
+      "name": "NVIDIA Corporation",
+      "type": "private_company",
+      "country": "United States",
+      "country_code": "US",
+      "description": "บริษัทเทคโนโลยีที่พัฒนา GPU และแพลตฟอร์มซอฟต์แวร์สำหรับงาน AI โดยร่วมจัดเวิร์กช็อป Local AI กับสาขาวิชาวิทยาการคอมพิวเตอร์ที่ศูนย์รังสิตในปี 2569",
+      "website_url": "https://www.nvidia.com/en-us/about-nvidia/",
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/",
+        "https://www.nvidia.com/en-us/about-nvidia/"
+      ],
+      "cstu_evidence": "ข่าวคณะระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับ NVIDIA จัดเวิร์กช็อป Local AI ที่ศูนย์รังสิตเมื่อ 9 กรกฎาคม 2569 ผู้เข้าร่วมได้ทดลองใช้ GPU และสร้าง AI Agent; หลักฐานนี้ยืนยันกิจกรรมครั้งนั้นเท่านั้น",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "svoa",
+      "name": "SVOA Public Company Limited",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "บริษัทไทยด้านผลิตภัณฑ์และบริการไอที ซึ่งร่วมจัดเวิร์กช็อป Local AI กับสาขาวิชาวิทยาการคอมพิวเตอร์ที่ศูนย์รังสิตในปี 2569",
+      "website_url": "https://www.svoa.co.th/",
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/",
+        "https://www.svoa.co.th/"
+      ],
+      "cstu_evidence": "ข่าวคณะระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับบริษัท SVOA จัดเวิร์กช็อป Local AI ที่ศูนย์รังสิตเมื่อ 9 กรกฎาคม 2569; หลักฐานนี้ยืนยันกิจกรรมครั้งนั้นเท่านั้น",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "ecti-association",
+      "name": "ECTI Association (Electrical Engineering/Electronics, Computer, Telecommunications and Information Technology Association)",
+      "type": "network",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "สมาคมวิชาการไทยด้านไฟฟ้า อิเล็กทรอนิกส์ คอมพิวเตอร์ โทรคมนาคม และสารสนเทศ ซึ่งร่วมจัดเวิร์กช็อป Local AI กับสาขาวิชาวิทยาการคอมพิวเตอร์ที่ศูนย์รังสิตในปี 2569",
+      "website_url": "https://ecti-thailand.org/",
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/",
+        "https://ecti-thailand.org/"
+      ],
+      "cstu_evidence": "ข่าวคณะระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับสมาคม ECTI จัดเวิร์กช็อป Local AI ที่ศูนย์รังสิตเมื่อ 9 กรกฎาคม 2569; หลักฐานนี้ยืนยันกิจกรรมครั้งนั้นเท่านั้น",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "kbtg",
+      "name": "KASIKORN Business-Technology Group (KBTG)",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "เคยส่งผู้เชี่ยวชาญร่วมกิจกรรม University Roadshow ของ CSTU ในเดือนตุลาคม 2563; ยังไม่ยืนยันสถานะความร่วมมือปัจจุบัน",
+      "website_url": "https://www.kbtg.tech/",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/",
+        "https://www.kbtg.tech/"
+      ],
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุว่า KBTG นำทีมผู้เชี่ยวชาญมาแนะนำบริษัทและแลกเปลี่ยนความรู้กับนักศึกษาในโครงการ KBTG University Roadshow เมื่อเดือนตุลาคม 2563; ไม่มีหลักฐานในหน้านี้ที่ยืนยันสถานะความร่วมมือปัจจุบัน",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "ipb-university",
+      "name": "IPB University (Institut Pertanian Bogor)",
+      "type": "university",
+      "country": "Indonesia",
+      "country_code": "ID",
+      "description": "ผู้จัด CSAgri IPB 2022 ที่นักศึกษาปริญญาตรี CSTU เข้าร่วม; เป็นประวัติโครงการในปี 2565",
+      "website_url": "https://www.ipb.ac.id/en/",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/",
+        "https://www.ipb.ac.id/en/"
+      ],
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุนักศึกษาปริญญาตรีสาขาวิชาวิทยาการคอมพิวเตอร์เข้าร่วม International Summer Course CSAgri IPB 2022 ที่จัดโดย IPB ระหว่าง 9–17 กันยายน 2565 และทำกิจกรรม Computer Science for Agriculture: IoT for Smart Urban Farming; เป็นหลักฐานการเข้าร่วมโครงการครั้งนั้น",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "university-of-california-san-diego",
+      "name": "University of California San Diego (UC San Diego)",
+      "type": "university",
+      "country": "United States",
+      "country_code": "US",
+      "description": "ปลายทางโครงการวิจัยภาคฤดูร้อน ISRP ของนักศึกษา CSTU ในปี 2565",
+      "website_url": "https://ucsd.edu/",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/",
+        "https://ucsd.edu/about/index.html"
+      ],
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุนักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์เข้าร่วม International Summer Research Program ที่ UC San Diego ระหว่าง 26 มิถุนายน–27 สิงหาคม 2565 และทำงานศึกษาเรื่องการควบคุมหุ่นยนต์; หลักฐานนี้ยืนยันการเข้าร่วมโครงการครั้งนั้น",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "aist-japan",
+      "name": "National Institute of Advanced Industrial Science and Technology (AIST)",
+      "type": "government",
+      "country": "Japan",
+      "country_code": "JP",
+      "description": "หน่วยงานวิจัยญี่ปุ่นที่รับนักศึกษาปริญญาตรี CSTU แลกเปลี่ยนทำวิจัย ตามประวัติปี 2563",
+      "website_url": "https://www.aist.go.jp/index_en.html",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/",
+        "https://www.aist.go.jp/index_en.html"
+      ],
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุนักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์สองคนไปแลกเปลี่ยนทำวิจัยที่ AIST เมือง Tsukuba ระหว่าง 10 มิถุนายน–17 สิงหาคม 2563; หลักฐานนี้ยืนยันกิจกรรมในช่วงเวลาดังกล่าว",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "feed-ingredients-trading-business-group-cp",
+      "name": "Feed Ingredients Trading Business Group (FIT), Charoen Pokphand Group",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "กลุ่มธุรกิจในเครือ CP ที่ส่งผู้เชี่ยวชาญร่วมสัมมนา AI ของ CSTU เมื่อ 24 กุมภาพันธ์ 2563",
+      "website_url": "https://www.cpgroupglobal.com/en/about-cp-group/our-business",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/",
+        "https://www.cpgroupglobal.com/en/about-cp-group/our-business"
+      ],
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุว่าสาขาวิชาจัดสัมมนา Democratizing A.I. เมื่อ 24 กุมภาพันธ์ 2563 และเชิญผู้เชี่ยวชาญด้านระบบสนับสนุนการตัดสินใจจาก Feed Ingredients Trading Business Group (C.P. Group) มาแลกเปลี่ยนความรู้; เป็นหลักฐานกิจกรรมสัมมนาครั้งนั้น",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "dublin-city-university-school-of-computing",
+      "name": "School of Computing, Dublin City University",
+      "type": "university",
+      "country": "Ireland",
+      "country_code": "IE",
+      "description": "หน่วยงานคอมพิวเตอร์ของ DCU มีข่าว MoU กับ SCI-TU; รอยืนยันการครอบคลุมปริญญาตรี CSTU ศูนย์รังสิต",
+      "website_url": "https://www.dcu.ie/computing",
+      "source_urls": [
+        "https://www.dcu.ie/computing",
+        "https://sci.tu.ac.th/sci-tu-%E0%B8%81%E0%B8%B1%E0%B8%9A-school-of-computing-dublin-city-university-%E0%B8%A3%E0%B9%88%E0%B8%A7%E0%B8%A1%E0%B8%A5%E0%B8%87%E0%B8%99%E0%B8%B2%E0%B8%A1%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97/"
+      ],
+      "cstu_evidence": "SCI-TU reports a signed MOU with this School for student exchange, joint programs, research, and strengthening expertise in computer science. The source does not state which TU degree level or campus participates; the subject and student-exchange link are directly relevant to CSTU, with the undergraduate/Rangsit applicability to be confirmed internally.",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "yarsi-university-faculty-of-information-technology",
+      "name": "Faculty of Information Technology, YARSI University",
+      "type": "university",
+      "country": "Indonesia",
+      "country_code": "ID",
+      "description": "คณะเทคโนโลยีสารสนเทศของ YARSI มีข่าว MoU กับ SCI-TU; รอยืนยันขอบเขตปริญญาตรี CSTU ศูนย์รังสิต",
+      "website_url": "https://www.yarsi.ac.id/akademik/fakultas-teknologi-informasi",
+      "source_urls": [
+        "https://www.yarsi.ac.id/akademik/fakultas-teknologi-informasi",
+        "https://sci.tu.ac.th/news-2022-6-22/"
+      ],
+      "cstu_evidence": "SCI-TU reports an academic MOU signed by the Faculty of Science and Technology dean and a YARSI Faculty of Information Technology representative. Computer Science faculty members took part in the visit, and the stated aims include academic, research, and student development. The source does not identify degree level or campus, so confirm applicability to the undergraduate Rangsit scope before treating as an active CSTU record.",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "scb",
+      "name": "ธนาคารไทยพาณิชย์ (SCB)",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "website_url": "https://www.scb.co.th/en/about-us",
+      "description": "ผู้จัด SCB Young Talent ครั้งที่ 2 ซึ่งทีมนักศึกษาปริญญาตรี CSTU ได้รับรางวัลในปี 2558",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/2021/02/15/scb-young-talent/",
+        "https://www.scb.co.th/en/about-us"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุทีมนักศึกษาปี 3 จากภาควิชาวิทยาการคอมพิวเตอร์ มธ. และวันจัดประกวดที่สำนักงานใหญ่ SCB",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "google",
+      "name": "Google",
+      "type": "private_company",
+      "country": "United States",
+      "country_code": "US",
+      "website_url": "https://about.google/",
+      "description": "ผู้จัด Google HackFair Bangkok ที่มีทีมจากสาขาเข้าร่วม; รอตรวจความสอดคล้องของวันที่และขอบเขตระดับการศึกษา",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/judges-choice-award-%E0%B9%83%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%99-google-hackfair-bangkok/",
+        "https://about.google/"
+      ],
+      "cstu_evidence": "รายงานทางการระบุทีมจากภาควิชาวิทยาการคอมพิวเตอร์ มธ. ส่งผลงานและได้รับรางวัลในงานโดยตรง; วันในสัปดาห์ไม่ตรงกับวันที่ที่แหล่งข่าวระบุ และยังไม่ระบุระดับการศึกษา",
+      "scope_status": "pending",
+      "is_published": false
+    }
+  ],
+  "documents": [
+    {
+      "key": "sci-tu-dcu-school-of-computing-mou-2023",
+      "name": "Academic MOU between Faculty of Science and Technology, Thammasat University and School of Computing, Dublin City University",
+      "doc_type": "mou",
+      "document_kind": "agreement",
+      "file_availability": "metadata_only",
+      "effective_date": null,
+      "expiry_date": null,
+      "responsible": null,
+      "status": null,
+      "signer_our": "รศ.ดร.สุเพชร จิรขจรกุล, คณบดีคณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ (ตามประกาศ SCI-TU)",
+      "signer_partner": "Assoc. Prof. Dr. Cathal Gurrin, Deputy Head, School of Computing, Dublin City University (as reported by SCI-TU)",
+      "partner_key": "dublin-city-university-school-of-computing",
+      "scope_items": [
+        "Research development",
+        "Student exchange",
+        "Joint programs",
+        "Developing expertise in computer science"
+      ],
+      "source_urls": [
+        "https://sci.tu.ac.th/sci-tu-%E0%B8%81%E0%B8%B1%E0%B8%9A-school-of-computing-dublin-city-university-%E0%B8%A3%E0%B9%88%E0%B8%A7%E0%B8%A1%E0%B8%A5%E0%B8%87%E0%B8%99%E0%B8%B2%E0%B8%A1%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97/"
+      ],
+      "cstu_evidence": "Official SCI-TU report explicitly identifies a signed MOU with a School of Computing and lists student exchange and computer-science expertise as purposes. This is directly relevant to the CSTU subject area; the announcement does not specify undergraduate eligibility, Rangsit campus, agreement term, or whether the agreement remains active.",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "sci-tu-yarsi-faculty-it-mou-2022",
+      "name": "Academic MOU between Faculty of Science and Technology, Thammasat University and Faculty of Information Technology, YARSI University",
+      "doc_type": "mou",
+      "document_kind": "agreement",
+      "file_availability": "metadata_only",
+      "effective_date": null,
+      "expiry_date": null,
+      "responsible": null,
+      "status": null,
+      "signer_our": "รศ.ดร.ณัฐธนนท์ หงส์วริทธิ์ธร, คณบดีคณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ (ตามประกาศ SCI-TU)",
+      "signer_partner": "Dr. Ummi Azizah Rachmawati, Faculty of Information Technology, YARSI University (as reported by SCI-TU)",
+      "partner_key": "yarsi-university-faculty-of-information-technology",
+      "scope_items": [
+        "Academic cooperation",
+        "Research cooperation",
+        "Student development"
+      ],
+      "source_urls": [
+        "https://sci.tu.ac.th/news-2022-6-22/"
+      ],
+      "cstu_evidence": "Official SCI-TU report explicitly confirms the signed faculty-level MOU and that Computer Science faculty members joined the visit. This gives a plausible CSTU connection, but the report does not specify undergraduate eligibility, Rangsit campus, agreement term, or whether the agreement remains active; confirm internally before public inclusion under the narrow undergraduate scope.",
+      "scope_status": "pending",
+      "is_published": false
+    }
+  ],
+  "activities": [
+    {
+      "key": "nvidia-local-ai-workshop-2026",
+      "name": "NVIDIA Powers the World’s AI, And Yours: Unlocked",
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับ NVIDIA, SVOA, ECTI และคณะพาณิชยศาสตร์และการบัญชี มธ. จัดเวิร์กช็อปทดลองใช้ GPU และเครื่องมือ Local AI พร้อมกิจกรรมสร้าง AI Agent และนำเสนอผลงาน",
+      "activity_type": "student_workshop_competition",
+      "date": "2026-07-09",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": "09:00–16:00",
+      "location": "อาคาร SC3 ชั้น 4 ห้อง 402 มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "nvidia",
+      "agreement_key": null,
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/"
+      ],
+      "cstu_evidence": "ข่าวทางการระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้ร่วมจัดกิจกรรม ณ ศูนย์รังสิต",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "posn-computer-camp-2-2026",
+      "name": "โครงการอบรมค่ายคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2 ประจำปี 2569",
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ มธ. รับผิดชอบจัดค่ายคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2 สำหรับนักเรียนที่ผ่านค่าย 1 เพื่อฝึกวิเคราะห์โจทย์และเขียนโปรแกรมเตรียมสู่การแข่งขันระดับประเทศ",
+      "activity_type": "engineering_camp",
+      "date": "2026-03-04",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2026-03-20",
+      "time": "08:30–18:30",
+      "location": "สาขาวิชาวิทยาการคอมพิวเตอร์ อาคารบรรยายรวม 2 คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
+      "participants": null,
+      "status": null,
+      "is_open": null,
+      "partner_key": null,
+      "agreement_key": null,
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C%E0%B8%AF-%E0%B8%A1%E0%B8%98-%E0%B9%80%E0%B8%9B%E0%B8%B4%E0%B8%94%E0%B8%84%E0%B9%88%E0%B8%B2%E0%B8%A2%E0%B8%84%E0%B8%AD/"
+      ],
+      "cstu_evidence": "ข่าวทางการระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ มธ. ได้รับมอบหมายเป็นศูนย์รับผิดชอบจัดค่าย 2 ที่ศูนย์รังสิต",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "ipb-csagri-summer-course-2022",
+      "name": "International Summer Course CSAgri IPB 2022",
+      "description": "นักศึกษาปริญญาตรี CSTU เข้าร่วมหลักสูตรระยะสั้นด้าน IoT เพื่อเกษตรอัจฉริยะที่จัดโดย IPB ในปี 2565",
+      "activity_type": "exchange",
+      "date": "2022-09-09",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2022-09-17",
+      "time": null,
+      "location": "Institut Pertanian Bogor (IPB), ประเทศอินโดนีเซีย",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "ipb-university",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/"
+      ],
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือของสาขาระบุว่านักศึกษาปริญญาตรีสาขาวิทยาการคอมพิวเตอร์เข้าร่วมกิจกรรมโดยตรง",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "ucsd-international-summer-research-2022",
+      "name": "International Summer Research Program (ISRP) ที่ UC San Diego",
+      "description": "นักศึกษา CSTU เข้าร่วมวิจัยภาคฤดูร้อนที่ UC San Diego และฝึกควบคุมหุ่นยนต์ด้วย ROS ในปี 2565",
+      "activity_type": "exchange",
+      "date": "2022-06-26",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2022-08-27",
+      "time": null,
+      "location": "University of California, San Diego, สหรัฐอเมริกา",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "university-of-california-san-diego",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/"
+      ],
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือระบุผู้เข้าร่วมเป็นนักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์ พร้อมช่วงวันที่และกิจกรรมวิจัย",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "kbtg-university-roadshow-2020",
+      "name": "KBTG University Roadshow",
+      "description": "ผู้เชี่ยวชาญ KBTG แนะนำองค์กรและแบ่งปันความรู้กับนักศึกษา CSTU; แหล่งข่าวระบุเพียงเดือนตุลาคม 2563",
+      "activity_type": "seminar",
+      "date": "2020-10-01",
+      "date_kind": "event",
+      "date_precision": "month",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "kbtg",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/"
+      ],
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือของสาขาระบุว่าบริษัทนำทีมมาแนะนำองค์กรและแลกเปลี่ยนความรู้กับนักศึกษาในกิจกรรมนี้",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "aist-undergraduate-research-exchange-2020",
+      "name": "แลกเปลี่ยนทำวิจัยที่ AIST ประเทศญี่ปุ่น",
+      "description": "นักศึกษาปริญญาตรี CSTU ไปแลกเปลี่ยนทำวิจัยที่ AIST เมือง Tsukuba ประเทศญี่ปุ่น ตามช่วงวันที่ในหน้าความร่วมมือของสาขา",
+      "activity_type": "exchange",
+      "date": "2020-06-10",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2020-08-17",
+      "time": null,
+      "location": "National Institute of Advanced Industrial Science and Technology (AIST), Tsukuba, Japan",
+      "participants": 2,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "aist-japan",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/"
+      ],
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือระบุชื่อหลักสูตรปริญญาตรี CSTU ของนักศึกษาที่ไปทำวิจัย ช่วงวันที่ และสถานที่ที่ AIST",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "democratizing-ai-cp-group-seminar-2020",
+      "name": "Democratizing A.I. – How a computer scientist can help narrow social inequality",
+      "description": "CSTU เชิญผู้เชี่ยวชาญจากกลุ่มธุรกิจในเครือ CP แบ่งปันแนวทางประยุกต์ AI วิเคราะห์ตลาดสินค้าเกษตร",
+      "activity_type": "seminar",
+      "date": "2020-02-24",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "feed-ingredients-trading-business-group-cp",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/partnership-th/"
+      ],
+      "cstu_evidence": "หน้าเครือข่ายความร่วมมือระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้จัดสัมมนา และระบุวิทยากรผู้เชี่ยวชาญจากบริษัทคู่ร่วมกิจกรรม",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "nsc-2021-cstu-finalist",
+      "name": "การแข่งขันพัฒนาโปรแกรมคอมพิวเตอร์แห่งประเทศไทย ครั้งที่ 23 (NSC 2021)",
+      "description": "โครงงานจากทีมสาขาวิชาวิทยาการคอมพิวเตอร์ ศูนย์รังสิต ผ่านเข้าสู่รอบชิงชนะเลิศการแข่งขัน NSC 2021; หน้าแหล่งข่าวไม่ได้ระบุวันแข่งขันรอบชิงชนะเลิศ",
+      "activity_type": "student_workshop_competition",
+      "date": "2021-02-15",
+      "date_kind": "announcement",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": null,
+      "is_open": null,
+      "partner_key": null,
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/2021/02/15/nsc-2021/"
+      ],
+      "cstu_evidence": "ข่าวของสาขาระบุชัดว่าหนึ่งในทีมที่เข้ารอบชิงชนะเลิศมาจากสาขาวิชาวิทยาการคอมพิวเตอร์ ศูนย์รังสิต",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "scb-young-talent-business-plan-2015",
+      "name": "SCB Young Talent ครั้งที่ 2: ประกวดแผนธุรกิจหัวข้อ Balance Inquiry",
+      "description": "ทีมนักศึกษาวิทยาการคอมพิวเตอร์ มธ. นำเสนอแนวคิดและต้นแบบแอปตรวจสอบยอดเงินในโครงการ SCB Young Talent และได้รับรางวัลชนะเลิศ",
+      "activity_type": "student_workshop_competition",
+      "date": "2015-08-03",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": "สำนักงานใหญ่ธนาคารไทยพาณิชย์, กรุงเทพฯ",
+      "participants": 4,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "scb",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/2021/02/15/scb-young-talent/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุทีมนักศึกษาปี 3 จากภาควิชาวิทยาการคอมพิวเตอร์ มธ. และวันจัดประกวดที่สำนักงานใหญ่ SCB",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "google-hackfair-bangkok-2015",
+      "name": "Google HackFair Bangkok",
+      "description": "ทีมจากภาควิชาวิทยาการคอมพิวเตอร์ มธ. นำผลงาน Augmented Reality using Tango Tablet ไปจัดแสดงในงาน Google HackFair Bangkok และได้รับรางวัล Judge’s Choice Award",
+      "activity_type": "student_workshop_competition",
+      "date": "2015-12-19",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": "Cyber World Tower, กรุงเทพฯ",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "partner_key": "google",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/judges-choice-award-%E0%B9%83%E0%B8%99%E0%B8%87%E0%B8%B2%E0%B8%99-google-hackfair-bangkok/"
+      ],
+      "cstu_evidence": "รายงานทางการระบุทีมจากภาควิชาวิทยาการคอมพิวเตอร์ มธ. ส่งผลงานและได้รับรางวัลในงานโดยตรง; กักไว้ตรวจเพิ่มเติม: แหล่งข่าวระบุวันอังคาร แต่ 19 ธันวาคม 2558 ตรงกับวันเสาร์ และไม่ระบุระดับการศึกษา",
+      "scope_status": "pending",
+      "is_published": false
+    }
+  ],
+  "review_notes": [
+    "การเผยแพร่ยืนยันความเกี่ยวข้องตามกิจกรรมที่มีหลักฐาน ไม่อ้างว่ามีสัญญาหรือความร่วมมือปัจจุบัน",
+    "MoU DCU/YARSI และ partner ทั้งสองเก็บเป็นข้อมูลรอตรวจและไม่เผยแพร่",
+    "Google HackFair/Google เก็บเป็นข้อมูลรอตรวจเพราะวันในสัปดาห์ขัดกับวันที่และไม่ระบุระดับการศึกษา",
+    "KBTG เก็บวันที่ 2020-10-01 เป็นตัวแทนเดือนด้วย date_precision=month ไม่แสดงเป็นวันจริง",
+    "กิจกรรม NVIDIA มีหลายภาคี แต่โมเดลปัจจุบันมี partner_id เดียว จึงเชื่อม NVIDIA และรักษาชื่อ SVOA/ECTI ในรายละเอียดและหลักฐาน",
+    "ค่าย สอวน. เป็นบริการวิชาการที่ CSTU จัด ณ รังสิต ไม่อ้างว่าผู้เข้าอบรมเป็นนักศึกษาปริญญาตรี",
+    "ไม่มีไฟล์สัญญาจริงที่ยืนยันได้ จึงไม่สร้าง PDF หรือปุ่มดาวน์โหลดจำลอง",
+    "PRAGMA34 Workshop Meeting ย้ายไปรับเข้าในไฟล์ cstu-candidates-faculty-site-2026-10-02.json เพราะนับงานแข่งขัน/การเข้าร่วมของนักศึกษา CS เป็นกิจกรรมความร่วมมือแบบเดียวกับ NSC, SCB และ Google HackFair"
+  ],
+  "excluded_candidates": [
+    {
+      "name": "Technological University Dublin",
+      "reason": "หน้า CSTU ระบุเพียงการหารือถึงความเป็นไปได้ในการร่วมมือด้านการศึกษา จึงยังไม่มีหลักฐานกิจกรรม โครงการ หรือนักศึกษาร่วมโครงการที่เกิดขึ้นแล้ว",
+      "url": "https://cs.sci.tu.ac.th/partnership-th/"
+    },
+    {
+      "name": "King Power Click",
+      "reason": "หน้าความร่วมมือ CSTU แสดงชื่อบริษัท แต่เนื้อหาประกอบกล่าวถึงนักศึกษาไปทำวิจัยที่ AIST และไม่เชื่อมบริษัทกับกิจกรรมนั้น หลักฐานจึงไม่เพียงพอและมีข้อความไม่สอดคล้องกัน",
+      "url": "https://cs.sci.tu.ac.th/partnership-th/"
+    },
+    {
+      "name": "Academic MOU between Faculty of Science and Technology, Thammasat University and Institut de Recherche pour le Développement (IRD)",
+      "url": "https://tu.ac.th/tu01210569/",
+      "reason": "The official TU announcement confirms a faculty-level agreement signed 14 May 2026 and says fields may include Computer Science and capacity-building for staff and students. It does not identify CSTU or the undergraduate Rangsit program as a participant or beneficiary, so it is held out of scope pending internal confirmation."
+    },
+    {
+      "name": "TU x CP Group MOU kick-off / preparation meeting",
+      "url": "https://sci.tu.ac.th/tu-x-cp-group-mou-renewal-kick-off-meeting/",
+      "reason": "Official SCI-TU source describes preparation for a future MOU signing, so this is not a signed agreement. Its AI/Data Science interests and Computer Science faculty attendee do not establish coverage of CSTU undergraduate Rangsit."
+    }
+  ]
+}

@@ -8,12 +8,12 @@ import {
   ChevronRight,
   Download,
   TrendingUp,
-  Building2,
   FileText,
+  AlertTriangle,
+  Building2,
   CalendarDays,
   GraduationCap,
   MessageSquare,
-  AlertTriangle,
 } from "lucide-react";
 import {
   BarChart,
@@ -66,6 +66,7 @@ const topPartners = [
   { name: "University of Malaya", activities: 5, students: 3, pct: 50 },
   { name: "Chulabhorn Research Institute", activities: 9, students: 0, pct: 82 },
 ];
+
 
 const expiringMou = [
   { title: "MoU UM 2565", org: "University of Malaya", expire: "31 พ.ค. 2568", daysLeft: 25 },

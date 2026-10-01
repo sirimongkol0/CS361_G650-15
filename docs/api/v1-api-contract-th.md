@@ -1,201 +1,58 @@
-# API Contract V1 (v1.2) — ฉบับภาษาไทย
+# สัญญา Public API - V2
 
-> คำแปลของ `docs/api/v1-api-contract.md` — ตัว endpoint และ field เป็นข้อความภาษาอังกฤษตาม API จริง
+คง prefix `/api/v1` เพื่อรองรับ client เดิม เอกสารนี้อธิบาย API ที่เปิดใช้จริง
+ดู fields, aliases และกฎเผยแพร่ครบที่ [V2 field contract](v2-field-contract.md)
 
-## ภาพรวม
+## API สาธารณะ
 
-API แบบสาธารณะเน้นการอ่าน ส่วนใหญ่เป็น GET และกรองเฉพาะรายการที่ publish เอกสาร (documents) มีเพิ่ม: อัปโหลด (POST) และลบ (DELETE)
+| Method | Path | หน้าที่ |
+| --- | --- | --- |
+| GET | `/api/v1/health` | ตรวจฐานข้อมูล คืน `{"status":"healthy"}` |
+| GET | `/api/v1/partners/` | รายการหน่วยงานที่ผ่านเกณฑ์เผยแพร่ |
+| GET | `/api/v1/partners/{id}` | รายละเอียดหน่วยงาน |
+| GET | `/api/v1/partners/{id}/logo` | โลโก้หน่วยงานที่เผยแพร่ |
+| GET | `/api/v1/documents/` | รายการเอกสารที่ผ่านเกณฑ์เผยแพร่ |
+| GET | `/api/v1/documents/{id}` | รายละเอียดเอกสารและหน่วยงานที่เกี่ยวข้อง |
+| GET | `/api/v1/documents/{id}/download` | ไฟล์ของเอกสารนั้น รองรับชื่อภาษาไทย |
+| GET | `/api/v1/activities/` | รายการกิจกรรมที่เผยแพร่ |
+| GET | `/api/v1/activities/{id}` | รายละเอียดกิจกรรมและความสัมพันธ์ที่เปิดเผยได้ |
 
-Base URL: `/api/v1`
+List คืน JSON array; ID เป็น integer ฉบับร่างหรือข้อมูลไม่ผ่านเกณฑ์ไม่ปรากฏใน list
+และคืน 404 เมื่อเรียก detail/download ความสัมพันธ์กับข้อมูลที่ไม่ผ่านเกณฑ์เป็น null
+แสดงเฉพาะแหล่งข้อมูล verified และผู้ติดต่อที่อนุญาตให้เผยแพร่
 
-- ภายใน Docker network: `http://backend:8000/api/v1`
-- จาก Browser: `http://localhost:8000/api/v1`
+## การค้นหาและกรอง
 
-สิ่งที่เพิ่มจากเวอร์ชันแรก: field ฝั่ง activities (`endDate`, `participants`, `location`, `time`, `status`, `isOpen`, `mouDocId`), field lifecycle ของ documents (`responsible`, `status`, `signerOur`, `signerPartner`, `scopeItems`, `timelineSteps`) และ resource ใหม่ 3 ตัว: feedback, exchange, users — ทั้งหมดเป็น optional/nullable ไม่ทำลายความเข้ากันได้กับเดิม
+| Resource | Query parameters |
+| --- | --- |
+| partners | `search`, `partner_type`, `country` |
+| documents | `search`, `doc_type`, `status`, `date_from`, `date_to` |
+| activities | `search`, `activity_type`, `status`, `date_from`, `date_to` |
 
----
+ค้นชื่อโดยตัดช่องว่างหัวท้ายและไม่แยกตัวพิมพ์เล็กใหญ่ การค้นหน่วยงานรวมชื่อผู้ติดต่อ
+ที่อนุญาตเผยแพร่ เอกสารและกิจกรรมค้นชื่อหน่วยงานที่ผ่านเกณฑ์เผยแพร่ได้ด้วย
+ชื่อหน่วยงานที่ไม่เปิดเผยต้องไม่ทำให้ค้นเจอข้อมูล ตัวกรองรวมกันแบบ AND
+ประเทศเทียบชื่อที่จัดเก็บตรงตัว ประเภทและสถานะใช้ค่า API ที่บันทึกไว้
 
-## Endpoints
+วันที่เป็น `YYYY-MM-DD` เอกสารกรองช่วงทับซ้อนแบบรวมวันขอบเขต:
+expiry >= date_from และ effective <= date_to กิจกรรมใช้ endDate หรือ date
+เมื่อไม่มี endDate เทียบ >= date_from และ date <= date_to วันที่ไม่ทราบค่า
+ไม่ผ่านขอบเขตที่ระบุ วันที่ไม่ถูกต้องหรือช่วงย้อนกลับคืน 422 ทั้งสอง resource
+กรองวันที่ตามค่าที่บันทึก ส่วนการแสดงผลรักษาความหมายและความละเอียดตาม
+`dateKind`/`datePrecision` เช่น วันประกาศ วันปิดรับสมัคร เดือน ปี หรือโดยประมาณ
 
-### GET /api/v1/health
+สถานะกิจกรรมและ `isOpen` ที่ไม่ทราบยังเป็น null หน้าเว็บแสดง “ไม่ระบุ”
+ไม่คาดเดาจากวันที่ วันเวลาอัปโหลดและตรวจสอบแหล่งข้อมูลเป็น UTC
 
-ตรวจสถานะ → `{"status": "healthy"}`
+## ขอบเขตและข้อผิดพลาด
 
-### GET /api/v1/partners/ — รายการ partners ที่ publish
+POST/DELETE เอกสารถูกปิดและคืน 405 โดยไม่เปลี่ยนแถวหรือไฟล์
+`/users`, `/feedback`, `/exchange` รวม detail ไม่เปิดใช้งานและคืน 404
+CORS อนุญาต GET จาก origin ที่ตั้งค่า Login, สิทธิ์และการเขียนข้อมูลเป็น V3+
 
-```json
-[
-  {
-    "id": 1,
-    "name": "มหาวิทยาลัยเชียงใหม่",
-    "description": "...",
-    "logoUrl": null,
-    "type": "university",
-    "country": "ไทย",
-    "websiteUrl": null,
-    "contactName": null,
-    "contactEmail": null
-  }
-]
-```
+Application errors ใช้ `{"detail":"..."}` สถานะ: 200, 404, 405, 422, 500
+และ 503 เมื่อฐานข้อมูลไม่พร้อม CORS preflight ใช้ข้อความของ framework
+ดาวน์โหลดใช้ `Content-Disposition: attachment` และชื่อ UTF-8
 
-`type` เป็นหนึ่งใน `university | government | private_company | nonprofit | alumni_network` — หน้าเว็บแปลงเป็น label ไทย
-
-### GET /api/v1/partners/{id} — ตัวเดียว, 404 ถ้าไม่มีหรือยังไม่ publish
-
-### GET /api/v1/activities/ — รายการกิจกรรมที่ publish (เรียงตามวันที่)
-
-`partner` เป็น `null` เมื่อกิจกรรมไม่มีหน่วยงาน หรือเมื่อหน่วยงานที่เชื่อมอยู่ยังไม่ publish เพื่อไม่ให้กิจกรรมที่เผยแพร่แล้วเปิดเผยข้อมูลหน่วยงานฉบับร่างทางอ้อม
-
-```json
-[
-  {
-    "id": 1,
-    "name": "อบรมเชิงปฏิบัติการ AI for Education",
-    "date": "2025-08-20",
-    "description": null,
-    "activity_type": "workshop",
-    "endDate": null,
-    "participants": 45,
-    "location": null,
-    "time": null,
-    "status": "เสร็จสิ้น",
-    "isOpen": true,
-    "mouDocId": 2,
-    "partner": { "id": 2, "name": "National Taiwan University" }
-  }
-]
-```
-
-- `date`/`endDate` เป็น ISO `YYYY-MM-DD` — การแสดงผลแบบไทย (พ.ศ.) เป็นหน้าที่ของ frontend
-- `activity_type`: `exchange | internship | cooperative_education | academic_event | workshop`
-- `status` เก็บเป็นข้อความตรงตัว (เช่น `เสร็จสิ้น`, `กำลังดำเนินการ`, `วางแผน`)
-- `mouDocId` ชี้ไป MoU/MoA ใน documents
-
-### GET /api/v1/activities/{id} — ตัวเดียว, 404 ถ้าไม่พบ
-
-### GET /api/v1/documents/ — รายการเอกสารที่ publish
-
-scope items กับ timeline steps ฝังมาในแต่ละรายการเลย (ใช้ทำหน้า detail — ไม่มี `GET /documents/{id}` แยกโดยตั้งใจ)
-
-```json
-[
-  {
-    "id": 1,
-    "name": "MoU ความร่วมมือทางวิชาการ มช.",
-    "docType": "mou",
-    "storageKey": "mock/agreements/mock-doc-1.pdf",
-    "mimeType": "application/pdf",
-    "sizeBytes": 1234,
-    "effectiveDate": "2024-01-01",
-    "expiryDate": "2028-12-31",
-    "partnerId": 1,
-    "responsible": "ผศ.ดร.วิชัย สอนดี",
-    "status": "active",
-    "signerOur": "รศ.ดร.ประธาน มหาวิทยาลัย",
-    "signerPartner": "รศ.ดร.สมชาย ใจดี",
-    "scopeItems": [
-      { "id": 1, "position": 1, "text": "การแลกเปลี่ยนนักศึกษาและบุคลากร" }
-    ],
-    "timelineSteps": [
-      { "id": 1, "position": 1, "label": "Draft", "date": "2023-11-01", "done": true, "current": false }
-    ]
-  }
-]
-```
-
-`docType`: `mou | moa | template | announcement` — `status`: `active | expiring | expired | draft`
-
-### POST /api/v1/documents/ — อัปโหลด PDF
-
-ส่งแบบ `multipart/form-data` field `file` (ใส่ `name` เพิ่มได้) ไฟล์เก็บลง storage (S3 ใน production, local disk ตอน dev/CI) — db เก็บแค่ metadata
-
-| สถานะ | ความหมาย |
-|---|---|
-| 201 | สร้างสำเร็จ |
-| 413 | ไฟล์ใหญ่เกิน 10 MB |
-| 415 | ไม่ใช่ไฟล์ PDF |
-
-### GET /api/v1/documents/{id}/download — ดาวน์โหลดไฟล์ (attachment), 404 ถ้าไม่พบ
-
-### DELETE /api/v1/documents/{id} — ลบ (204), 404 ถ้าไม่พบ
-
-### GET /api/v1/feedback/ — feedback ที่ publish เรียงใหม่ → เก่า
-
-```json
-[
-  {
-    "id": 1,
-    "title": "ความพึงพอใจการอบรม AI for Education",
-    "source": "ผู้เข้าร่วมกิจกรรม",
-    "rating": 5,
-    "date": "2025-08-21",
-    "status": "ตรวจสอบแล้ว",
-    "comment": "...",
-    "partnerId": 2,
-    "activityId": 1
-  }
-]
-```
-
-### GET /api/v1/exchange/ — รายชื่อนักศึกษาแลกเปลี่ยน
-
-```json
-[
-  {
-    "id": 1,
-    "name": "นายสมศักดิ์ ใจดี",
-    "type": "outbound",
-    "fromProgram": "หลักสูตรวิทยาการคอมพิวเตอร์",
-    "toOrganization": "National Taiwan University",
-    "startDate": "2025-02-01",
-    "endDate": "2025-05-31",
-    "program": "Student Exchange",
-    "status": "เสร็จสิ้น",
-    "partnerId": 2,
-    "activityId": null
-  }
-]
-```
-
-`type`: `outbound | inbound`
-
-### GET /api/v1/users/ — โปรไฟล์ผู้ดูแล (หน้า settings)
-
-```json
-[
-  {
-    "id": 1,
-    "firstName": "Admin",
-    "lastName": "System",
-    "email": "admin@university.ac.th",
-    "phone": "+66 2 123 4567",
-    "position": "ผู้ดูแลระบบ",
-    "department": "สำนักงานหลักสูตร"
-  }
-]
-```
-
----
-
-## รูปแบบ Error
-
-Error ทุกประเภทใช้รูปแบบเดียวกัน: `{"detail": "..."}`
-
-ข้อมูลที่ไม่มีอยู่และข้อมูลที่ยังไม่ publish คืน 404 แบบเดียวกัน เพื่อไม่ให้ผู้ใช้สาธารณะตรวจพบ ID ของฉบับร่างได้ ค่า path ที่ไม่ผ่าน validation คืน `{"detail": "Request validation failed"}` พร้อม 422 และข้อผิดพลาดภายในคืน `{"detail": "Internal server error"}` โดยไม่เปิดเผยรายละเอียดภายใน
-
-| Status | ความหมาย |
-|---|---|
-| 200 / 201 / 204 | สำเร็จ |
-| 404 | ไม่พบ (หรือยังไม่ publish) |
-| 413 | ไฟล์ใหญ่เกิน 10 MB |
-| 415 | ไม่ใช่ PDF |
-| 422 | ค่าที่ส่งไม่ผ่าน validation |
-| 500 | Error ฝั่ง server |
-
-## หมายเหตุ
-
-- ทุก list endpoint กรอง `is_published = true` ยกเว้น `users` (ไม่มี flag publish)
-- V1 ยังไม่มี authentication; endpoint เขียนมีแค่อัปโหลด/ลบเอกสาร — CRUD ที่เหลือกับ auth เป็นของ V2+
-- วันที่เป็น ISO 8601 — หน้าเว็บแปลงเป็น พ.ศ. (+543) ตอนแสดงผล
-- กำหนด origin ของ Browser ที่เรียก API ได้ผ่าน environment variable `CORS_ORIGINS` แบบคั่นด้วย comma ค่า local เริ่มต้นรองรับ port 3000 และ 3001 ส่วน origin อื่นจะไม่ได้รับ CORS access header
+API local: `http://localhost:8000/api/v1`; ภายใน Compose:
+`http://backend:8000/api/v1` ตั้งค่า browser origins ด้วย `CORS_ORIGINS`

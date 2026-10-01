@@ -56,5 +56,5 @@ node tests/agreements.cjs
 Use `TEST_FRONTEND_URL` to test another frontend port and `PLAYWRIGHT_MODULE`
 to reuse an existing Playwright package. For local API smoke checks, use a
 disposable DB via DATABASE_URL and separate LOCAL_STORAGE_DIR, run
-`backend/seed_mock.py`, then start the API and pass `--api` / `--frontend` to
+`scripts/prepare_v2_validation.py` following `docs/demo-v2.md`, then start the API and pass `--api` / `--frontend` to
 the verification scripts. Migrate existing DB schemas before starting the app.

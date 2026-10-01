@@ -6,7 +6,7 @@ from starlette.exceptions import HTTPException
 
 from config import settings
 from database import engine, Base
-from routers import health, partners, activities, documents, feedback, exchange, users
+from routers import health, partners, activities, documents
 import schemas
 
 # Create tables
@@ -20,7 +20,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
 
@@ -57,6 +57,5 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(partners.router, prefix="/api/v1")
 app.include_router(activities.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
-app.include_router(feedback.router, prefix="/api/v1")
-app.include_router(exchange.router, prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
+# V2 exposes only the public repository. Internal routers are not mounted
+# until their authentication and access-control contract is implemented in V3+.

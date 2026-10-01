@@ -24,10 +24,10 @@ const documents = [
       await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(status !== 200 ? { detail: 'Test error' } : id ? row : empty ? [] : documents) });
     });
     await page.goto(`${base}/documents`);
-    await page.getByText('กำลังโหลดเอกสาร', { exact: true }).waitFor();
+    await page.getByRole('status', { name: 'กำลังโหลดข้อมูล', exact: true }).waitFor();
     releaseLoading();
     await page.getByRole('link', { name: 'Alpha Agreement', exact: true }).waitFor();
-    await page.getByPlaceholder('ค้นหาชื่อข้อตกลง, หน่วยงาน...').fill('Alpha');
+    await page.getByPlaceholder('ค้นหาชื่อข้อตกลง, หน่วยงาน...').fill('Alpha');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Alpha');
     await page.getByLabel('ประเภทเอกสาร').selectOption('MOU');
     await page.getByLabel('สถานะเอกสาร').selectOption('active');
     await page.getByLabel('ช่วงเวลาที่มีผลจาก').fill('2026-12-31');

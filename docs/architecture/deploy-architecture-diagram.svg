@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="950" viewBox="0 0 1400 950" role="img" aria-labelledby="title desc">
+  <title id="title">PCSMS deployment architecture</title>
+  <desc id="desc">Users reach a Next.js container on a single EC2 instance either directly over HTTP port 3000 or over HTTPS through a Cloudflare quick tunnel. The browser calls /api/v1 on the frontend origin and Next.js proxies it over the compose network to a loopback-only FastAPI container, which stores relational data in Amazon RDS PostgreSQL and document bytes in Amazon S3 through the instance role, with a Docker volume as a local fallback. Code flows from the developer through GitHub and GitHub Actions CI to the EC2 host.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#334155"/>
+    </marker>
+    <marker id="arrow-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#94a3b8"/>
+    </marker>
+    <style>
+      .title { font: 700 32px Arial, sans-serif; fill: #172033; }
+      .subtitle { font: 400 17px Arial, sans-serif; fill: #64748b; }
+      .zone { font: 700 16px Arial, sans-serif; fill: #64748b; letter-spacing: 0.5px; }
+      .box-title { font: 700 20px Arial, sans-serif; fill: #172033; }
+      .box-text { font: 400 15px Arial, sans-serif; fill: #475569; }
+      .label { font: 600 14px Arial, sans-serif; fill: #334155; }
+      .note { font: 400 15px Arial, sans-serif; fill: #64748b; }
+      .flow { fill: none; stroke: #334155; stroke-width: 2.5; }
+      .flow-muted { fill: none; stroke: #94a3b8; stroke-width: 2.5; stroke-dasharray: 8 6; }
+    </style>
+  </defs>
+  <rect width="1400" height="950" fill="#f8fafc"/>
+  <text x="40" y="60" class="title">PCSMS - Deployment Architecture</text>
+  <text x="40" y="92" class="subtitle">docker-compose.deploy.yml on one EC2 host - only Next.js is public; it proxies /api/v1 to FastAPI; RDS + S3</text>
+
+  <!-- AWS region -->
+  <rect x="610" y="120" width="770" height="760" rx="20" fill="#fffbf5" stroke="#f59e0b" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="630" y="148" class="zone">AWS · ap-southeast-1</text>
+
+  <!-- EC2 host -->
+  <rect x="640" y="185" width="720" height="395" rx="16" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="660" y="212" class="zone">EC2 t2.micro · Ubuntu 24.04 · Docker Compose</text>
+
+  <!-- User browser -->
+  <rect x="40" y="150" width="220" height="150" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="62" y="188" class="box-title">User browser</text>
+  <text x="62" y="220" class="box-text">Anonymous / public</text>
+  <text x="62" y="246" class="box-text">Dashboard, stakeholders,</text>
+  <text x="62" y="272" class="box-text">activities, documents</text>
+
+  <!-- Cloudflare -->
+  <rect x="320" y="230" width="250" height="105" rx="18" fill="#fff7ed" stroke="#ea580c" stroke-width="3"/>
+  <text x="342" y="266" class="box-title">Cloudflare edge</text>
+  <text x="342" y="294" class="box-text">*.trycloudflare.com</text>
+  <text x="342" y="319" class="box-text">TLS cert, random URL</text>
+
+  <!-- cloudflared -->
+  <rect x="660" y="235" width="300" height="72" rx="14" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="680" y="265" class="box-title">cloudflared</text>
+  <text x="680" y="291" class="box-text">quick tunnel, outbound only</text>
+
+  <!-- Next.js -->
+  <rect x="660" y="345" width="300" height="200" rx="18" fill="#fff7f7" stroke="#b91c1c" stroke-width="3"/>
+  <text x="680" y="383" class="box-title">Next.js 16 :3000</text>
+  <text x="680" y="416" class="box-text">Standalone container</text>
+  <text x="680" y="443" class="box-text">/dashboard/public (home)</text>
+  <text x="680" y="470" class="box-text">Stakeholders · activities</text>
+  <text x="680" y="497" class="box-text">Proxies /api/v1 → backend</text>
+  <text x="680" y="524" class="box-text">proxy.ts: prototype → redirect</text>
+
+  <!-- FastAPI -->
+  <rect x="1030" y="235" width="310" height="225" rx="18" fill="#eff6ff" stroke="#2563eb" stroke-width="3"/>
+  <text x="1050" y="273" class="box-title">FastAPI /api/v1</text>
+  <text x="1050" y="306" class="box-text">health · partners · activities</text>
+  <text x="1050" y="333" class="box-text">documents · feedback</text>
+  <text x="1050" y="360" class="box-text">exchange · users</text>
+  <text x="1050" y="387" class="box-text">Pydantic DTOs, {detail} errors</text>
+  <text x="1050" y="414" class="box-text">Port 8000 on 127.0.0.1 only</text>
+  <text x="1050" y="441" class="box-text">Health probes the database</text>
+
+  <!-- Volume -->
+  <rect x="1030" y="490" width="310" height="70" rx="14" fill="#ffffff" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="1050" y="519" class="box-title" style="font-size:17px">Volume backend_storage</text>
+  <text x="1050" y="544" class="box-text">Fallback: STORAGE_BACKEND=local</text>
+
+  <!-- RDS -->
+  <rect x="660" y="630" width="300" height="140" rx="18" fill="#f0fdf4" stroke="#15803d" stroke-width="3"/>
+  <text x="680" y="668" class="box-title">Amazon RDS PostgreSQL</text>
+  <text x="680" y="700" class="box-text">Partners, activities, documents</text>
+  <text x="680" y="726" class="box-text">Feedback, exchange, users</text>
+  <text x="680" y="752" class="box-text">DATABASE_URL from .env</text>
+
+  <!-- S3 -->
+  <rect x="1030" y="630" width="310" height="140" rx="18" fill="#fefce8" stroke="#ca8a04" stroke-width="3"/>
+  <text x="1050" y="668" class="box-title">Amazon S3</text>
+  <text x="1050" y="700" class="box-text">Bucket cs361-partner-docs</text>
+  <text x="1050" y="726" class="box-text">Document bytes, instance role</text>
+  <text x="1050" y="752" class="box-text">STORAGE_BACKEND=s3 in .env</text>
+
+  <!-- IAM / SG notes -->
+  <text x="640" y="818" class="note">IAM: instance profile CS361-EC2-AppRole → S3 cs361-partner-docs/* (List/Get/Put)</text>
+  <text x="640" y="846" class="note">Security groups: EC2 22 admin IP, 3000 public (8000 not needed) · RDS 5432 ← EC2 IP only</text>
+
+  <!-- GitHub -->
+  <rect x="310" y="600" width="270" height="200" rx="18" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+  <text x="332" y="638" class="box-title">GitHub + Actions CI</text>
+  <text x="332" y="672" class="box-text">full-stack-smoke (compose)</text>
+  <text x="332" y="700" class="box-text">backend-test (PG + SQLite)</text>
+  <text x="332" y="728" class="box-text">frontend-build</text>
+  <text x="332" y="756" class="box-text">v2-integration (Playwright)</text>
+
+  <!-- Developer -->
+  <rect x="40" y="640" width="220" height="130" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="62" y="678" class="box-title">Developer</text>
+  <text x="62" y="710" class="box-text">git push</text>
+  <text x="62" y="736" class="box-text">SSH: git pull,</text>
+  <text x="62" y="760" class="box-text">compose up -d --build</text>
+
+  <!-- Flows -->
+  <!-- browser -> cloudflare -->
+  <path d="M260,255 L316,276" class="flow" marker-end="url(#arrow)"/>
+  <text x="262" y="240" class="label">HTTPS</text>
+  <!-- cloudflared -> cloudflare (outbound) -->
+  <path d="M658,271 L574,281" class="flow" marker-end="url(#arrow)"/>
+  <!-- cloudflared -> next -->
+  <path d="M810,307 L810,341" class="flow" marker-end="url(#arrow)"/>
+  <text x="820" y="331" class="label">localhost:3000</text>
+  <!-- browser -> next direct -->
+  <path d="M180,300 L656,452" class="flow" marker-end="url(#arrow)"/>
+  <text x="196" y="378" class="label">HTTP :3000</text>
+  <text x="196" y="397" class="label">(EC2 public IP)</text>
+  <!-- next -> api (same-origin proxy) -->
+  <path d="M960,420 L1026,420" class="flow" marker-end="url(#arrow)"/>
+  <text x="966" y="410" class="label" style="font-size:13px">/api/v1</text>
+  <text x="966" y="442" class="label" style="font-size:13px">internal</text>
+  <!-- api -> volume (fallback) -->
+  <path d="M1185,460 L1185,486" class="flow-muted" marker-end="url(#arrow-muted)"/>
+  <!-- api -> rds -->
+  <path d="M1030,440 L932,626" class="flow" marker-end="url(#arrow)"/>
+  <text x="990" y="606" class="label">SQLAlchemy :5432</text>
+  <!-- api -> s3 (instance role) -->
+  <path d="M1340,300 L1366,300 L1366,700 L1344,700" class="flow" marker-end="url(#arrow)"/>
+  <!-- developer -> github -->
+  <path d="M260,705 L306,705" class="flow" marker-end="url(#arrow)"/>
+  <!-- github -> ec2 -->
+  <path d="M580,640 L636,572" class="flow" marker-end="url(#arrow)"/>
+  <text x="560" y="600" class="label" style="font-size:13px">git pull</text>
+
+  <text x="40" y="915" class="note">Sources: docker-compose.deploy.yml, frontend/next.config.js, backend/config.py, .github/workflows/ci.yml, docs/decisions/v1-deployment-ec2.md</text>
+</svg>

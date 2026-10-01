@@ -8,6 +8,7 @@ from sqlalchemy import (
     false,
     ForeignKey,
     Integer,
+    LargeBinary,
     String,
     Table,
 )
@@ -30,6 +31,10 @@ document_sources = Table(
     Column("document_id", Integer, ForeignKey("documents.id", ondelete="CASCADE"), primary_key=True),
     Column("source_id", Integer, ForeignKey("sources.id", ondelete="CASCADE"), primary_key=True),
 )
+
+# Shared by partners/documents/activities; the constraint name is per table.
+SCOPE_LEVELS = ("program", "faculty", "university")
+SCOPE_LEVEL_CHECK = "scope_level IS NULL OR scope_level IN ('program', 'faculty', 'university')"
 
 
 class Source(Base):
@@ -65,6 +70,7 @@ class Partner(Base):
             "country_code IS NULL OR (length(country_code) = 2 AND country_code = upper(country_code))",
             name="ck_partners_country_code_iso2",
         ),
+        CheckConstraint(SCOPE_LEVEL_CHECK, name="ck_partners_scope_level"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -73,14 +79,17 @@ class Partner(Base):
     logo_url = Column(Text, nullable=True)
     is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
     # --- real-world stakeholder metadata (all nullable -> backwards compatible) ---
-    type = Column(String, nullable=True)            # university | government | private_company | nonprofit | alumni_network
-    country = Column(String, nullable=True)
+    # Allowed values: docs/api/v2-field-contract.md (labels in frontend/src/lib/labels.ts)
+    type = Column(String, nullable=True)            # university | government | private_company | network | vocational | healthcare | international_organization
+    country = Column(String, nullable=True)         # English short name, one spelling per country_code
     country_code = Column(String(2), nullable=True)
     website_url = Column(Text, nullable=True)
     contact_name = Column(String, nullable=True)    # coordinator / liaison
     contact_email = Column(String, nullable=True)
     # Contact publication requires explicit approval, independently of the partner.
     contact_is_public = Column(Boolean, default=False, server_default=false(), nullable=False)
+    # Cooperation level: program | faculty | university; NULL = not yet classified.
+    scope_level = Column(String, nullable=True)
 
     activities = relationship("Activity", back_populates="partner", passive_deletes=True)
     documents = relationship("Document", back_populates="partner", passive_deletes=True)
@@ -109,6 +118,7 @@ class Document(Base):
             "file_availability IS NULL OR file_availability != 'available' OR storage_key IS NOT NULL",
             name="ck_documents_available_file_has_storage_key",
         ),
+        CheckConstraint(SCOPE_LEVEL_CHECK, name="ck_documents_scope_level"),
     )
 
     name = Column(String, index=True, nullable=False)
@@ -127,15 +137,16 @@ class Document(Base):
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     effective_date = Column(Date, nullable=True)
     expiry_date = Column(Date, nullable=True)
-    # --- frontend mock (pages-C) coverage: all nullable -> backwards compatible ---
-    responsible = Column(String, nullable=True)     # MockDocument.responsible / documentInfoRows
-    status = Column(String, nullable=True)          # active | expiring | expired | draft
-    signer_our = Column(String, nullable=True)      # documentInfoRows "ผู้ลงนาม (ฝ่ายเรา)"
-    signer_partner = Column(String, nullable=True)  # documentInfoRows "ผู้ลงนาม (หน่วยงาน)"
+    # --- agreement detail fields: all nullable -> backwards compatible ---
+    responsible = Column(String, nullable=True)     # person responsible for the agreement
+    status = Column(String, nullable=True)          # active | expiring | expired | draft (must agree with expiry_date)
+    signer_our = Column(String, nullable=True)      # "ผู้ลงนาม (ฝ่ายเรา)"
+    signer_partner = Column(String, nullable=True)  # "ผู้ลงนาม (หน่วยงาน)"
+    scope_level = Column(String, nullable=True)     # program | faculty | university (NULL = not yet classified)
 
     partner = relationship("Partner", back_populates="documents")
     sources = relationship("Source", secondary=document_sources, back_populates="documents")
-    # Mock-coverage children (document detail page)
+    # Document detail children
     scope_items = relationship(
         "DocumentScopeItem", back_populates="document",
         order_by="DocumentScopeItem.position", cascade="all, delete-orphan",
@@ -167,6 +178,7 @@ class Activity(Base):
             "date IS NOT NULL OR (date_kind IS NULL AND date_precision IS NULL)",
             name="ck_activities_date_semantics_require_date",
         ),
+        CheckConstraint(SCOPE_LEVEL_CHECK, name="ck_activities_scope_level"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -176,17 +188,18 @@ class Activity(Base):
     is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     # --- activity classification (nullable -> backwards compatible) ---
-    activity_type = Column(String, nullable=True)   # exchange | internship | cooperative_education | academic_event | workshop
-    date_kind = Column(String, nullable=True)       # event | deadline | application_open | application_close
+    activity_type = Column(String, nullable=True)   # official_event | collaboration_meeting | exchange | seminar | ... (see field contract)
+    date_kind = Column(String, nullable=True)       # event | announcement | deadline | application_open | application_close | period_start | period_end
     date_precision = Column(String, nullable=True)  # day | month | year | approximate
-    # --- frontend mock (pages-C) coverage: all nullable -> backwards compatible ---
-    end_date = Column(Date, nullable=True)          # period end (mock shows ranges like "Feb-May 2568")
-    participants = Column(Integer, nullable=True)   # MockActivity.participants
-    location = Column(String, nullable=True)        # StudentUpcomingActivity.location / activityInfoRows
-    time = Column(String, nullable=True)            # display string, e.g. "09:00 - 17:00" (activityInfoRows)
-    status = Column(String, nullable=True)          # mock status label, stored verbatim (Thai), e.g. "เสร็จสิ้น"
-    is_open = Column(Boolean, nullable=True)        # PublicActivity.open (open for registration)
-    # MoU/MoA backing this activity (MockActivity.mou / mouDocId) -> documents.id
+    # --- activity detail fields: all nullable -> backwards compatible ---
+    end_date = Column(Date, nullable=True)          # period end for multi-day activities
+    participants = Column(Integer, nullable=True)   # participant count
+    location = Column(String, nullable=True)        # venue
+    time = Column(String, nullable=True)            # display string, e.g. "09:00 - 17:00"
+    status = Column(String, nullable=True)          # Thai display label: วางแผน | กำลังดำเนินการ | เสร็จสิ้น
+    is_open = Column(Boolean, nullable=True)        # open for registration
+    scope_level = Column(String, nullable=True)     # program | faculty | university (NULL = not yet classified)
+    # MoU/MoA backing this activity -> documents.id
     mou_document_id = Column(Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
 
     partner = relationship("Partner", back_populates="activities")
@@ -197,7 +210,7 @@ class Activity(Base):
 
 
 class Feedback(Base):
-    """Feedback entries (mock FeedbackEntry / teacherRecentFeedback / adminFeedbackDevelopment)."""
+    """Feedback entries shown on the Feedback page and dashboards."""
 
     __tablename__ = "feedbacks"
 
@@ -210,7 +223,7 @@ class Feedback(Base):
     source = Column(String, nullable=True)          # participant | alumni | partner | student | coop_system
     rating = Column(Integer, nullable=True)         # 1..5
     date = Column(Date, nullable=True, index=True)
-    status = Column(String, nullable=True)          # mock status label (Thai), e.g. "ตรวจสอบแล้ว"
+    status = Column(String, nullable=True)          # Thai status label, e.g. "ตรวจสอบแล้ว"
     comment = Column(String, nullable=True)         # free-text comment
     is_published = Column(Boolean, default=False, nullable=False)
     # Optional links back to the partner / activity the feedback is about
@@ -222,7 +235,7 @@ class Feedback(Base):
 
 
 class ExchangeStudent(Base):
-    """Exchange / internship student records (mock ExchangeStudent, pages-B)."""
+    """Exchange / internship student records."""
 
     __tablename__ = "exchange_students"
 
@@ -235,13 +248,13 @@ class ExchangeStudent(Base):
     )
 
     name = Column(String, index=True, nullable=False)
-    type = Column(String, nullable=True)            # outbound | inbound (mock field `type`)
-    from_program = Column(String, nullable=True)    # mock field `from` (home program)
-    to_organization = Column(String, nullable=True) # mock field `to` (destination)
-    start_date = Column(Date, nullable=True)        # period start (mock shows a display string)
+    type = Column(String, nullable=True)            # outbound | inbound
+    from_program = Column(String, nullable=True)    # home program (outbound) or partner (inbound)
+    to_organization = Column(String, nullable=True) # destination
+    start_date = Column(Date, nullable=True)        # period start
     end_date = Column(Date, nullable=True)          # period end
     program = Column(String, nullable=True)         # Student Exchange | Internship | ...
-    status = Column(String, nullable=True)          # mock status label (Thai), e.g. "เสร็จสิ้น"
+    status = Column(String, nullable=True)          # Thai status label, e.g. "เสร็จสิ้น"
     is_published = Column(Boolean, default=False, nullable=False)
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     activity_id = Column(Integer, ForeignKey("activities.id", ondelete="SET NULL"), nullable=True)
@@ -251,7 +264,7 @@ class ExchangeStudent(Base):
 
 
 class DocumentScopeItem(Base):
-    """One cooperation-scope bullet of an agreement (mock documentScope)."""
+    """One cooperation-scope bullet of an agreement."""
 
     __tablename__ = "document_scope_items"
 
@@ -270,7 +283,7 @@ class DocumentScopeItem(Base):
 
 
 class AdminProfile(Base):
-    """Admin/staff profile shown on the Settings page (mock adminProfile)."""
+    """Admin/staff profile shown on the Settings page."""
 
     __tablename__ = "admin_profiles"
 
@@ -281,3 +294,15 @@ class AdminProfile(Base):
     phone = Column(String, nullable=True)
     position = Column(String, nullable=True)
     department = Column(String, nullable=True)
+
+
+class PartnerLogo(Base):
+    """Partner logo image stored in the database (one per partner), served by GET /partners/{id}/logo.
+    Kept in its own table so the partners table schema is unchanged."""
+    __tablename__ = "partner_logos"
+
+    partner_id = Column(Integer, ForeignKey("partners.id", ondelete="CASCADE"), primary_key=True)
+    mime_type = Column(String, nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    source_url = Column(Text, nullable=True)  # where the image was downloaded from
+    updated_at = Column(DateTime(timezone=True), nullable=False)

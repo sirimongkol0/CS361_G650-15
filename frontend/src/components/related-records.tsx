@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
-import { loadActivities, loadDocuments, useApiResource } from "@/lib/api";
+import { loadDocuments, loadActivities, useApiResource } from "@/lib/api";
 
 type Props = { kind: "agreements" | "activities"; partnerId?: number; documentId?: number };
 
@@ -21,7 +21,7 @@ export function RelatedRecords({ kind, partnerId, documentId }: Props) {
   }, [kind, partnerId, documentId]);
   const title = kind === "agreements" ? "ข้อตกลงที่เกี่ยวข้อง" : "กิจกรรมที่เกี่ยวข้อง";
 
-  return <section className="bg-white border border-line rounded-lg shadow-card p-5">
+  return <section className="bg-white rounded-base shadow-card p-5">
     <h2 className="font-bold mb-3 text-ink">{title}</h2>
     {records.status === "loading" ? <LoadingState compact />
       : records.status === "error" ? <ErrorState compact error={records.error} onRetry={records.retry} />

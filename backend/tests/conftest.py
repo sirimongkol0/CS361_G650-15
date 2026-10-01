@@ -15,6 +15,7 @@ from sqlalchemy.engine import make_url
 # SQLAlchemy engine are created at module import time.
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", "sqlite://")
 os.environ["STORAGE_BACKEND"] = "local"
+os.environ["CORS_ORIGINS"] = "http://localhost:3000,http://localhost:3001"
 test_url = make_url(os.environ["DATABASE_URL"])
 if test_url.get_backend_name() != "sqlite" and not (test_url.database or "").endswith("_test"):
     raise RuntimeError("Destructive tests require a dedicated database ending in _test")

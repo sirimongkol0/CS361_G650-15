@@ -1,0 +1,9 @@
+# Separate cstu_demo database on the existing RDS instance.
+# Use --env-file .env.demo-rds; no secrets are stored in this source file.
+services:
+  seed:
+    environment:
+      DATABASE_URL: ${DEMO_RDS_DATABASE_URL:?Configure the isolated demo database first}
+  backend:
+    environment:
+      DATABASE_URL: ${DEMO_RDS_DATABASE_URL:?Configure the isolated demo database first}

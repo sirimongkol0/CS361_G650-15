@@ -1,0 +1,38 @@
+{
+  "0": {
+    "file": "demo-agreement-1.pdf",
+    "name": "MoU แลกเปลี่ยนนักศึกษา รุ่งอรุณวิทยา",
+    "sizeBytes": 55297,
+    "sha256": "8732e23078dc4ea443c198594941a96bcc33ed0ae37fe529af6eb75a9744aee7"
+  },
+  "1": {
+    "file": "demo-agreement-2.pdf",
+    "name": "MoU วิจัยร่วม NLP กับ Sakuragaoka",
+    "sizeBytes": 53707,
+    "sha256": "cff66290286c828ceab21663087197a0a28daef00b425209c1b2c3136fa87c82"
+  },
+  "2": {
+    "file": "demo-agreement-3.pdf",
+    "name": "MoA ฝึกงานนักพัฒนา CodeCraft Studio",
+    "sizeBytes": 55345,
+    "sha256": "59d5f71a72353a80a5f991588f985a708430f8f6ec8a69a22294ccb958873551"
+  },
+  "3": {
+    "file": "demo-agreement-4.pdf",
+    "name": "MoA โครงการ Dashboard สะพานข้อมูล (รุ่นแรก)",
+    "sizeBytes": 53129,
+    "sha256": "1e471e96c35bdb367aa7d3c2d071aa819d090f4f6f4d85b80b2f6850e6027d77"
+  },
+  "6": {
+    "file": "demo-agreement-7.pdf",
+    "name": "MoU ม่านหมอก (ฉบับร่างภายใน)",
+    "sizeBytes": 53196,
+    "sha256": "ccfb3f22dbab9103773129d282e53901f64610c10c2b5362bcaae153b6f6cd6d"
+  },
+  "7": {
+    "file": "demo-agreement-8.pdf",
+    "name": "แบบฟอร์มเตรียมข้อตกลงความร่วมมือ",
+    "sizeBytes": 50848,
+    "sha256": "51879f0b5302272bcdce56a8ea2a9163c18a74561fbccacecf513f55737f8d56"
+  }
+}

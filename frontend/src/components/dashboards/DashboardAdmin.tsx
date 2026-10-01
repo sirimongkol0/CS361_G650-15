@@ -10,15 +10,11 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { label, partnerTypeLabels } from "@/lib/labels";
 import {
-  adminYearlyTrend,
-  adminMonthlyActivities,
-  adminStakeholderTypes,
-  adminTopCollaborations,
-  adminFeedbackDevelopment as mockAdminFeedbackDevelopment,
-  adminWatchMOU as mockAdminWatchMOU,
-} from "@/lib/mock";
-import { loadDocuments, loadFeedbackEntries, useApiData } from "@/lib/api";
+  agreementState, expiringAgreements, isAgreement, averageRating, beYear, countByMonth, monthLabel,
+  partnersByEngagement, shown, useDashboardData, yearsIn,
+} from "@/lib/dashboard-data";
 
 const statCard = "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover transition-all duration-150";
 const contentCard = "content-card bg-white rounded-base shadow-card";
@@ -33,14 +29,7 @@ function Stars({ n }: { n: number }) {
   );
 }
 
-const kpis = [
-  { icon: Building2, label: "Stakeholder", value: "48", change: "+4.2%", color: "#8B1538", bg: "#F5D6DE" },
-  { icon: TrendingUp, label: "Active Collaboration", value: "38", change: "+6%", color: "#C8961E", bg: "#FEF6E4" },
-  { icon: FileText, label: "Active MoU / MoA", value: "21", change: null, warn: "2 ใกล้หมด", color: "#B45309", bg: "#FEF3C7" },
-  { icon: CalendarDays, label: "Activities", value: "156", change: "+8.5%", color: "#1D4ED8", bg: "#DBEAFE" },
-  { icon: GraduationCap, label: "Exchange Students", value: "32", change: "+12%", color: "#15803D", bg: "#DCFCE7" },
-  { icon: Star, label: "Avg Feedback Score", value: "4.5★", change: "+0.3", color: "#7C3AED", bg: "#EDE9FE" },
-];
+const PIE_COLORS = ["#8B1538", "#C8961E", "#1D4ED8", "#15803D", "#7C3AED", "#0369A1", "#B45309", "#6B7280"];
 
 const systemActions = [
   { label: "User Management", href: "/users", icon: Users },
@@ -49,25 +38,49 @@ const systemActions = [
 ];
 
 export default function DashboardAdmin() {
-  const [period, setPeriod] = useState("2568");
+  const data = useDashboardData();
+  const years = yearsIn([...data.activities.map((a) => a.startDate), ...data.feedback.map((f) => f.dateIso)]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const year = selectedYear ?? years[0] ?? new Date().getFullYear();
 
-  // API-first with mock.ts as fallback for the MoU watch list + feedback items.
-  // Chart aggregates stay on mock — the API has no aggregate endpoints.
-  const adminWatchMOU = useApiData(async () => {
-    const docs = await loadDocuments();
-    const watch = docs
-      .filter((d) => d.status === "expiring")
-      .map((d) => ({ title: d.title, org: d.org, days: d.daysLeft }));
-    return watch.length > 0 ? watch : mockAdminWatchMOU;
-  }, mockAdminWatchMOU);
-  const adminFeedbackDevelopment = useApiData(async () => {
-    const feedback = await loadFeedbackEntries();
-    const items = feedback
-      .filter((f) => f.comment)
-      .slice(0, 3)
-      .map((f) => ({ text: f.comment, source: f.source, rating: f.rating }));
-    return items.length > 0 ? items : mockAdminFeedbackDevelopment;
-  }, mockAdminFeedbackDevelopment);
+  const agreements = data.documents.filter(isAgreement);
+  const adminWatchMOU = expiringAgreements(data.documents).map((d) => ({ title: d.title, org: d.org, days: d.daysLeft }));
+  const activeAgreements = agreements.filter((d) => agreementState(d) === "active").length;
+  const engagement = partnersByEngagement(data);
+  const topTotal = engagement[0]?.total ?? 0;
+  const adminTopCollaborations = engagement.slice(0, 5).map((row) => ({
+    name: row.partner.name, score: row.total, pct: topTotal ? Math.round((row.total / topTotal) * 100) : 0,
+  }));
+  const adminFeedbackDevelopment = data.feedback
+    .filter((f) => f.comment)
+    .slice(0, 3)
+    .map((f) => ({ text: f.comment, source: f.source, rating: f.rating }));
+  const avgRating = averageRating(data.feedback);
+
+  const effectiveYears = yearsIn(agreements.map((d) => d.effectiveDate)).reverse();
+  const adminYearlyTrend = effectiveYears.map((y) => ({ year: beYear(y), ความร่วมมือ: agreements.filter((d) => d.effectiveDate?.startsWith(String(y))).length }));
+  const activityCounts = countByMonth(data.activities.map((a) => a.startDate), year);
+  const feedbackCounts = countByMonth(data.feedback.map((f) => f.dateIso), year);
+  const adminMonthlyActivities = activityCounts.map((count, i) => ({
+    month: monthLabel(i), กิจกรรม: count, feedback: feedbackCounts[i],
+  }));
+  const typeCounts = new Map<string, number>();
+  for (const p of data.partners) {
+    const name = label(partnerTypeLabels, p.type);
+    typeCounts.set(name, (typeCounts.get(name) ?? 0) + 1);
+  }
+  const adminStakeholderTypes = Array.from(typeCounts, ([name, value], i) => ({
+    name, value, color: PIE_COLORS[i % PIE_COLORS.length],
+  })).sort((a, b) => b.value - a.value);
+
+  const kpis = [
+    { icon: Building2, label: "Stakeholder", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE" },
+    { icon: TrendingUp, label: "Active Collaboration", value: shown(data.loaded, engagement.length), color: "#C8961E", bg: "#FEF6E4" },
+    { icon: FileText, label: "Active MoU / MoA", value: shown(data.loaded, activeAgreements), warn: adminWatchMOU.length ? `${adminWatchMOU.length} ใกล้หมด` : null, color: "#B45309", bg: "#FEF3C7" },
+    { icon: CalendarDays, label: "Activities", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: GraduationCap, label: "Exchange Students", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7" },
+    { icon: Star, label: "Avg Feedback Score", value: avgRating == null ? "—" : `${avgRating.toFixed(1)}★`, color: "#7C3AED", bg: "#EDE9FE" },
+  ];
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -80,17 +93,17 @@ export default function DashboardAdmin() {
               ภาพรวมความร่วมมือระดับหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>Executive Dashboard — ปีการศึกษา {period}</p>
+          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>Executive Dashboard — ปี {beYear(year)}</p>
         </div>
         <div className="flex gap-2">
           <select
             className="rounded-lg px-3 py-2 text-sm bg-white cursor-pointer"
             style={{ border: "1.5px solid var(--border)", width: "auto" }}
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
+            value={year}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            aria-label="ปี"
           >
-            <option value="2568">ปีการศึกษา 2568</option>
-            <option value="2567">ปีการศึกษา 2567</option>
+            {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
           <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />PDF</button>
           <button className="btn btn-accent text-sm gap-2"><Download className="w-4 h-4" />Excel</button>
@@ -98,23 +111,13 @@ export default function DashboardAdmin() {
       </div>
 
       {/* Executive KPI */}
-      <div className="grid grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-6 gap-3 mb-6 stagger">
         {kpis.map((s) => (
           <div key={s.label} className={statCard} style={{ padding: "16px 14px" }}>
             <div className="flex items-center justify-between mb-2">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: s.bg }}>
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
               </div>
-              {s.change && (
-                <span className="text-xs font-semibold" style={{ color: "#15803D" }}>
-                  <TrendingUp className="w-3 h-3 inline mr-0.5" />{s.change}
-                </span>
-              )}
-              {s.warn && (
-                <span className="text-xs font-semibold" style={{ color: "#B45309" }}>
-                  <AlertTriangle className="w-3 h-3 inline mr-0.5" />
-                </span>
-              )}
             </div>
             <div className="text-xl font-extrabold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
             <div className="text-xs mt-0.5" style={{ color: "#6B7280" }}>{s.label}</div>
@@ -124,7 +127,7 @@ export default function DashboardAdmin() {
       </div>
 
       {/* Charts row 1 */}
-      <div className="grid gap-5 mb-5" style={{ gridTemplateColumns: "1fr 1fr 300px" }}>
+      <div className="grid gap-5 mb-5 stagger" style={{ gridTemplateColumns: "1fr 1fr 300px" }}>
         {/* Yearly trend */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>จำนวนความร่วมมือรายปี</h2>
@@ -149,11 +152,11 @@ export default function DashboardAdmin() {
         {/* Monthly activities */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>กิจกรรมรายเดือน</h2>
-          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>กิจกรรม vs Feedback</p>
+          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>กิจกรรม vs Feedback • ปี {beYear(year)}</p>
           <ResponsiveContainer width="100%" height={170}>
             <BarChart data={adminMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
               <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 11 }} />
@@ -180,14 +183,16 @@ export default function DashboardAdmin() {
       </div>
 
       {/* Bottom row */}
-      <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+      <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
         {/* Top collabs */}
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-sm" style={{ color: "#111827" }}>ความร่วมมือที่มีผลลัพธ์สูง</h2>
+            <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
             <Link href="/reports" className="text-xs" style={{ color: "#8B1538" }}>ดูรายงาน →</Link>
           </div>
+          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>จำนวนข้อตกลง + กิจกรรมที่เผยแพร่</p>
           <div className="space-y-3.5">
+            {data.loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-sm font-bold w-4 flex-shrink-0" style={{ color: i < 3 ? "#8B1538" : "#9CA3AF" }}>{i + 1}</span>
@@ -221,7 +226,7 @@ export default function DashboardAdmin() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>21 ข้อตกลงปกติ ✓</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>{shown(data.loaded, activeAgreements)} ข้อตกลงปกติ ✓</div>
             </div>
           </div>
         </div>
@@ -233,6 +238,7 @@ export default function DashboardAdmin() {
             <Link href="/feedback" className="text-xs" style={{ color: "#8B1538" }}>ดูทั้งหมด →</Link>
           </div>
           <div className="space-y-3">
+            {data.loaded && adminFeedbackDevelopment.length === 0 && <p className="text-xs text-faint">ยังไม่มี Feedback ที่เผยแพร่</p>}
             {adminFeedbackDevelopment.map((f, i) => (
               <div key={i} className="p-3 rounded-xl bg-paper shadow-lightring">
                 <div className="flex items-start justify-between gap-2 mb-1">

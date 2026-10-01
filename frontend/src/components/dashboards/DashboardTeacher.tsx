@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, ChevronRight, AlertTriangle, Star } from "lucide-react";
-import { teacherStakeholders, teacherActivities as mockTeacherActivities, teacherRecentFeedback as mockTeacherFeedback } from "@/lib/mock";
-import { loadActivities, loadFeedbackEntries, useApiData } from "@/lib/api";
+import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, ChevronRight, Star } from "lucide-react";
+import { label, partnerTypeLabels } from "@/lib/labels";
+import {
+  expiringAgreements, isAgreement, partnersByEngagement, recentActivities, shown, useDashboardData,
+} from "@/lib/dashboard-data";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
@@ -28,23 +30,26 @@ type Kpi = {
   href?: string;
 };
 
-const kpis: Kpi[] = [
-  { icon: Building2, label: "Stakeholder ที่รับผิดชอบ", value: "3", color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-  { icon: FileText, label: "MoU / MoA", value: "4", color: "#B45309", bg: "#FEF3C7" },
-  { icon: CalendarDays, label: "กิจกรรม", value: "8", color: "#1D4ED8", bg: "#DBEAFE" },
-  { icon: GraduationCap, label: "นักศึกษาในโครงการ", value: "12", color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-  { icon: MessageSquare, label: "Feedback ล่าสุด", value: "24", color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
-];
-
 const quickActions = [
   { label: "ดูนักศึกษา", href: "/exchange", color: "#1D4ED8", bg: "#DBEAFE" },
 ];
 
 export default function DashboardTeacher() {
-  // API-first with mock.ts as fallback for activities + recent feedback.
-  // teacherStakeholders stays on mock — the API contract has no MoU counts.
-  const teacherActivities = useApiData(loadActivities, mockTeacherActivities);
-  const teacherRecentFeedback = useApiData(loadFeedbackEntries, mockTeacherFeedback);
+  // There is no per-user assignment data yet, so every list covers all published records.
+  const data = useDashboardData();
+  const teacherStakeholders = partnersByEngagement(data).slice(0, 5);
+  const teacherActivities = recentActivities(data.activities, 5);
+  const teacherRecentFeedback = data.feedback.slice(0, 3);
+
+  const nextExpiring = expiringAgreements(data.documents)[0];
+
+  const kpis: Kpi[] = [
+    { icon: Building2, label: "Stakeholder", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+    { icon: FileText, label: "MoU / MoA", value: shown(data.loaded, data.documents.filter(isAgreement).length), color: "#B45309", bg: "#FEF3C7", href: "/documents" },
+    { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE", href: "/activities" },
+    { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
+    { icon: MessageSquare, label: "Feedback", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
+  ];
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -53,14 +58,14 @@ export default function DashboardTeacher() {
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
           <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            ความร่วมมือที่รับผิดชอบ
+            ภาพรวมความร่วมมือ
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมงานในความรับผิดชอบของคุณ</p>
+        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อมูลที่เผยแพร่ทั้งหมด (ยังไม่แยกตามผู้รับผิดชอบ)</p>
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-5 gap-4 mb-6 stagger">
         {kpis.map((s) => {
           const inner = (
             <>
@@ -79,38 +84,34 @@ export default function DashboardTeacher() {
         })}
       </div>
 
-      {/* Warning: expiring MoU */}
-      <div className="flex items-center gap-3 p-3.5 rounded-xl mb-5" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
-        <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: "#B45309" }} />
-        <p className="text-sm" style={{ color: "#92400E" }}>
-          <span className="font-bold">MoA สหกิจ บ.เทคโนโลยี</span> ใกล้หมดอายุใน{" "}
-          <span className="font-bold">15 วัน</span> — กรุณาดำเนินการต่ออายุ
-        </p>
-      </div>
+      {nextExpiring && <div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">{nextExpiring.title} ใกล้หมดอายุใน {nextExpiring.daysLeft} วัน</div>}
 
-      <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
+      <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr" }}>
         {/* My stakeholders */}
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-bold" style={{ color: "#111827" }}>Stakeholder ที่รับผิดชอบ</h2>
+            <h2 className="font-bold" style={{ color: "#111827" }}>Stakeholder ที่มีความร่วมมือมากที่สุด</h2>
             <Link href="/stakeholders" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
               ดูทั้งหมด <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
-            {teacherStakeholders.map((s, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FAFAFA]">
+            {data.loaded && teacherStakeholders.length === 0 && <p className="px-5 py-4 text-xs text-faint">ยังไม่มีข้อมูล</p>}
+            {teacherStakeholders.map(({ partner: s, agreements, activities }) => (
+              <div key={s.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FAFAFA]">
                 <div
                   className="rounded-full flex items-center justify-center font-bold flex-shrink-0"
                   style={{ background: s.bg, color: s.color, width: 36, height: 36, fontSize: 10 }}
                 >
                   {s.initials}
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-sm" style={{ color: "#111827" }}>{s.name}</div>
-                  <div className="text-xs" style={{ color: "#9CA3AF" }}>{s.type} • {s.mou} MoU</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{s.name}</div>
+                  <div className="text-xs" style={{ color: "#9CA3AF" }}>
+                    {label(partnerTypeLabels, s.type)} • {agreements} MoU/MoA • {activities} กิจกรรม
+                  </div>
                 </div>
-                <Link href="/stakeholders/1" className="btn p-1.5 text-xs" style={{ background: "transparent", color: "#6B7280" }}>ดู</Link>
+                <Link href={`/stakeholders/${s.id}`} className="btn p-1.5 text-xs" style={{ background: "transparent", color: "#6B7280" }}>ดู</Link>
               </div>
             ))}
           </div>
@@ -119,9 +120,13 @@ export default function DashboardTeacher() {
         {/* My activities */}
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-bold" style={{ color: "#111827" }}>กิจกรรมที่รับผิดชอบ</h2>
+            <h2 className="font-bold" style={{ color: "#111827" }}>กิจกรรมล่าสุด</h2>
+            <Link href="/activities" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
+              ดูทั้งหมด <ChevronRight className="w-3 h-3" />
+            </Link>
           </div>
           <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
+            {data.loaded && teacherActivities.length === 0 && <p className="px-5 py-4 text-xs text-faint">ยังไม่มีกิจกรรมที่เผยแพร่</p>}
             {teacherActivities.map((a, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FAFAFA]">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#DBEAFE" }}>
@@ -129,7 +134,7 @@ export default function DashboardTeacher() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{a.name}</div>
-                  <div className="text-xs" style={{ color: "#9CA3AF" }}>{a.org} • {a.date} • {a.participants} คน</div>
+                  <div className="text-xs" style={{ color: "#9CA3AF" }}>{a.org} • {a.date}{a.participants > 0 && ` • ${a.participants} คน`}</div>
                 </div>
                 <span className={`badge ${a.statusColor}`}>{a.status}</span>
               </div>
@@ -146,6 +151,7 @@ export default function DashboardTeacher() {
             </Link>
           </div>
           <div className="p-4 space-y-3">
+            {data.loaded && teacherRecentFeedback.length === 0 && <p className="text-xs text-faint">ยังไม่มี Feedback ที่เผยแพร่</p>}
             {teacherRecentFeedback.map((f, i) => (
               <div key={i} className="p-3 rounded-xl bg-paper shadow-lightring">
                 <div className="flex items-start justify-between mb-1.5">

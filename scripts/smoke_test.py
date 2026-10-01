@@ -41,12 +41,13 @@ def main():
     if health != {"status": "healthy"}:
         raise RuntimeError(f"unexpected health response: {health!r}")
 
-    for resource in ("partners/", "activities/"):
+    for resource in ("partners/", "documents/", "activities/"):
         payload = json.loads(wait_for(f"{args.api}/{resource}", 1, 0))
-        if not isinstance(payload, list) or not payload:
-            raise RuntimeError(f"{resource} did not return seeded rows")
+        if not isinstance(payload, list):
+            raise RuntimeError(f"{resource} did not return a list")
 
-    wait_for(f"{args.frontend}/dashboard/public", args.attempts, args.delay)
+    for route in ("dashboard/public", "stakeholders", "documents", "activities"):
+        wait_for(f"{args.frontend}/{route}", args.attempts, args.delay)
     print("Smoke test passed: database-backed API and frontend are reachable.")
 
 

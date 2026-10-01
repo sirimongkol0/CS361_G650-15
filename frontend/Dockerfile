@@ -14,6 +14,12 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # the Docker network, so this must be a host-reachable address, NOT a service name.
 ARG NEXT_PUBLIC_API_BROWSER_URL=http://localhost:8000/api/v1
 ENV NEXT_PUBLIC_API_BROWSER_URL=$NEXT_PUBLIC_API_BROWSER_URL
+# Optional: internal backend origin for the same-origin /api/v1 proxy
+# (see next.config.js). Empty keeps the browser calling the API directly.
+ARG API_PROXY_TARGET=
+ENV API_PROXY_TARGET=$API_PROXY_TARGET
+ARG NEXT_PUBLIC_DEMO_MODE=false
+ENV NEXT_PUBLIC_DEMO_MODE=$NEXT_PUBLIC_DEMO_MODE
 
 RUN npm run build
 

@@ -14,8 +14,7 @@ import {
   EyeOff,
   Check,
 } from "lucide-react";
-import { adminProfile as mockAdminProfile } from "@/lib/mock";
-import { loadAdminProfile, useApiData } from "@/lib/api";
+import { EMPTY_ADMIN_PROFILE, loadAdminProfile, useApiData } from "@/lib/api";
 
 const settingsTabs = [
   { id: "profile", label: "โปรไฟล์", icon: User },
@@ -76,8 +75,7 @@ export default function SettingsPage() {
   });
   const [saved, setSaved] = useState(false);
 
-  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
-  const adminProfile = useApiData(loadAdminProfile, mockAdminProfile);
+  const adminProfile = useApiData(loadAdminProfile, EMPTY_ADMIN_PROFILE);
 
   const handleSave = () => {
     setSaved(true);
@@ -124,7 +122,7 @@ export default function SettingsPage() {
               </h2>
               <div className="flex items-center gap-5 mb-6 pb-6 border-b border-line">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold bg-crimson-light text-crimson">
-                  {adminProfile.firstName[0]}
+                  {adminProfile.firstName[0] ?? "—"}
                 </div>
                 <div>
                   <button className="btn btn-outline text-sm">
@@ -148,7 +146,7 @@ export default function SettingsPage() {
                     <label className="block text-sm font-semibold mb-1.5 text-mute">
                       {f.label}
                     </label>
-                    <input className={inputClass} defaultValue={f.value} />
+                    <input key={f.value} className={inputClass} defaultValue={f.value} />
                   </div>
                 ))}
               </div>
@@ -355,7 +353,7 @@ export default function SettingsPage() {
                       <label className="block text-sm font-semibold mb-1.5 text-mute">
                         {f.label}
                       </label>
-                      <input className={inputClass} defaultValue={f.value} />
+                      <input key={f.value} className={inputClass} defaultValue={f.value} />
                     </div>
                   ))}
                 </div>

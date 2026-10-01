@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:display": "node tests/activity-display.cjs",
+    "test:scope": "node tests/scope-summary.cjs"
   },
   "dependencies": {
     "lucide-react": "^1.37.0",
