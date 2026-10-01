@@ -60,7 +60,7 @@ export default function LoginPage() {
                 PCSMS
               </div>
               <div className="text-xs leading-tight text-faint">
-                Program Collaboration &amp; Stakeholder Management
+                Partner Collaboration &amp; Stakeholder Management
               </div>
             </div>
           </div>

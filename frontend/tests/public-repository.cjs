@@ -23,13 +23,13 @@ const partners = [
       await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(status !== 200 ? { detail: 'Test error' } : id ? row : empty ? [] : partners) });
     });
     await page.goto(`${base}/stakeholders`);
-    await page.getByText('กำลังโหลดหน่วยงาน', { exact: true }).waitFor();
+    await page.getByRole('status', { name: 'กำลังโหลดข้อมูล', exact: true }).waitFor();
     releaseLoading();
     await page.getByRole('link', { name: 'Alpha University', exact: true }).waitFor();
-    await page.getByPlaceholder('ค้นหาหน่วยงานหรือผู้ติดต่อ...').fill('Beta');
+    await page.getByPlaceholder('ค้นหาหน่วยงานหรือผู้ติดต่อ...').fill('Beta');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Beta');
     const filters = page.locator('select[aria-label]');
     await filters.nth(0).selectOption('government');
-    await filters.nth(1).selectOption({ label: 'Japan' });
+    await filters.nth(1).selectOption('🇯🇵 ญี่ปุ่น'); // countryCode JP is shown as a localized label
     assert.equal(await page.locator('tbody tr').count(), 1);
     await filters.nth(0).selectOption('university');
     await page.getByText('ไม่พบหน่วยงานที่ค้นหา', { exact: true }).waitFor();

@@ -11,10 +11,7 @@ import {
   Send,
   CheckCircle2,
 } from "lucide-react";
-import { feedbackEntries as mockFeedbackEntries } from "@/lib/mock";
-import { loadFeedbackEntries, useApiData } from "@/lib/api";
-
-type FeedbackEntry = (typeof mockFeedbackEntries)[number];
+import { loadFeedbackEntries, useApiData, type FeedbackEntry } from "@/lib/api";
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -49,11 +46,10 @@ export default function FeedbackPage() {
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
-  const [selectedId, setSelectedId] = useState<number | null>(mockFeedbackEntries[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
 
-  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
-  const feedbackEntries = useApiData(loadFeedbackEntries, mockFeedbackEntries);
+  const feedbackEntries = useApiData<FeedbackEntry[]>(loadFeedbackEntries, []);
 
   const filtered = feedbackEntries.filter((f: FeedbackEntry) => {
     const matchSearch = f.title.toLowerCase().includes(search.toLowerCase());
@@ -63,7 +59,8 @@ export default function FeedbackPage() {
     return matchSearch && matchSource && matchRating;
   });
 
-  const selected = feedbackEntries.find((f: FeedbackEntry) => f.id === selectedId);
+  // Until the user picks an entry, show the first loaded one.
+  const selected = feedbackEntries.find((f: FeedbackEntry) => f.id === (selectedId ?? feedbackEntries[0]?.id));
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">

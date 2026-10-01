@@ -6,6 +6,9 @@ from datetime import date, datetime, timezone
 # "date" annotated as Optional[date] (annotation collapses to NoneType).
 datetime_date = date
 
+# Cooperation level of a record (docs/api/v2-field-contract.md); None = not yet classified.
+ScopeLevel = Literal['program', 'faculty', 'university']
+
 
 class PartnerBase(BaseModel):
     name: str
@@ -68,6 +71,7 @@ class PartnerResponse(BaseModel):
     websiteUrl: Optional[str] = Field(default=None, validation_alias=AliasChoices('website_url', 'websiteUrl'), serialization_alias='websiteUrl')
     contactName: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_name', 'contactName'), serialization_alias='contactName')
     contactEmail: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_email', 'contactEmail'), serialization_alias='contactEmail')
+    scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
     sources: List['SourceResponse'] = Field(default_factory=list)
 
 
@@ -85,7 +89,7 @@ class ActivityBase(BaseModel):
     activity_type: Optional[str] = None
     date_kind: Optional[Literal['event', 'announcement', 'deadline', 'application_open', 'application_close', 'period_start', 'period_end']] = None
     date_precision: Optional[Literal['day', 'month', 'year', 'approximate']] = None
-    # --- frontend mock (pages-C) coverage: all optional -> backwards compatible ---
+    # --- detail fields: all optional -> backwards compatible ---
     end_date: Optional[datetime_date] = None
     participants: Optional[int] = None
     location: Optional[str] = None
@@ -136,6 +140,7 @@ class ActivityResponse(BaseModel):
     status: Optional[str] = None
     isOpen: Optional[bool] = Field(default=None, validation_alias=AliasChoices('is_open', 'isOpen'), serialization_alias='isOpen')
     mouDocId: Optional[int] = Field(default=None, validation_alias=AliasChoices('mou_document_id', 'mouDocId'), serialization_alias='mouDocId')
+    scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
     sources: List[SourceResponse] = Field(default_factory=list)
 
 class DocumentBase(BaseModel):
@@ -175,11 +180,12 @@ class DocumentResponse(BaseModel):
     effectiveDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('effective_date', 'effectiveDate'), serialization_alias='effectiveDate')
     expiryDate: Optional[datetime_date] = Field(default=None, validation_alias=AliasChoices('expiry_date', 'expiryDate'), serialization_alias='expiryDate')
     partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
-    # --- frontend mock (pages-C) coverage: all optional -> backwards compatible ---
+    # --- detail fields: all optional -> backwards compatible ---
     responsible: Optional[str] = None
     status: Optional[str] = None
     signerOur: Optional[str] = Field(default=None, validation_alias=AliasChoices('signer_our', 'signerOur'), serialization_alias='signerOur')
     signerPartner: Optional[str] = Field(default=None, validation_alias=AliasChoices('signer_partner', 'signerPartner'), serialization_alias='signerPartner')
+    scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
     scopeItems: Optional[List['DocumentScopeItemResponse']] = Field(
         default=None, validation_alias=AliasChoices('scope_items', 'scopeItems'), serialization_alias='scopeItems'
     )

@@ -56,6 +56,22 @@ module.exports = {
         lg: '14px',
         md: '10px',
       },
+      keyframes: {
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'fade-up': {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'scale-in': {
+          from: { opacity: '0', transform: 'scale(0.97)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 0.2s ease-out both',
+        'fade-up': 'fade-up 0.3s ease-out both',
+        'scale-in': 'scale-in 0.18s ease-out both',
+      },
       boxShadow: {
         // .stat-card / .content-card from the mock
         card: '0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px #E5E7EB',

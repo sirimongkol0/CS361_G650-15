@@ -1,0 +1,282 @@
+[
+  {
+    "id": 27,
+    "partner": {
+      "id": 302,
+      "name": "สภาอุตสาหกรรมแห่งประเทศไทย"
+    },
+    "name": "MOU: มหาวิทยาลัยธรรมศาสตร์–สภาอุตสาหกรรมแห่งประเทศไทย",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2025-09-08",
+    "expiryDate": null,
+    "partnerId": 302,
+    "responsible": null,
+    "status": null,
+    "signerOur": null,
+    "signerPartner": null,
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 58,
+        "sourceUrl": "https://tu.ac.th/en/thammasat-fti-partner-to-elevate-thai-industry-globally/",
+        "sourceTitle": "ธรรมศาสตร์และสภาอุตสาหกรรมแห่งประเทศไทยร่วมมือกัน",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.404166Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าลงนาม MOU เมื่อ 8 ก.ย. 2568"
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "partner": {
+      "id": 303,
+      "name": "บริษัท บุญรอดบริวเวอรี่ จำกัด"
+    },
+    "name": "MOU: มหาวิทยาลัยธรรมศาสตร์–บุญรอดบริวเวอรี่",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2025-08-08",
+    "expiryDate": null,
+    "partnerId": 303,
+    "responsible": null,
+    "status": null,
+    "signerOur": "ศ. ดร.ศุภสวัสดิ์ ชัชวาลย์ อธิการบดีมหาวิทยาลัยธรรมศาสตร์",
+    "signerPartner": "คุณธิติพร ธรรมาภิมุขกุล Chief Marketing Officer บริษัท บุญรอดบริวเวอรี่ จำกัด",
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 57,
+        "sourceUrl": "https://web.sa.ict.tu.ac.th/thammasat-130868-mou-boonrawd",
+        "sourceTitle": "MOU ธรรมศาสตร์–บุญรอดบริวเวอรี่",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.334188Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าลงนาม MOU เมื่อ 8 ส.ค. 2568"
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "partner": {
+      "id": 305,
+      "name": "กรมพัฒนาพลังงานทดแทนและอนุรักษ์พลังงาน"
+    },
+    "name": "MOU: มหาวิทยาลัยธรรมศาสตร์–กรมพัฒนาพลังงานทดแทนและอนุรักษ์พลังงาน",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2025-08-25",
+    "expiryDate": null,
+    "partnerId": 305,
+    "responsible": null,
+    "status": null,
+    "signerOur": "ศ. ดร.ศุภสวัสดิ์ ชัชวาลย์ อธิการบดีมหาวิทยาลัยธรรมศาสตร์",
+    "signerPartner": "คุณนันธิกา ทังสุพานิช อธิบดีกรมพัฒนาพลังงานทดแทนและอนุรักษ์พลังงาน",
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 56,
+        "sourceUrl": "https://tu.ac.th/thammasat-270868-mou-course-renewable-energy/",
+        "sourceTitle": "มธ. และ พพ. ร่วมมือพัฒนาหลักสูตรด้านพลังงานทดแทน",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.263045Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าลงนาม MOU เมื่อ 25 ส.ค. 2568"
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "partner": {
+      "id": 304,
+      "name": "บริษัท สหพัฒนาอินเตอร์โฮลดิ้ง จำกัด (มหาชน)"
+    },
+    "name": "MOU: มหาวิทยาลัยธรรมศาสตร์–สหพัฒนาอินเตอร์โฮลดิ้ง",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2025-06-26",
+    "expiryDate": null,
+    "partnerId": 304,
+    "responsible": null,
+    "status": null,
+    "signerOur": "Prof. Dr. Supasawad Chardchawarn, Rector of Thammasat University",
+    "signerPartner": "Mr. Boonchai Chokwatana, Chairman of Saha Pathanapibul PLC",
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 55,
+        "sourceUrl": "https://tu.ac.th/en/thammasat-and-saha-pathana-inter-holding-join-forces-to-bridge-academia-and-industry/",
+        "sourceTitle": "ธรรมศาสตร์และสหพัฒนาอินเตอร์โฮลดิ้ง",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.184505Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าลงนาม MOU เมื่อ 26 มิ.ย. 2568"
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "partner": {
+      "id": 301,
+      "name": "มหาวิทยาลัยมหิดล"
+    },
+    "name": "MOU: มหาวิทยาลัยธรรมศาสตร์–มหาวิทยาลัยมหิดล",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2025-05-22",
+    "expiryDate": null,
+    "partnerId": 301,
+    "responsible": null,
+    "status": null,
+    "signerOur": "ศ. ดร.ศุภสวัสดิ์ ชัชวาลย์ อธิการบดีมหาวิทยาลัยธรรมศาสตร์",
+    "signerPartner": "ศ. นพ.ปิยะมิตร ศรีธรา อธิการบดีมหาวิทยาลัยมหิดล",
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 54,
+        "sourceUrl": "https://tu.ac.th/thammasat-230568-tu-mou-mu-develop-education-research/",
+        "sourceTitle": "ความร่วมมือระหว่างธรรมศาสตร์และมหิดล",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.113644Z",
+        "sourceLocator": "หน้าเว็บทางการของ มธ. ระบุว่าอธิการบดีทั้งสองมหาวิทยาลัยลงนาม MOU เมื่อ 22 พ.ค. 2568"
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "partner": {
+      "id": 307,
+      "name": "สถาบันภาษา มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"
+    },
+    "name": "MOU: สถาบันภาษา มธ.–สถาบันภาษา มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2025-02-17",
+    "expiryDate": null,
+    "partnerId": 307,
+    "responsible": null,
+    "status": null,
+    "signerOur": null,
+    "signerPartner": null,
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 52,
+        "sourceUrl": "https://litu.tu.ac.th/en/news/litu-signs-mou-with-limcu/",
+        "sourceTitle": "สถาบันภาษา มธ. ลงนาม MOU กับสถาบันภาษา มจร.",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.975789Z",
+        "sourceLocator": "หน้าเว็บของสถาบันภาษา มธ. ระบุวันลงนามเป็นวันที่ 17 ก.พ. 2568"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "partner": {
+      "id": 306,
+      "name": "สถาบันนโยบายวิทยาศาสตร์ เทคโนโลยี และนวัตกรรม (STIPI) มจธ."
+    },
+    "name": "MOU: คณะเศรษฐศาสตร์ มธ.–สถาบันนโยบายวิทยาศาสตร์ เทคโนโลยี และนวัตกรรม (STIPI) มจธ.",
+    "docType": "mou",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2024-04-02",
+    "expiryDate": null,
+    "partnerId": 306,
+    "responsible": null,
+    "status": null,
+    "signerOur": null,
+    "signerPartner": null,
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 51,
+        "sourceUrl": "https://analytics.econ.tu.ac.th/en/newsDetail/16",
+        "sourceTitle": "คณะเศรษฐศาสตร์ มธ. ลงนาม MOU กับ STIPI มจธ.",
+        "sourcePublisher": "มหาวิทยาลัยธรรมศาสตร์หรือหน่วยงานทางการของ มธ.",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:40.904885Z",
+        "sourceLocator": "หน้าเว็บทางการของคณะเศรษฐศาสตร์ มธ. ระบุว่าคณะและ STIPI ลงนาม MOU เมื่อ 2 เม.ย. 2567"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "partner": {
+      "id": 1,
+      "name": "ธนาคารแห่งประเทศไทย"
+    },
+    "name": "MOA: ธนาคารแห่งประเทศไทย–คณะนิติศาสตร์ มธ.",
+    "docType": "moa",
+    "documentKind": "agreement",
+    "fileAvailability": "metadata_only",
+    "storageKey": null,
+    "mimeType": null,
+    "sizeBytes": null,
+    "fileName": null,
+    "uploadedAt": null,
+    "effectiveDate": "2026-08-19",
+    "expiryDate": null,
+    "partnerId": 1,
+    "responsible": null,
+    "status": null,
+    "signerOur": null,
+    "signerPartner": null,
+    "scopeItems": [],
+    "sources": [
+      {
+        "id": 3,
+        "sourceUrl": "https://www.bot.or.th/th/news-and-media/activities/activities-20260819.html",
+        "sourceTitle": "แหล่งข้อมูลทางการเกี่ยวกับความร่วมมือ",
+        "sourcePublisher": "www.bot.or.th",
+        "sourceType": "official_news",
+        "sourceCheckedAt": "2026-09-26T17:24:41.760835Z",
+        "sourceLocator": "ธนาคารกลางของประเทศไทย หน้าเว็บทางการของ ธปท. ระบุข้อตกลงความร่วมมือทางวิชาการกับคณะนิติศาสตร์ มธ. (19 ส.ค. 2569) และวิทยาลัยการเรียนรู้และการศึกษา (3 ส.ค. 2565)"
+      }
+    ]
+  }
+]

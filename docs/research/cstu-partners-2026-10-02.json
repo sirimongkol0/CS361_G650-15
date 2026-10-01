@@ -1,0 +1,129 @@
+{
+  "partners": [
+    {
+      "key": "nvidia",
+      "name": "NVIDIA Corporation",
+      "type": "private_company",
+      "country": "United States",
+      "country_code": "US",
+      "website_url": "https://www.nvidia.com/en-us/about-nvidia/",
+      "description": "บริษัทเทคโนโลยีที่พัฒนา GPU และแพลตฟอร์มซอฟต์แวร์สำหรับงาน AI โดยร่วมจัดเวิร์กช็อป Local AI กับสาขาวิชาวิทยาการคอมพิวเตอร์ที่ศูนย์รังสิตในปี 2569",
+      "cstu_evidence": "ข่าวคณะระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับ NVIDIA จัดเวิร์กช็อป Local AI ที่ศูนย์รังสิตเมื่อ 9 กรกฎาคม 2569 ผู้เข้าร่วมได้ทดลองใช้ GPU และสร้าง AI Agent; หลักฐานนี้ยืนยันกิจกรรมครั้งนั้นเท่านั้น",
+      "sources": [
+        {"url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/", "title": "คณะวิทยาศาสตร์และเทคโนโลยี มธ. ร่วมกับภาคีเครือข่าย จัดกิจกรรม NVIDIA Powers the World’s AI, And Yours: Unlocked", "publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_event_report", "locator": "ย่อหน้าเปิดข่าว ระบุสาขาวิชาวิทยาการคอมพิวเตอร์และ NVIDIA เป็นผู้ร่วมจัด พร้อมสถานที่และวันที่ 9 กรกฎาคม 2569", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://www.nvidia.com/en-us/about-nvidia/", "title": "About NVIDIA", "publisher": "NVIDIA", "type": "official_organization_site", "locator": "About NVIDIA; company overview", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "svoa",
+      "name": "SVOA Public Company Limited",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "website_url": "https://www.svoa.co.th/",
+      "description": "บริษัทไทยด้านผลิตภัณฑ์และบริการไอที ซึ่งร่วมจัดเวิร์กช็อป Local AI กับสาขาวิชาวิทยาการคอมพิวเตอร์ที่ศูนย์รังสิตในปี 2569",
+      "cstu_evidence": "ข่าวคณะระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับบริษัท SVOA จัดเวิร์กช็อป Local AI ที่ศูนย์รังสิตเมื่อ 9 กรกฎาคม 2569; หลักฐานนี้ยืนยันกิจกรรมครั้งนั้นเท่านั้น",
+      "sources": [
+        {"url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/", "title": "คณะวิทยาศาสตร์และเทคโนโลยี มธ. ร่วมกับภาคีเครือข่าย จัดกิจกรรม NVIDIA Powers the World’s AI, And Yours: Unlocked", "publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_event_report", "locator": "ย่อหน้าเปิดข่าว ระบุบริษัท SVOA เป็นผู้ร่วมจัดเวิร์กช็อปที่ศูนย์รังสิต วันที่ 9 กรกฎาคม 2569", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://www.svoa.co.th/", "title": "SVOA Public Company Limited", "publisher": "SVOA Public Company Limited", "type": "official_organization_site", "locator": "หน้าแรกและข้อมูลเกี่ยวกับบริษัท", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "ecti-association",
+      "name": "ECTI Association (Electrical Engineering/Electronics, Computer, Telecommunications and Information Technology Association)",
+      "type": "network",
+      "country": "Thailand",
+      "country_code": "TH",
+      "website_url": "https://ecti-thailand.org/",
+      "description": "สมาคมวิชาการไทยด้านไฟฟ้า อิเล็กทรอนิกส์ คอมพิวเตอร์ โทรคมนาคม และสารสนเทศ ซึ่งร่วมจัดเวิร์กช็อป Local AI กับสาขาวิชาวิทยาการคอมพิวเตอร์ที่ศูนย์รังสิตในปี 2569",
+      "cstu_evidence": "ข่าวคณะระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ร่วมกับสมาคม ECTI จัดเวิร์กช็อป Local AI ที่ศูนย์รังสิตเมื่อ 9 กรกฎาคม 2569; หลักฐานนี้ยืนยันกิจกรรมครั้งนั้นเท่านั้น",
+      "sources": [
+        {"url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B8%B2%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B9%80%E0%B8%97%E0%B8%84%E0%B9%82-43/", "title": "คณะวิทยาศาสตร์และเทคโนโลยี มธ. ร่วมกับภาคีเครือข่าย จัดกิจกรรม NVIDIA Powers the World’s AI, And Yours: Unlocked", "publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_event_report", "locator": "ย่อหน้าเปิดข่าว ระบุสมาคม ECTI เป็นผู้ร่วมจัดเวิร์กช็อปที่ศูนย์รังสิต วันที่ 9 กรกฎาคม 2569", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://ecti-thailand.org/", "title": "ECTI Association", "publisher": "ECTI Association", "type": "official_organization_site", "locator": "หน้าแรกและคำอธิบายชื่อ/ภารกิจของสมาคม", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "kbtg",
+      "name": "KASIKORN Business-Technology Group (KBTG)",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "website_url": "https://www.kbtg.tech/",
+      "description": "กลุ่มเทคโนโลยีของธนาคารกสิกรไทย ซึ่งเคยนำผู้เชี่ยวชาญมาแนะนำองค์กรและแลกเปลี่ยนความรู้กับนักศึกษาวิทยาการคอมพิวเตอร์ในกิจกรรม University Roadshow เมื่อปี 2563",
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุว่า KBTG นำทีมผู้เชี่ยวชาญมาแนะนำบริษัทและแลกเปลี่ยนความรู้กับนักศึกษาในโครงการ KBTG University Roadshow เมื่อเดือนตุลาคม 2563; ไม่มีหลักฐานในหน้านี้ที่ยืนยันสถานะความร่วมมือปัจจุบัน",
+      "sources": [
+        {"url": "https://cs.sci.tu.ac.th/partnership-th/", "title": "เครือข่ายความร่วมมือ", "publisher": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_program_partnership_page", "locator": "ข้อความรายการ KBTG University Roadshow ระบุผู้เชี่ยวชาญและนักศึกษาของสาขา; ตุลาคม 2563", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://www.kbtg.tech/", "title": "KASIKORN Business-Technology Group | KBTG", "publisher": "KBTG", "type": "official_organization_site", "locator": "หน้าแรก ระบุชื่อองค์กร KBTG", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "ipb-university",
+      "name": "IPB University (Institut Pertanian Bogor)",
+      "type": "university",
+      "country": "Indonesia",
+      "country_code": "ID",
+      "website_url": "https://www.ipb.ac.id/en/",
+      "description": "มหาวิทยาลัยในอินโดนีเซียที่จัด International Summer Course CSAgri; นักศึกษาปริญญาตรีวิทยาการคอมพิวเตอร์ของธรรมศาสตร์เข้าร่วมกิจกรรมด้าน IoT และเกษตรอัจฉริยะในปี 2565",
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุนักศึกษาปริญญาตรีสาขาวิชาวิทยาการคอมพิวเตอร์เข้าร่วม International Summer Course CSAgri IPB 2022 ที่จัดโดย IPB ระหว่าง 9–17 กันยายน 2565 และทำกิจกรรม Computer Science for Agriculture: IoT for Smart Urban Farming; เป็นหลักฐานการเข้าร่วมโครงการครั้งนั้น",
+      "sources": [
+        {"url": "https://cs.sci.tu.ac.th/partnership-th/", "title": "เครือข่ายความร่วมมือ", "publisher": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_program_partnership_page", "locator": "รายการ International Summer Course CSAgri IPB 2022; นักศึกษาปริญญาตรี CSTU; 9–17 กันยายน 2565", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://www.ipb.ac.id/en/", "title": "IPB University", "publisher": "IPB University", "type": "official_organization_site", "locator": "เว็บไซต์ทางการของ IPB University", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "university-of-california-san-diego",
+      "name": "University of California San Diego (UC San Diego)",
+      "type": "university",
+      "country": "United States",
+      "country_code": "US",
+      "website_url": "https://ucsd.edu/",
+      "description": "มหาวิทยาลัยวิจัยรัฐในแคลิฟอร์เนีย ซึ่งเป็นสถานที่จัด International Summer Research Program ที่นักศึกษาปริญญาตรีวิทยาการคอมพิวเตอร์ของธรรมศาสตร์เข้าร่วมในปี 2565",
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุนักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์เข้าร่วม International Summer Research Program ที่ UC San Diego ระหว่าง 26 มิถุนายน–27 สิงหาคม 2565 และทำงานศึกษาเรื่องการควบคุมหุ่นยนต์; หลักฐานนี้ยืนยันการเข้าร่วมโครงการครั้งนั้น",
+      "sources": [
+        {"url": "https://cs.sci.tu.ac.th/partnership-th/", "title": "เครือข่ายความร่วมมือ", "publisher": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_program_partnership_page", "locator": "รายการ International Summer Research Program (ISRP); นักศึกษาปี 3 CSTU; 26 มิถุนายน–27 สิงหาคม 2565", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://ucsd.edu/about/index.html", "title": "About UC San Diego", "publisher": "University of California San Diego", "type": "official_organization_site", "locator": "About UC San Diego; ภารกิจและข้อมูลมหาวิทยาลัย", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "aist-japan",
+      "name": "National Institute of Advanced Industrial Science and Technology (AIST)",
+      "type": "government",
+      "country": "Japan",
+      "country_code": "JP",
+      "website_url": "https://www.aist.go.jp/index_en.html",
+      "description": "สถาบันวิจัยวิทยาศาสตร์และเทคโนโลยีขั้นสูงของญี่ปุ่น ซึ่งเป็นหน่วยงานปลายทางของการแลกเปลี่ยนทำวิจัยที่นักศึกษาปริญญาตรีวิทยาการคอมพิวเตอร์ของธรรมศาสตร์เข้าร่วมในปี 2563",
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุนักศึกษาชั้นปีที่ 3 สาขาวิชาวิทยาการคอมพิวเตอร์สองคนไปแลกเปลี่ยนทำวิจัยที่ AIST เมือง Tsukuba ระหว่าง 10 มิถุนายน–17 สิงหาคม 2563; หลักฐานนี้ยืนยันกิจกรรมในช่วงเวลาดังกล่าว",
+      "sources": [
+        {"url": "https://cs.sci.tu.ac.th/partnership-th/", "title": "เครือข่ายความร่วมมือ", "publisher": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_program_partnership_page", "locator": "ข้อความ AIST ประเทศญี่ปุ่น ระบุการแลกเปลี่ยนทำวิจัยของนักศึกษาชั้นปีที่ 3 CSTU ที่ Tsukuba; 10 มิถุนายน–17 สิงหาคม 2563", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://www.aist.go.jp/index_en.html", "title": "National Institute of Advanced Industrial Science and Technology (AIST)", "publisher": "AIST", "type": "official_organization_site", "locator": "เว็บไซต์ทางการ AIST; เมนู About AIST และ Research Results", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    },
+    {
+      "key": "feed-ingredients-trading-business-group-cp",
+      "name": "Feed Ingredients Trading Business Group (FIT), Charoen Pokphand Group",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "website_url": "https://www.cpgroupglobal.com/en/about-cp-group/our-business",
+      "description": "กลุ่มธุรกิจวัตถุดิบอาหารสัตว์ในเครือเจริญโภคภัณฑ์ ซึ่งผู้เชี่ยวชาญเคยมาแลกเปลี่ยนความรู้ด้าน AI และการวิเคราะห์อุปสงค์อุปทานสินค้าเกษตรกับนักศึกษาที่สาขาวิชาวิทยาการคอมพิวเตอร์จัดสัมมนาในปี 2563",
+      "cstu_evidence": "หน้าความร่วมมือของ CSTU ระบุว่าสาขาวิชาจัดสัมมนา Democratizing A.I. เมื่อ 24 กุมภาพันธ์ 2563 และเชิญผู้เชี่ยวชาญด้านระบบสนับสนุนการตัดสินใจจาก Feed Ingredients Trading Business Group (C.P. Group) มาแลกเปลี่ยนความรู้; เป็นหลักฐานกิจกรรมสัมมนาครั้งนั้น",
+      "sources": [
+        {"url": "https://cs.sci.tu.ac.th/partnership-th/", "title": "เครือข่ายความร่วมมือ", "publisher": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์", "type": "official_program_partnership_page", "locator": "ข้อความสัมมนา Democratizing A.I.; Feed Ingredients Trading Business Group (C.P. Group); 24 กุมภาพันธ์ 2563", "checked_at": "2026-10-01T17:52:27Z"},
+        {"url": "https://www.cpgroupglobal.com/en/about-cp-group/our-business", "title": "Our Business", "publisher": "Charoen Pokphand Group", "type": "official_organization_site", "locator": "ส่วน Agro-Industry and Food; ระบุกลุ่มธุรกิจ Feed Ingredients Trading และ Bangkok Produce Merchandising เป็นหน่วยธุรกิจที่เกี่ยวข้อง", "checked_at": "2026-10-01T17:52:27Z"}
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "name": "Technological University Dublin",
+      "reason": "หน้า CSTU ระบุเพียงการหารือถึงความเป็นไปได้ในการร่วมมือด้านการศึกษา จึงยังไม่มีหลักฐานกิจกรรม โครงการ หรือนักศึกษาร่วมโครงการที่เกิดขึ้นแล้ว",
+      "url": "https://cs.sci.tu.ac.th/partnership-th/"
+    },
+    {
+      "name": "King Power Click",
+      "reason": "หน้าความร่วมมือ CSTU แสดงชื่อบริษัท แต่เนื้อหาประกอบกล่าวถึงนักศึกษาไปทำวิจัยที่ AIST และไม่เชื่อมบริษัทกับกิจกรรมนั้น หลักฐานจึงไม่เพียงพอและมีข้อความไม่สอดคล้องกัน",
+      "url": "https://cs.sci.tu.ac.th/partnership-th/"
+    }
+  ]
+}
+

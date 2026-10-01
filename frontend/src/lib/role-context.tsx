@@ -5,11 +5,11 @@
  * to Next.js (Link from next/link, localStorage handled SSR-safely).
  *
  * NOTE: this is MOCK AUTH ONLY (role chosen in the login page / switcher, stored
- * in localStorage). Real authentication is planned for V2 — do not treat the
+ * in localStorage). Real authentication is planned for V3 — do not treat the
  * selected role as a security boundary.
  */
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import Link from 'next/link';
 
 export type UserRole = 'public' | 'student' | 'teacher' | 'staff' | 'admin';
@@ -81,43 +81,31 @@ export interface NavItem {
 export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   public: [
     { to: '/dashboard/public', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'ความร่วมมือ', icon: 'globe' },
+    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
   student: [
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
-    { to: '/feedback', label: 'Feedback', icon: 'message' },
   ],
   teacher: [
     { to: '/dashboard/teacher', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
     { to: '/documents', label: 'MoU / MoA', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
-    { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/feedback', label: 'Feedback', icon: 'message' },
-    { to: '/reports', label: 'รายงาน', icon: 'chart' },
   ],
   staff: [
     { to: '/dashboard/staff', label: 'Dashboard', icon: 'home', end: true },
     { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
     { to: '/documents', label: 'MoU / MoA', icon: 'file' },
     { to: '/activities', label: 'Activities', icon: 'calendar' },
-    { to: '/exchange', label: 'Student Exchange', icon: 'graduation' },
-    { to: '/feedback', label: 'Feedback', icon: 'message' },
-    { to: '/reports', label: 'Reports', icon: 'chart' },
   ],
   admin: [
     { to: '/dashboard/admin', label: 'Executive Dashboard', icon: 'home', end: true },
     { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
     { to: '/documents', label: 'MoU / MoA', icon: 'file' },
     { to: '/activities', label: 'Activities', icon: 'calendar' },
-    { to: '/exchange', label: 'Student Exchange', icon: 'graduation' },
-    { to: '/feedback', label: 'Feedback', icon: 'message' },
-    { to: '/reports', label: 'Reports & Analytics', icon: 'chart' },
-    { to: '/users', label: 'User Management', icon: 'users' },
-    { to: '/settings', label: 'Settings', icon: 'settings' },
   ],
 };
 
@@ -140,12 +128,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   // SSR-safe and least-privilege: anonymous/new sessions start in the public role.
   const [role, setRoleState] = useState<UserRole>('public');
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as UserRole | null;
-    if (stored && ROLES.some((r) => r.id === stored)) {
-      setRoleState(stored);
-    }
-  }, []);
+  // Deploy build is public-only: a role saved by the old prototype switcher is ignored.
 
   const setRole = (r: UserRole) => {
     if (typeof window !== 'undefined') {

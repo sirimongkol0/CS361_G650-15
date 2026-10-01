@@ -1,0 +1,68 @@
+# Isolated CSTU stack. Does not use the RDS DATABASE_URL in .env.
+# Start: docker compose --env-file .env.cstu -f docker-compose.cstu.yml up --build -d --wait
+name: cs361-cstu
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cstu_collaboration
+      POSTGRES_USER: cstu_app
+      POSTGRES_PASSWORD: ${CSTU_DATABASE_PASSWORD:?Set CSTU_DATABASE_PASSWORD in .env.cstu}
+    volumes:
+      - cstu_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cstu_app -d cstu_collaboration"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://cstu_app:${CSTU_DATABASE_PASSWORD:?Set CSTU_DATABASE_PASSWORD in .env.cstu}@database:5432/cstu_collaboration
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_DIR: /app/storage
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CSTU_BACKEND_PORT:-8000}:8000"
+    volumes:
+      - cstu_backend_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://backend:8000/api/v1
+        NEXT_PUBLIC_API_BROWSER_URL: /api/v1
+        API_PROXY_TARGET: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CSTU_FRONTEND_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --spider http://127.0.0.1:3000/dashboard/public || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  cstu_postgres_data:
+  cstu_backend_storage:

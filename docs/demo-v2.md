@@ -4,7 +4,7 @@
 
 ## เตรียมสภาพแวดล้อม (PowerShell / Windows)
 
-ใช้ Python 3.11, Node.js 22 ขึ้นไป, npm และ Docker Desktop ที่ทำงานอยู่ รันจากโฟลเดอร์หลักของ repository บน branch `issue/v2-6-integration-test` หรือ `main` หลังรวม PR นี้
+ใช้ Python 3.11, Node.js 22 ขึ้นไป, npm และ Docker Desktop ที่ทำงานอยู่ รันจากโฟลเดอร์หลักของ source V2 ปัจจุบัน รองรับทั้ง Git checkout และ source archive
 
 ```powershell
 py -3.11 -m venv .tmp-v2-6-venv
@@ -31,9 +31,9 @@ $env:LOCAL_STORAGE_DIR=Join-Path $env:TEST_REPORT_DIR 'storage'
 .tmp-v2-6-venv/Scripts/python.exe -m uvicorn main:app --app-dir backend --host 127.0.0.1 --port 8126
 ```
 
-ตัวเตรียมข้อมูลรับเฉพาะ PostgreSQL ที่ชื่อลงท้าย `_test` หรือ SQLite file ที่ลงท้าย `_test.db` จึงไม่ใช้ฐานข้อมูลส่วนกลาง สคริปต์รัน V2 migration สองครั้ง สร้างตารางเสริมที่ seed V1 ใช้ และเรียก seed เดิมสองครั้ง ตรวจจำนวน/ID ไม่เพิ่ม แล้วเพิ่มเคส V2-6 สำหรับข้อมูลไม่เผยแพร่, ความสัมพันธ์ว่าง, metadata-only และไฟล์หาย
+ตัวเตรียมข้อมูลรับเฉพาะ PostgreSQL ที่ชื่อลงท้าย `_test` หรือ SQLite file ที่ลงท้าย `_test.db` จึงไม่ใช้ฐานข้อมูลส่วนกลาง สคริปต์รัน V2 migration สองครั้ง สร้างตารางเสริม เพิ่มชุดข้อมูลทดสอบจาก `backend/tests/sample_data.py` แล้วเพิ่มเคส V2-6 สำหรับข้อมูลไม่เผยแพร่, ความสัมพันธ์ว่าง, metadata-only และไฟล์หาย การรันซ้ำจะไม่เพิ่มแถว แต่คืน missing-file fixture ให้
 
-เริ่มจากฐานข้อมูลว่างจะได้ 8 partners / 7 documents / 10 activities จาก seed เดิม และรวมเคสเพิ่มเป็น 10 / 10 / 12; API เผยแพร่ 9 / 9 / 11 รายการ เก็บ ID จริง, foreign key, version และ commit ใน `.tmp-v2-6/manifest.json`
+เริ่มจากฐานข้อมูลว่างจะได้ 3 partners / 3 documents / 3 activities จากชุดข้อมูลทดสอบ และรวมเคสเพิ่มเป็น 5 / 6 / 5; API เผยแพร่ 4 / 5 / 4 รายการ เก็บ ID จริง, foreign key, version และ source fingerprint ใน `.tmp-v2-6/manifest.json` Git checkout มี commit ด้วย ส่วน source archive ใช้ `sourceCommit: null` โดยไม่อ้าง SHA ที่ไม่มี
 
 ## Terminal 2: build และเปิด UI
 
@@ -55,6 +55,8 @@ $env:TEST_FRONTEND_URL='http://localhost:3126'
 $env:PLAYWRIGHT_MODULE=Join-Path (Get-Location) '.tmp-v2-tools/node_modules/playwright'
 .tmp-v2-6-venv/Scripts/python.exe scripts/wait_v2_servers.py
 node frontend/tests/v2-integration.cjs
+node frontend/tests/v2-improvements.cjs
+npm --prefix frontend run test:display
 ```
 
 ผลที่คาดหวัง: `PASS` 14 กลุ่มทดสอบ และ `result.json` มี `status: passed` รวมเคสไม่มี browser runtime errors เป็น 15 รายการ อ่าน request/response จริงใน `.tmp-v2-6/requests.json` และภาพใน `.tmp-v2-6/screenshots/` ภาพซ่อน account/role controls เฉพาะตอนจับภาพเพื่อจำกัดหลักฐานเป็น V2
@@ -65,7 +67,7 @@ node frontend/tests/v2-integration.cjs
 
 ## Demo ผ่านหน้าเว็บ
 
-เปิด [Stakeholders](http://localhost:3126/stakeholders) ค้นหา `มหาวิทยาลัยเชียงใหม่`, เลือก university/ไทย แล้วเปิด detail ตรวจข้อตกลง `MoU ความร่วมมือทางวิชาการ มช.` และกิจกรรมที่เกี่ยวข้อง เปิดข้อตกลง → กิจกรรม → หน่วยงาน/ข้อตกลง และกด Refresh ทุกหน้า ข้อมูลต้องตรง ID ใน manifest
+เปิด [Stakeholders](http://localhost:3126/stakeholders) ค้นหา `มหาวิทยาลัยตัวอย่าง A`, เลือก university/ไทย แล้วเปิด detail ตรวจข้อตกลง `MoU ตัวอย่าง A` และกิจกรรม `สัมมนาความร่วมมือ A` เปิดข้อตกลง → กิจกรรม → หน่วยงาน/ข้อตกลง และกด Refresh ทุกหน้า ข้อมูลต้องตรง ID ใน manifest
 
 ในหน้า Documents ใช้ประเภท MOU, สถานะ active และช่วงเวลาที่มีผลถึงวันหมดอายุของข้อตกลง เพื่อพิสูจน์ inclusive overlap; ล้างตัวกรองต้องคืนรายการทั้งหมด กดดาวน์โหลด PDF จากข้อตกลงเดียวกันและตรวจชื่อ/bytes ตาม manifest
 
@@ -84,5 +86,11 @@ docker rm --force cs361-v2-6-demo
 ```
 
 ## Backend regression และ CI
+
+ชุด improvements ตรวจค้นชื่อหน่วยงานร่วมกับประเภท/สถานะ/วันที่, Refresh/ย้อนกลับ,
+ล้างตัวกรอง, popstate, สถานะและการสมัครที่ไม่ระบุ, ความหมาย/ความละเอียดวันที่,
+ลำดับกิจกรรมและจำนวนข้อตกลงบน Dashboard รวมถึงหน้าจอมือถือ ไม่มี browser errors
+ชุดนี้ใช้ fixture interception แยกจากชุด integration ที่เรียก API/DB จริง
+เก็บผลและภาพใน `.tmp-v2-6/ui/` ดูหลักฐานล่าสุดที่ [V2 improvements](evidence/v2-improvements.md)
 
 CI รัน backend tests บน PostgreSQL/SQLite, frontend build, Compose smoke และ `v2-integration` แยกฐานข้อมูลของแต่ละงาน ไม่รัน pytest ซึ่งล้างตารางบนฐานข้อมูลที่ใช้ demo ระหว่างเปิด API ให้สร้างอีกฐานข้อมูลลงท้าย `_test` สำหรับ pytest โดยเฉพาะหากรันในเครื่อง

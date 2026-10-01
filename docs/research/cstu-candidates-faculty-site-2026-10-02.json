@@ -1,0 +1,615 @@
+{
+  "schema_version": 1,
+  "target_database": "cstu_collaboration",
+  "reviewed": true,
+  "research_date": "2026-10-02",
+  "sources": [
+    {
+      "source_url": "https://sci.tu.ac.th/mou-scitu-blendata/",
+      "source_title": "MoU ระหว่างคณะวิทยาศาสตร์และเทคโนโลยี มธ. กับ บริษัท เบลนเดต้า จำกัด",
+      "source_publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "ข่าวลงวันที่ 4 ตุลาคม 2566: วันลงนาม ผู้ลงนาม และขอบเขตความร่วมมือกับสาขาวิชาวิทยาการคอมพิวเตอร์"
+    },
+    {
+      "source_url": "https://blendata.com/",
+      "source_title": "Blendata Co., Ltd.",
+      "source_publisher": "Blendata Co., Ltd.",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้าแรกของบริษัท (blendata.co เปลี่ยนเส้นทางมาที่ blendata.com) ระบุชื่อบริษัท การดำเนินงานด้านข้อมูลและ AI และที่ตั้งในประเทศไทย"
+    },
+    {
+      "source_url": "https://sci.tu.ac.th/%E0%B8%9E%E0%B8%B4%E0%B8%98%E0%B8%B5%E0%B8%9B%E0%B8%B4%E0%B8%94-%E0%B9%82%E0%B8%84%E0%B8%A3%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%AD%E0%B8%9A%E0%B8%A3%E0%B8%A1%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E/",
+      "source_title": "พิธีปิด โครงการอบรมคอมพิวเตอร์โอลิมปิก ค่าย 2 ประจำปีการศึกษา 2565",
+      "source_publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "ข่าวลงวันที่ 5 เมษายน 2566: สาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้ดูแลค่าย 2 ระหว่าง 20 มี.ค.–5 เม.ย. 2566; ไม่ระบุสถานที่และจำนวนผู้เข้าอบรม"
+    },
+    {
+      "source_url": "https://sci.tu.ac.th/%E0%B8%A3%E0%B8%AD%E0%B8%87%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B8%B2%E0%B8%88%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C-%E0%B8%94%E0%B8%A3-%E0%B8%AA%E0%B8%B8%E0%B9%80%E0%B8%9E%E0%B8%8A%E0%B8%A3/",
+      "source_title": "พิธีมอบเกียรติบัตรผู้เข้าอบรมคอมพิวเตอร์โอลิมปิก ค่าย 2",
+      "source_publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "ข่าวลงวันที่ 4 เมษายน 2567: ค่าย 2 ระหว่าง 18 มี.ค.–3 เม.ย. 2567 ผู้เข้ารับเกียรติบัตร 29 คน ผู้ดูแลคือหัวหน้าและคณาจารย์สาขาวิชาวิทยาการคอมพิวเตอร์; ไม่ระบุศูนย์"
+    },
+    {
+      "source_url": "https://www.posn.or.th/",
+      "source_title": "มูลนิธิส่งเสริมโอลิมปิกวิชาการและพัฒนามาตรฐานวิทยาศาสตร์ศึกษา (สอวน.)",
+      "source_publisher": "มูลนิธิส่งเสริมโอลิมปิกวิชาการและพัฒนามาตรฐานวิทยาศาสตร์ศึกษา",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้าแรกระบุชื่อมูลนิธิและภารกิจบริหารโอลิมปิกวิชาการ รวมถึงคอมพิวเตอร์"
+    },
+    {
+      "source_url": "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C-%E0%B8%A1%E0%B8%98-%E0%B8%84%E0%B8%B4%E0%B8%94%E0%B8%84%E0%B9%89%E0%B8%99%E0%B9%81%E0%B8%AD%E0%B8%9B%E0%B8%9E%E0%B8%A5/",
+      "source_title": "คณะวิทย์ มธ. คิดค้นแอปพลิเคชัน My Mood Day",
+      "source_publisher": "คณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_news",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "ข่าวลงวันที่ 13 เมษายน 2563: ผลงานของอาจารย์และนักศึกษาสาขาวิทยาการคอมพิวเตอร์ พัฒนาร่วมกับทีมจิตแพทย์ โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ"
+    },
+    {
+      "source_url": "https://hospital.tu.ac.th/",
+      "source_title": "โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ",
+      "source_publisher": "โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้าแรกของโรงพยาบาล ระบุชื่อโรงพยาบาลในประเทศไทย"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/dimension-data-challenge-2017/",
+      "source_title": "Dimension Data Challenge 2017",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "เสาร์ 25 มีนาคม 2560 จัดโดย Dimension Data; นักศึกษาชั้นปีที่ 4 สาขา CS ได้รับรางวัลรองชนะเลิศอันดับ 2 (หน้าเผยแพร่ 15 กุมภาพันธ์ 2564)"
+    },
+    {
+      "source_url": "https://www.dimensiondata.com/",
+      "source_title": "Dimension Data",
+      "source_publisher": "NTT",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "ที่อยู่เว็บเดิมของ Dimension Data เปลี่ยนเส้นทางไปเว็บ NTT; ยังไม่พบข้อความยืนยันประเทศของนิติบุคคล"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/cisco-thailand-netriders-2016/",
+      "source_title": "Cisco Thailand NetRiders 2016",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "นักศึกษาชั้นปีที่ 4 ภาควิชาวิทยาการคอมพิวเตอร์ มธ. ได้รับรางวัลรองชนะเลิศอันดับ 2 ระดับ CCENT Competition ปี 2559; ไม่ระบุวันและสถานที่แข่งขัน"
+    },
+    {
+      "source_url": "https://www.cisco.com/c/en/us/about.html",
+      "source_title": "About Cisco",
+      "source_publisher": "Cisco Systems, Inc.",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้า About ของ Cisco ระบุสำนักงานใหญ่ที่ San Jose, California"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/global-centra-smart-cities-student-hackathon/",
+      "source_title": "Global CENTRA Smart Cities Student Hackathon",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "1–2 เมษายน 2560 ที่ University of Florida; นักศึกษาชั้นปีที่ 4 สาขา CS สองคนร่วมทีมนานาชาติและได้รางวัลที่ 1"
+    },
+    {
+      "source_url": "https://www.ufl.edu/",
+      "source_title": "University of Florida",
+      "source_publisher": "University of Florida",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้าแรกมหาวิทยาลัย ระบุ Gainesville, FL"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/acm-icpc-thailand-central-group-b-programming-contest-2016/",
+      "source_title": "ACM-ICPC Thailand Central Group B Programming Contest 2016",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "อาทิตย์ 11 กันยายน 2559 ณ คณะ ICT มหาวิทยาลัยมหิดล วิทยาเขตศาลายา; ทีม Lnwza007 และ Cookies ของ มธ. ได้รับรางวัลสนับสนุนค่าเดินทางรอบประเทศไทย; ไม่ระบุผู้จัด"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/the-2018-apac-hpc-ai-competition/",
+      "source_title": "The 2018 APAC HPC-AI Competition",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "นักศึกษาชั้นปีที่ 3–4 สาขา CS ได้รางวัลพิเศษด้านการนำเสนอทีมแบบวิดีโอ; จัดโดย HPC-AI Advisory Council; ไม่ระบุวันที่"
+    },
+    {
+      "source_url": "https://www.hpcadvisorycouncil.com/",
+      "source_title": "HPC-AI Advisory Council",
+      "source_publisher": "HPC-AI Advisory Council",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้าแรกอธิบายภารกิจขององค์กร; ไม่ระบุประเทศที่ตั้ง"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/pragma-31-student-hackathon/",
+      "source_title": "PRAGMA 31 Student Hackathon",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "ภาควิชาวิทยาการคอมพิวเตอร์ มธ. จัด Student Hackathon 5–6 กันยายน 2559; นักศึกษา 3 ทีมได้รางวัล; นำเสนอที่ PRAGMA 31 Workshop 9 กันยายน 2559"
+    },
+    {
+      "source_url": "https://www.pragma-grid.net/",
+      "source_title": "PRAGMA",
+      "source_publisher": "PRAGMA",
+      "source_type": "official_partner_source",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "หน้าแรกอธิบาย PRAGMA เป็นชุมชนนานาชาติด้านเทคโนโลยีเพื่อวิทยาศาสตร์; ไม่ระบุประเทศที่ตั้งหลัก"
+    },
+    {
+      "source_url": "https://cs.sci.tu.ac.th/the-pragma34-workshop-meeting/",
+      "source_title": "The PRAGMA34 Workshop Meeting",
+      "source_publisher": "CS.SCI@TU สาขาวิชาวิทยาการคอมพิวเตอร์ มหาวิทยาลัยธรรมศาสตร์",
+      "source_type": "official_institution_page",
+      "source_checked_at": "2026-10-01T18:30:00Z",
+      "source_locator": "11 พฤษภาคม 2561 ที่ Akihabara กรุงโตเกียว; นักศึกษาชั้นปีที่ 4 สาขา CS นำเสนอโครงงานและได้รางวัลโปสเตอร์ดีเด่นอันดับ 3"
+    }
+  ],
+  "partners": [
+    {
+      "key": "blendata",
+      "name": "บริษัท เบลนเดต้า จำกัด (Blendata Co., Ltd.)",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "บริษัทเทคโนโลยีด้านข้อมูลและ AI ในประเทศไทย ลงนาม MoU กับคณะวิทยาศาสตร์และเทคโนโลยี มธ. โดยระบุสาขาวิชาวิทยาการคอมพิวเตอร์เป็นหน่วยงานร่วมดำเนินการ",
+      "website_url": "https://blendata.com/",
+      "scope_level": "faculty",
+      "source_urls": [
+        "https://sci.tu.ac.th/mou-scitu-blendata/",
+        "https://blendata.com/"
+      ],
+      "cstu_evidence": "ข่าว SCI-TU ระบุความร่วมมือระหว่างบริษัทกับสาขาวิชาวิทยาการคอมพิวเตอร์ ลงนามระดับคณะ จึงติดป้ายระดับคณะ ไม่นับเป็น CSTU โดยตรง",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "posn-foundation",
+      "name": "มูลนิธิส่งเสริมโอลิมปิกวิชาการและพัฒนามาตรฐานวิทยาศาสตร์ศึกษา (สอวน.)",
+      "type": "network",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "มูลนิธิที่บริหารโอลิมปิกวิชาการระดับประเทศ รวมถึงคอมพิวเตอร์โอลิมปิก ซึ่งสาขาวิชาวิทยาการคอมพิวเตอร์ มธ. เป็นผู้ดูแลค่าย 2",
+      "website_url": "https://www.posn.or.th/",
+      "scope_level": "program",
+      "source_urls": [
+        "https://www.posn.or.th/",
+        "https://sci.tu.ac.th/%E0%B8%9E%E0%B8%B4%E0%B8%98%E0%B8%B5%E0%B8%9B%E0%B8%B4%E0%B8%94-%E0%B9%82%E0%B8%84%E0%B8%A3%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%AD%E0%B8%9A%E0%B8%A3%E0%B8%A1%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E/",
+        "https://sci.tu.ac.th/%E0%B8%A3%E0%B8%AD%E0%B8%87%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B8%B2%E0%B8%88%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C-%E0%B8%94%E0%B8%A3-%E0%B8%AA%E0%B8%B8%E0%B9%80%E0%B8%9E%E0%B8%8A%E0%B8%A3/"
+      ],
+      "cstu_evidence": "ข่าวทางการระบุว่าสาขาวิชาวิทยาการคอมพิวเตอร์ มธ. เป็นผู้ดูแลค่าย 2 ของโครงการ สอวน. ในปีการศึกษา 2565 และ 2566",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "thammasat-chalermprakiat-hospital",
+      "name": "โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ",
+      "type": "healthcare",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "โรงพยาบาลที่ทีมจิตแพทย์พัฒนาแอปพลิเคชัน My Mood Day ร่วมกับอาจารย์และนักศึกษาสาขาวิทยาการคอมพิวเตอร์ มธ.",
+      "website_url": "https://hospital.tu.ac.th/",
+      "scope_level": "program",
+      "source_urls": [
+        "https://hospital.tu.ac.th/",
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C-%E0%B8%A1%E0%B8%98-%E0%B8%84%E0%B8%B4%E0%B8%94%E0%B8%84%E0%B9%89%E0%B8%99%E0%B9%81%E0%B8%AD%E0%B8%9B%E0%B8%9E%E0%B8%A5/"
+      ],
+      "cstu_evidence": "ข่าว SCI-TU ระบุผลงานของอาจารย์และนักศึกษาสาขาวิทยาการคอมพิวเตอร์พัฒนาร่วมกับทีมจิตแพทย์ของโรงพยาบาลนี้",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "dimension-data",
+      "name": "Dimension Data",
+      "type": "private_company",
+      "country": "Thailand",
+      "country_code": "TH",
+      "description": "ผู้จัดการแข่งขัน Dimension Data Challenge 2017 ที่นักศึกษา CS มธ. ได้รางวัลรองชนะเลิศอันดับ 2; รอยืนยันนิติบุคคลและประเทศจากแหล่งทางการ",
+      "website_url": "https://www.dimensiondata.com/",
+      "scope_level": "program",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/dimension-data-challenge-2017/",
+        "https://www.dimensiondata.com/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุผู้จัดและผลของนักศึกษา CS; กักไว้ตรวจเพิ่มเพราะเว็บเดิมของบริษัทเปลี่ยนไปที่ NTT และไม่ยืนยันประเทศ (ค่า Thailand เป็นค่าชั่วคราวที่ยังไม่ได้ยืนยัน)",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "cisco",
+      "name": "Cisco Systems, Inc.",
+      "type": "private_company",
+      "country": "United States",
+      "country_code": "US",
+      "description": "ผู้ให้การแข่งขัน Cisco Thailand NetRiders 2016 ที่นักศึกษา CS มธ. ได้รางวัลรองชนะเลิศอันดับ 2 ระดับ CCENT",
+      "website_url": "https://www.cisco.com/c/en/us/about.html",
+      "scope_level": "program",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/cisco-thailand-netriders-2016/",
+        "https://www.cisco.com/c/en/us/about.html"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุนักศึกษาชั้นปีที่ 4 ภาควิชาวิทยาการคอมพิวเตอร์ มธ. ได้รางวัลในการแข่งขันที่จัดโดย Cisco Thailand",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "university-of-florida",
+      "name": "University of Florida",
+      "type": "university",
+      "country": "United States",
+      "country_code": "US",
+      "description": "มหาวิทยาลัยเจ้าภาพ Global CENTRA Smart Cities Student Hackathon ที่นักศึกษา CS มธ. ร่วมทีมนานาชาติและได้รางวัลที่ 1",
+      "website_url": "https://www.ufl.edu/",
+      "scope_level": "program",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/global-centra-smart-cities-student-hackathon/",
+        "https://www.ufl.edu/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุนักศึกษาชั้นปีที่ 4 สาขา CS สองคนเข้าร่วมแข่งขันที่ University of Florida",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "hpc-ai-advisory-council",
+      "name": "HPC-AI Advisory Council",
+      "type": "network",
+      "country": "United States",
+      "country_code": "US",
+      "description": "องค์กรผู้จัด APAC HPC-AI Competition 2018 ที่นักศึกษา CS มธ. ได้รางวัลพิเศษด้านการนำเสนอวิดีโอ; รอยืนยันประเทศที่ตั้งจากแหล่งทางการ",
+      "website_url": "https://www.hpcadvisorycouncil.com/",
+      "scope_level": "program",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/the-2018-apac-hpc-ai-competition/",
+        "https://www.hpcadvisorycouncil.com/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุผู้จัดและทีมนักศึกษา CS ชั้นปีที่ 3–4; กักไว้ตรวจเพิ่มเพราะเว็บองค์กรไม่ระบุประเทศ (ค่า US ยังไม่ได้ยืนยัน)",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "pragma",
+      "name": "PRAGMA (Pacific Rim Applications and Grid Middleware Assembly)",
+      "type": "international_organization",
+      "country": "United States",
+      "country_code": "US",
+      "description": "ชุมชนนานาชาติด้านเทคโนโลยีเพื่อวิทยาศาสตร์ ที่นักศึกษา CS มธ. เข้าร่วม Student Hackathon ครั้งที่ 31 และ Workshop ครั้งที่ 34; รอยืนยันประเทศที่ตั้งจากแหล่งทางการ",
+      "website_url": "https://www.pragma-grid.net/",
+      "scope_level": "program",
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/pragma-31-student-hackathon/",
+        "https://cs.sci.tu.ac.th/the-pragma34-workshop-meeting/",
+        "https://www.pragma-grid.net/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุกิจกรรมของนักศึกษา CS ในงาน PRAGMA 31 และ 34; กักไว้ตรวจเพิ่มเพราะเว็บ PRAGMA เป็นชุมชนกระจายหลายประเทศและไม่ระบุประเทศหลัก (ค่า US ยังไม่ได้ยืนยัน)",
+      "scope_status": "pending",
+      "is_published": false
+    }
+  ],
+  "documents": [
+    {
+      "key": "scitu-blendata-mou-2023",
+      "name": "บันทึกข้อตกลงความร่วมมือ (MoU) ระหว่างคณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ กับ บริษัท เบลนเดต้า จำกัด",
+      "doc_type": "mou",
+      "document_kind": "agreement",
+      "file_availability": "metadata_only",
+      "effective_date": "2023-10-04",
+      "expiry_date": null,
+      "responsible": null,
+      "status": null,
+      "signer_our": "รศ.ดร.สุเพชร จิรขจรกุล, คณบดีคณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ (ตามข่าว SCI-TU)",
+      "signer_partner": "Natthanapass Ratchatavivat, CEO and Co-founder, Blendata Company Limited (as reported by SCI-TU)",
+      "scope_level": "faculty",
+      "partner_key": "blendata",
+      "scope_items": [
+        "ร่วมแบ่งปันข้อมูล",
+        "ร่วมให้คำปรึกษานักศึกษาระดับบัณฑิตศึกษา",
+        "ให้คำปรึกษาด้านมุมมองจากภาคอุตสาหกรรมในการพัฒนาหลักสูตร",
+        "ร่วมกันจัดกิจกรรมเชิงวิชาการ"
+      ],
+      "source_urls": [
+        "https://sci.tu.ac.th/mou-scitu-blendata/"
+      ],
+      "cstu_evidence": "ข่าว SCI-TU ระบุว่าความร่วมมือเป็นของสาขาวิชาวิทยาการคอมพิวเตอร์กับบริษัท และมีการให้มุมมองภาคอุตสาหกรรมเพื่อพัฒนาหลักสูตร ข่าวไม่ระบุระดับปริญญาตรี/ศูนย์รังสิตและไม่ระบุวันหมดอายุ จึงตั้งสถานะเป็นไม่ทราบ (null) และติดป้ายระดับคณะเพราะลงนามโดยคณบดี",
+      "scope_status": "confirmed",
+      "is_published": true
+    }
+  ],
+  "activities": [
+    {
+      "key": "posn-computer-camp-2-ay2565",
+      "name": "โครงการอบรมคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2 ประจำปีการศึกษา 2565",
+      "description": "สาขาวิชาวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์และเทคโนโลยี มธ. เป็นผู้ดูแลค่าย 2 ของโครงการ สอวน. ระหว่าง 20 มีนาคม–5 เมษายน 2566; ข่าวไม่ระบุสถานที่และจำนวนผู้เข้าอบรม",
+      "activity_type": "engineering_camp",
+      "date": "2023-03-20",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2023-04-05",
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "posn-foundation",
+      "agreement_key": null,
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%9E%E0%B8%B4%E0%B8%98%E0%B8%B5%E0%B8%9B%E0%B8%B4%E0%B8%94-%E0%B9%82%E0%B8%84%E0%B8%A3%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%AD%E0%B8%9A%E0%B8%A3%E0%B8%A1%E0%B8%84%E0%B8%AD%E0%B8%A1%E0%B8%9E/"
+      ],
+      "cstu_evidence": "ข่าวทางการระบุสาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้ดูแลค่าย; ไม่ระบุศูนย์จึงไม่ใส่สถานที่",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "posn-computer-camp-2-ay2566",
+      "name": "โครงการอบรมคอมพิวเตอร์โอลิมปิก สอวน. ค่าย 2 ประจำปีการศึกษา 2566",
+      "description": "หัวหน้าและคณาจารย์สาขาวิชาวิทยาการคอมพิวเตอร์ มธ. ดูแลค่าย 2 ระหว่าง 18 มีนาคม–3 เมษายน 2567 มีผู้เข้ารับเกียรติบัตร 29 คน",
+      "activity_type": "engineering_camp",
+      "date": "2024-03-18",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2024-04-03",
+      "time": null,
+      "location": null,
+      "participants": 29,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "posn-foundation",
+      "agreement_key": null,
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%A3%E0%B8%AD%E0%B8%87%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B8%B2%E0%B8%88%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C-%E0%B8%94%E0%B8%A3-%E0%B8%AA%E0%B8%B8%E0%B9%80%E0%B8%9E%E0%B8%8A%E0%B8%A3/"
+      ],
+      "cstu_evidence": "ข่าวทางการระบุสาขาวิชาวิทยาการคอมพิวเตอร์เป็นผู้ดูแลค่าย; ไม่ระบุศูนย์จึงไม่ใส่สถานที่",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "my-mood-day-app-2020",
+      "name": "My Mood Day: แอปพลิเคชันติดตามสุขภาพใจผู้ป่วยโรงพยาบาลสนามธรรมศาสตร์",
+      "description": "อาจารย์และนักศึกษาสาขาวิทยาการคอมพิวเตอร์ มธ. พัฒนาแอปพลิเคชันร่วมกับทีมจิตแพทย์ โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ เพื่อให้จิตแพทย์ติดตามสุขภาพใจของผู้ป่วยก่อนและระหว่างการกักตัว; การใช้งานต้องอยู่ภายใต้การดูแลของจิตแพทย์ (วันที่คือวันประกาศข่าว)",
+      "activity_type": "student_activity",
+      "date": "2020-04-13",
+      "date_kind": "announcement",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": null,
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "thammasat-chalermprakiat-hospital",
+      "agreement_key": null,
+      "source_urls": [
+        "https://sci.tu.ac.th/%E0%B8%84%E0%B8%93%E0%B8%B0%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C-%E0%B8%A1%E0%B8%98-%E0%B8%84%E0%B8%B4%E0%B8%94%E0%B8%84%E0%B9%89%E0%B8%99%E0%B9%81%E0%B8%AD%E0%B8%9B%E0%B8%9E%E0%B8%A5/"
+      ],
+      "cstu_evidence": "ข่าวทางการระบุอาจารย์และนักศึกษาสาขาวิทยาการคอมพิวเตอร์เป็นผู้พัฒนาร่วมกับทีมจิตแพทย์",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "dimension-data-challenge-2017",
+      "name": "Dimension Data Challenge 2017",
+      "description": "นักศึกษาชั้นปีที่ 4 สาขาวิทยาการคอมพิวเตอร์ มธ. ได้รับรางวัลรองชนะเลิศอันดับ 2 ในการแข่งขันที่จัดโดย Dimension Data เมื่อวันเสาร์ที่ 25 มีนาคม 2560",
+      "activity_type": "student_workshop_competition",
+      "date": "2017-03-25",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "dimension-data",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/dimension-data-challenge-2017/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุนักศึกษา CS ชั้นปีที่ 4 เข้าแข่งขันและได้รางวัล; รอเผยแพร่จนกว่าจะยืนยันข้อมูล partner",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "cisco-thailand-netriders-2016",
+      "name": "Cisco Thailand NetRiders 2016",
+      "description": "นักศึกษาชั้นปีที่ 4 ภาควิชาวิทยาการคอมพิวเตอร์ มธ. ได้รับรางวัลรองชนะเลิศอันดับ 2 ระดับ CCENT Competition ในการแข่งขันที่จัดโดย Cisco Thailand; หน้าข่าวระบุเพียงปี 2559",
+      "activity_type": "student_workshop_competition",
+      "date": "2016-01-01",
+      "date_kind": "event",
+      "date_precision": "year",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "cisco",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/cisco-thailand-netriders-2016/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุนักศึกษา CS ชั้นปีที่ 4 ได้รับรางวัล; ไม่ระบุวันและสถานที่ จึงใช้ความละเอียดระดับปี",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "global-centra-smart-cities-hackathon-2017",
+      "name": "Global CENTRA Smart Cities Student Hackathon",
+      "description": "นักศึกษาชั้นปีที่ 4 สาขาวิทยาการคอมพิวเตอร์ มธ. สองคนร่วมทีมนานาชาติกับนักศึกษา Nara Institute of Science and Technology และ University of Florida ที่ University of Florida ระหว่าง 1–2 เมษายน 2560 ได้รางวัลที่ 1 จากเว็บแอปพลิเคชันแสดงข้อมูลเปิดของเมือง Gainesville",
+      "activity_type": "student_workshop_competition",
+      "date": "2017-04-01",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2017-04-02",
+      "time": null,
+      "location": "University of Florida, Gainesville, Florida, สหรัฐอเมริกา",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "university-of-florida",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/global-centra-smart-cities-student-hackathon/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุชื่อนักศึกษา CS ชั้นปีที่ 4 ที่เข้าร่วมและผลการแข่งขัน",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "acm-icpc-thailand-central-group-b-2016",
+      "name": "ACM-ICPC Thailand Central Group B Programming Contest 2016",
+      "description": "ทีม Lnwza007 และทีม Cookies จากคณะวิทยาศาสตร์และเทคโนโลยี มธ. เข้าแข่งขันรอบภูมิภาคภาคกลาง เขต 2 เมื่อวันอาทิตย์ที่ 11 กันยายน 2559 และได้รับรางวัลสนับสนุนค่าเดินทางไปแข่งขันรอบประเทศไทย ทีมละ 6,000 บาท",
+      "activity_type": "student_workshop_competition",
+      "date": "2016-09-11",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": "คณะ ICT มหาวิทยาลัยมหิดล วิทยาเขตศาลายา จ.นครปฐม",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": null,
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/acm-icpc-thailand-central-group-b-programming-contest-2016/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุทีมนักศึกษาและอาจารย์ผู้ควบคุมทีมจากคณะวิทยาศาสตร์และเทคโนโลยี มธ.; หน้าข่าวระบุเพียงสถานที่จัด ไม่ระบุผู้จัด จึงไม่สร้าง partner มหาวิทยาลัยมหิดล",
+      "scope_status": "confirmed",
+      "is_published": true
+    },
+    {
+      "key": "apac-hpc-ai-competition-2018",
+      "name": "The 2018 APAC HPC-AI Competition",
+      "description": "ทีมนักศึกษาชั้นปีที่ 3–4 สาขาวิทยาการคอมพิวเตอร์ มธ. ได้รับรางวัลพิเศษด้านการนำเสนอทีมแบบวิดีโอ ในการแข่งขันที่จัดโดย HPC-AI Advisory Council; หน้าข่าวไม่ระบุวันและสถานที่ จึงใช้ปีตามชื่อการแข่งขัน",
+      "activity_type": "student_workshop_competition",
+      "date": "2018-01-01",
+      "date_kind": "event",
+      "date_precision": "year",
+      "end_date": null,
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "hpc-ai-advisory-council",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/the-2018-apac-hpc-ai-competition/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุนักศึกษา CS ชั้นปีที่ 3–4 และอาจารย์ที่ปรึกษา; รอเผยแพร่จนกว่าจะยืนยันข้อมูล partner",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "pragma31-student-hackathon-2016",
+      "name": "PRAGMA 31 Student Hackathon",
+      "description": "ภาควิชาวิทยาการคอมพิวเตอร์ มธ. จัด Student Hackathon ระหว่าง 5–6 กันยายน 2559 มีนักศึกษา 3 ทีมได้รับรางวัล และหนึ่งทีมได้นำเสนอที่ PRAGMA 31 Workshop",
+      "activity_type": "student_workshop_competition",
+      "date": "2016-09-05",
+      "date_kind": "period_start",
+      "date_precision": "day",
+      "end_date": "2016-09-06",
+      "time": null,
+      "location": null,
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "pragma",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/pragma-31-student-hackathon/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุว่าภาควิชาเป็นผู้จัดและนักศึกษา CS เข้าแข่งขัน; รอเผยแพร่จนกว่าจะยืนยันข้อมูล partner",
+      "scope_status": "pending",
+      "is_published": false
+    },
+    {
+      "key": "pragma34-workshop-2018",
+      "name": "The PRAGMA34 Workshop Meeting",
+      "description": "นักศึกษาชั้นปีที่ 4 สาขาวิทยาการคอมพิวเตอร์ มธ. นำเสนอโครงงานในการประชุม PRAGMA34 ที่ Akihabara กรุงโตเกียว เมื่อวันที่ 11 พฤษภาคม 2561 และได้รับรางวัลการนำเสนอโปสเตอร์ดีเด่นอันดับ 3",
+      "activity_type": "international_conference",
+      "date": "2018-05-11",
+      "date_kind": "event",
+      "date_precision": "day",
+      "end_date": null,
+      "time": null,
+      "location": "Akihabara, Tokyo, Japan",
+      "participants": null,
+      "status": "เสร็จสิ้น",
+      "is_open": null,
+      "scope_level": "program",
+      "partner_key": "pragma",
+      "agreement_key": null,
+      "source_urls": [
+        "https://cs.sci.tu.ac.th/the-pragma34-workshop-meeting/"
+      ],
+      "cstu_evidence": "รายงานของสาขาระบุนักศึกษา CS ชั้นปีที่ 4 และอาจารย์ที่ปรึกษา; รอเผยแพร่จนกว่าจะยืนยันข้อมูล partner",
+      "scope_status": "pending",
+      "is_published": false
+    }
+  ],
+  "review_notes": [
+    "ข้อมูลชุดนี้ตรวจจากเว็บไซต์ของคณะวิทยาศาสตร์และเทคโนโลยี (sci.tu.ac.th) และสาขาวิชาวิทยาการคอมพิวเตอร์ (cs.sci.tu.ac.th) เมื่อวันที่ 2 ตุลาคม 2569 ไม่ได้ยืนยัน MoU ปัจจุบันหรือสถานะข้อตกลง",
+    "MoU Blendata ลงนามระดับคณะและระบุสาขาวิชาวิทยาการคอมพิวเตอร์เป็นหน่วยงานร่วมดำเนินการ จึงติดป้าย scope_level=faculty ไม่นับเป็น CSTU โดยตรง ข่าวไม่ระบุวันหมดอายุ สถานะข้อตกลงจึงเป็น null และไม่สร้างไฟล์สัญญาจำลอง",
+    "งานแข่งขันและการเข้าร่วมของนักศึกษา CS (NSC/SCB/Google HackFair ในชุดที่ตรวจแล้ว และ Dimension Data, Cisco NetRiders, CENTRA, ICPC, APAC HPC-AI, PRAGMA ในชุดนี้) นับเป็นกิจกรรมความร่วมมือแบบสม่ำเสมอ ตามที่ผู้ใช้ตัดสินใจเมื่อ 2 ตุลาคม 2569",
+    "PRAGMA34 ย้ายจาก excluded_candidates ของชุดที่ตรวจแล้วมาเป็นข้อมูลรับเข้าในชุดนี้ เพราะหลักเกณฑ์นับกิจกรรมที่นักศึกษาเข้าร่วมแล้ว URL เดิมในชุดนั้นมี /2021/02/15/ และตอบ 404 ส่วน URL ที่ใช้ในชุดนี้ตอบ 200",
+    "Dimension Data, HPC-AI Advisory Council และ PRAGMA ยังไม่มีแหล่งทางการที่ยืนยันประเทศของหน่วยงาน (ค่า country ในชุดนี้เป็นค่าชั่วคราว) partner และกิจกรรมที่เชื่อมจึงเป็น pending และไม่เผยแพร่ จนกว่าผู้ทบทวนจะยืนยัน",
+    "ICPC รอบภูมิภาคจัดที่คณะ ICT ม.มหิดล แต่หน้าข่าวไม่ระบุผู้จัด จึงใส่เป็นสถานที่ ไม่สร้าง partner มหาวิทยาลัยมหิดล",
+    "ค่าย สอวน. ปีการศึกษา 2565 และ 2566 ไม่ระบุศูนย์ที่จัด จึงไม่ใส่สถานที่ และไม่อ้างว่าผู้เข้าอบรมเป็นนักศึกษาปริญญาตรี",
+    "ศิษย์เก่า 2 คนจากเว็บคณะยังไม่นำเข้า เพราะโมเดลปัจจุบันยังไม่มี Stakeholder บุคคล (ดูงานถัดไปใน docs/decisions/cstu-program-scope.md)"
+  ],
+  "excluded_candidates": [
+    {
+      "name": "ศูนย์ลำปาง (Lampang campus) ทุกรายการ",
+      "reason": "อยู่นอกขอบเขตศูนย์รังสิตที่ตกลงไว้"
+    },
+    {
+      "name": "ธนชาตประกันภัย",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้วว่านักศึกษาหรือสาขา CSTU ศูนย์รังสิตเกี่ยวข้อง"
+    },
+    {
+      "name": "Coursera",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้วว่าเป็นความร่วมมือที่นักศึกษาหรือสาขา CSTU เกี่ยวข้อง"
+    },
+    {
+      "name": "Digital Ventures",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้ว"
+    },
+    {
+      "name": "Deloitte",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้ว"
+    },
+    {
+      "name": "E-C.O.P / KLab",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้ว"
+    },
+    {
+      "name": "เนคเทค / AI Nine",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้ว"
+    },
+    {
+      "name": "KCG",
+      "reason": "ยังไม่มีแหล่งต้นทางที่ตรวจแล้ว"
+    }
+  ]
+}

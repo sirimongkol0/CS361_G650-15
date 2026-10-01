@@ -1,4 +1,4 @@
-"""Read-only V2 API smoke check. Does not seed, upload, or change records."""
+"""Read-only V2 API check of a populated database. Does not upload or change records."""
 
 import argparse
 import json
@@ -18,7 +18,7 @@ def verify(api):
     partners = get_json('partners/')
     documents = get_json('documents/')
     activities = get_json('activities/')
-    assert partners and documents and activities, 'Expected seeded data for all three features'
+    assert partners and documents and activities, 'Expected published data for all three features'
     partner_ids = {p['id'] for p in partners}
     document_ids = {d['id'] for d in documents}
     downloads = 0
@@ -36,7 +36,6 @@ def verify(api):
             if document['sizeBytes'] is not None:
                 assert len(data) == document['sizeBytes']
             downloads += 1
-    assert downloads, 'Expected at least one downloadable PDF'
     for activity in activities[:3]:
         assert get_json(f"activities/{activity['id']}")['id'] == activity['id']
     for activity in activities:

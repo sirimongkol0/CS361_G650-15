@@ -1,9 +1,12 @@
-# V1 Setup Guide
+# V2 Setup Guide
+
+For disposable sample data, migration and browser checks, follow the
+[V2 demo guide](../demo-v2.md). Public data is read-only; editing is V3+.
 
 ## Prerequisites
 
 - Docker Engine or Docker Desktop with Docker Compose v2 (recommended), or
-- Python 3.11+, Node.js 20.9+, and PostgreSQL 16+ for running processes manually.
+- Python 3.11+, Node.js 22+, and PostgreSQL 16+ for running processes manually.
 
 ## Option A — clean-checkout Docker Compose
 
@@ -19,10 +22,12 @@ python scripts/smoke_test.py
 Compose starts the services in this order:
 
 1. PostgreSQL becomes healthy.
-2. The one-shot `seed` service creates the schema and inserts the development
-   dataset. It must exit with code 0.
-3. The backend starts and becomes healthy only after it can query PostgreSQL.
-4. The frontend starts after the backend is healthy.
+2. The backend creates any missing tables, then becomes healthy only after it
+   can query PostgreSQL.
+3. The frontend starts after the backend is healthy.
+
+The local database starts empty; lists show their empty state until records
+are added.
 
 Expected endpoints:
 
@@ -31,7 +36,9 @@ Expected endpoints:
 | http://localhost:8000/api/v1/health | `{"status":"healthy"}` |
 | http://localhost:8000/docs | Swagger UI |
 | http://localhost:3000 | redirects to `/dashboard/public` |
-| http://localhost:3000/activities | seeded activity list |
+| http://localhost:3000/activities | activity list (empty on a fresh database) |
+| http://localhost:3000/stakeholders | stakeholder list |
+| http://localhost:3000/documents | document list, filters and downloads |
 
 The checked-in defaults are development-only and contain no production
 credentials. You do not need an `.env` file. To change ports or local database
@@ -42,8 +49,8 @@ embedded in the browser bundle.
 Useful lifecycle commands:
 
 ```bash
-# Inspect the one-shot seed and application logs
-docker compose logs seed backend frontend
+# Inspect the application logs
+docker compose logs backend frontend
 
 # Stop containers but preserve the PostgreSQL and upload volumes
 docker compose down
@@ -65,11 +72,10 @@ default; the Compose flow never connects to RDS or S3.
    python -m venv venv
    # Windows: venv/Scripts/pip install -r requirements.txt
    # macOS/Linux: venv/bin/pip install -r requirements.txt
-   copy .env.example .env
    venv/Scripts/python -m uvicorn main:app --reload --port 8000
    ```
 
-   On macOS/Linux, use `cp` instead of `copy` and `venv/bin/python` instead of
+   On macOS/Linux, use `venv/bin/python` instead of
    `venv/Scripts/python`. To use PostgreSQL, change `DATABASE_URL` in
    `backend/.env`.
 
@@ -81,23 +87,13 @@ default; the Compose flow never connects to RDS or S3.
    npm run dev
    ```
 
-## Schema and seed verification
-
-Compose seeds the frontend-compatible dataset automatically. The seed is
-additive and idempotent: running it again creates no duplicate rows.
-
-```bash
-# With the Compose database running; the second run reports zero inserts
-docker compose run --rm seed
-
-# Real TU sample data for a separately configured local database
-python backend/seed.py
-```
+## Schema
 
 Schema definitions and constraints live in `backend/models.py`. See
-`database/schema/README.md` for the integrity rules. The V1 setup uses
-SQLAlchemy `create_all` for clean/additive schema creation; it is not a
-replacement for production migration tooling.
+`database/schema/README.md` for the integrity rules. A fresh V2 setup uses
+SQLAlchemy `create_all` for fresh schema creation. For an existing database,
+stop the API and run `python backend/migrate_v2.py` with its DATABASE_URL before
+restarting. Back up existing data before a migration.
 
 ## Tests
 
@@ -110,16 +106,16 @@ cd ..
 python scripts/smoke_test.py
 ```
 
-`test_seed_and_schema.py` creates a clean schema, runs the seed twice, compares
-table counts, verifies relationships and exercises database constraints. CI
-also builds a clean Compose stack and runs the smoke script.
+Tests build their own data from `backend/tests/sample_data.py`.
+`test_seed_and_schema.py` checks that this dataset is internally consistent and
+exercises database constraints. CI also builds a clean Compose stack and runs
+the smoke script.
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `seed` exits non-zero | schema, constraint or database startup problem | `docker compose logs seed database` |
 | backend remains unhealthy | it cannot query PostgreSQL | `docker compose logs backend database` |
 | port already allocated | another local service uses 3000, 8000 or 5432 | copy `.env.example` to `.env`, change the port, and update `PUBLIC_API_URL` if needed |
 | a fresh database is required | named volume still contains prior local data | `docker compose down --volumes`, then start again |
-| seeded document download is 404 | mock seed stores document metadata only | upload a PDF through the API; local uploads persist in `backend_storage` |
+| document download is 404 | the record is metadata-only or its file is missing | check fileAvailability and its storage object; public upload is disabled |

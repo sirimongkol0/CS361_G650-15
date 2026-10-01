@@ -4,9 +4,9 @@ import AppShell from "@/components/AppShell";
 import { RoleProvider } from "@/lib/role-context";
 
 export const metadata: Metadata = {
-  title: "Partner Activity App",
+  title: "CSTU | PCSMS",
   description:
-    "A Next.js app for viewing partners, activities, and agreement documents",
+    "ระบบข้อมูลความร่วมมือของ CSTU ระดับปริญญาตรี มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="th">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

@@ -1,0 +1,141 @@
+{
+  "partners": [
+    {
+      "key": "dublin-city-university-school-of-computing",
+      "name": "School of Computing, Dublin City University",
+      "type": "university",
+      "country": "Ireland",
+      "country_code": "IE",
+      "website_url": "https://www.dcu.ie/computing",
+      "description": "School of Computing at Dublin City University; official DCU page confirms undergraduate computing degrees including BSc in Computer Science.",
+      "cstu_evidence": "SCI-TU reports a signed MOU with this School for student exchange, joint programs, research, and strengthening expertise in computer science. The source does not state which TU degree level or campus participates; the subject and student-exchange link are directly relevant to CSTU, with the undergraduate/Rangsit applicability to be confirmed internally.",
+      "sources": [
+        {
+          "url": "https://www.dcu.ie/computing",
+          "title": "School of Computing",
+          "publisher": "Dublin City University",
+          "type": "official_partner_page",
+          "locator": "Official school profile; states it offers BSc in Computer Science",
+          "checked_at": "2026-10-01T17:51:21Z"
+        },
+        {
+          "url": "https://sci.tu.ac.th/sci-tu-%E0%B8%81%E0%B8%B1%E0%B8%9A-school-of-computing-dublin-city-university-%E0%B8%A3%E0%B9%88%E0%B8%A7%E0%B8%A1%E0%B8%A5%E0%B8%87%E0%B8%99%E0%B8%B2%E0%B8%A1%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97/",
+          "title": "SCI-TU กับ School of Computing, Dublin City University ร่วมลงนามบันทึกความร่วมมือทางวิชาการ (MOU) เพื่อพัฒนางานวิจัย รวมถึงการแลกเปลี่ยนนักศึกษาระหว่างทั้งสองสถาบัน",
+          "publisher": "Faculty of Science and Technology, Thammasat University (SCI-TU)",
+          "type": "official_agreement_announcement",
+          "locator": "Lines 47–56: dated 3 Feb 2023; dean of SCI-TU signed with DCU School of Computing representative; purpose includes research development, student exchange, joint programs, and computer science expertise",
+          "checked_at": "2026-10-01T17:51:21Z"
+        }
+      ]
+    },
+    {
+      "key": "yarsi-university-faculty-of-information-technology",
+      "name": "Faculty of Information Technology, YARSI University",
+      "type": "university",
+      "country": "Indonesia",
+      "country_code": "ID",
+      "website_url": "https://www.yarsi.ac.id/akademik/fakultas-teknologi-informasi",
+      "description": "YARSI University faculty responsible for information technology programs.",
+      "cstu_evidence": "SCI-TU reports an academic MOU signed by the Faculty of Science and Technology dean and a YARSI Faculty of Information Technology representative. Computer Science faculty members took part in the visit, and the stated aims include academic, research, and student development. The source does not identify degree level or campus, so confirm applicability to the undergraduate Rangsit scope before treating as an active CSTU record.",
+      "sources": [
+        {
+          "url": "https://www.yarsi.ac.id/akademik/fakultas-teknologi-informasi",
+          "title": "Fakultas Teknologi Informasi",
+          "publisher": "Universitas YARSI",
+          "type": "official_partner_page",
+          "locator": "Official faculty profile; identifies Faculty of Information Technology and its programs",
+          "checked_at": "2026-10-01T17:51:21Z"
+        },
+        {
+          "url": "https://sci.tu.ac.th/news-2022-6-22/",
+          "title": "SCI-TU ลงนามบันทึกความร่วมมือทางวิชาการกับ Faculty of Information Technology, Yarsi University ประเทศอินโดนีเซีย",
+          "publisher": "Faculty of Science and Technology, Thammasat University (SCI-TU)",
+          "type": "official_agreement_announcement",
+          "locator": "Lines 48–52: dated 22 Jun 2022; Computer Science faculty joined the visit; SCI-TU and YARSI Faculty of IT signed an academic MOU for academic, research, and student development cooperation",
+          "checked_at": "2026-10-01T17:51:21Z"
+        }
+      ]
+    }
+  ],
+  "documents": [
+    {
+      "key": "sci-tu-dcu-school-of-computing-mou-2023",
+      "name": "Academic MOU between Faculty of Science and Technology, Thammasat University and School of Computing, Dublin City University",
+      "doc_type": "MOU",
+      "document_kind": "agreement",
+      "file_availability": "metadata_only",
+      "partner_name": "School of Computing, Dublin City University",
+      "effective_date": null,
+      "expiry_date": null,
+      "responsible": null,
+      "status": null,
+      "signer_our": "รศ.ดร.สุเพชร จิรขจรกุล, คณบดีคณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ (ตามประกาศ SCI-TU)",
+      "signer_partner": "Assoc. Prof. Dr. Cathal Gurrin, Deputy Head, School of Computing, Dublin City University (as reported by SCI-TU)",
+      "scope_items": [
+        "Research development",
+        "Student exchange",
+        "Joint programs",
+        "Developing expertise in computer science"
+      ],
+      "cstu_evidence": "Official SCI-TU report explicitly identifies a signed MOU with a School of Computing and lists student exchange and computer-science expertise as purposes. This is directly relevant to the CSTU subject area; the announcement does not specify undergraduate eligibility, Rangsit campus, agreement term, or whether the agreement remains active.",
+      "sources": [
+        {
+          "url": "https://sci.tu.ac.th/sci-tu-%E0%B8%81%E0%B8%B1%E0%B8%9A-school-of-computing-dublin-city-university-%E0%B8%A3%E0%B9%88%E0%B8%A7%E0%B8%A1%E0%B8%A5%E0%B8%87%E0%B8%99%E0%B8%B2%E0%B8%A1%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97/",
+          "title": "SCI-TU กับ School of Computing, Dublin City University ร่วมลงนามบันทึกความร่วมมือทางวิชาการ (MOU) เพื่อพัฒนางานวิจัย รวมถึงการแลกเปลี่ยนนักศึกษาระหว่างทั้งสองสถาบัน",
+          "publisher": "Faculty of Science and Technology, Thammasat University (SCI-TU)",
+          "type": "official_agreement_announcement",
+          "locator": "Lines 47–56; publication/signing announcement dated 3 Feb 2023. Signing date is recorded in source metadata only, not as effective_date.",
+          "checked_at": "2026-10-01T17:51:21Z"
+        }
+      ]
+    },
+    {
+      "key": "sci-tu-yarsi-faculty-it-mou-2022",
+      "name": "Academic MOU between Faculty of Science and Technology, Thammasat University and Faculty of Information Technology, YARSI University",
+      "doc_type": "MOU",
+      "document_kind": "agreement",
+      "file_availability": "metadata_only",
+      "partner_name": "Faculty of Information Technology, YARSI University",
+      "effective_date": null,
+      "expiry_date": null,
+      "responsible": null,
+      "status": null,
+      "signer_our": "รศ.ดร.ณัฐธนนท์ หงส์วริทธิ์ธร, คณบดีคณะวิทยาศาสตร์และเทคโนโลยี มหาวิทยาลัยธรรมศาสตร์ (ตามประกาศ SCI-TU)",
+      "signer_partner": "Dr. Ummi Azizah Rachmawati, Faculty of Information Technology, YARSI University (as reported by SCI-TU)",
+      "scope_items": [
+        "Academic cooperation",
+        "Research cooperation",
+        "Student development"
+      ],
+      "cstu_evidence": "Official SCI-TU report explicitly confirms the signed faculty-level MOU and that Computer Science faculty members joined the visit. This gives a plausible CSTU connection, but the report does not specify undergraduate eligibility, Rangsit campus, agreement term, or whether the agreement remains active; confirm internally before public inclusion under the narrow undergraduate scope.",
+      "sources": [
+        {
+          "url": "https://sci.tu.ac.th/news-2022-6-22/",
+          "title": "SCI-TU ลงนามบันทึกความร่วมมือทางวิชาการกับ Faculty of Information Technology, Yarsi University ประเทศอินโดนีเซีย",
+          "publisher": "Faculty of Science and Technology, Thammasat University (SCI-TU)",
+          "type": "official_agreement_announcement",
+          "locator": "Lines 48–52; announcement dated 22 Jun 2022. Article says Computer Science faculty joined the visit and names both signatories; its date is not assumed to be the agreement effective date.",
+          "checked_at": "2026-10-01T17:51:21Z"
+        }
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "name": "Academic MOU between Faculty of Science and Technology, Thammasat University and Institut de Recherche pour le Développement (IRD)",
+      "url": "https://tu.ac.th/tu01210569/",
+      "reason": "The official TU announcement confirms a faculty-level agreement signed 14 May 2026 and says fields may include Computer Science and capacity-building for staff and students. It does not identify CSTU or the undergraduate Rangsit program as a participant or beneficiary, so it is held out of scope pending internal confirmation."
+    },
+    {
+      "name": "TU x CP Group MOU kick-off / preparation meeting",
+      "url": "https://sci.tu.ac.th/tu-x-cp-group-mou-renewal-kick-off-meeting/",
+      "reason": "Official SCI-TU source describes preparation for a future MOU signing, so this is not a signed agreement. Its AI/Data Science interests and Computer Science faculty attendee do not establish coverage of CSTU undergraduate Rangsit."
+    },
+    {
+      "name": "The PRAGMA34 Workshop Meeting",
+      "url": "https://cs.sci.tu.ac.th/2021/02/15/the-pragma34-workshop-meeting/",
+      "reason": "Official CSTU page describes student participation in a research workshop, an activity rather than a signed agreement."
+    }
+  ]
+}
+

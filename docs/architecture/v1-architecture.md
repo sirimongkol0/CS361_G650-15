@@ -26,8 +26,8 @@ FastAPI + Pydantic DTOs
   +---------------- storage abstraction ------> local volume | S3
 ```
 
-Docker Compose creates `database`, a one-shot idempotent `seed`, `backend`
-and `frontend` in dependency order. The browser calls the host-reachable
+Docker Compose creates `database`, `backend` (which creates missing tables)
+and `frontend` in dependency order; no sample data is loaded. The browser calls the host-reachable
 `PUBLIC_API_URL`; containers share an isolated Compose network. The database
 port is bound only to `127.0.0.1`.
 
@@ -50,19 +50,16 @@ port is bound only to `127.0.0.1`.
    callers could bypass them.
 2. **Public routes fail visibly.** Partner/activity pages and the public
    dashboard start in loading state, render empty data explicitly and offer a
-   retry after errors. The earlier mock-first fallback remains only on
-   prototype pages outside the supported public V1 flow; using it publicly was
-   rejected because it hid API failures and could misrepresent publication.
-3. **Local V1 includes its database.** Compose runs PostgreSQL 16 and a
-   one-shot seed instead of requiring an undocumented database on host
+   retry after errors. The earlier mock-first fallback has been removed from
+   all pages because it hid API failures and could misrepresent publication.
+3. **Local V1 includes its database.** Compose runs PostgreSQL 16 instead of requiring an undocumented database on host
    `localhost`. Health-based dependencies make startup deterministic.
-4. **Schema and seed are repeatable.** Natural keys, domain checks, indexes,
-   relationships and delete behavior are declared in the models. The
-   development seed is additive and idempotent. `create_all` supports clean V1
-   setup; production migrations remain a post-V1 concern.
+4. **Schema is repeatable.** Natural keys, domain checks, indexes,
+   relationships and delete behavior are declared in the models. `create_all`
+   supports clean setup and `backend/migrate_v2.py` upgrades existing databases.
 5. **Tests are isolated.** API tests override the database dependency with a
-   fresh in-memory SQLite database using `StaticPool`; schema/seed tests use
-   their own temporary database. This avoids order-dependent shared state.
+   fresh in-memory SQLite database using `StaticPool`; schema tests use
+   their own temporary database and the synthetic `tests/sample_data.py`. This avoids order-dependent shared state.
 6. **Browser and server addresses are distinct.** A browser cannot resolve a
    Compose service name, so `PUBLIC_API_URL` is embedded as a host-reachable
    URL. Backend/database traffic stays on the Compose network.
@@ -86,7 +83,8 @@ anonymous browser
   detail; repeatable local stack; API/schema/security verification.
 - Existing but outside this public outcome: document management and
   prototype role pages for feedback, exchange, reports, settings and users.
-- Authentication, authorization and partner/activity write workflows are V2+.
+- Authentication, authorization and editing workflows are V3+.
+- This is the V1 baseline; see the current API and V2 field contract for repository changes.
 
 See [the evidence index](../evidence/v1-readiness.md) for the mapping from
 outcomes to current code and tests.

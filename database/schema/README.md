@@ -52,5 +52,5 @@ name ends in `_test`. Tests create/drop tables, so the test runner rejects
 other PostgreSQL names. CI runs both PostgreSQL and SQLite, including empty
 and populated legacy schema migration and transaction rollback checks.
 
-See `docs/api/v2-field-contract.md` for the contract to review before merge,
-and `database/seed/README.md` for repeatable seed/download commands.
+See `docs/api/v2-field-contract.md` for the field contract. The repository
+contains no seed data; tests build theirs from `backend/tests/sample_data.py`.

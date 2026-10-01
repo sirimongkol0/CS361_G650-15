@@ -1,4 +1,4 @@
-"""Verification for repeatable schema setup and idempotent development seed."""
+"""Verification for schema rules and the consistency of the test dataset."""
 
 from datetime import date
 
@@ -6,8 +6,8 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 import models
-import seed_mock
 from database import Base, SessionLocal, engine
+from tests.sample_data import add_sample_data
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -18,48 +18,22 @@ def clean_database():
     Base.metadata.drop_all(bind=engine)
 
 
-def _counts(session):
-    return {
-        "partners": session.query(models.Partner).count(),
-        "documents": session.query(models.Document).count(),
-        "activities": session.query(models.Activity).count(),
-        "feedbacks": session.query(models.Feedback).count(),
-        "exchange_students": session.query(models.ExchangeStudent).count(),
-        "admin_profiles": session.query(models.AdminProfile).count(),
-        "scope_items": session.query(models.DocumentScopeItem).count(),
-    }
-
-
-def test_mock_seed_is_idempotent_and_relationships_resolve():
+def test_sample_data_is_internally_consistent():
     session = SessionLocal()
     try:
-        seed_mock.seed(session)
-        first = _counts(session)
-        seed_mock.seed(session)
-        second = _counts(session)
-
-        assert second == first
-        assert first == {
-            "partners": len(seed_mock.PARTNERS),
-            "documents": len(seed_mock.DOCUMENTS),
-            "activities": len(seed_mock.ACTIVITIES),
-            "feedbacks": len(seed_mock.FEEDBACKS),
-            "exchange_students": len(seed_mock.EXCHANGE_STUDENTS),
-            "admin_profiles": 1,
-            "scope_items": len(seed_mock.DOCUMENT_1_SCOPE),
-        }
-
-        assert all(activity.partner is not None for activity in session.query(models.Activity))
-        assert all(document.partner is not None for document in session.query(models.Document))
-        feedback_by_title = {
-            feedback.title: feedback for feedback in session.query(models.Feedback)
-        }
-        seeded_activity_names = {row["name"] for row in seed_mock.ACTIVITIES}
-        for row in seed_mock.FEEDBACKS:
-            feedback = feedback_by_title[row["title"]]
-            assert (feedback.partner is not None) == (row["partner"] is not None)
-            expected_activity_link = row["activity"] in seeded_activity_names
-            assert (feedback.activity is not None) == expected_activity_link
+        add_sample_data(session)
+        today = date(2026, 10, 1)
+        for document in session.query(models.Document):
+            expected = "expired" if document.expiry_date < today else "active"
+            assert document.status == expected, document.name
+        for activity in session.query(models.Activity):
+            assert activity.partner is not None
+            agreement = activity.mou_document
+            if agreement is not None:
+                assert agreement.partner_id == activity.partner_id
+                assert agreement.effective_date <= activity.date <= agreement.expiry_date
+        feedback = session.query(models.Feedback).one()
+        assert feedback.activity.partner_id == feedback.partner_id
     finally:
         session.close()
 

@@ -21,34 +21,17 @@ services:
       - app_network
     restart: unless-stopped
 
-  seed:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    environment: &backend_environment
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-pcsms}:${POSTGRES_PASSWORD:-pcsms_local_only}@database:5432/${POSTGRES_DB:-pcsms}
-      STORAGE_BACKEND: local
-      LOCAL_STORAGE_DIR: /app/storage
-    command: ["python", "seed_mock.py", "--yes"]
-    depends_on:
-      database:
-        condition: service_healthy
-    volumes:
-      - backend_storage:/app/storage
-    networks:
-      - app_network
-    restart: "no"
-
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    environment: *backend_environment
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-pcsms}:${POSTGRES_PASSWORD:-pcsms_local_only}@database:5432/${POSTGRES_DB:-pcsms}
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_DIR: /app/storage
     depends_on:
       database:
         condition: service_healthy
-      seed:
-        condition: service_completed_successfully
     networks:
       - app_network
     ports:

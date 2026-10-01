@@ -12,10 +12,7 @@ import {
   Filter,
   MoreHorizontal,
 } from "lucide-react";
-import { exchangeStudents as mockExchangeStudents } from "@/lib/mock";
-import { loadExchangeStudents, useApiData } from "@/lib/api";
-
-type ExchangeStudent = (typeof mockExchangeStudents)[number];
+import { loadExchangeStudents, useApiData, type ExchangeStudent } from "@/lib/api";
 
 const statusColors: Record<string, string> = {
   "เสร็จสิ้น": "badge-green",
@@ -29,8 +26,7 @@ export default function StudentExchangePage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // API-first with mock.ts as fallback (initial render uses mock until API resolves).
-  const exchangeStudents = useApiData(loadExchangeStudents, mockExchangeStudents);
+  const exchangeStudents = useApiData<ExchangeStudent[]>(loadExchangeStudents, []);
 
   const filtered = useMemo(
     () =>

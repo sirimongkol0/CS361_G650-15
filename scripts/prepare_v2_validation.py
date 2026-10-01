@@ -1,4 +1,4 @@
-"""Prepare a disposable V2 end-to-end database using V2 migration and seed.
+"""Prepare a disposable V2 end-to-end database using V2 migration and test data.
 
 Only *_test PostgreSQL databases or *_test.db SQLite files are accepted.
 No application or shared database is read or written. Run from repository root.
@@ -14,6 +14,30 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'backend'))
+
+
+def source_identity():
+    """Identify checked-out contents, including source archives without .git."""
+    try:
+        commit = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        commit = None
+    files = set()
+    for directory, pattern in [('backend', '*.py'), ('backend/routers', '*.py'),
+                               ('backend/tests', '*.py'), ('frontend/src', '**/*'),
+                               ('frontend/tests', '*.cjs'), ('scripts', '*.py'),
+                               ('database', '**/*.sql')]:
+        files.update(path for path in (ROOT / directory).glob(pattern) if path.is_file())
+    files.update(ROOT / path for path in ['frontend/package.json', 'frontend/package-lock.json',
+                 'frontend/next.config.js', 'backend/requirements.txt'])
+    digest = hashlib.sha256()
+    for path in sorted(files):
+        digest.update(path.relative_to(ROOT).as_posix().encode('utf-8') + b'\0')
+        digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return {'sourceCommit': commit, 'sourceFingerprint': digest.hexdigest(),
+            'sourceIdentityKind': 'git_checkout' if commit else 'source_archive'}
 
 
 def main():
@@ -36,12 +60,13 @@ def main():
     from database import Base, SessionLocal, engine
     from migrate_v2 import migrate
     import models
-    import seed_mock
     import storage
+    from tests import sample_data
+    from tests.sample_data import add_sample_data
 
     migrate(engine)
     migrate(engine)
-    # Existing seed also includes V1 auxiliary tables outside the V2 core migration.
+    # The test dataset also uses auxiliary tables outside the V2 core migration.
     Base.metadata.create_all(bind=engine)
     sample = (ROOT / 'backend/fixtures/v2-sample.pdf').read_bytes()
     def source(label):
@@ -50,19 +75,15 @@ def main():
             source_type='demo_fixture', verification_status='verified',
             source_checked_at=datetime(2026, 10, 1, tzinfo=timezone.utc))
     with SessionLocal() as db:
-        seed_mock.seed(db)
-        counts_before = [db.query(m).count() for m in (models.Partner, models.Document, models.Activity)]
-        ids_before = [[row.id for row in db.query(m).order_by(m.id)] for m in (models.Partner, models.Document, models.Activity)]
-        seed_mock.seed(db)
-        assert ids_before == [[row.id for row in db.query(m).order_by(m.id)] for m in (models.Partner, models.Document, models.Activity)]
-        assert counts_before == [db.query(m).count() for m in (models.Partner, models.Document, models.Activity)]
-        primary = db.query(models.Partner).filter_by(name=seed_mock.PARTNERS[0]['name']).one()
+        # Re-running only restores the missing-file fixture; rows are inserted once.
         if not db.query(models.Partner).filter_by(name='V2-6 Empty Stakeholder').first():
-            empty = models.Partner(name='V2-6 Empty Stakeholder', type='government', country='ญี่ปุ่น',
+            add_sample_data(db)
+            primary = db.query(models.Partner).filter_by(name=sample_data.PARTNERS[0]['name']).one()
+            empty = models.Partner(name='V2-6 Empty Stakeholder', type='government', country='Japan',
                 country_code='JP', description='Synthetic empty relationship fixture',
                 website_url='https://pcsms-demo.example.test/v2-6/empty', is_published=True,
                 sources=[source('empty-partner')])
-            hidden = models.Partner(name='V2-6 Unpublished Stakeholder', type='university', country='ไทย',
+            hidden = models.Partner(name='V2-6 Unpublished Stakeholder', type='university', country='Thailand',
                 country_code='TH', description='Synthetic private fixture',
                 website_url='https://pcsms-demo.example.test/v2-6/hidden', is_published=False,
                 sources=[source('hidden-partner')])
@@ -83,7 +104,7 @@ def main():
                 mou_document=draft_doc, date=date(2026, 10, 1), is_published=False)
             hidden_targets = models.Activity(name='V2-6 Public Activity Private Targets', partner=hidden,
                 mou_document=draft_doc, date=date(2026, 10, 1), date_kind='event', date_precision='day',
-                activity_type='อบรม', status='วางแผน', is_published=True, sources=[source('public-activity')])
+                activity_type='seminar', status='วางแผน', is_published=True, sources=[source('public-activity')])
             db.add_all([empty, hidden, draft_doc, missing, metadata, hidden_activity, hidden_targets])
             db.commit()
         storage.put_file('v2-6/hidden.pdf', sample)
@@ -100,16 +121,17 @@ def main():
         foreign_keys = {table: inspect(engine).get_foreign_keys(table) for table in ('documents', 'activities')}
         def named(items, name):
             return next(item for item in items if item.name == name)
-        primary_doc = named(documents, seed_mock.DOCUMENTS[0]['name'])
+        primary = named(partners, sample_data.PARTNERS[0]['name'])
+        primary_doc = named(documents, sample_data.DOCUMENTS[0]['name'])
         primary_activity = next(a for a in activities if a.mou_document_id == primary_doc.id)
         missing_doc = named(documents, 'V2-6 Missing File Agreement')
         manifest = {
             'databaseEngine': engine.dialect.name,
             'databaseVersion': db.execute(text('SELECT version()')).scalar() if engine.dialect.name == 'postgresql' else db.execute(text('SELECT sqlite_version()')).scalar(),
             'pythonVersion': platform.python_version(),
-            'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+            **source_identity(),
             'preparedAt': datetime.now(timezone.utc).isoformat(),
-            'migrationRuns': 2, 'seedRuns': 2, 'seedCounts': counts_before,
+            'migrationRuns': 2, 'sampleCounts': [len(sample_data.PARTNERS), len(sample_data.DOCUMENTS), len(sample_data.ACTIVITIES)],
             'foreignKeys': foreign_keys,
             'sampleSha256': hashlib.sha256(sample).hexdigest(),
             'sampleFile': str(ROOT / 'backend/fixtures/v2-sample.pdf'),
@@ -134,7 +156,7 @@ def main():
                 'noAgreementActivity':next(a.id for a in activities if a.is_published and a.mou_document_id is None)},
         }
     (report_dir / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2, default=str), encoding='utf-8')
-    print(json.dumps({'status':'prepared','database':engine.dialect.name,'seedCounts':counts_before,'reportDirectory':str(report_dir)}, indent=2))
+    print(json.dumps({'status':'prepared','database':engine.dialect.name,'sampleCounts':[len(partners), len(documents), len(activities)],'reportDirectory':str(report_dir)}, indent=2))
 
 
 if __name__ == '__main__':

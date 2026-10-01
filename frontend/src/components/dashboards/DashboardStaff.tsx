@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, TrendingUp, ChevronRight, Plus, Download } from "lucide-react";
+import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, Plus, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { staffMonthlyActivities, staffRecentActivities as mockStaffRecentActivities, staffExpiringDocs as mockStaffExpiringDocs } from "@/lib/mock";
-import { loadActivities, loadDocuments, useApiData } from "@/lib/api";
+import {
+  agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
+  recentActivities, shown, useDashboardData, yearsIn,
+} from "@/lib/dashboard-data";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150";
@@ -20,27 +22,27 @@ type Kpi = {
   href?: string;
 };
 
-const kpis: Kpi[] = [
-  { icon: Building2, label: "Stakeholder", value: "48", color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-  { icon: FileText, label: "MoU / MoA", value: "23", color: "#B45309", bg: "#FEF3C7" },
-  { icon: CalendarDays, label: "กิจกรรม", value: "156", color: "#1D4ED8", bg: "#DBEAFE" },
-  { icon: GraduationCap, label: "นักศึกษา", value: "32", color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-  { icon: MessageSquare, label: "Feedback", value: "128", color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
-  { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: "2", color: "#B45309", bg: "#FEF3C7" },
-];
-
 export default function DashboardStaff() {
-  const [year, setYear] = useState("2568");
+  const data = useDashboardData();
+  const years = yearsIn(data.activities.map((a) => a.startDate));
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const year = selectedYear ?? years[0] ?? new Date().getFullYear();
 
-  // API-first with mock.ts as fallback for recent activities + expiring docs.
-  // staffMonthlyActivities (chart) stays on mock — the API has no aggregate endpoint.
-  const staffRecentActivities = useApiData(loadActivities, mockStaffRecentActivities);
-  const staffExpiringDocs = useApiData(async () => {
-    const docs = await loadDocuments();
-    return docs
-      .filter((d) => d.status === "expiring")
-      .map((d) => ({ title: d.title, org: d.org, expire: d.expire, days: d.daysLeft }));
-  }, mockStaffExpiringDocs);
+  const agreements = data.documents.filter(isAgreement);
+  const staffExpiringDocs = expiringAgreements(data.documents).map((d) => ({title: d.title, org: d.org, expire: d.expire, days: d.daysLeft}));
+  const activeAgreements = agreements.filter((d) => agreementState(d) === "active").length;
+  const monthly = countByMonth(data.activities.map((a) => a.startDate), year)
+    .map((count, i) => ({ month: monthLabel(i), กิจกรรม: count }));
+  const staffRecentActivities = recentActivities(data.activities, 5);
+
+  const kpis: Kpi[] = [
+    { icon: Building2, label: "Stakeholder", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+    { icon: FileText, label: "MoU / MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
+    { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: GraduationCap, label: "นักศึกษา", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
+    { icon: MessageSquare, label: "Feedback", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
+    { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(data.loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
+  ];
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -60,31 +62,20 @@ export default function DashboardStaff() {
             className="rounded-lg px-3 py-2 text-sm bg-white cursor-pointer"
             style={{ border: "1.5px solid var(--border)", width: "auto" }}
             value={year}
-            onChange={(e) => setYear(e.target.value)}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            aria-label="ปี"
           >
-            <option value="2568">ปีการศึกษา 2568</option>
-            <option value="2567">ปีการศึกษา 2567</option>
+            {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
           <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />Export</button>
           <button className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
         </div>
       </div>
 
-      {/* Expiry alert */}
-      {staffExpiringDocs.length > 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-xl mb-5" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
-          <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: "#B45309" }} />
-          <div className="flex-1 text-sm" style={{ color: "#92400E" }}>
-            <span className="font-bold">⚠ {staffExpiringDocs.length} ข้อตกลงใกล้หมดอายุ</span>
-            {staffExpiringDocs.map((d, i) => (
-              <span key={i}> — {d.title} เหลืออีก {d.days} วัน</span>
-            ))}
-          </div>
-        </div>
-      )}
+      {staffExpiringDocs.length > 0 && (<div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">มีข้อตกลงใกล้หมดอายุ {staffExpiringDocs.length} ฉบับ</div>)}
 
       {/* KPI row */}
-      <div className="grid grid-cols-6 gap-3 mb-6">
+      <div className="grid grid-cols-6 gap-3 mb-6 stagger">
         {kpis.map((s) => {
           const inner = (
             <>
@@ -104,21 +95,18 @@ export default function DashboardStaff() {
       </div>
 
       {/* Chart + Recent activities */}
-      <div className="grid gap-5 mb-5" style={{ gridTemplateColumns: "1fr 380px" }}>
+      <div className="grid gap-5 mb-5 stagger" style={{ gridTemplateColumns: "1fr 380px" }}>
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-bold" style={{ color: "#111827" }}>จำนวนกิจกรรมรายเดือน</h2>
-              <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>ปีการศึกษา {year}</p>
+              <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
             </div>
-            <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#15803D" }}>
-              <TrendingUp className="w-3.5 h-3.5" />+8.5% จากปีที่แล้ว
-            </span>
           </div>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={staffMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+            <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="กิจกรรม" fill="#8B1538" radius={[4, 4, 0, 0]} />
@@ -148,7 +136,7 @@ export default function DashboardStaff() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>21 ข้อตกลงที่ใช้งานปกติ</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>{shown(data.loaded, activeAgreements)} ข้อตกลงที่ใช้งานปกติ</div>
               <div className="text-xs" style={{ color: "#16A34A" }}>ไม่มีการดำเนินการที่จำเป็น</div>
             </div>
           </div>
@@ -159,6 +147,7 @@ export default function DashboardStaff() {
       <div className={contentCard}>
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
           <h2 className="font-bold" style={{ color: "#111827" }}>กิจกรรมล่าสุด</h2>
+          <Link href="/activities" className="text-xs font-semibold" style={{ color: "#8B1538" }}>ดูทั้งหมด →</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

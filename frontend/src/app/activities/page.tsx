@@ -1,35 +1,51 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, ChevronRight, MoreHorizontal, Plus, Search, Users } from "lucide-react";
-import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
+import { useUrlState } from "@/lib/url-state";
+import { SearchInput } from "@/components/search-input";
+import { CalendarDays, ChevronRight, MoreHorizontal, Plus, Users } from "lucide-react";
+import { EmptyState, ErrorState } from "@/components/data-states";
+import { ScopeLevelBadge, ScopeLevelOptions } from "@/components/scope-level-badge";
 import { loadActivities, useApiResource } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
-import { activityTypeColors } from "@/lib/mock";
+import { activityTypeColors, activityTypeLabels, label, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
+import { formatThaiDate } from "@/lib/api";
+import {
+  downloadCsv, matchesQuery, sortBy, useDocumentTitle, useRememberResults, usePagination, useSort,
+} from "@/lib/list-tools";
+import {
+  CopyLinkButton, DatePresets, ExportCsvButton, FilterChips, Highlight, PlainHeader, Pagination, SortHeader, TableSkeleton,
+  useRowLink, yearPresets, type FilterChip,
+} from "@/components/list-ui";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 export default function ActivitiesPage() {
+  useDocumentTitle("กิจกรรม");
   const { role } = useRole();
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [orgFilter, setOrgFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const sort = useSort();
+  const rowLink = useRowLink();
+  const [search, setSearch] = useUrlState("q", "");
+  const [typeFilter, setTypeFilter] = useUrlState("type", "all");
+  const [orgFilter, setOrgFilter] = useUrlState("org", "all");
+  const [statusFilter, setStatusFilter] = useUrlState("status", "all");
+  const [scopeFilter, setScopeFilter] = useUrlState("scope", "all");
+  const [dateFrom, setDateFrom] = useUrlState("from", "");
+  const [dateTo, setDateTo] = useUrlState("to", "");
   const activities = useApiResource(loadActivities);
 
-  const data = activities.status === "success" ? activities.data : [];
+  const data = useMemo(() => (activities.status === "success" ? activities.data : []), [activities]);
+  // Hide the participants column until the data actually records participant counts.
+  const showParticipants = data.some((item) => item.participants > 0);
   const types = useMemo(() => Array.from(new Set(data.map((item) => item.type))), [data]);
-  const organizations = useMemo(() => Array.from(new Set(data.map((item) => item.org))), [data]);
+  const organizations = useMemo(() => Array.from(new Set(data.map((item) => item.org).filter((org) => org !== "—"))), [data]);
   const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("th");
     const rangeStart = dateFrom ? new Date(dateFrom).getTime() : null;
     const rangeEnd = dateTo ? new Date(dateTo).getTime() : null;
 
-    return data.filter((item) => {
+    const rows = data.filter((item) => {
       const activityStart = item.startDate
         ? new Date(item.startDate).getTime()
         : NaN;
@@ -38,10 +54,7 @@ export default function ActivitiesPage() {
         ? new Date(item.endDate).getTime()
         : activityStart;
 
-      const matchesSearch =
-        !query ||
-        item.name.toLocaleLowerCase("th").includes(query) ||
-        item.org.toLocaleLowerCase("th").includes(query);
+      const matchesSearch = matchesQuery(search, item.name, item.org);
 
       const matchesType =
         typeFilter === "all" || item.type === typeFilter;
@@ -51,6 +64,9 @@ export default function ActivitiesPage() {
 
       const matchesStatus =
         statusFilter === "all" || item.status === statusFilter;
+
+      const matchesScope =
+        scopeFilter === "all" || item.scopeLevel === scopeFilter;
 
       const matchesDateFrom =
         rangeStart === null ||
@@ -65,19 +81,60 @@ export default function ActivitiesPage() {
         matchesType &&
         matchesOrganization &&
         matchesStatus &&
+        matchesScope &&
         matchesDateFrom &&
         matchesDateTo
       );
     });
+    return sortBy(rows, sort.key, sort.desc, {
+      name: (item) => item.name,
+      org: (item) => (item.org === "—" ? null : item.org),
+      type: (item) => label(activityTypeLabels, item.type),
+      scope: (item) => item.scopeLevel,
+      date: (item) => item.startDate,
+      participants: (item) => (item.participants > 0 ? item.participants : null),
+      status: (item) => item.status,
+    });
   }, [
+    sort.key,
+    sort.desc,
     data,
     search,
     typeFilter,
     orgFilter,
     statusFilter,
+    scopeFilter,
     dateFrom,
     dateTo,
   ]);
+
+  const page = usePagination(filtered.length);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const tableTop = () => {
+    tableRef.current?.scrollTo({ top: 0 });
+    tableRef.current?.parentElement?.scrollIntoView({ block: "nearest" });
+  };
+  useRememberResults("activities", filtered.map((item) => item.id), activities.status === "success");
+
+  const chips: FilterChip[] = [
+    search && { label: `ค้นหา: ${search}`, onRemove: () => setSearch("") },
+    typeFilter !== "all" && { label: `ประเภท: ${label(activityTypeLabels, typeFilter)}`, onRemove: () => setTypeFilter("all") },
+    orgFilter !== "all" && { label: `หน่วยงาน: ${orgFilter}`, onRemove: () => setOrgFilter("all") },
+    statusFilter !== "all" && { label: `สถานะ: ${statusFilter}`, onRemove: () => setStatusFilter("all") },
+    scopeFilter !== "all" && { label: `ระดับ: ${scopeLevelLabels[scopeFilter as ScopeLevel] ?? scopeFilter}`, onRemove: () => setScopeFilter("all") },
+    dateFrom && { label: `ตั้งแต่ ${formatThaiDate(dateFrom)}`, onRemove: () => setDateFrom("") },
+    dateTo && { label: `ถึง ${formatThaiDate(dateTo)}`, onRemove: () => setDateTo("") },
+  ].filter((chip): chip is FilterChip => Boolean(chip));
+
+  const exportCsv = () => downloadCsv(
+    "cstu-activities.csv",
+    ["ID", "ชื่อกิจกรรม", "หน่วยงาน", "ประเภท", "ระดับ", "วันที่", "วันที่ (ISO)", "ผู้เข้าร่วม", "สถานะ"],
+    filtered.map((item) => [
+      item.id, item.name, item.org, label(activityTypeLabels, item.type),
+      item.scopeLevel ? scopeLevelLabels[item.scopeLevel] : "", item.date, item.startDate,
+      item.participants > 0 ? item.participants : "", item.status,
+    ])
+  );
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -98,31 +155,32 @@ export default function ActivitiesPage() {
         )}
       </div>
 
-      {activities.status === "loading" && <LoadingState title="กำลังโหลดกิจกรรม" />}
+      {activities.status === "loading" && <TableSkeleton columns={5} />}
       {activities.status === "error" && <ErrorState error={activities.error} onRetry={activities.retry} />}
       {activities.status === "success" && activities.data.length === 0 && <EmptyState title="ยังไม่มีกิจกรรมที่เผยแพร่" />}
 
       {activities.status === "success" && activities.data.length > 0 && (
         <>
-          <div className="bg-white border border-line rounded-lg shadow-card p-4 mb-5">
+          <div className="bg-white rounded-base shadow-card p-4 mb-5">
             <div className="flex flex-wrap gap-3">
-              <div className="relative flex-1 min-w-48">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
-                <input className={`${inputCls} pl-9`} placeholder="ค้นหากิจกรรมหรือหน่วยงาน..." value={search} onChange={(event) => setSearch(event.target.value)} />
-              </div>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <SearchInput className={inputCls} placeholder="ค้นหากิจกรรมหรือหน่วยงาน..." value={search} onChange={setSearch} />
+              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเภทกิจกรรม" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
                 <option value="all">ประเภท: ทั้งหมด</option>
-                {types.map((type) => <option key={type} value={type}>{type}</option>)}
+                {types.map((type) => <option key={type} value={type}>{label(activityTypeLabels, type)}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} value={orgFilter} onChange={(event) => setOrgFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="หน่วยงาน" value={orgFilter} onChange={(event) => setOrgFilter(event.target.value)}>
                 <option value="all">หน่วยงาน: ทั้งหมด</option>
                 {organizations.map((org) => <option key={org} value={org}>{org}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="สถานะกิจกรรม" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                 <option value="all">สถานะ: ทั้งหมด</option>
                 <option value="เสร็จสิ้น">เสร็จสิ้น</option>
                 <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
                 <option value="วางแผน">วางแผน</option>
+                <option value="ไม่ระบุ">ไม่ระบุ</option>
+              </select>
+              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
+                <ScopeLevelOptions />
               </select>
               <input
                 type="date"
@@ -144,12 +202,14 @@ export default function ActivitiesPage() {
 
               <button
                 type="button"
-                className="btn btn-outline whitespace-nowrap"
+                className="btn btn-outline disabled:opacity-40 disabled:cursor-not-allowed"
+                disabled={chips.length === 0}
                 onClick={() => {
                   setSearch("");
                   setTypeFilter("all");
                   setOrgFilter("all");
                   setStatusFilter("all");
+                  setScopeFilter("all");
                   setDateFrom("");
                   setDateTo("");
                 }}
@@ -157,6 +217,8 @@ export default function ActivitiesPage() {
                 ล้างตัวกรอง
               </button>
             </div>
+            <DatePresets presets={yearPresets()} onPick={(from, to) => { setDateFrom(from); setDateTo(to); }} />
+            <FilterChips chips={chips} />
           </div>
 
           <div className="flex gap-3 mb-4 flex-wrap items-center">
@@ -164,42 +226,51 @@ export default function ActivitiesPage() {
             <span className="badge badge-green">เสร็จสิ้น: {data.filter((item) => item.status === "เสร็จสิ้น").length}</span>
             <span className="badge badge-blue">กำลังดำเนินการ: {data.filter((item) => item.status === "กำลังดำเนินการ").length}</span>
             <span className="badge badge-purple">วางแผน: {data.filter((item) => item.status === "วางแผน").length}</span>
+            <div className="flex-1" />
+            <CopyLinkButton label="คัดลอกลิงก์ผลลัพธ์" />
+            <ExportCsvButton onExport={exportCsv} disabled={filtered.length === 0} />
           </div>
 
           {filtered.length === 0 ? (
             <EmptyState title="ไม่พบกิจกรรมที่ค้นหา" message="ลองเปลี่ยนคำค้นหาหรือตัวกรอง" />
           ) : (
-            <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="bg-white rounded-base shadow-card overflow-hidden">
+              <div ref={tableRef} className="overflow-auto max-h-[75vh]">
                 <table className="w-full">
-                  <thead><tr className="border-b border-line bg-[#F8FAFC]">
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-faint">ชื่อกิจกรรม</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">หน่วยงาน</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">ประเภท</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">วันที่</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">ผู้เข้าร่วม</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">สถานะ</th>
-                    <th className="px-4 py-3.5" />
+                  <thead><tr className="border-b border-line">
+                    <SortHeader label="ชื่อกิจกรรม" sortKey="name" sort={sort} className="px-5" />
+                    <SortHeader label="หน่วยงาน" sortKey="org" sort={sort} />
+                    <SortHeader label="ประเภท" sortKey="type" sort={sort} />
+                    <SortHeader label="ระดับ" sortKey="scope" sort={sort} />
+                    <SortHeader label="วันที่" sortKey="date" sort={sort} />
+                    {showParticipants && <SortHeader label="ผู้เข้าร่วม" sortKey="participants" sort={sort} />}
+                    <SortHeader label="สถานะ" sortKey="status" sort={sort} />
+                    <PlainHeader />
                   </tr></thead>
-                  <tbody>{filtered.map((item) => (
-                    <tr key={item.id} className="border-b border-[#F1F5F9] hover:bg-[#FAFAFA] transition-colors">
+                  <tbody>{filtered.slice(page.start, page.end).map((item) => {
+                    const row = rowLink(`/activities/${item.id}`);
+                    return (
+                    <tr key={item.id} onClick={row.onClick} className={`${row.className} border-b border-soft hover:bg-[#FAFAFA] transition-colors`}>
                       <td className="px-5 py-4"><div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#DBEAFE]"><CalendarDays className="w-4 h-4 text-[#1D4ED8]" /></div>
-                        <Link href={`/activities/${item.id}`} className="text-sm font-semibold hover:underline text-ink">{item.name}</Link>
+                        <Link href={`/activities/${item.id}`} className="text-sm font-semibold hover:underline text-ink"><Highlight text={item.name} query={search} /></Link>
                       </div></td>
-                      <td className="px-4 py-4 text-sm text-faint">{item.org}</td>
-                      <td className="px-4 py-4"><span className={activityTypeColors[item.type] ?? "badge badge-gray"}>{item.type}</span></td>
+                      <td className="px-4 py-4 text-sm text-faint"><Highlight text={item.org} query={search} /></td>
+                      <td className="px-4 py-4"><span className={`badge ${activityTypeColors[item.type] ?? "badge-gray"}`}>{label(activityTypeLabels, item.type)}</span></td>
+                      <td className="px-4 py-4"><ScopeLevelBadge level={item.scopeLevel} /></td>
                       <td className="px-4 py-4 text-sm text-faint">{item.date}</td>
-                      <td className="px-4 py-4"><span className="flex items-center gap-1.5 text-sm font-semibold text-ink"><Users className="w-3.5 h-3.5 text-faint" />{item.participants}</span></td>
+                      {showParticipants && <td className="px-4 py-4"><span className="flex items-center gap-1.5 text-sm font-semibold text-ink"><Users className="w-3.5 h-3.5 text-faint" />{item.participants > 0 ? item.participants : "–"}</span></td>}
                       <td className="px-4 py-4"><span className={`badge ${item.statusColor}`}>{item.status}</span></td>
                       <td className="px-4 py-4"><div className="flex gap-1">
-                        <Link href={`/activities/${item.id}`} className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" aria-label={`ดู ${item.name}`}><ArrowUpRight className="w-4 h-4" /></Link>
+                        <Link href={`/activities/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
                         {role !== "public" && <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" type="button" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></button>}
                       </div></td>
                     </tr>
-                  ))}</tbody>
+                    );
+                  })}</tbody>
                 </table>
               </div>
+              <Pagination {...page} total={filtered.length} onPage={(next) => { page.setPage(next); tableTop(); }} />
             </div>
           )}
         </>

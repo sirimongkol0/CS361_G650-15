@@ -26,8 +26,8 @@ FastAPI + Pydantic DTOs
   +---------------- storage abstraction ------> local volume | S3
 ```
 
-Docker Compose สร้าง `database`, `seed` แบบ one-shot ที่รันซ้ำได้, `backend`
-และ `frontend` ตามลำดับ dependency ส่วน browser เรียก `PUBLIC_API_URL` ที่เข้า
+Docker Compose สร้าง `database`, `backend` (ซึ่งสร้างตารางที่ยังไม่มี)
+และ `frontend` ตามลำดับ dependency โดยไม่โหลดข้อมูลตัวอย่าง ส่วน browser เรียก `PUBLIC_API_URL` ที่เข้า
 ถึงได้จาก host ขณะที่ container สื่อสารผ่าน network แยกของ Compose และเปิด
 database port เฉพาะ `127.0.0.1`
 
@@ -49,17 +49,16 @@ database port เฉพาะ `127.0.0.1`
    สามารถข้าม UI ได้
 2. **Public route แสดงความล้มเหลวตรงไปตรงมา** - หน้า partner/activity และ public
    dashboard เริ่มจาก loading, อธิบายกรณีว่าง และให้ retry เมื่อ error การ fallback
-   เป็น mock แบบเดิมคงไว้เฉพาะหน้าต้นแบบนอก public flow เพราะถ้าใช้ในหน้าสาธารณะ
-   จะซ่อน API failure และอาจทำให้เข้าใจสถานะเผยแพร่ผิด
-3. **สภาพแวดล้อม local รวมฐานข้อมูล** - Compose ใช้ PostgreSQL 16 และ seed
-   one-shot แทนการพึ่งฐานข้อมูล `localhost` ที่ไม่ได้จัดเตรียมไว้ พร้อม health-based
+   เป็น mock แบบเดิมถูกนำออกจากทุกหน้าแล้ว เพราะซ่อน API failure และอาจทำให้
+   เข้าใจสถานะเผยแพร่ผิด
+3. **สภาพแวดล้อม local รวมฐานข้อมูล** - Compose ใช้ PostgreSQL 16
+   แทนการพึ่งฐานข้อมูล `localhost` ที่ไม่ได้จัดเตรียมไว้ พร้อม health-based
    dependencies เพื่อให้ลำดับเริ่มระบบแน่นอน
-4. **Schema และ seed รันซ้ำได้** - model ระบุ natural keys, domain checks,
-   indexes, relationships และ delete behavior ส่วน seed เป็นแบบ additive และ
-   idempotent โดย `create_all` ใช้สำหรับ clean V1 setup; migration production อยู่
-   นอกขอบเขต V1
+4. **Schema รันซ้ำได้** - model ระบุ natural keys, domain checks,
+   indexes, relationships และ delete behavior โดย `create_all` ใช้สำหรับ clean setup
+   และ `backend/migrate_v2.py` ใช้ปรับฐานข้อมูลเดิม
 5. **Tests แยกข้อมูลจากกัน** - API tests override database dependency ด้วย
-   in-memory SQLite ใหม่ที่ใช้ `StaticPool`; schema/seed tests ใช้ฐานชั่วคราวของตน
+   in-memory SQLite ใหม่ที่ใช้ `StaticPool`; schema tests ใช้ฐานชั่วคราวของตนและ `tests/sample_data.py`
    จึงไม่ขึ้นกับลำดับการรัน
 6. **ที่อยู่สำหรับ browser กับ server แยกกัน** - browser resolve ชื่อ service ของ
    Compose ไม่ได้ จึงฝัง `PUBLIC_API_URL` ที่ host เข้าถึงได้ ส่วน backend/database
@@ -84,7 +83,8 @@ database port เฉพาะ `127.0.0.1`
   full stack ในเครื่องที่สร้างซ้ำได้ และหลักฐาน API/schema/security
 - มีอยู่แต่ไม่ใช่ผลลัพธ์สาธารณะนี้: การจัดการเอกสารและหน้าต้นแบบตาม role สำหรับ
   feedback, exchange, reports, settings และ users
-- authentication, authorization และ partner/activity write workflow เป็น V2+
+- authentication, authorization และ workflow เขียนข้อมูลเป็น V3 ขึ้นไป
+- เอกสารนี้เป็น baseline V1; ดู API ปัจจุบันและ V2 field contract สำหรับคลังข้อมูล
 
 ดูการเชื่อมโยงผลลัพธ์กับโค้ดและ tests ใน
 [ดัชนีหลักฐาน V1](../evidence/v1-readiness.md)
