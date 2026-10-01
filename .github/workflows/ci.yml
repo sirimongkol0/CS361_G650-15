@@ -103,3 +103,74 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
         run: npm run build
+
+  v2-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: v2test
+          POSTGRES_PASSWORD: v2_local_test
+          POSTGRES_DB: pcsms_v2_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://v2test:v2_local_test@127.0.0.1:5432/pcsms_v2_test
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_DIR: ${{ github.workspace }}/.tmp-v2-6/storage
+      TEST_REPORT_DIR: ${{ github.workspace }}/.tmp-v2-6
+      CORS_ORIGINS: http://localhost:3126
+      TEST_API_URL: http://127.0.0.1:8126/api/v1
+      TEST_FRONTEND_URL: http://localhost:3126
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8126/api/v1
+      PLAYWRIGHT_MODULE: ${{ github.workspace }}/.tmp-v2-tools/node_modules/playwright
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies and Chromium
+        run: |
+          pip install -r backend/requirements.txt
+          npm ci --prefix frontend
+          npm install --prefix .tmp-v2-tools --no-save --package-lock=false playwright@1.62.1
+          node .tmp-v2-tools/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Prepare PostgreSQL with migration, repeated seed and edge fixtures
+        run: python scripts/prepare_v2_validation.py
+      - name: Build frontend
+        run: npm --prefix frontend run build
+      - name: Start real API and frontend, then run V2 end-to-end validation
+        run: |
+          python -m uvicorn main:app --app-dir backend --host 127.0.0.1 --port 8126 > .tmp-v2-6/api.log 2>&1 &
+          api_pid=$!
+          npm --prefix frontend run start -- --port 3126 > .tmp-v2-6/frontend.log 2>&1 &
+          frontend_pid=$!
+          trap 'kill "$api_pid" "$frontend_pid" 2>/dev/null || true' EXIT
+          python scripts/wait_v2_servers.py
+          node frontend/tests/v2-integration.cjs
+      - name: Upload commit/environment, API transcript and role-free screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-integration-${{ github.sha }}
+          include-hidden-files: true
+          path: |
+            .tmp-v2-6/manifest.json
+            .tmp-v2-6/result.json
+            .tmp-v2-6/requests.json
+            .tmp-v2-6/screenshots/
+            .tmp-v2-6/failure.png
+            .tmp-v2-6/*.log
+          if-no-files-found: warn
