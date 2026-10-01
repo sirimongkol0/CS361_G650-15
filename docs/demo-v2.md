@@ -41,6 +41,7 @@ $env:LOCAL_STORAGE_DIR=Join-Path $env:TEST_REPORT_DIR 'storage'
 
 ```powershell
 $env:NEXT_PUBLIC_API_URL='http://127.0.0.1:8126/api/v1'
+$env:NEXT_PUBLIC_API_BROWSER_URL='http://127.0.0.1:8126/api/v1'
 npm --prefix frontend run build
 npm --prefix frontend run start -- --port 3126
 ```

@@ -130,6 +130,7 @@ jobs:
       TEST_API_URL: http://127.0.0.1:8126/api/v1
       TEST_FRONTEND_URL: http://localhost:3126
       NEXT_PUBLIC_API_URL: http://127.0.0.1:8126/api/v1
+      NEXT_PUBLIC_API_BROWSER_URL: http://127.0.0.1:8126/api/v1
       PLAYWRIGHT_MODULE: ${{ github.workspace }}/.tmp-v2-tools/node_modules/playwright
     steps:
       - uses: actions/checkout@v4

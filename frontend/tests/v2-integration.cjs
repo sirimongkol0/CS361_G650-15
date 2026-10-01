@@ -60,6 +60,7 @@ async function check(name,work) {await work();cases.push({name,status:'passed'})
     let failPath=null,emptyPath=null,gatePath=null,gate=null;
     await page.route('**/api/v1/**',async route=>{
       const url=new URL(route.request().url()), endpoint=url.pathname.replace('/api/v1','');
+      assert.equal(url.origin + '/api/v1',api,'Compiled browser API URL must point to the actual test API');
       if(endpoint===gatePath && gate) await gate;
       if(endpoint===failPath) {transcript.push({kind:'injected-outage',route:endpoint,status:503});return route.fulfill({status:503,contentType:'application/json',body:'{"detail":"V2 audit outage"}'});}
       const response=await route.fetch({url:api+endpoint+(endpoint===emptyPath?'?search=V2-NO-SUCH-RECORD':url.search)});

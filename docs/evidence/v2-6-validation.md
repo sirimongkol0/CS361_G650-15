@@ -36,7 +36,7 @@
 
 `frontend/tests/v2-integration.cjs` ตรวจทุก published list/detail เทียบกับ `manifest.json` ที่อ่านจาก DB โดยตรง และตรวจ foreign key ของทุก document/activity พร้อม API combined search/filter และ period overlap
 
-ข้อมูลปกติและ JSON ที่หน้าเว็บได้รับมาจาก API จริงทั้งหมด Browser route ส่ง request ต่อไป API เดิม ไม่มี fixture JSON แทนข้อมูลธุรกิจ การตรวจ list ว่างใช้ query ที่ API จริงคืนผลว่าง; transcript ระบุ `forwardedQuery` ส่วน failure injection มีเฉพาะ HTTP 503 สำหรับตรวจ Error/Retry และ gate ที่หน่วง request สำหรับตรวจ Loading ตรวจ CORS origin ของ UI ด้วย direct API request
+ข้อมูลปกติและ JSON ที่หน้าเว็บได้รับมาจาก API จริงทั้งหมด Browser route ส่ง request ต่อไป API เดิม ไม่มี fixture JSON แทนข้อมูลธุรกิจ การตรวจ list ว่างใช้ query ที่ API จริงคืนผลว่าง; transcript ระบุ `forwardedQuery` ส่วน failure injection มีเฉพาะ HTTP 503 สำหรับตรวจ Error/Retry และ gate ที่หน่วง request สำหรับตรวจ Loading ตรวจ CORS origin ของ UI ด้วย direct API request และ assert ว่า URL ที่ browser เรียกตรงกับ test API ที่ build ไว้
 
 Missing-file ใช้ DB row ที่อ้าง storage key ซึ่งไม่มีไฟล์จริง API ต้องคืน 404 และ UI แสดงข้อผิดพลาด จากนั้นตัวทดสอบวาง PDF fixture กลับใน storage directory แยกแล้วกด Retry ตรวจ filename ภาษาไทยและ SHA-256 การเตรียมข้อมูลก่อนรันซ้ำคืน fixture นี้เป็นสถานะไฟล์หายโดยลบเฉพาะ reserved key
 
@@ -63,5 +63,7 @@ Missing-file ใช้ DB row ที่อ้าง storage key ซึ่งไ�
 - Search/Filter: [Stakeholders](v2-6/stakeholder-filters.png), [Agreements](v2-6/agreement-filters.png), [Activities](v2-6/activity-filters.png)
 - Relationships: [Stakeholder](v2-6/stakeholder-relationships.png), [Agreement](v2-6/agreement-relationships.png), [Activity](v2-6/activity-relationships.png)
 - UI states: [Loading](v2-6/documents-loading.png), [Empty](v2-6/documents-empty.png), [Error/Retry](v2-6/documents-error.png), [Not Found](v2-6/not-found.png), [Empty relationships](v2-6/empty-relationships.png), [Missing file/Retry](v2-6/missing-file.png)
+
+ตรวจซ้ำด้วยเบราว์เซอร์ปกติโดยไม่ intercept request: หน้า Documents → MoU มช. → download ผ่าน โดยเรียก `http://127.0.0.1:8126/api/v1` และได้ `mock-doc-1.pdf` คู่มือกำหนดทั้ง API URL และ browser URL ก่อน build เพื่อไม่เรียก default port 8000
 
 CI job `v2-integration` เก็บ `manifest.json`, `result.json`, `requests.json`, screenshot และ server logs เป็น artifact ทุกครั้ง พร้อมกับ jobs เดิมที่ตรวจ backend PostgreSQL/SQLite, frontend build และ clean Compose smoke ผลที่เผยแพร่ใน PR และ CI เป็นแหล่งอ้างอิงของ commit ที่ตรวจจริง
