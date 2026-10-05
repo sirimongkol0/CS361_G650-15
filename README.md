@@ -1,15 +1,16 @@
-# PCSMS - CSTU Program Collaboration & Stakeholder Management
+# PCSMS – ระบบจัดการความร่วมมือและผู้มีส่วนได้ส่วนเสียของหลักสูตร CSTU
 
-The agreed scope is undergraduate Computer Science at Thammasat University,
-Rangsit campus. The system will track the program's collaborations, with
-permitted public information and an internal workspace for authorized users.
-See [the CSTU scope decision](docs/decisions/cstu-program-scope.md) for data
-inclusion criteria, the V1–V7 roadmap, and pending review of existing records.
-This scope decision does not certify existing data as CSTU-related.
+ระบบติดตามความร่วมมือของ **หลักสูตรวิทยาการคอมพิวเตอร์ ระดับปริญญาตรี มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต**
+มีส่วนข้อมูลสาธารณะที่ได้รับอนุญาตให้เผยแพร่ และ (ในเวอร์ชันถัดไป) พื้นที่ทำงานภายในสำหรับผู้ที่ได้รับสิทธิ์
 
-The current version is **V2 - Collaboration Repository**: a public, read-only
-repository of published stakeholders, MoU/MoA agreements, documents and activities.
-The supported local stack is Next.js, FastAPI and PostgreSQL.
+เกณฑ์ว่าข้อมูลแบบไหนนับเป็นของหลักสูตร แผนพัฒนา V1–V7 และรายการข้อมูลเดิมที่รอตรวจ
+ดูที่ [ขอบเขตหลักสูตร CSTU](docs/decisions/cstu-program-scope.md)
+(เอกสารนี้ไม่ได้รับรองว่าข้อมูลที่มีอยู่เดิมเป็นของ CSTU)
+
+## เวอร์ชันปัจจุบัน: V2 – Collaboration Repository
+
+คลังข้อมูลสาธารณะแบบอ่านอย่างเดียว ของหน่วยงานคู่ความร่วมมือ ข้อตกลง MoU/MoA เอกสาร และกิจกรรมที่เผยแพร่แล้ว
+สร้างด้วย **Next.js + FastAPI + PostgreSQL**
 
 ## เว็บที่ deploy แล้ว
 
@@ -20,83 +21,115 @@ The supported local stack is Next.js, FastAPI and PostgreSQL.
 - ดูภาพรวมที่ [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)
   และวิธี deploy ที่ [การ deploy V2](docs/decisions/v2-deployment-amplify-ec2.md)
 
-## Start the complete stack
+## รันบนเครื่องตัวเอง
 
-For the fictional course demonstration (recommended for presentations):
+ทุกแบบใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
+รายละเอียดของแต่ละแบบดูที่ [คู่มือ infrastructure](infra/README.md)
+
+### 1. เดโมข้อมูลสมมติ (แนะนำสำหรับนำเสนอ)
 
 ```powershell
 docker compose -f docker-compose.demo.yml up --build -d --wait
 ```
 
-Open http://localhost:3100/dashboard/public. This uses the independent
-`cstu_demo` PostgreSQL database and separate storage volumes, with a visible
-fictional-data notice. It preserves the real CSTU database on port 3000.
-See [the fictional demo guide](docs/demo-fictional.md) for data coverage,
-repeatable preparation and verification. All demo records flow through the
-real API and database; there is no frontend sample-data fallback.
+เปิด http://localhost:3100/dashboard/public
 
-The current machine serves the enriched demo PDFs from S3. To preserve this
-configuration when restarting, use both Compose files:
+- ใช้ฐานข้อมูล PostgreSQL `cstu_demo` และพื้นที่เก็บไฟล์ที่แยกออกมา
+- ทุกหน้ามีป้ายบอกว่าเป็นข้อมูลสมมติ
+- ข้อมูลทุกอย่างมาจาก API และฐานข้อมูลจริง หน้าเว็บไม่มีข้อมูลตัวอย่างสำรองในตัว
+- ไม่กระทบฐานข้อมูล CSTU จริงที่ port 3000
+
+ดูข้อมูลที่ครอบคลุมและวิธีเตรียม/ตรวจซ้ำที่ [คู่มือเดโมข้อมูลสมมติ](docs/demo-fictional.md)
+
+**ถ้าต้องการให้เดโมอ่านไฟล์ PDF จาก S3** (แบบที่เครื่องหลักใช้อยู่) ให้รัน Compose สองไฟล์ร่วมกัน:
 
 ```powershell
 docker compose -f docker-compose.demo.yml -f docker-compose.demo-s3.yml up -d --wait
 ```
 
-See [demo S3 setup and validation](docs/demo-s3.md) before enabling S3 on a new machine.
+ก่อนเปิดใช้ S3 บนเครื่องใหม่ ดู [เอกสารเดโมบน S3](docs/demo-s3.md)
 
-For the isolated CSTU database on this machine, use:
+### 2. ฐานข้อมูล CSTU จริง
 
 ```powershell
 docker compose --env-file .env.cstu -f docker-compose.cstu.yml up --build -d --wait
 python scripts/smoke_test.py --api http://localhost:3000/api/v1
 ```
 
-See [CSTU database setup](docs/setup/cstu-database.md) for credentials setup on
-a new machine, persistent volumes, and switching back to the original RDS stack.
-The CSTU database starts empty and uses separate local document storage.
+- ต้องสร้างไฟล์ `.env.cstu` ก่อน
+- ฐานข้อมูลเริ่มต้นว่าง และใช้พื้นที่เก็บเอกสารแยก
 
-The original generic local stack is also available:
+วิธีตั้งรหัสผ่านบนเครื่องใหม่ การเก็บข้อมูลถาวร และการสลับกลับไปใช้ RDS เดิม
+ดูที่ [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
+
+### 3. สำหรับพัฒนาทั่วไป
 
 ```bash
 docker compose up --build -d --wait
 python scripts/smoke_test.py
 ```
 
-Open http://localhost:3000/dashboard/public. No `.env` file or cloud
-credentials are required for local development.
+เปิด http://localhost:3000/dashboard/public
 
-## Documentation
+- ไม่ต้องมีไฟล์ `.env` และไม่ต้องใช้ AWS
+- ฐานข้อมูลเริ่มต้นว่าง
 
-- [CSTU scope and development roadmap](docs/decisions/cstu-program-scope.md)
-- [Isolated CSTU database](docs/setup/cstu-database.md)
-- [V2 field contract](docs/api/v2-field-contract.md)
-- [V2 demo and real API/browser verification](docs/demo-v2.md)
-- [Latest V2 improvements and validation](docs/evidence/v2-improvements.md)
+## V2 ทำอะไรได้บ้าง
+
+- ดูรายการและรายละเอียดของหน่วยงาน ข้อตกลง และกิจกรรม
+- ค้นหาและกรองหลายเงื่อนไขพร้อมกัน เรียงลำดับ และแบ่งหน้า
+- ส่งออก CSV
+- ค้นหาทั้งระบบด้วย **Ctrl+K**
+- ดูตัวอย่าง PDF และดาวน์โหลดเอกสาร
+- ดูความสัมพันธ์ระหว่างข้อมูลที่เผยแพร่แล้ว และแหล่งอ้างอิงของข้อมูล
+
+API สาธารณะมีเฉพาะการอ่าน (GET) ของ health, partners, documents และ activities
+
+**ยังไม่มีใน V2:** การอัปโหลดหรือลบเอกสาร, API ของ users, feedback และ exchange,
+การเข้าสู่ระบบ และการแก้ไขข้อมูลโดยผู้มีสิทธิ์ (อยู่ใน V3 เป็นต้นไป)
+
+### การแสดงผลข้อมูล
+
+- กิจกรรมที่ไม่รู้สถานะหรือจำนวนผู้เข้าร่วม จะแสดงว่า "ไม่ทราบ"
+- วันที่คงความหมายเดิมไว้ เช่น วันประกาศ หรือวันปิดรับสมัคร
+  และแสดงตามความละเอียดที่มี (เดือน, ปี หรือโดยประมาณ)
+- หน้า dashboard เรียงกิจกรรมจากใหม่ไปเก่า
+  และจำนวนข้อตกลงไม่นับแบบฟอร์มและประกาศ
+
+## ข้อมูลทดสอบ
+
+- หน้าเว็บไม่เคยแสดงข้อมูลทดสอบแทนข้อมูลจาก API ฐานข้อมูลใหม่จึงเริ่มต้นว่าง
+- tests ใช้ข้อมูลสังเคราะห์ใน `backend/tests/sample_data.py`
+- `scripts/prepare_v2_validation.py` เตรียมเฉพาะฐานข้อมูลชั่วคราวชื่อ `*_test` หรือไฟล์ `*_test.db`
+  ข้อมูลเหล่านี้ไม่ใช่ข้อตกลงจริงของมหาวิทยาลัย
+- ถ้าต้องการสภาพแวดล้อมทดสอบแยก ทำตาม [คู่มือเดโมและการตรวจ V2](docs/demo-v2.md)
+
+## เอกสาร
+
+**ระบบปัจจุบัน (V2)**
+
 - [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)
 - [การ deploy V2: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md)
 - [คู่มือ infrastructure](infra/README.md)
-- [ฐานเดโมบน RDS](docs/demo-rds.md)
-- [Setup guide](docs/setup/README.md) / [คู่มือติดตั้ง](docs/setup/README-th.md)
-- [Architecture V1](docs/architecture/v1-architecture.md) / [สถาปัตยกรรม V1](docs/architecture/v1-architecture-th.md) (ประวัติ)
-- [API contract](docs/api/v1-api-contract.md) / [สัญญา API](docs/api/v1-api-contract-th.md)
-- [Technology decisions](docs/decisions/v1-tech-stack.md) / [การตัดสินใจด้านเทคโนโลยี](docs/decisions/v1-tech-stack-th.md)
-- [V1 evidence index](docs/evidence/v1-readiness.md)
+- [คู่มือติดตั้ง](docs/setup/README-th.md)
+- [ขอบเขตหลักสูตร CSTU และแผนพัฒนา](docs/decisions/cstu-program-scope.md)
+- [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
+- [สัญญา field ของ V2](docs/api/v2-field-contract.md)
+- [คู่มือเดโมและการตรวจ API/เบราว์เซอร์ของ V2](docs/demo-v2.md)
+- [เดโมข้อมูลสมมติ](docs/demo-fictional.md) · [เดโมบน S3](docs/demo-s3.md) · [ฐานเดโมบน RDS](docs/demo-rds.md)
+- [การปรับปรุงและผลตรวจ V2 ล่าสุด](docs/evidence/v2-improvements.md)
 
-The V1 evidence index is historical. V2 supports list/detail, combined search
-and filters, sorting, pagination, CSV export, global search (Ctrl+K), PDF
-preview, published relationships, source citations and downloads. Public
-APIs expose only GET operations for health, partners, documents and activities.
-Document upload/delete and the users, feedback and exchange APIs are unavailable
-in this public application. Authentication and authorized writes belong to V3+.
+**ประวัติ V1**
 
-Unknown activity status and enrollment are displayed as unknown; date labels
-retain announcement/deadline meaning and month/year/approximate precision.
-Dashboard activities are ordered newest first and agreement counts exclude
-templates and announcements.
+- [สถาปัตยกรรม V1](docs/architecture/v1-architecture-th.md)
+- [สัญญา API V1](docs/api/v1-api-contract-th.md)
+- [การตัดสินใจด้านเทคโนโลยี V1](docs/decisions/v1-tech-stack-th.md)
+- [การ deploy V1](docs/decisions/v1-deployment-ec2.md)
+- [หลักฐานความพร้อม V1](docs/evidence/v1-readiness.md)
 
-Pages never substitute test data for API results; a fresh generic local
-database starts empty. Tests use synthetic data in `backend/tests/sample_data.py`.
-`scripts/prepare_v2_validation.py` prepares only disposable `*_test` databases
-or `*_test.db` files; these fixtures are not official institutional agreements.
-Follow the V2 demo guide for a separate validation environment. PDFs under
-`docs/pdf` are historical exports; the linked Markdown guides are current.
+เอกสารภาษาอังกฤษ: [Setup guide](docs/setup/README.md) ·
+[Architecture V1](docs/architecture/v1-architecture.md) ·
+[API contract V1](docs/api/v1-api-contract.md) ·
+[Technology decisions V1](docs/decisions/v1-tech-stack.md)
+
+ไฟล์ PDF ใน `docs/pdf` เป็นเวอร์ชันเก่าที่ export ไว้ ให้ใช้ไฟล์ Markdown ที่ลิงก์ไว้ด้านบนเป็นหลัก
