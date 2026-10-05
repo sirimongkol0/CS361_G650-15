@@ -1,5 +1,7 @@
 # V1 Architecture
 
+> **หมายเหตุ (ตุลาคม 2026):** เอกสารนี้เป็นประวัติของ V1 ระบบปัจจุบันดูที่ [สถาปัตยกรรมระบบ V2](v2-architecture.md)
+
 ## Supported system
 
 V1 is a three-tier public information service. Anonymous users browse only

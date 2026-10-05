@@ -45,6 +45,7 @@ __pycache__/
 
 # Generated doc exports (regenerable from .md sources)
 *.html
+!docs/architecture/*.html
 docs-th/*.docx
 docs-th/**/*.docx
 

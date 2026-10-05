@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V2 Deploy Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #232f3e;
+      --muted: #545b64;
+      --rule: #d5dbdb;
+      --badge: #1a73e8;
+      --font: 'Helvetica Neue', Arial, 'Noto Sans Thai', sans-serif;
+    }
+    body { font-family: var(--font); background: #ffffff; color: var(--ink); padding: 2rem 1rem; }
+    .frame { max-width: 1000px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; }
+    .scroll { overflow-x: auto; }
+    svg { width: 100%; min-width: 820px; display: block; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1.25rem; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .n { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: var(--badge); color: #fff; font-weight: 700; font-size: 0.75rem; align-items: center; justify-content: center; }
+    code { font-family: Consolas, Menlo, monospace; font-size: 0.8rem; background: #f2f3f3; padding: 0 0.25rem; border-radius: 3px; }
+    .scope { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.25rem; font-size: 0.85rem; line-height: 1.6; }
+    .scope div { border: 1px solid var(--rule); border-radius: 4px; padding: 0.9rem 1rem; }
+    .scope h3 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .scope ul { padding-left: 1.1rem; color: var(--muted); }
+    @media (max-width: 720px) { .scope { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <h1>สถาปัตยกรรมการ deploy ระบบ V2</h1>
+    <p class="subtitle">CS361 G650-15 · Collaboration Repository · AWS ap-southeast-1 (Singapore)</p>
+
+    <div class="scroll">
+    <svg viewBox="0 0 960 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="v2-deploy-title v2-deploy-desc" font-family="'Helvetica Neue', Arial, 'Noto Sans Thai', sans-serif">
+      <title id="v2-deploy-title">สถาปัตยกรรมการ deploy ระบบ V2</title>
+      <desc id="v2-deploy-desc">ผู้ใช้เปิดเว็บ Next.js บน AWS Amplify ที่ build จาก GitHub main; Amplify ส่งต่อ /api/v1 ไปยัง FastAPI ใน Docker บน EC2 ใน public subnet ของ VPC ซึ่งอ่านข้อมูลจาก RDS PostgreSQL cstu_demo และอ่านไฟล์ PDF จาก S3 ผ่าน IAM role</desc>
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#232f3e"/></marker>
+        <marker id="arr-soft" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#545b64"/></marker>
+        <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M16 0H0V16" fill="none" stroke="#eef0f2" stroke-width="1"/>
+        </pattern>
+      </defs>
+
+      <rect width="960" height="800" fill="#ffffff"/>
+      <rect width="960" height="800" fill="url(#grid)"/>
+
+      <!-- ===== Groups ===== -->
+      <!-- AWS Cloud -->
+      <rect x="20" y="96" width="920" height="684" fill="#ffffff" stroke="#232f3e" stroke-width="1.2"/>
+      <rect x="20" y="96" width="40" height="32" fill="#232f3e"/>
+      <text x="40" y="117" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">aws</text>
+      <path d="M29 121 q11 5 22 0" fill="none" stroke="#ff9900" stroke-width="1.6"/>
+      <text x="70" y="116" fill="#232f3e" font-size="12" font-weight="700">AWS Cloud</text>
+
+      <!-- Region -->
+      <rect x="44" y="144" width="872" height="616" fill="none" stroke="#147eba" stroke-width="1.2" stroke-dasharray="6,4"/>
+      <text x="560" y="164" fill="#232f3e" font-size="11" font-weight="700">Region ap-southeast-1 (Singapore)</text>
+
+      <!-- VPC -->
+      <rect x="72" y="260" width="664" height="472" fill="#f7f8f8" stroke="#248814" stroke-width="1.2"/>
+      <rect x="72" y="260" width="32" height="32" fill="#248814"/>
+      <path d="M80 280 a5 5 0 0 1 4-7 a6 6 0 0 1 11 1 a4 4 0 0 1 1 8 h-14 a3 3 0 0 1 -2-2z" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <text x="112" y="275" fill="#232f3e" font-size="11" font-weight="700">VPC (default)</text>
+      <text x="112" y="288" fill="#545b64" font-size="9">172.31.0.0/16</text>
+
+      <!-- Public subnet -->
+      <rect x="96" y="312" width="296" height="396" fill="#e9f3e6"/>
+      <rect x="96" y="312" width="28" height="28" fill="#248814"/>
+      <rect x="104" y="324" width="12" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <path d="M106 324 v-3 a4 4 0 0 1 8 0 v3" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <text x="132" y="326" fill="#232f3e" font-size="10" font-weight="700">Public subnet</text>
+      <text x="132" y="338" fill="#545b64" font-size="9">EC2 instance</text>
+
+      <!-- DB subnet -->
+      <rect x="416" y="312" width="296" height="396" fill="#e6f2f8"/>
+      <rect x="416" y="312" width="28" height="28" fill="#147eba"/>
+      <rect x="424" y="324" width="12" height="10" rx="1" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <path d="M426 324 v-3 a4 4 0 0 1 8 0 v3" fill="none" stroke="#fff" stroke-width="1.4"/>
+      <text x="452" y="326" fill="#232f3e" font-size="10" font-weight="700">DB subnet group</text>
+      <text x="452" y="338" fill="#545b64" font-size="9">RDS instance</text>
+
+      <!-- Security group around EC2 -->
+      <rect x="132" y="384" width="224" height="200" fill="none" stroke="#dd344c" stroke-width="1.1" stroke-dasharray="5,3"/>
+      <text x="140" y="574" fill="#dd344c" font-size="9" font-weight="700">Security group CS361-app-sg</text>
+
+      <!-- ===== Connectors (behind icons) ===== -->
+      <!-- 1 Users -> Amplify -->
+      <line x1="480" y1="68" x2="480" y2="194" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
+      <!-- 5 GitHub -> Amplify (build) -->
+      <path d="M200 68 V210 Q200 218 208 218 H454" fill="none" stroke="#545b64" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
+      <!-- 2 Amplify -> EC2 -->
+      <path d="M480 244 V280 Q480 288 472 288 H252 Q244 288 244 296 V430" fill="none" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
+      <!-- 3 EC2 -> RDS -->
+      <line x1="270" y1="456" x2="538" y2="456" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
+      <!-- 4 EC2 -> S3 -->
+      <path d="M244 584 V616 Q244 624 252 624 H802" fill="none" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
+
+      <!-- Connector labels -->
+      <rect x="276" y="198" width="120" height="14" fill="#ffffff"/>
+      <text x="336" y="209" fill="#545b64" font-size="9" text-anchor="middle">push main → auto-build</text>
+      <rect x="300" y="268" width="128" height="14" fill="#f7f8f8"/>
+      <text x="364" y="279" fill="#545b64" font-size="9" text-anchor="middle">rewrite /api/v1 → :8000</text>
+      <rect x="424" y="434" width="104" height="14" fill="#e6f2f8"/>
+      <text x="476" y="445" fill="#545b64" font-size="9" text-anchor="middle">SQL · TLS · :5432</text>
+      <rect x="560" y="600" width="140" height="14" fill="#e6f2f8"/>
+      <text x="630" y="611" fill="#545b64" font-size="9" text-anchor="middle">GetObject (IAM role)</text>
+
+      <!-- ===== Icons ===== -->
+      <!-- Users -->
+      <g fill="#ffffff" stroke="#232f3e" stroke-width="1.6">
+        <circle cx="468" cy="28" r="7"/><path d="M454 52 a14 12 0 0 1 28 0 z"/>
+        <circle cx="492" cy="28" r="7"/><path d="M478 52 a14 12 0 0 1 28 0 z"/>
+        <circle cx="480" cy="40" r="8"/><path d="M463 66 a17 14 0 0 1 34 0 z"/>
+      </g>
+      <text x="512" y="44" fill="#232f3e" font-size="11">ผู้ใช้ทั่วไป (browser)</text>
+
+      <!-- GitHub -->
+      <rect x="176" y="20" width="48" height="48" rx="4" fill="#24292f"/>
+      <circle cx="200" cy="44" r="14" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M193 52 v-5 q-4-1-4-6 q0-3 2-5 q-1-3 1-5 q3 0 5 2 h6 q2-2 5-2 q2 2 1 5 q2 2 2 5 q0 5-4 6 v5" fill="none" stroke="#fff" stroke-width="1.6"/>
+      <text x="232" y="40" fill="#232f3e" font-size="11" font-weight="700">GitHub</text>
+      <text x="232" y="54" fill="#545b64" font-size="9">CS361_G650-15 · main</text>
+
+      <!-- Amplify -->
+      <rect x="456" y="196" width="48" height="48" rx="4" fill="#dd344c"/>
+      <path d="M466 234 L478 206 L486 222 M472 234 h22 L486 222 L482 230" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>
+      <text x="514" y="212" fill="#232f3e" font-size="11" font-weight="700">AWS Amplify Hosting</text>
+      <text x="514" y="226" fill="#545b64" font-size="9">Next.js SSR (WEB_COMPUTE)</text>
+      <text x="514" y="239" fill="#545b64" font-size="9">main.d5kr2senr2j9o.amplifyapp.com</text>
+
+      <!-- EC2 -->
+      <rect x="220" y="432" width="48" height="48" rx="4" fill="#ed7100"/>
+      <rect x="232" y="444" width="24" height="24" fill="none" stroke="#fff" stroke-width="2"/>
+      <g stroke="#fff" stroke-width="1.6">
+        <path d="M238 438v6M244 438v6M250 438v6M238 468v6M244 468v6M250 468v6M226 450h6M226 456h6M226 462h6M256 450h6M256 456h6M256 462h6"/>
+      </g>
+      <text x="244" y="498" fill="#232f3e" font-size="11" font-weight="700" text-anchor="middle">EC2 · CS361-ec2</text>
+      <text x="244" y="512" fill="#545b64" font-size="9" text-anchor="middle">Docker · FastAPI :8000</text>
+      <text x="244" y="525" fill="#545b64" font-size="9" text-anchor="middle">t2.micro · Ubuntu</text>
+      <text x="244" y="540" fill="#545b64" font-size="9" text-anchor="middle">IAM role CS361-EC2-AppRole</text>
+
+      <!-- RDS -->
+      <rect x="540" y="432" width="48" height="48" rx="4" fill="#3b48cc"/>
+      <ellipse cx="564" cy="446" rx="11" ry="4" fill="none" stroke="#fff" stroke-width="1.8"/>
+      <path d="M553 446 v18 a11 4 0 0 0 22 0 v-18 M553 455 a11 4 0 0 0 22 0" fill="none" stroke="#fff" stroke-width="1.8"/>
+      <text x="564" y="498" fill="#232f3e" font-size="11" font-weight="700" text-anchor="middle">RDS PostgreSQL</text>
+      <text x="564" y="512" fill="#545b64" font-size="9" text-anchor="middle">cs361-partner-db</text>
+      <text x="564" y="525" fill="#545b64" font-size="9" text-anchor="middle">database: cstu_demo</text>
+      <text x="564" y="540" fill="#545b64" font-size="9" text-anchor="middle">partners · documents · activities</text>
+
+      <!-- S3 -->
+      <rect x="804" y="600" width="48" height="48" rx="4" fill="#3f8624"/>
+      <ellipse cx="828" cy="614" rx="13" ry="4" fill="none" stroke="#fff" stroke-width="1.8"/>
+      <path d="M815 614 l3 22 a10 3 0 0 0 20 0 l3 -22" fill="none" stroke="#fff" stroke-width="1.8"/>
+      <text x="828" y="666" fill="#232f3e" font-size="11" font-weight="700" text-anchor="middle">S3 Bucket</text>
+      <text x="828" y="680" fill="#545b64" font-size="9" text-anchor="middle">cs361-partner-docs</text>
+      <text x="828" y="693" fill="#545b64" font-size="9" text-anchor="middle">cstu-demo/v2/*.pdf</text>
+
+      <!-- ===== Step badges ===== -->
+      <g font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">
+        <circle cx="496" cy="130" r="10" fill="#1a73e8"/><text x="496" y="134">1</text>
+        <circle cx="496" cy="266" r="10" fill="#1a73e8"/><text x="496" y="270">2</text>
+        <circle cx="404" cy="472" r="10" fill="#1a73e8"/><text x="404" y="476">3</text>
+        <circle cx="520" cy="640" r="10" fill="#1a73e8"/><text x="520" y="644">4</text>
+        <circle cx="216" cy="172" r="10" fill="#1a73e8"/><text x="216" y="176">5</text>
+      </g>
+    </svg>
+    </div>
+
+    <table>
+      <thead><tr><th>#</th><th>ขั้นตอน</th><th>รายละเอียด</th></tr></thead>
+      <tbody>
+        <tr><td><span class="n">1</span></td><td>ผู้ใช้เปิดเว็บ</td><td>HTTPS ไปยัง Amplify ซึ่งรัน Next.js หน้า <code>/stakeholders</code> <code>/documents</code> <code>/activities</code></td></tr>
+        <tr><td><span class="n">2</span></td><td>Proxy API</td><td>Next.js rewrite <code>/api/v1/*</code> ฝั่ง server ไปยัง FastAPI บน EC2 port 8000 เบราว์เซอร์จึงเรียก API ผ่านโดเมน HTTPS เดียวกัน</td></tr>
+        <tr><td><span class="n">3</span></td><td>อ่านข้อมูล</td><td>FastAPI query RDS PostgreSQL database <code>cstu_demo</code> สำหรับ list · detail · search · filter · relationship เฉพาะข้อมูลที่เผยแพร่</td></tr>
+        <tr><td><span class="n">4</span></td><td>ดาวน์โหลดเอกสาร</td><td><code>/documents/{id}/download</code> backend อ่าน PDF จาก S3 ด้วย IAM role ของ EC2 ไม่ส่ง credentials ให้ frontend</td></tr>
+        <tr><td><span class="n">5</span></td><td>Build &amp; deploy</td><td>push เข้า <code>main</code> บน GitHub → Amplify build และ deploy frontend อัตโนมัติ</td></tr>
+      </tbody>
+    </table>
+
+    <div class="scope">
+      <div>
+        <h3>ขอบเขต V2</h3>
+        <ul>
+          <li>รายการ รายละเอียด ค้นหา กรอง หน่วยงาน ข้อตกลง กิจกรรม</li>
+          <li>ความสัมพันธ์หน่วยงาน ↔ ข้อตกลง ↔ กิจกรรม</li>
+          <li>ดาวน์โหลดเอกสารที่เตรียมไว้</li>
+        </ul>
+      </div>
+      <div>
+        <h3>นอกขอบเขต V2</h3>
+        <ul>
+          <li>เพิ่ม/แก้ไข/ลบ และอัปโหลดผ่านหน้าเว็บ</li>
+          <li>ระบบสิทธิ์ / Workflow (V3)</li>
+          <li>Load balancer, Auto Scaling, Multi-AZ (ยังไม่ได้ใช้)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

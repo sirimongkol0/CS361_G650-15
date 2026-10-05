@@ -11,6 +11,15 @@ The current version is **V2 - Collaboration Repository**: a public, read-only
 repository of published stakeholders, MoU/MoA agreements, documents and activities.
 The supported local stack is Next.js, FastAPI and PostgreSQL.
 
+## เว็บที่ deploy แล้ว
+
+**https://main.d5kr2senr2j9o.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต)
+
+- หน้าเว็บ Next.js อยู่บน AWS Amplify ส่วน API อยู่บน EC2 ข้อมูลอยู่บน RDS และไฟล์อยู่บน S3
+- push เข้า `main` แล้วหน้าเว็บอัปเดตเอง ส่วน backend ต้อง deploy เอง
+- ดูภาพรวมที่ [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)
+  และวิธี deploy ที่ [การ deploy V2](docs/decisions/v2-deployment-amplify-ec2.md)
+
 ## Start the complete stack
 
 For the fictional course demonstration (recommended for presentations):
@@ -63,8 +72,12 @@ credentials are required for local development.
 - [V2 field contract](docs/api/v2-field-contract.md)
 - [V2 demo and real API/browser verification](docs/demo-v2.md)
 - [Latest V2 improvements and validation](docs/evidence/v2-improvements.md)
+- [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)
+- [การ deploy V2: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md)
+- [คู่มือ infrastructure](infra/README.md)
+- [ฐานเดโมบน RDS](docs/demo-rds.md)
 - [Setup guide](docs/setup/README.md) / [คู่มือติดตั้ง](docs/setup/README-th.md)
-- [Architecture](docs/architecture/v1-architecture.md) / [สถาปัตยกรรม](docs/architecture/v1-architecture-th.md)
+- [Architecture V1](docs/architecture/v1-architecture.md) / [สถาปัตยกรรม V1](docs/architecture/v1-architecture-th.md) (ประวัติ)
 - [API contract](docs/api/v1-api-contract.md) / [สัญญา API](docs/api/v1-api-contract-th.md)
 - [Technology decisions](docs/decisions/v1-tech-stack.md) / [การตัดสินใจด้านเทคโนโลยี](docs/decisions/v1-tech-stack-th.md)
 - [V1 evidence index](docs/evidence/v1-readiness.md)

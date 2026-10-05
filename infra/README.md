@@ -1,187 +1,135 @@
-# Infrastructure Guide
+# คู่มือ Infrastructure
 
-## Overview
+คู่มือนี้บอกวิธีรันระบบบนเครื่องตัวเอง วิธีตรวจว่าระบบทำงาน และวิธีแก้ปัญหาที่เจอบ่อย
+ส่วนการ deploy ขึ้น AWS ดูที่ [การ deploy V2](../docs/decisions/v2-deployment-amplify-ec2.md)
 
-This document provides instructions for running and verifying the Partner Activity application infrastructure.
+## ต้องมีอะไรก่อน
 
-## Prerequisites
+- Docker และ Docker Compose
+- Node.js 20 ขึ้นไป และ Python 3.11 ขึ้นไป (ใช้เฉพาะตอนรันแบบไม่ใช้ Docker)
 
-- Docker and Docker Compose installed
-- Node.js 20+ (for local development without Docker)
-- Python 3.11+ (for local development without Docker)
-- PostgreSQL 15 (for local development without Docker)
+## เลือก Compose ให้ถูกไฟล์
 
-## Running with Docker (Recommended)
+repo มี Compose หลายไฟล์ แต่ละไฟล์ใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
 
-### Start All Services
+| ไฟล์ | ใช้ทำอะไร | ฐานข้อมูล | เปิดเว็บที่ |
+|---|---|---|---|
+| `docker-compose.yml` | พัฒนาบนเครื่อง | PostgreSQL ใน Docker (`pcsms`) เริ่มต้นว่าง | http://localhost:3000 |
+| `docker-compose.demo.yml` | สาธิตด้วยข้อมูลสมมติ (แนะนำตอนนำเสนอ) | PostgreSQL ใน Docker (`cstu_demo`) | http://localhost:3100 |
+| `docker-compose.demo.yml` + `docker-compose.demo-s3.yml` | เดโมที่อ่าน PDF จาก S3 | เหมือนด้านบน | http://localhost:3100 |
+| `docker-compose.demo-rds.yml` (ใช้ร่วมกับไฟล์เดโม) | เดโมที่ต่อ RDS จริง | RDS `cstu_demo` | http://localhost:3100 |
+| `docker-compose.cstu.yml` | ข้อมูล CSTU จริงที่รวบรวมไว้ | PostgreSQL ใน Docker (`cstu_collaboration`) | http://localhost:3000 |
+
+คู่มือของแต่ละแบบ:
+[เดโมข้อมูลสมมติ](../docs/demo-fictional.md) ·
+[เดโมบน S3](../docs/demo-s3.md) ·
+[เดโมบน RDS](../docs/demo-rds.md) ·
+[ฐานข้อมูล CSTU](../docs/setup/cstu-database.md)
+
+## รันระบบสำหรับพัฒนา
 
 ```bash
-# From the project root directory
-docker compose up --build
+docker compose up --build -d --wait
 ```
 
-This will start:
-- **FastAPI backend** on http://localhost:8000 — connects to the external AWS RDS PostgreSQL via the `DATABASE_URL` baked into `docker-compose.yml`
-- **Next.js frontend** on http://localhost:3000 — SSR fetches go to the backend service name (`http://partner_activity_backend:8000`) inside the Docker network; **browser-facing links** (document downloads, the `/docs` Swagger link) use `NEXT_PUBLIC_API_BROWSER_URL` (`http://localhost:8000/api/v1`) because the user's browser cannot resolve Docker service names
+คำสั่งนี้เปิด 3 container:
 
-> **Note:** there is no database container in this compose file. The database is
-> the external AWS RDS instance (`cs361-partner-db...ap-southeast-1.rds.amazonaws.com`).
+| Container | ทำอะไร | Port บนเครื่อง |
+|---|---|---|
+| `database` | PostgreSQL 16 | `127.0.0.1:5432` (เปิดเฉพาะในเครื่อง) |
+| `backend` | FastAPI | `8000` |
+| `frontend` | Next.js | `3000` |
 
-### Verify Services Are Running
+- ไม่ต้องมีไฟล์ `.env` และไม่ต้องใช้ AWS
+- ฐานข้อมูลเริ่มต้น **ว่าง** หน้าเว็บจะไม่มีข้อมูลจนกว่าจะเพิ่มข้อมูลเอง หรือใช้ Compose ของเดโม
+- เปลี่ยน port ได้ด้วยตัวแปร `FRONTEND_PORT`, `BACKEND_PORT` และ `POSTGRES_PORT`
+
+ดูสถานะและ log:
 
 ```bash
-# Check container status
 docker compose ps
-
-# View logs
-docker compose logs -f
+docker compose logs -f backend
 ```
 
-### Stop Services
+ปิดระบบ:
 
 ```bash
-# Stop all services
 docker compose down
-
-# Stop and remove volumes (use with caution)
-docker compose down -v
 ```
 
-## Running Without Docker
+ถ้าใช้ `docker compose down -v` ข้อมูลในฐานข้อมูลและไฟล์ที่อัปโหลดจะ **ถูกลบทั้งหมด**
 
-### Backend Setup (SQLite — No DB Needed)
+## รันแบบไม่ใช้ Docker
+
+### Backend
 
 ```bash
 cd backend
-
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+venv\Scripts\activate
 pip install -r requirements.txt
-
-# Run the backend — uses SQLite by default
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### Backend Setup (PostgreSQL / RDS)
+ถ้าไม่ตั้ง `DATABASE_URL` backend จะใช้ SQLite ในไฟล์บนเครื่อง
+ถ้าจะต่อ PostgreSQL ให้ตั้งค่าก่อนรัน เช่น
+`set DATABASE_URL=postgresql+psycopg2://user:password@localhost:5432/pcsms`
 
-```bash
-cd backend
+บน macOS หรือ Linux ใช้ `source venv/bin/activate` และ `export` แทน
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set DATABASE_URL to your RDS or local PostgreSQL
-export DATABASE_URL="postgresql://user:password@your-rds-endpoint:5432/dbname"
-
-# Run the backend
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Set environment variables
-# NEXT_PUBLIC_API_URL       → server-side (SSR) fetches
-# NEXT_PUBLIC_API_BROWSER_URL → links the browser opens (downloads, /docs)
-export NEXT_PUBLIC_API_URL="http://localhost:8000/api/v1"
-export NEXT_PUBLIC_API_BROWSER_URL="http://localhost:8000/api/v1"
-
-# Run development server
 npm run dev
 ```
 
-## Verification Commands
+ค่าเริ่มต้นจะเรียก API ที่ `http://localhost:8000/api/v1`
+ถ้า backend อยู่ที่อื่นให้ตั้ง `NEXT_PUBLIC_API_URL` ก่อนรัน
 
-### Health Check
+## ตรวจว่าระบบทำงาน
+
+| ตรวจอะไร | คำสั่ง | ผลที่ควรได้ |
+|---|---|---|
+| backend พร้อมใช้ | `curl http://localhost:8000/api/v1/health` | `{"status":"healthy"}` |
+| รายการหน่วยงาน | `curl http://localhost:8000/api/v1/partners/` | รายการหน่วยงาน (ว่างได้ถ้าฐานข้อมูลยังไม่มีข้อมูล) |
+| ข้อมูลที่ไม่มีอยู่ | `curl http://localhost:8000/api/v1/partners/999` | 404 |
+| ตรวจทั้งระบบ | `python scripts/smoke_test.py` | ทุกข้อผ่าน |
+| เอกสาร API | เปิด http://localhost:8000/docs | หน้า Swagger |
+
+หน้าเว็บหลัก: http://localhost:3000/dashboard/public
+
+## แก้ปัญหาที่เจอบ่อย
+
+### backend เชื่อมฐานข้อมูลไม่ได้
+
+1. ดูว่า container `database` ขึ้นสถานะ healthy แล้วหรือยัง: `docker compose ps`
+2. ดู log ของ backend: `docker compose logs backend`
+3. ถ้าต่อ RDS ต้องให้ security group ของ RDS อนุญาตเครื่องที่รัน backend ที่ port 5432
+
+### Port ถูกใช้อยู่แล้ว
+
+ตั้ง port ใหม่ตอนรัน เช่น
 
 ```bash
-curl http://localhost:8000/api/v1/health
-# Expected: {"status":"healthy"}
+set FRONTEND_PORT=3001
+docker compose up -d
 ```
 
-### List Partners
+### เบราว์เซอร์ขึ้น `DNS_PROBE_POSSIBLE` หรือหา `backend` ไม่เจอ
 
-```bash
-curl http://localhost:8000/api/v1/partners/
-# Expected: [] (empty array if no data) or array of partner objects
-```
+แปลว่าเบราว์เซอร์ได้ที่อยู่ภายใน Docker (เช่น `http://backend:8000`) ไปเปิดตรง ๆ ซึ่งเบราว์เซอร์มองไม่เห็น
+ที่อยู่ที่เบราว์เซอร์ใช้ต้องเป็นที่อยู่ที่เปิดจากเครื่องได้ เช่น `http://localhost:8000/api/v1`
+ตรวจค่า `PUBLIC_API_URL` ใน Compose หรือ `NEXT_PUBLIC_API_BROWSER_URL` ของ frontend
 
-### Get Specific Partner (Draft should return 404)
-
-```bash
-# This should return 404 for draft partners
-curl http://localhost:8000/api/v1/partners/999
-# Expected: 404 with error message
-```
-
-### List Activities (Ordered by Date Ascending)
-
-```bash
-curl http://localhost:8000/api/v1/activities/
-# Expected: Array of activities ordered by date ascending
-```
-
-### Frontend Pages
-
-- Home: http://localhost:3000
-- Partners: http://localhost:3000/partners
-- Activities: http://localhost:3000/activities
-
-## Troubleshooting
-
-### Database Connection Issues
-
-If the backend cannot connect to the database:
-
-1. Verify the RDS endpoint is reachable from your machine / container host
-   (the RDS security group must allow port 5432 from your IP):
-
-   ```bash
-   docker compose exec backend env | grep DATABASE_URL
-   ```
-
-2. Check backend logs for connection errors:
-
-   ```bash
-   docker compose logs backend
-   ```
-
-### Port Already in Use
-
-If ports 8000 or 3000 are already in use, modify the `docker-compose.yml` port mappings:
-
-```yaml
-ports:
-  - "8001:8000"  # Change host port
-```
-
-### Browser shows `DNS_PROBE_POSSIBLE` for `partner_activity_backend`
-
-A Docker service name leaked into the browser. Server-side (SSR) fetches may use
-the service name, but anything the **browser opens directly** must point at
-`http://localhost:8000`. The fix lives in the repo already: `docker-compose.yml`
-sets both `NEXT_PUBLIC_API_URL` (SSR) and `NEXT_PUBLIC_API_BROWSER_URL`
-(browser links), and `lib/api.ts` builds download/Swagger links from the
-browser URL. If you see this again, check those two variables.
-
-### Frontend Build Errors
-
-Ensure all dependencies are installed and the API URL is correctly configured:
+### build frontend ไม่ผ่าน
 
 ```bash
 cd frontend
 npm install
 npm run build
 ```
+
+ถ้า build ใน Docker บนเครื่องที่ RAM น้อย (เช่น EC2 t2.micro) เครื่องอาจค้าง
+ควร build บนเครื่องอื่นหรือใช้ Amplify แทน (ดู[การ deploy V2](../docs/decisions/v2-deployment-amplify-ec2.md))
