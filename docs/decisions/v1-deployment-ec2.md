@@ -1,5 +1,7 @@
 # V1 Deployment Decision — EC2 + Docker Compose (with Cloudflare Tunnel)
 
+> **หมายเหตุ (ตุลาคม 2026):** เอกสารนี้เป็นประวัติของ V1 ระบบปัจจุบันดูที่ [การ deploy V2](v2-deployment-amplify-ec2.md)
+
 > สถานะ: Accepted (V1) · วันที่: 31 Aug 2026 · ผู้เขียน: CS361_G650-15
 > ยังไม่รวมการเปลี่ยนแปลง code — เอกสารบันทึกการตัดสินใจและบทเรียนจากการ deploy จริง
 
