@@ -9,6 +9,7 @@ from sqlalchemy import (
     true,
     ForeignKey,
     Integer,
+    JSON,
     LargeBinary,
     String,
     Table,
@@ -350,3 +351,29 @@ class RevokedToken(Base):
 
     jti = Column(String, primary_key=True)
     expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class AuditLog(Base):
+    """Append-only history of every V3 write: who did what to which record, before and after.
+
+    Rows are written by ``audit.record`` in the same transaction as the change
+    and are never updated or deleted through the API.
+    """
+
+    __tablename__ = "audit_logs"
+    __table_args__ = (
+        CheckConstraint("length(action) > 0", name="ck_audit_logs_action_nonempty"),
+        CheckConstraint("length(entity) > 0", name="ck_audit_logs_entity_nonempty"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    # Kept if the account is later removed, so history never disappears.
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    action = Column(String, nullable=False)        # create | update | delete | approve | publish | ...
+    entity = Column(String, nullable=False)        # table name, e.g. "partners"
+    entity_id = Column(Integer, nullable=True)
+    before = Column(JSON, nullable=True)
+    after = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+    user = relationship("User")

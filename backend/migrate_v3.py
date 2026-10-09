@@ -12,7 +12,7 @@ from database import Base
 import models  # noqa: F401 -- register the target schema
 import migrate_v2
 
-V3_TABLES = ("users", "revoked_tokens")
+V3_TABLES = ("users", "revoked_tokens", "audit_logs")
 
 
 def migrate(engine):

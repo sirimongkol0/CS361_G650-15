@@ -15,7 +15,10 @@ def test_openapi_exposes_only_repository_reads_and_auth(client):
     auth_paths = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/auth/")}
     assert auth_paths == {"/api/v1/auth/login": {"post"}, "/api/v1/auth/logout": {"post"},
                           "/api/v1/auth/me": {"get"}}
-    repository = {path: methods for path, methods in paths.items() if path not in auth_paths}
+    # Staff/admin-only reads (require_role); everything else stays public repository reads.
+    protected = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/audit-logs")}
+    assert protected == {"/api/v1/audit-logs/": {"get"}}
+    repository = {path: methods for path, methods in paths.items() if path not in auth_paths and path not in protected}
     assert all(set(methods) == {"get"} for methods in repository.values())
     assert all(path.startswith(tuple(f"/api/v1/{name}" for name in ["health", "partners", "documents", "activities"])) for path in repository)
 
