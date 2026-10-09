@@ -33,7 +33,7 @@ export default function DashboardPublic() {
   const lastFetched = allLoaded ? getLastFetchedAt() : null;
   // Headline = CSTU directly (scope "program"); broader levels are counted separately, never as CSTU.
   const kpis = [
-    { icon: Building2, label: "คู่ความร่วมมือ", loaded: partners.status === "success", counts: countByScope(partnerData), sub: "รายการ", href: "/stakeholders", note: null as string | null, color: "#8B1538", bg: "#F5D6DE" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", loaded: partners.status === "success", counts: countByScope(partnerData), sub: "รายการ", href: "/stakeholders", note: null as string | null, color: "#8B1538", bg: "#F5D6DE" },
     { icon: Globe, label: "กิจกรรม", loaded: activities.status === "success", counts: countByScope(activityData), sub: "กิจกรรม", href: "/activities", note: null, color: "#15803D", bg: "#DCFCE7" },
     { icon: FileText, label: "ข้อตกลง MoU/MoA", loaded: documents.status === "success", counts: countByScope(agreementData), sub: "ฉบับ", href: "/documents", note: "ไม่รวมแบบฟอร์ม", color: "#7C3AED", bg: "#EDE9FE" },
   ];

@@ -101,21 +101,21 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   ],
   coordinator: [
     { to: '/dashboard/coordinator', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
-    { to: '/documents', label: 'MoU / MoA', icon: 'file' },
+    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
   staff: [
-    { to: '/dashboard/staff', label: 'Dashboard', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
-    { to: '/documents', label: 'MoU / MoA', icon: 'file' },
-    { to: '/activities', label: 'Activities', icon: 'calendar' },
+    { to: '/dashboard/staff', label: 'หน้าหลัก', icon: 'home', end: true },
+    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
+    { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
   admin: [
-    { to: '/dashboard/admin', label: 'Executive Dashboard', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'Stakeholder', icon: 'building' },
-    { to: '/documents', label: 'MoU / MoA', icon: 'file' },
-    { to: '/activities', label: 'Activities', icon: 'calendar' },
+    { to: '/dashboard/admin', label: 'หน้าหลัก', icon: 'home', end: true },
+    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
+    { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
 };
 

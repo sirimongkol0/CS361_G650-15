@@ -44,11 +44,11 @@ export default function DashboardTeacher() {
   const nextExpiring = expiringAgreements(data.documents)[0];
 
   const kpis: Kpi[] = [
-    { icon: Building2, label: "Stakeholder", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-    { icon: FileText, label: "MoU / MoA", value: shown(data.loaded, data.documents.filter(isAgreement).length), color: "#B45309", bg: "#FEF3C7", href: "/documents" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, data.documents.filter(isAgreement).length), color: "#B45309", bg: "#FEF3C7", href: "/documents" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE", href: "/activities" },
     { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: MessageSquare, label: "Feedback", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
+    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
   ];
 
   return (
@@ -90,7 +90,7 @@ export default function DashboardTeacher() {
         {/* My stakeholders */}
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-bold" style={{ color: "#111827" }}>Stakeholder ที่มีความร่วมมือมากที่สุด</h2>
+            <h2 className="font-bold" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
             <Link href="/stakeholders" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
               ดูทั้งหมด <ChevronRight className="w-3 h-3" />
             </Link>
@@ -145,13 +145,13 @@ export default function DashboardTeacher() {
         {/* Recent feedback */}
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-bold" style={{ color: "#111827" }}>Feedback ล่าสุด</h2>
+            <h2 className="font-bold" style={{ color: "#111827" }}>ความคิดเห็นล่าสุด</h2>
             <Link href="/feedback" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
               ดูทั้งหมด <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="p-4 space-y-3">
-            {data.loaded && teacherRecentFeedback.length === 0 && <p className="text-xs text-faint">ยังไม่มี Feedback ที่เผยแพร่</p>}
+            {data.loaded && teacherRecentFeedback.length === 0 && <p className="text-xs text-faint">ยังไม่มีความคิดเห็นที่เผยแพร่</p>}
             {teacherRecentFeedback.map((f, i) => (
               <div key={i} className="p-3 rounded-xl bg-paper shadow-lightring">
                 <div className="flex items-start justify-between mb-1.5">

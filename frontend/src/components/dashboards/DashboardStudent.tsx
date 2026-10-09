@@ -26,7 +26,7 @@ export default function DashboardStudent() {
     { icon: CalendarDays, label: "กิจกรรมที่กำลังจะมา", value: shown(data.loaded, upcoming.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CheckCircle2, label: "เปิดรับสมัคร", value: shown(data.loaded, openActivities.length), color: "#15803D", bg: "#DCFCE7" },
     { icon: GraduationCap, label: "โครงการแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#8B1538", bg: "#F5D6DE" },
-    { icon: Building2, label: "คู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#1D4ED8", bg: "#DBEAFE" },
   ];
 
   return (
@@ -134,13 +134,13 @@ export default function DashboardStudent() {
           <div className={`${contentCard} p-4`}>
             <div className="flex items-center gap-2 mb-3">
               <Star className="w-4 h-4" style={{ color: "#C8961E" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>Feedback</h3>
+              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>ความคิดเห็น</h3>
             </div>
             <p className="text-xs text-faint">
-              รายการ Feedback ที่ต้องทำจะแสดงเมื่อระบบรองรับบัญชีนักศึกษา
+              รายการแบบประเมินความคิดเห็นที่ต้องทำจะแสดงเมื่อระบบรองรับบัญชีนักศึกษา
             </p>
             <Link href="/feedback" className="btn btn-accent text-xs mt-3 py-1.5 px-3 gap-1 inline-flex">
-              <MessageSquare className="w-3 h-3" />ดู Feedback ทั้งหมด
+              <MessageSquare className="w-3 h-3" />ดูความคิดเห็นทั้งหมด
             </Link>
           </div>
         </div>

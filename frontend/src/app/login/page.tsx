@@ -80,7 +80,7 @@ export default function LoginPage() {
                 PCSMS
               </div>
               <div className="text-xs leading-tight text-faint">
-                Partner Collaboration &amp; Stakeholder Management
+                ระบบบริหารความร่วมมือและผู้มีส่วนได้ส่วนเสีย
               </div>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs mt-8 text-faint">
-          © 2568 มหาวิทยาลัยธรรมศาสตร์ • PCSMS • Secure Collaboration Workspace
+          © 2568 มหาวิทยาลัยธรรมศาสตร์ • PCSMS
         </p>
       </div>
 
@@ -189,13 +189,13 @@ export default function LoginPage() {
         <div className="relative z-10 max-w-sm w-full">
           {/* Heading */}
           <div className="mb-8">
-            <div className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#C8961E' }}>
-              Thammasat University
+            <div className="text-sm font-bold mb-3" style={{ color: '#C8961E' }}>
+              มหาวิทยาลัยธรรมศาสตร์
             </div>
             <h2 className="text-3xl font-extrabold text-white leading-tight mb-3 font-display">
               ระบบบริหารความร่วมมือ
               <br />
-              และ Stakeholder
+              และผู้มีส่วนได้ส่วนเสีย
             </h2>
             <p className="text-[#9CA3AF]" style={{ fontSize: 14, lineHeight: 1.7 }}>
               บริหารจัดการ MoU/MoA กิจกรรม และนักศึกษาแลกเปลี่ยน
