@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     Text,
     false,
+    true,
     ForeignKey,
     Integer,
     LargeBinary,
@@ -306,3 +307,46 @@ class PartnerLogo(Base):
     data = Column(LargeBinary, nullable=False)
     source_url = Column(Text, nullable=True)  # where the image was downloaded from
     updated_at = Column(DateTime(timezone=True), nullable=False)
+
+
+# V3 roles, lowest to highest privilege. Cognito group names use the same values.
+ROLES = ("public", "student", "coordinator", "staff", "admin")
+
+
+class User(Base):
+    """Local account record for a Cognito user.
+
+    Passwords never reach this table: Cognito stores and checks them. The row
+    links the Cognito identity (``sub``) to application data and lets the
+    backend disable an account without touching Cognito.
+    """
+
+    __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('public', 'student', 'coordinator', 'staff', 'admin')",
+            name="ck_users_role",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    cognito_sub = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    # Mirrors the user's Cognito group; refreshed from each verified token.
+    role = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True, server_default=true(), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class RevokedToken(Base):
+    """Access tokens ended by logout before their natural expiry.
+
+    Cognito's sign-out only stops tokens at Cognito itself, so the backend
+    keeps the token ``jti`` until it would have expired anyway.
+    """
+
+    __tablename__ = "revoked_tokens"
+
+    jti = Column(String, primary_key=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
