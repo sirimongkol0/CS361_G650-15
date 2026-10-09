@@ -48,7 +48,6 @@ const output = path.resolve('.tmp-fictional-demo');
     const page = await browser.newPage({ viewport: { width: 1365, height: 900 } });
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${base}/stakeholders`);
-    await page.getByRole('note').filter({ hasText: 'ระบบสาธิต · ข้อมูลตัวอย่าง' }).waitFor();
     await page.getByRole('link', { name: alumni.name, exact: true }).waitFor();
     await page.getByLabel('ประเภทหน่วยงาน').selectOption('alumni');
     await page.getByText('แสดง 3 จาก 29 รายการ', { exact: true }).waitFor();

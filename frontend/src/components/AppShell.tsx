@@ -316,11 +316,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               ขาดการเชื่อมต่ออินเทอร์เน็ต ข้อมูลที่แสดงอาจไม่เป็นปัจจุบัน
             </div>
           )}
-          {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
-            <div role="note" className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-              <strong>ระบบสาธิต · ข้อมูลตัวอย่าง</strong>
-            </div>
-          )}
           <div key={pathname} className="flex-grow animate-fade-up">{children}</div>
         </main>
 
