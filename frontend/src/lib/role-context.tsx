@@ -69,6 +69,13 @@ export const ROLES: RoleConfig[] = [
   },
 ];
 
+/** Roles that get add/edit controls in the UI (the backend checks again with require_role). */
+export const MANAGER_ROLES: readonly UserRole[] = ['coordinator', 'staff', 'admin'];
+
+export function canManage(role: UserRole): boolean {
+  return MANAGER_ROLES.includes(role);
+}
+
 export function getRoleConfig(role: UserRole): RoleConfig {
   return ROLES.find((r) => r.id === role) ?? ROLES[0];
 }
