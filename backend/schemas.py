@@ -304,3 +304,17 @@ class CurrentUserResponse(BaseModel):
     id: int
     email: str
     role: str
+
+
+class AuditLogResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: Optional[int] = None
+    user_email: Optional[str] = None
+    action: str
+    entity: str
+    entity_id: Optional[int] = None
+    before: Optional[dict] = None
+    after: Optional[dict] = None
+    created_at: datetime

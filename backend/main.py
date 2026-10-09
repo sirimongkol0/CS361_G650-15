@@ -8,6 +8,7 @@ from config import settings
 from database import engine, Base
 from routers import health, partners, activities, documents
 from routers import auth as auth_routes
+from routers import audit_logs
 import schemas
 
 # Create tables
@@ -59,5 +60,6 @@ app.include_router(partners.router, prefix="/api/v1")
 app.include_router(activities.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(auth_routes.router, prefix="/api/v1")
+app.include_router(audit_logs.router, prefix="/api/v1")
 # Internal routers are mounted only once their endpoints are protected with
 # auth.require_role(...) (V3).
