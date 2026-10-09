@@ -106,6 +106,11 @@ API สาธารณะมีเฉพาะการอ่าน (GET) ขอ
 
 ## เอกสาร
 
+**V3 (กำลังพัฒนา)**
+
+- [คู่มือ Login และสิทธิ์ตามบทบาท](docs/setup/v3-auth.md)
+- [ตารางสิทธิ์ตามบทบาท (ร่าง)](docs/decisions/v3-role-permissions.md)
+
 **ระบบปัจจุบัน (V2)**
 
 - [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)

@@ -1,15 +1,12 @@
 """V3 login and server-side role checks, against a local fake of Cognito.
 
 Tokens are signed with a throwaway RSA key, so CI needs no AWS access.
+The fake Cognito lives in tests/auth_helpers.py; fixtures in conftest.py.
 """
 
-import time
 import uuid
 
-import jwt
 import pytest
-from botocore.exceptions import ClientError
-from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi import Depends, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.testclient import TestClient
@@ -20,70 +17,7 @@ import auth
 import main
 import models
 from config import settings
-
-POOL_ID = "ap-southeast-1_TESTPOOL"
-CLIENT_ID = "test-app-client"
-ISSUER = f"https://cognito-idp.ap-southeast-1.amazonaws.com/{POOL_ID}"
-SIGNING_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-OTHER_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-PASSWORD = "Fictional-Passw0rd"
-
-
-def make_token(sub, groups=(), token_use="access", *, email=None, lifetime=3600,
-               client_id=CLIENT_ID, issuer=ISSUER, key=SIGNING_KEY):
-    now = int(time.time())
-    claims = {"sub": sub, "iss": issuer, "token_use": token_use, "iat": now,
-              "exp": now + lifetime, "jti": str(uuid.uuid4())}
-    if groups:
-        claims["cognito:groups"] = list(groups)
-    if token_use == "access":
-        claims["client_id"] = client_id
-    else:
-        claims["aud"] = client_id
-        claims["email"] = email
-    return jwt.encode(claims, key, algorithm="RS256")
-
-
-class FakeCognito:
-    """Stands in for the boto3 ``cognito-idp`` client used by ``auth.sign_in``."""
-
-    def __init__(self):
-        self.users = {}
-        self.challenge = False
-
-    def add(self, email, groups):
-        self.users[email] = {"sub": str(uuid.uuid4()), "groups": list(groups)}
-        return self.users[email]
-
-    def initiate_auth(self, ClientId, AuthFlow, AuthParameters):
-        assert (ClientId, AuthFlow) == (CLIENT_ID, "USER_PASSWORD_AUTH")
-        user = self.users.get(AuthParameters["USERNAME"])
-        if user is None or AuthParameters["PASSWORD"] != PASSWORD:
-            raise ClientError({"Error": {"Code": "NotAuthorizedException",
-                                         "Message": "Incorrect username or password."}},
-                              "InitiateAuth")
-        if self.challenge:
-            return {"ChallengeName": "NEW_PASSWORD_REQUIRED", "Session": "s"}
-        email = AuthParameters["USERNAME"]
-        return {"AuthenticationResult": {
-            "AccessToken": make_token(user["sub"], user["groups"]),
-            "IdToken": make_token(user["sub"], user["groups"], "id", email=email),
-            "ExpiresIn": 3600,
-            "TokenType": "Bearer",
-        }}
-
-
-@pytest.fixture()
-def cognito(monkeypatch):
-    fake = FakeCognito()
-    monkeypatch.setattr(settings, "COGNITO_REGION", "ap-southeast-1")
-    monkeypatch.setattr(settings, "COGNITO_USER_POOL_ID", POOL_ID)
-    monkeypatch.setattr(settings, "COGNITO_APP_CLIENT_ID", CLIENT_ID)
-    monkeypatch.setattr(auth, "get_signing_key", lambda token: SIGNING_KEY.public_key())
-    monkeypatch.setattr(auth, "cognito_client", lambda: fake)
-    for role in models.ROLES:
-        fake.add(f"{role}@example.test", [role])
-    return fake
+from tests.auth_helpers import OTHER_KEY, PASSWORD, make_token
 
 
 def login(client, email, password=PASSWORD):
@@ -256,6 +190,17 @@ def test_require_role_enforces_allowed_roles(client, guarded_client, cognito, ro
         assert response.json() == {"detail": "Insufficient permissions"}
     else:
         assert response.json() == {"role": role}
+
+
+@pytest.mark.parametrize("role,status", [("student", 403), ("coordinator", 403), ("staff", 200), ("admin", 200)])
+def test_auth_headers_fixture_signs_in_each_role(guarded_client, auth_headers, role, status):
+    assert guarded_client.get("/staff-only", headers=auth_headers(role)).status_code == status
+
+
+def test_auth_headers_fixture_separates_users_of_one_role(auth_headers, db_session):
+    mine, other = auth_headers("coordinator"), auth_headers("coordinator", name="other")
+    assert mine.user_id != other.user_id
+    assert db_session.get(models.User, other.user_id).email == "other@example.test"
 
 
 def test_require_role_without_token_is_401(guarded_client, cognito):
