@@ -16,7 +16,7 @@ import { parseScopeLevel, type ScopeLevel } from "@/lib/labels";
 const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 const BROWSER_BASE = process.env.NEXT_PUBLIC_API_BROWSER_URL || SERVER_BASE;
 
-function apiBase(): string {
+export function apiBase(): string {
   return typeof window === "undefined" ? SERVER_BASE : BROWSER_BASE;
 }
 
