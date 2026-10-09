@@ -36,11 +36,11 @@ export default function DashboardStaff() {
   const staffRecentActivities = recentActivities(data.activities, 5);
 
   const kpis: Kpi[] = [
-    { icon: Building2, label: "Stakeholder", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-    { icon: FileText, label: "MoU / MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
     { icon: GraduationCap, label: "นักศึกษา", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: MessageSquare, label: "Feedback", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
+    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
     { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(data.loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
   ];
 
@@ -52,7 +52,7 @@ export default function DashboardStaff() {
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
             <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Course Collaboration Management
+              การบริหารความร่วมมือของหลักสูตร
             </h1>
           </div>
           <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมการบริหารความร่วมมือหลักสูตร</p>
@@ -67,7 +67,7 @@ export default function DashboardStaff() {
           >
             {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />Export</button>
+          <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />ส่งออก</button>
           <button className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
         </div>
       </div>
@@ -117,7 +117,7 @@ export default function DashboardStaff() {
         {/* Expiring docs */}
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold" style={{ color: "#111827" }}>MoU ที่ต้องติดตาม</h2>
+            <h2 className="font-bold" style={{ color: "#111827" }}>ข้อตกลงที่ต้องติดตาม</h2>
           </div>
           <div className="space-y-3">
             {staffExpiringDocs.map((d, i) => (

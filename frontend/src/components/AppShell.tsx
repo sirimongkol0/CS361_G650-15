@@ -9,11 +9,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, FileText, CalendarDays, GraduationCap,
   MessageSquare, BarChart3, Settings, Menu,
-  Users, Globe, Folder, ArrowUp, Search, Keyboard, WifiOff,
+  Users, Globe, Folder, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
 import { ROLE_NAV, useRole } from '@/lib/role-context';
@@ -40,7 +40,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const { role } = useRole();
+  const router = useRouter();
+  const { role, config, user, status, logout } = useRole();
 
   const mainRef = useRef<HTMLElement>(null);
   const [showTop, setShowTop] = useState(false);
@@ -50,6 +51,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const cameBack = useRef(false);
 
   const navItems = ROLE_NAV[role];
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/dashboard/public');
+  };
 
   // Remember the desktop sidebar width between visits.
   useEffect(() => {
@@ -183,6 +189,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 
+  // The login page has its own full-screen layout.
+  if (pathname === '/login') return <>{children}</>;
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--background)' }}>
       <a
@@ -253,6 +262,35 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             ค้นหาทั้งระบบ
             <kbd className="rounded border border-line px-1.5 text-[11px]">Ctrl K</kbd>
           </button>
+          {status === 'authenticated' && user && (
+            <div className="flex items-center gap-2">
+              <span
+                className="badge text-xs"
+                style={{ color: config.pillColor, background: config.pillBg }}
+                title={config.label}
+              >
+                {config.labelShort}
+              </span>
+              <span className="hidden md:inline text-sm text-faint max-w-[200px] truncate" title={user.email}>
+                {user.email}
+              </span>
+              <button
+                type="button"
+                className="btn btn-outline gap-1.5 px-2.5 py-1.5 text-sm"
+                onClick={handleLogout}
+                title="ออกจากระบบ"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">ออกจากระบบ</span>
+              </button>
+            </div>
+          )}
+          {status === 'anonymous' && (
+            <Link href="/login" className="btn btn-primary gap-1.5 px-3 py-1.5 text-sm">
+              <LogIn className="w-4 h-4" />
+              เข้าสู่ระบบ
+            </Link>
+          )}
           <button
             type="button"
             className="p-1.5 rounded hover:bg-soft"
@@ -276,11 +314,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div role="alert" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-900">
               <WifiOff className="w-4 h-4" />
               ขาดการเชื่อมต่ออินเทอร์เน็ต ข้อมูลที่แสดงอาจไม่เป็นปัจจุบัน
-            </div>
-          )}
-          {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
-            <div role="note" className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-              <strong>ระบบสาธิต · ข้อมูลตัวอย่าง</strong>
             </div>
           )}
           <div key={pathname} className="flex-grow animate-fade-up">{children}</div>

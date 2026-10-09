@@ -22,6 +22,10 @@ services:
       STORAGE_BACKEND: local
       LOCAL_STORAGE_DIR: /app/storage
       CORS_ORIGINS: http://localhost:3100,http://127.0.0.1:3100
+      # V3 login; empty -> /auth/* answers 503 while public reads keep working.
+      COGNITO_REGION: ${COGNITO_REGION:-ap-southeast-1}
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID:-}
+      COGNITO_APP_CLIENT_ID: ${COGNITO_APP_CLIENT_ID:-}
     command: ["python", "seed_demo.py"]
     depends_on:
       database:

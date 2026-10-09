@@ -10,17 +10,20 @@ def test_internal_routes_are_not_public(client, path):
     assert f"/api/v1/{path}" not in client.get("/openapi.json").json()["paths"]
 
 
-def test_openapi_exposes_only_repository_reads(client):
+def test_openapi_exposes_only_repository_reads_and_auth(client):
     paths = client.get("/openapi.json").json()["paths"]
-    assert all(set(methods) == {"get"} for methods in paths.values())
-    assert all(path.startswith(tuple(f"/api/v1/{name}" for name in ["health", "partners", "documents", "activities"])) for path in paths)
+    auth_paths = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/auth/")}
+    assert auth_paths == {"/api/v1/auth/login": {"post"}, "/api/v1/auth/logout": {"post"},
+                          "/api/v1/auth/me": {"get"}}
+    repository = {path: methods for path, methods in paths.items() if path not in auth_paths}
+    assert all(set(methods) == {"get"} for methods in repository.values())
+    assert all(path.startswith(tuple(f"/api/v1/{name}" for name in ["health", "partners", "documents", "activities"])) for path in repository)
 
 
-def test_cors_does_not_advertise_public_writes(client):
-    response = client.options("/api/v1/documents/", headers={
-        "Origin": "http://localhost:3001", "Access-Control-Request-Method": "POST",
-    })
-    assert response.status_code == 400
+@pytest.mark.parametrize("path", ["partners/", "documents/", "activities/"])
+def test_repository_has_no_public_write_routes(client, path):
+    # CORS allows POST for /auth/login; repository writes must still not exist.
+    assert client.post(f"/api/v1/{path}", json={"name": "x"}).status_code == 405
 
 
 @pytest.mark.parametrize("resource", ["documents", "activities"])

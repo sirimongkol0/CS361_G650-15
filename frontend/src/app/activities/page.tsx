@@ -8,7 +8,7 @@ import { CalendarDays, ChevronRight, MoreHorizontal, Plus, Users } from "lucide-
 import { EmptyState, ErrorState } from "@/components/data-states";
 import { ScopeLevelBadge, ScopeLevelOptions } from "@/components/scope-level-badge";
 import { loadActivities, useApiResource } from "@/lib/api";
-import { useRole } from "@/lib/role-context";
+import { canManage, useRole } from "@/lib/role-context";
 import { activityTypeColors, activityTypeLabels, label, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { formatThaiDate } from "@/lib/api";
 import {
@@ -150,7 +150,7 @@ export default function ActivitiesPage() {
             {role === "public" ? "กิจกรรมความร่วมมือที่ได้รับอนุญาตให้เผยแพร่" : "กิจกรรมและโครงการความร่วมมือ"}
           </p>
         </div>
-        {role !== "public" && (
+        {canManage(role) && (
           <button className="btn btn-primary gap-2" type="button"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
         )}
       </div>
@@ -263,7 +263,7 @@ export default function ActivitiesPage() {
                       <td className="px-4 py-4"><span className={`badge ${item.statusColor}`}>{item.status}</span></td>
                       <td className="px-4 py-4"><div className="flex gap-1">
                         <Link href={`/activities/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
-                        {role !== "public" && <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" type="button" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></button>}
+                        {canManage(role) && <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" type="button" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></button>}
                       </div></td>
                     </tr>
                     );

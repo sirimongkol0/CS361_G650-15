@@ -283,3 +283,24 @@ DocumentResponse.model_rebuild()
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+$")
+    password: str = Field(min_length=1, max_length=256)
+
+
+class LoginResponse(BaseModel):
+    """OAuth-style bearer token; send it as ``Authorization: Bearer <access_token>``."""
+    access_token: str
+    token_type: Literal['bearer'] = 'bearer'
+    expires_in: int
+    role: str
+
+
+class CurrentUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    role: str

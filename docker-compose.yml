@@ -29,6 +29,10 @@ services:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-pcsms}:${POSTGRES_PASSWORD:-pcsms_local_only}@database:5432/${POSTGRES_DB:-pcsms}
       STORAGE_BACKEND: local
       LOCAL_STORAGE_DIR: /app/storage
+      # V3 login; empty -> /auth/* answers 503 while public reads keep working.
+      COGNITO_REGION: ${COGNITO_REGION:-ap-southeast-1}
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID:-}
+      COGNITO_APP_CLIENT_ID: ${COGNITO_APP_CLIENT_ID:-}
     depends_on:
       database:
         condition: service_healthy

@@ -11,3 +11,5 @@ httpx==0.26.0
 boto3==1.34.30
 python-multipart==0.0.6
 alembic==1.14.1
+# V3 login: verifies Amazon Cognito RS256 tokens
+PyJWT[crypto]==2.8.0

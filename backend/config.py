@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = ""
     LOCAL_STORAGE_DIR: str = "./storage"  # used when STORAGE_BACKEND=local
 
+    # Login (V3): users, passwords and role groups live in an Amazon Cognito
+    # User Pool. These IDs are not secrets; the backend needs no AWS keys for
+    # login because Cognito's sign-in and JWKS endpoints are unauthenticated.
+    COGNITO_REGION: str = "ap-southeast-1"
+    COGNITO_USER_POOL_ID: str = ""   # e.g. ap-southeast-1_xxxxxxxxx
+    COGNITO_APP_CLIENT_ID: str = ""  # app client without a client secret
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
     @property

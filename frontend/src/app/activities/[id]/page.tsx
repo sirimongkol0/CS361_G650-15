@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { Calendar, FileText, ChevronRight, Clock, MapPin, Users } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { ApiError, loadActivity, loadDocuments, useApiResource } from "@/lib/api";
-import { useRole } from "@/lib/role-context";
+import { canManage, useRole } from "@/lib/role-context";
 import { SourceLinks } from "@/components/source-links";
 import { activityDateLabel } from "@/lib/activity-display";
 import { DetailToolbar } from "@/components/detail-toolbar";
@@ -69,7 +69,7 @@ export default function ActivityDetailPage() {
             {item.participants > 0 && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{item.participants} ผู้เข้าร่วม</span>}
           </div>
         </div>
-        {role !== "public" && (
+        {canManage(role) && (
           <div className="flex gap-2">
             <button className="btn btn-outline" type="button">แก้ไข</button>
             <button className="btn btn-primary gap-2" type="button"><FileText className="w-4 h-4" />ออกรายงาน</button>

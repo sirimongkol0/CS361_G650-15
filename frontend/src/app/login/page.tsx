@@ -1,45 +1,65 @@
 'use client';
 
 /*
- * Login — Next.js port of legacy/figma-mock/src/pages/Login.tsx (TU theme).
- * MOCK AUTH: picking a role sets it in localStorage and routes to the role
- * dashboard. Real authentication (SSO / TU account) is planned for V2.
+ * Login — real sign-in (V3). The backend checks the password with Amazon Cognito;
+ * the role comes from the account, not from a picker. Accounts are created by an
+ * administrator (no self sign-up).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Eye, EyeOff, ArrowRight, Building2, Users, FileText,
-  GraduationCap, ChevronDown, Shield, Globe,
-} from 'lucide-react';
-import { ROLES, useRole, getRoleConfig, type UserRole } from '@/lib/role-context';
+import { Eye, EyeOff, ArrowRight, Shield, Globe, AlertCircle } from 'lucide-react';
+import { ApiError } from '@/lib/api';
+import { ROLES, useRole, getRoleConfig } from '@/lib/role-context';
 
-const stats = [
-  { icon: Building2, value: '48', label: 'หน่วยงานคู่ความร่วมมือ', color: '#F5D6DE' },
-  { icon: FileText, value: '23', label: 'MoU / MoA ที่มีผลบังคับ', color: '#FEF3C7' },
-  { icon: Users, value: '156', label: 'กิจกรรมทั้งหมด', color: '#DCFCE7' },
-  { icon: GraduationCap, value: '32', label: 'นักศึกษาแลกเปลี่ยน', color: '#DBEAFE' },
-];
+/** Only same-site paths are allowed as the post-login destination. */
+function nextPath(): string | null {
+  const next = new URLSearchParams(window.location.search).get('next');
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : null;
+}
+
+function loginErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่';
+  if (error.status === 401 && error.message === 'Password change required') {
+    return 'บัญชีนี้ต้องตั้งรหัสผ่านใหม่ กรุณาติดต่อผู้ดูแลระบบ';
+  }
+  switch (error.status) {
+    case 401: return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+    case 403: return 'บัญชีนี้ถูกปิดการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+    case 422: return 'กรุณากรอกอีเมลและรหัสผ่านให้ถูกต้อง';
+    case 429: return 'พยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่';
+    default: return 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง';
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setRole } = useRole();
+  const { login, status, config } = useRole();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Already signed in -> go to this role's dashboard.
+  useEffect(() => {
+    if (status === 'authenticated') router.replace(nextPath() ?? config.dashboardPath);
+  }, [status, config.dashboardPath, router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRole(selectedRole);
-    router.push(getRoleConfig(selectedRole).dashboardPath);
-  };
-
-  const handleSSO = () => {
-    setRole(selectedRole);
-    router.push(getRoleConfig(selectedRole).dashboardPath);
+    setError(null);
+    setSubmitting(true);
+    try {
+      const me = await login(email.trim(), password);
+      setPassword('');
+      router.replace(nextPath() ?? getRoleConfig(me.role).dashboardPath);
+    } catch (err) {
+      setError(loginErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -60,7 +80,7 @@ export default function LoginPage() {
                 PCSMS
               </div>
               <div className="text-xs leading-tight text-faint">
-                Partner Collaboration &amp; Stakeholder Management
+                ระบบบริหารความร่วมมือและผู้มีส่วนได้ส่วนเสีย
               </div>
             </div>
           </div>
@@ -71,68 +91,31 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Note about prototype */}
-        <div
-          className="flex items-start gap-2.5 p-3 rounded-md mb-5 text-xs"
-          style={{ background: '#FEF3C7', border: '1px solid #FDE68A', color: '#92400E' }}
-        >
-          <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#B45309' }} />
-          <span>
-            <span className="font-bold">Prototype Mode:</span> เลือกประเภทผู้ใช้งานเพื่อดู
-            Dashboard ตามสิทธิ์ของแต่ละ Role — ในระบบจริง Role ถูกกำหนดจาก
-            Authentication ระบบ
-          </span>
-        </div>
-
-        <form onSubmit={handleLogin} className="space-y-4">
-          {/* Role selector */}
-          <div>
-            <label className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
-              ประเภทผู้ใช้งาน
-            </label>
-            <div className="relative">
-              <select
-                className="w-full px-3 py-2 pr-10 text-sm font-medium appearance-none rounded-md border bg-white"
-                style={{ borderColor: 'var(--border)' }}
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-              >
-                {ROLES.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                style={{ color: '#9CA3AF' }}
-              />
+        <form onSubmit={handleLogin} className="space-y-4" noValidate>
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-2.5 p-3 rounded-md text-sm"
+              style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
-            {/* Role badge preview */}
-            <div className="mt-2 flex items-center gap-1.5">
-              <span
-                className="badge text-xs"
-                style={{ color: getRoleConfig(selectedRole).pillColor, background: getRoleConfig(selectedRole).pillBg }}
-              >
-                <Shield className="w-3 h-3" />
-                {getRoleConfig(selectedRole).labelShort}
-              </span>
-              <span className="text-xs text-faint">
-                จะถูก Redirect ไปยัง Dashboard ที่เหมาะสม
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
-              อีเมล / ชื่อผู้ใช้
+            <label htmlFor="login-email" className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
+              อีเมล
             </label>
             <input
+              id="login-email"
               className="w-full px-3 py-2 text-sm rounded-md border outline-none focus:border-crimson"
               style={{ borderColor: 'var(--border)' }}
-              type="text"
+              type="email"
+              autoComplete="username"
               placeholder="email@tu.ac.th"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -140,15 +123,18 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
+            <label htmlFor="login-password" className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
               รหัสผ่าน
             </label>
             <div className="relative">
               <input
+                id="login-password"
                 className="w-full px-3 py-2 pr-10 text-sm rounded-md border outline-none focus:border-crimson"
                 style={{ borderColor: 'var(--border)' }}
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 placeholder="••••••••"
+                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -156,6 +142,7 @@ export default function LoginPage() {
                 type="button"
                 className="absolute right-3 top-1/2 -translate-y-1/2"
                 onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
                 style={{ color: '#9CA3AF' }}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -163,61 +150,24 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Remember + Forgot */}
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="w-4 h-4 rounded"
-                style={{ accentColor: '#8B1538' }}
-              />
-              <span className="text-sm text-faint">จดจำการเข้าสู่ระบบ</span>
-            </label>
-            <button type="button" className="text-sm font-semibold text-crimson">
-              ลืมรหัสผ่าน?
-            </button>
-          </div>
-
           {/* Login button */}
-          <button type="submit" className="btn btn-primary w-full py-2.5 text-base mt-2">
-            เข้าสู่ระบบ
-            <ArrowRight className="w-4 h-4" />
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-1">
-            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-            <span className="text-xs text-faint">หรือเข้าสู่ระบบด้วย</span>
-            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-          </div>
-
-          {/* Google */}
-          <button type="button" className="btn btn-outline w-full py-2.5" onClick={handleSSO}>
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            เข้าสู่ระบบด้วย Google
-          </button>
-
-          {/* SSO */}
           <button
-            type="button"
-            className="btn w-full py-2.5"
-            style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: '1px solid var(--primary-muted)' }}
-            onClick={handleSSO}
+            type="submit"
+            className="btn btn-primary w-full py-2.5 text-base mt-2"
+            disabled={submitting || !email.trim() || !password}
           >
-            <Shield className="w-4 h-4" />
-            SSO / University Account
+            {submitting ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
+            {!submitting && <ArrowRight className="w-4 h-4" />}
           </button>
+
+          <p className="flex items-start gap-2 text-xs text-faint">
+            <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            บัญชีผู้ใช้สร้างโดยผู้ดูแลระบบ สิทธิ์การใช้งานกำหนดตามบัญชีของคุณ
+          </p>
         </form>
 
         <p className="text-center text-xs mt-8 text-faint">
-          © 2568 มหาวิทยาลัยธรรมศาสตร์ • PCSMS v3.1 • Secure Collaboration Workspace
+          © 2568 มหาวิทยาลัยธรรมศาสตร์ • PCSMS
         </p>
       </div>
 
@@ -239,38 +189,18 @@ export default function LoginPage() {
         <div className="relative z-10 max-w-sm w-full">
           {/* Heading */}
           <div className="mb-8">
-            <div className="text-xs font-bold tracking-widest uppercase mb-3" style={{ color: '#C8961E' }}>
-              Thammasat University
+            <div className="text-sm font-bold mb-3" style={{ color: '#C8961E' }}>
+              มหาวิทยาลัยธรรมศาสตร์
             </div>
             <h2 className="text-3xl font-extrabold text-white leading-tight mb-3 font-display">
               ระบบบริหารความร่วมมือ
               <br />
-              และ Stakeholder
+              และผู้มีส่วนได้ส่วนเสีย
             </h2>
             <p className="text-[#9CA3AF]" style={{ fontSize: 14, lineHeight: 1.7 }}>
               บริหารจัดการ MoU/MoA กิจกรรม และนักศึกษาแลกเปลี่ยน
               อย่างเป็นระบบในที่เดียว
             </p>
-          </div>
-
-          {/* Stat grid */}
-          <div className="grid grid-cols-2 gap-3 mb-8">
-            {stats.map(({ icon: Icon, value, label, color }) => (
-              <div
-                key={label}
-                className="rounded-md p-4"
-                style={{ background: '#1F2937', border: '1px solid #374151' }}
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center mb-2"
-                  style={{ background: `${color}22` }}
-                >
-                  <Icon className="w-4 h-4" style={{ color }} />
-                </div>
-                <div className="text-xl font-extrabold text-white font-display">{value}</div>
-                <div className="text-xs mt-0.5 text-[#9CA3AF]">{label}</div>
-              </div>
-            ))}
           </div>
 
           {/* Role preview chips */}

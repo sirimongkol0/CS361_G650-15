@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException
 from config import settings
 from database import engine, Base
 from routers import health, partners, activities, documents
+from routers import auth as auth_routes
 import schemas
 
 # Create tables
@@ -20,7 +21,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -57,5 +58,6 @@ app.include_router(health.router, prefix="/api/v1")
 app.include_router(partners.router, prefix="/api/v1")
 app.include_router(activities.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
-# V2 exposes only the public repository. Internal routers are not mounted
-# until their authentication and access-control contract is implemented in V3+.
+app.include_router(auth_routes.router, prefix="/api/v1")
+# Internal routers are mounted only once their endpoints are protected with
+# auth.require_role(...) (V3).

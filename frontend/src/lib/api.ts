@@ -16,7 +16,7 @@ import { parseScopeLevel, type ScopeLevel } from "@/lib/labels";
 const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 const BROWSER_BASE = process.env.NEXT_PUBLIC_API_BROWSER_URL || SERVER_BASE;
 
-function apiBase(): string {
+export function apiBase(): string {
   return typeof window === "undefined" ? SERVER_BASE : BROWSER_BASE;
 }
 
@@ -346,6 +346,10 @@ const COUNTRY_CODE_LABELS: Record<string, string> = {
   CN: "🇨🇳 จีน", ID: "🇮🇩 อินโดนีเซีย", IS: "🇮🇸 ไอซ์แลนด์",
   SG: "🇸🇬 สิงคโปร์", CH: "🇨🇭 สวิตเซอร์แลนด์", AT: "🇦🇹 ออสเตรีย", NO: "🇳🇴 นอร์เวย์",
   NL: "🇳🇱 เนเธอร์แลนด์", ZA: "🇿🇦 แอฟริกาใต้", HK: "🇭🇰 ฮ่องกง", MX: "🇲🇽 เม็กซิโก",
+  DE: "🇩🇪 เยอรมนี", FR: "🇫🇷 ฝรั่งเศส", IT: "🇮🇹 อิตาลี", ES: "🇪🇸 สเปน", SE: "🇸🇪 สวีเดน",
+  FI: "🇫🇮 ฟินแลนด์", DK: "🇩🇰 เดนมาร์ก", BE: "🇧🇪 เบลเยียม", IE: "🇮🇪 ไอร์แลนด์", CA: "🇨🇦 แคนาดา",
+  NZ: "🇳🇿 นิวซีแลนด์", PH: "🇵🇭 ฟิลิปปินส์", LA: "🇱🇦 ลาว", KH: "🇰🇭 กัมพูชา", MM: "🇲🇲 เมียนมา",
+  BN: "🇧🇳 บรูไน", TR: "🇹🇷 ตุรกี", AE: "🇦🇪 สหรัฐอาหรับเอมิเรตส์", BR: "🇧🇷 บราซิล",
 };
 
 // Generic Thai organisation prefixes; initials skip them so "มหาวิทยาลัย…" names don't all read "มห".
