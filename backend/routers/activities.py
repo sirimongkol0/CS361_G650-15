@@ -9,6 +9,8 @@ from public_visibility import partner_criteria, document_criteria
 import database
 import models
 import schemas
+import auth
+import audit
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -71,7 +73,7 @@ def list_published_activities(
             with_loader_criteria(models.Partner, and_(*partner_criteria())),
             with_loader_criteria(models.Document, and_(*document_criteria())),
         )
-        .filter(models.Activity.is_published.is_(True))
+        .filter(models.Activity.is_published.is_(True), models.Activity.is_deleted.is_(False))
     )
 
     # Match only publicly eligible partner names, just as in the response.
@@ -148,9 +150,74 @@ def get_activity(activity_id: int, db: Session = Depends(database.get_db)):
     ).filter(
         models.Activity.id == activity_id,
         models.Activity.is_published.is_(True),
+        models.Activity.is_deleted.is_(False),
     ).first()
     
     if activity is None:
         raise HTTPException(status_code=404, detail="Activity not found")
     
     return _public_activity(activity)
+
+
+def _can_manage_activity(activity: models.Activity, user: models.User) -> bool:
+    if user.role in ("staff", "admin"):
+        return True
+    return user.role == "coordinator" and activity.owner_user_id == user.id
+
+
+@router.post("/", response_model=schemas.ActivityResponse, status_code=201)
+def create_activity(
+    body: schemas.ActivityCreate,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("coordinator", "staff", "admin")),
+):
+    data = body.model_dump()
+    if user.role == "coordinator":
+        # Coordinators can create records, but publication remains a staff/admin action.
+        data["is_published"] = False
+    row = models.Activity(**data, owner_user_id=user.id)
+    db.add(row)
+    db.flush()
+    audit.record(db, user, "create", "activities", row.id, after=audit.snapshot(row))
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.patch("/{activity_id}", response_model=schemas.ActivityResponse)
+def update_activity(
+    activity_id: int, body: schemas.ActivityUpdate,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("coordinator", "staff", "admin")),
+):
+    row = db.query(models.Activity).filter(models.Activity.id == activity_id, models.Activity.is_deleted.is_(False)).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if not _can_manage_activity(row, user):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    data = body.model_dump(exclude_unset=True)
+    if user.role == "coordinator" and "is_published" in data:
+        raise HTTPException(status_code=403, detail="Only staff/admin can change publication status")
+    before = audit.snapshot(row)
+    for key, value in data.items():
+        setattr(row, key, value)
+    audit.record(db, user, "update", "activities", row.id, before=before, after=audit.snapshot(row))
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+@router.delete("/{activity_id}", status_code=204)
+def delete_activity(
+    activity_id: int, db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("staff", "admin")),
+):
+    row = db.query(models.Activity).filter(models.Activity.id == activity_id, models.Activity.is_deleted.is_(False)).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    before = audit.snapshot(row)
+    row.is_deleted = True
+    row.is_published = False
+    audit.record(db, user, "delete", "activities", row.id, before=before, after=audit.snapshot(row))
+    db.commit()
+    return None
