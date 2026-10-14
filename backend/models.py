@@ -203,6 +203,8 @@ class Activity(Base):
     scope_level = Column(String, nullable=True)     # program | faculty | university (NULL = not yet classified)
     # MoU/MoA backing this activity -> documents.id
     mou_document_id = Column(Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True)
+    owner_user_id = Column(Integer, nullable=True, index=True)
+    is_deleted = Column(Boolean, default=False, server_default=false(), nullable=False)
 
     partner = relationship("Partner", back_populates="activities")
     mou_document = relationship(
@@ -260,6 +262,8 @@ class ExchangeStudent(Base):
     is_published = Column(Boolean, default=False, nullable=False)
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     activity_id = Column(Integer, ForeignKey("activities.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    owner_user_id = Column(Integer, nullable=True, index=True)
 
     partner = relationship("Partner")
     activity = relationship("Activity")
