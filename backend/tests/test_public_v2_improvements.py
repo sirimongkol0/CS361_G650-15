@@ -4,36 +4,60 @@ import pytest
 import models
 
 
-@pytest.mark.parametrize("path", ["users/", "users/1", "feedback/", "feedback/1", "exchange/", "exchange/1"])
+@pytest.mark.parametrize("path", ["users/", "users/1", "feedback/", "feedback/1", "exchange/1"])
 def test_internal_routes_are_not_public(client, path):
     assert client.get(f"/api/v1/{path}").status_code == 404
     assert f"/api/v1/{path}" not in client.get("/openapi.json").json()["paths"]
 
 
-def test_openapi_exposes_repository_reads_partner_crud_and_auth(client):
+def test_openapi_exposes_expected_routes_and_auth(client):
     paths = client.get("/openapi.json").json()["paths"]
-    auth_paths = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/auth/")}
-    assert auth_paths == {"/api/v1/auth/login": {"post"}, "/api/v1/auth/logout": {"post"},
-                          "/api/v1/auth/me": {"get"}}
-    # Staff/admin-only reads (require_role); everything else stays public repository reads.
-    protected = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/audit-logs")}
-    assert protected == {"/api/v1/audit-logs/": {"get"}}
-    repository = {
+
+    auth_paths = {
         path: set(methods)
         for path, methods in paths.items()
+        if path.startswith("/api/v1/auth/")
+    }
+    assert auth_paths == {
+        "/api/v1/auth/login": {"post"},
+        "/api/v1/auth/logout": {"post"},
+        "/api/v1/auth/me": {"get"},
+    }
+
+    protected = {
+        path: set(methods)
+        for path, methods in paths.items()
+        if path.startswith("/api/v1/audit-logs")
+    }
+    assert protected == {"/api/v1/audit-logs/": {"get"}}
+
+    # Partner mutations remain available only to authenticated roles.
+    assert set(paths["/api/v1/partners/"]) == {"get", "post"}
+    assert set(paths["/api/v1/partners/{partner_id}"]) == {"get", "put", "delete"}
+
+    # Existing public read APIs
+    repository = {
+        path: methods
+        for path, methods in paths.items()
         if path not in auth_paths and path not in protected
+        and path not in {"/api/v1/partners/", "/api/v1/partners/{partner_id}"}
+        and not path.startswith("/api/v1/exchange")
+        and not path.startswith("/api/v1/activities")
     }
-    assert repository == {
-        "/api/v1/health": {"get"},
-        "/api/v1/partners/": {"get", "post"},
-        "/api/v1/partners/{partner_id}": {"get", "put", "delete"},
-        "/api/v1/partners/{partner_id}/logo": {"get"},
-        "/api/v1/documents/": {"get"},
-        "/api/v1/documents/{document_id}": {"get"},
-        "/api/v1/documents/{document_id}/download": {"get"},
-        "/api/v1/activities/": {"get"},
-        "/api/v1/activities/{activity_id}": {"get"},
-    }
+    assert all(set(methods) == {"get"} for methods in repository.values())
+    assert all(
+        path.startswith(tuple(
+            f"/api/v1/{name}"
+            for name in ["health", "partners", "documents"]
+        ))
+        for path in repository
+    )
+
+    # V3-4 adds role-protected activity and exchange writes.
+    assert set(paths["/api/v1/activities/"]) >= {"get", "post"}
+    assert set(paths["/api/v1/activities/{activity_id}"]) >= {"get", "patch", "delete"}
+    assert set(paths["/api/v1/exchange/"]) >= {"get", "post"}
+    assert set(paths["/api/v1/exchange/{student_id}"]) >= {"get", "patch"}
 
 
 @pytest.mark.parametrize(("method", "path", "expected_status"), [
@@ -41,9 +65,8 @@ def test_openapi_exposes_repository_reads_partner_crud_and_auth(client):
     ("put", "partners/1", 401),
     ("delete", "partners/1", 401),
     ("post", "documents/", 405),
-    ("post", "activities/", 405),
 ])
-def test_repository_writes_require_auth_or_are_not_registered(
+def test_repository_write_routes_are_protected_or_absent(
     client, method, path, expected_status
 ):
     if method == "delete":

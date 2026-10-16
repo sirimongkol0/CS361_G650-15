@@ -148,6 +148,7 @@ class ActivityUpdate(BaseModel):
     status: Optional[str] = None
     is_open: Optional[bool] = None
     mou_document_id: Optional[int] = None
+    scope_level: Optional[ScopeLevel] = None
 
 
 class ActivityResponse(BaseModel):
@@ -264,6 +265,20 @@ class ExchangeStudentCreate(BaseModel):
     program: Optional[str] = None
     status: Optional[str] = None
     is_published: bool = False
+    partner_id: Optional[int] = None
+    activity_id: Optional[int] = None
+    user_id: Optional[int] = None
+
+class ExchangeStudentUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = None
+    from_program: Optional[str] = None
+    to_organization: Optional[str] = None
+    start_date: Optional[datetime_date] = None
+    end_date: Optional[datetime_date] = None
+    program: Optional[str] = None
+    status: Optional[str] = None
+    is_published: Optional[bool] = None
     partner_id: Optional[int] = None
     activity_id: Optional[int] = None
 

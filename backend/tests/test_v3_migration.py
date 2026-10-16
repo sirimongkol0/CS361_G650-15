@@ -42,3 +42,86 @@ def test_users_role_is_constrained(migration_engine, role):
         with migration_engine.begin() as c:
             c.execute(text("INSERT INTO users (cognito_sub, email, role, created_at) "
                            "VALUES ('sub', 'x@example.test', :role, CURRENT_TIMESTAMP)"), {"role": role})
+
+
+def test_v3_4_migration_creates_exchange_table_on_fresh_database(
+    migration_engine,
+):
+    engine = migration_engine
+
+    migrate(engine)
+    migrate(engine)
+
+    inspector = inspect(engine)
+
+    assert inspector.has_table("activities")
+    assert inspector.has_table("exchange_students")
+
+    activity_columns = {
+        column["name"]: column
+        for column in inspector.get_columns("activities")
+    }
+    assert "owner_user_id" in activity_columns
+    assert "is_deleted" in activity_columns
+
+    exchange_columns = {
+        column["name"]
+        for column in inspector.get_columns("exchange_students")
+    }
+    assert {"user_id", "owner_user_id"} <= exchange_columns
+
+    exchange_fks = inspector.get_foreign_keys("exchange_students")
+    assert any(
+        fk["constrained_columns"] == ["user_id"]
+        and fk["referred_table"] == "users"
+        for fk in exchange_fks
+    )
+
+
+def test_v3_4_migration_preserves_existing_exchange_rows(
+    migration_engine,
+):
+    engine = migration_engine
+
+    with engine.begin() as connection:
+        connection.exec_driver_sql(
+            """
+            CREATE TABLE exchange_students (
+                id INTEGER PRIMARY KEY,
+                name VARCHAR NOT NULL
+            )
+            """
+        )
+        connection.exec_driver_sql(
+            """
+            INSERT INTO exchange_students (id, name)
+            VALUES (42, 'Existing exchange record')
+            """
+        )
+
+    migrate(engine)
+    migrate(engine)
+
+    inspector = inspect(engine)
+    columns = {
+        column["name"]
+        for column in inspector.get_columns("exchange_students")
+    }
+
+    assert {"id", "name", "user_id", "owner_user_id"} <= columns
+
+    with engine.connect() as connection:
+        row = connection.execute(
+            text(
+                """
+                SELECT id, name, user_id, owner_user_id
+                FROM exchange_students
+                WHERE id = 42
+                """
+            )
+        ).one()
+
+    assert row.id == 42
+    assert row.name == "Existing exchange record"
+    assert row.user_id is None
+    assert row.owner_user_id is None
