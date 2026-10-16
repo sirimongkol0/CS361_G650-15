@@ -10,7 +10,7 @@ def test_internal_routes_are_not_public(client, path):
     assert f"/api/v1/{path}" not in client.get("/openapi.json").json()["paths"]
 
 
-def test_openapi_exposes_only_repository_reads_and_auth(client):
+def test_openapi_exposes_repository_reads_partner_crud_and_auth(client):
     paths = client.get("/openapi.json").json()["paths"]
     auth_paths = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/auth/")}
     assert auth_paths == {"/api/v1/auth/login": {"post"}, "/api/v1/auth/logout": {"post"},
@@ -18,15 +18,39 @@ def test_openapi_exposes_only_repository_reads_and_auth(client):
     # Staff/admin-only reads (require_role); everything else stays public repository reads.
     protected = {path: set(methods) for path, methods in paths.items() if path.startswith("/api/v1/audit-logs")}
     assert protected == {"/api/v1/audit-logs/": {"get"}}
-    repository = {path: methods for path, methods in paths.items() if path not in auth_paths and path not in protected}
-    assert all(set(methods) == {"get"} for methods in repository.values())
-    assert all(path.startswith(tuple(f"/api/v1/{name}" for name in ["health", "partners", "documents", "activities"])) for path in repository)
+    repository = {
+        path: set(methods)
+        for path, methods in paths.items()
+        if path not in auth_paths and path not in protected
+    }
+    assert repository == {
+        "/api/v1/health": {"get"},
+        "/api/v1/partners/": {"get", "post"},
+        "/api/v1/partners/{partner_id}": {"get", "put", "delete"},
+        "/api/v1/partners/{partner_id}/logo": {"get"},
+        "/api/v1/documents/": {"get"},
+        "/api/v1/documents/{document_id}": {"get"},
+        "/api/v1/documents/{document_id}/download": {"get"},
+        "/api/v1/activities/": {"get"},
+        "/api/v1/activities/{activity_id}": {"get"},
+    }
 
 
-@pytest.mark.parametrize("path", ["partners/", "documents/", "activities/"])
-def test_repository_has_no_public_write_routes(client, path):
-    # CORS allows POST for /auth/login; repository writes must still not exist.
-    assert client.post(f"/api/v1/{path}", json={"name": "x"}).status_code == 405
+@pytest.mark.parametrize(("method", "path", "expected_status"), [
+    ("post", "partners/", 401),
+    ("put", "partners/1", 401),
+    ("delete", "partners/1", 401),
+    ("post", "documents/", 405),
+    ("post", "activities/", 405),
+])
+def test_repository_writes_require_auth_or_are_not_registered(
+    client, method, path, expected_status
+):
+    if method == "delete":
+        response = client.delete(f"/api/v1/{path}")
+    else:
+        response = getattr(client, method)(f"/api/v1/{path}", json={"name": "x"})
+    assert response.status_code == expected_status
 
 
 @pytest.mark.parametrize("resource", ["documents", "activities"])

@@ -16,9 +16,12 @@ V3_TABLES = ("users", "revoked_tokens", "audit_logs")
 
 
 def migrate(engine):
+    with engine.begin() as connection:
+        Base.metadata.tables["users"].create(connection, checkfirst=True)
+
     migrate_v2.migrate(engine)
     with engine.begin() as connection:
-        for name in V3_TABLES:
+        for name in V3_TABLES[1:]:
             Base.metadata.tables[name].create(connection, checkfirst=True)
 
 
@@ -37,3 +40,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
