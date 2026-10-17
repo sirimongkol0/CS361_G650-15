@@ -85,9 +85,14 @@ def test_migration_replaces_true_publication_default(migration_engine):
 def test_v2_migration_handles_missing_users_table(migration_engine):
     engine = migration_engine
     with engine.begin() as c:
-        c.exec_driver_sql(
+        partners_ddl = (
             'CREATE TABLE partners (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL)'
         )
+        if engine.dialect.name == "postgresql":
+            partners_ddl = partners_ddl.replace(
+                "id INTEGER PRIMARY KEY", "id SERIAL PRIMARY KEY"
+            )
+        c.exec_driver_sql(partners_ddl)
         c.exec_driver_sql(
             "INSERT INTO partners (id, name) VALUES (7, 'Existing partner')"
         )
