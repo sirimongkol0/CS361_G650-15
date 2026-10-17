@@ -31,11 +31,16 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     }
     assert protected == {"/api/v1/audit-logs/": {"get"}}
 
+    # Partner mutations remain available only to authenticated roles.
+    assert set(paths["/api/v1/partners/"]) == {"get", "post"}
+    assert set(paths["/api/v1/partners/{partner_id}"]) == {"get", "put", "delete"}
+
     # Existing public read APIs
     repository = {
         path: methods
         for path, methods in paths.items()
         if path not in auth_paths and path not in protected
+        and path not in {"/api/v1/partners/", "/api/v1/partners/{partner_id}"}
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
     }
@@ -55,9 +60,20 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     assert set(paths["/api/v1/exchange/{student_id}"]) >= {"get", "patch"}
 
 
-@pytest.mark.parametrize("path", ["partners/", "documents/"])
-def test_repository_has_no_public_write_routes(client, path):
-    assert client.post(f"/api/v1/{path}", json={"name": "x"}).status_code == 405
+@pytest.mark.parametrize(("method", "path", "expected_status"), [
+    ("post", "partners/", 401),
+    ("put", "partners/1", 401),
+    ("delete", "partners/1", 401),
+    ("post", "documents/", 405),
+])
+def test_repository_write_routes_are_protected_or_absent(
+    client, method, path, expected_status
+):
+    if method == "delete":
+        response = client.delete(f"/api/v1/{path}")
+    else:
+        response = getattr(client, method)(f"/api/v1/{path}", json={"name": "x"})
+    assert response.status_code == expected_status
 
 
 @pytest.mark.parametrize("resource", ["documents", "activities"])

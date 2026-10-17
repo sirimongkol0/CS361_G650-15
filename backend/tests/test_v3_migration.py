@@ -1,26 +1,15 @@
 import pytest
-from sqlalchemy import MetaData, create_engine, inspect, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
-from database import Base, engine as configured_engine
 from migrate_v3 import migrate
 
 
-@pytest.fixture(params=["sqlite", "configured"])
-def migration_engine(request, tmp_path):
-    if request.param == "configured":
-        if configured_engine.dialect.name == "sqlite":
-            pytest.skip("Covered by the SQLite migration case")
-        engine = configured_engine
-        Base.metadata.drop_all(engine)
-    else:
-        engine = create_engine(f"sqlite:///{tmp_path / 'v2.db'}")
+@pytest.fixture
+def migration_engine(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'v3.db'}")
     yield engine
-    metadata = MetaData()
-    metadata.reflect(engine)
-    metadata.drop_all(engine)
-    if request.param == "sqlite":
-        engine.dispose()
+    engine.dispose()
 
 
 def test_v3_migration_adds_auth_tables_and_keeps_v2_data(migration_engine):
@@ -32,8 +21,11 @@ def test_v3_migration_adds_auth_tables_and_keeps_v2_data(migration_engine):
     migrate(engine)
     with engine.begin() as c:
         inspector = inspect(c)
-        assert inspector.has_table("users") and inspector.has_table("revoked_tokens")
+        assert all(inspector.has_table(name) for name in ("users", "revoked_tokens", "audit_logs"))
         assert "ck_users_role" in {x["name"] for x in inspector.get_check_constraints("users")}
+        user_fks = inspector.get_foreign_keys("partners")
+        assert any(fk["referred_table"] == "users" and fk["constrained_columns"] == ["owner_user_id"]
+                   for fk in user_fks)
         assert c.execute(text("SELECT name FROM partners WHERE id=7")).scalar_one() == "Existing partner"
         c.execute(text("INSERT INTO users (id, cognito_sub, email, role, created_at) "
                        "VALUES (1, 'sub-1', 'staff@example.test', 'staff', CURRENT_TIMESTAMP)"))

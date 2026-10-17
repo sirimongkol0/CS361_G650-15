@@ -11,7 +11,7 @@ import sqlite3
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import CheckConstraint, create_engine, inspect, text
+from sqlalchemy import CheckConstraint, MetaData, create_engine, inspect, text
 
 from database import Base
 import models  # noqa: F401 -- register the target schema
@@ -23,6 +23,35 @@ CORE_TABLES = (
 )
 NAMING = {"uq": "uq_%(table_name)s_%(column_0_name)s",
           "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s"}
+
+
+def _create_table(connection, target):
+    """Create a V2 table without foreign keys to tables added in later versions."""
+    inspector = inspect(connection)
+    missing_parents = {
+        fk.referred_table.name
+        for fk in target.foreign_key_constraints
+        if fk.referred_table.name != target.name
+        and not inspector.has_table(fk.referred_table.name)
+    }
+    unexpected_parents = missing_parents - {"users"}
+    if unexpected_parents:
+        raise RuntimeError(
+            f"Cannot create {target.name!r}; referenced tables are missing: "
+            f"{', '.join(sorted(unexpected_parents))}"
+        )
+    if not missing_parents:
+        target.create(connection)
+        return
+
+    metadata = MetaData()
+    for source in Base.metadata.tables.values():
+        source.to_metadata(metadata)
+    table = metadata.tables[target.key]
+    for fk in tuple(table.foreign_key_constraints):
+        if fk.referred_table.name == "users":
+            table.constraints.remove(fk)
+    table.create(connection)
 
 
 def migrate(engine):
@@ -42,7 +71,7 @@ def migrate(engine):
                     target = Base.metadata.tables[name]
                     inspector = inspect(connection)
                     if not inspector.has_table(name):
-                        target.create(connection)
+                        _create_table(connection, target)
                         continue
                     columns = {c["name"]: c for c in inspector.get_columns(name)}
                     if "is_published" in columns:
@@ -56,6 +85,13 @@ def migrate(engine):
                         local = list(fk.column_keys)
                         remote = [element.column.name for element in fk.elements]
                         parent = fk.referred_table.name
+                        if not inspector.has_table(parent):
+                            if parent == "users":
+                                continue
+                            raise RuntimeError(
+                                f"Cannot add foreign key on {name!r}; "
+                                f"referenced table {parent!r} is missing"
+                            )
                         old_fk = next((f for f in foreign_keys if f["constrained_columns"] == local), None)
                         if (old_fk is None or old_fk["referred_table"] != parent
                                 or old_fk["referred_columns"] != remote

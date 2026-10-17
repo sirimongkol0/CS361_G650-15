@@ -80,9 +80,10 @@ class Partner(Base):
     description = Column(Text, nullable=True)
     logo_url = Column(Text, nullable=True)
     is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
+
     # --- real-world stakeholder metadata (all nullable -> backwards compatible) ---
-    # Allowed values: docs/api/v2-field-contract.md (labels in frontend/src/lib/labels.ts)
-    type = Column(String, nullable=True)            # university | government | private_company | network | vocational | healthcare | international_organization
+    # Allowed values: university | government | private_company | network | vocational | healthcare | international_organization | alumni | expert | coordinator
+    type = Column(String, nullable=True)            
     country = Column(String, nullable=True)         # English short name, one spelling per country_code
     country_code = Column(String(2), nullable=True)
     website_url = Column(Text, nullable=True)
@@ -93,6 +94,15 @@ class Partner(Base):
     # Cooperation level: program | faculty | university; NULL = not yet classified.
     scope_level = Column(String, nullable=True)
 
+    # --- [V3-2] Fields เพิ่มเติมสำหรับ Stakeholder/Coordinator & RBAC & Soft Delete ---
+    owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    organization_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True, index=True)
+    is_deleted = Column(Boolean, default=False, server_default=false(), nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    owner = relationship("User", foreign_keys=[owner_user_id])
+    organization = relationship("Partner", remote_side=[id], foreign_keys=[organization_id], backref="coordinators")
     activities = relationship("Activity", back_populates="partner", passive_deletes=True)
     documents = relationship("Document", back_populates="partner", passive_deletes=True)
     sources = relationship("Source", secondary=partner_sources, back_populates="partners")

@@ -86,6 +86,9 @@ def _ensure_exchange_user_foreign_key(connection):
 
 
 def migrate(engine):
+    with engine.begin() as connection:
+        Base.metadata.tables["users"].create(connection, checkfirst=True)
+
     """Apply V2 and V3/V3-4 schema changes idempotently."""
     if engine.dialect.name not in {"sqlite", "postgresql"}:
         raise ValueError(
@@ -168,3 +171,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+

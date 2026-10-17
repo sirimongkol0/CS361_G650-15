@@ -3,7 +3,8 @@ from sqlalchemy import MetaData, create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 from database import Base, engine as configured_engine
 
-from migrate_v2 import migrate
+from migrate_v2 import CORE_TABLES, migrate
+from migrate_v3 import migrate as migrate_v3
 
 
 @pytest.fixture(params=["sqlite", "configured"])
@@ -79,6 +80,102 @@ def test_migration_replaces_true_publication_default(migration_engine):
     with engine.begin() as c:
         c.execute(text("INSERT INTO partners (id, name) VALUES (1, 'Unpublished by default')"))
         assert c.execute(text('SELECT is_published FROM partners')).scalar_one() == False
+
+
+def test_v2_migration_handles_missing_users_table(migration_engine):
+    engine = migration_engine
+    with engine.begin() as c:
+        partners_ddl = (
+            'CREATE TABLE partners (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL)'
+        )
+        if engine.dialect.name == "postgresql":
+            partners_ddl = partners_ddl.replace(
+                "id INTEGER PRIMARY KEY", "id SERIAL PRIMARY KEY"
+            )
+        c.exec_driver_sql(partners_ddl)
+        c.exec_driver_sql(
+            "INSERT INTO partners (id, name) VALUES (7, 'Existing partner')"
+        )
+
+    migrate(engine)
+    migrate(engine)
+
+    with engine.begin() as c:
+        assert c.execute(
+            text("SELECT name FROM partners WHERE id=7")
+        ).scalar_one() == "Existing partner"
+        assert not any(
+            fk["referred_table"] == "users"
+            for fk in inspect(c).get_foreign_keys("partners")
+        )
+        assert any(
+            fk["referred_table"] == "partners"
+            and fk["constrained_columns"] == ["organization_id"]
+            for fk in inspect(c).get_foreign_keys("partners")
+        )
+        if engine.dialect.name == "sqlite":
+            assert c.exec_driver_sql("PRAGMA foreign_key_check").fetchall() == []
+        c.execute(text("INSERT INTO partners (name) VALUES ('New partner')"))
+        if engine.dialect.name == "sqlite":
+            assert c.exec_driver_sql("PRAGMA foreign_key_check").fetchall() == []
+
+    migrate_v3(engine)
+    migrate_v3(engine)
+
+    with engine.connect() as c:
+        owner_fks = [
+            fk for fk in inspect(c).get_foreign_keys("partners")
+            if fk["referred_table"] == "users"
+            and fk["constrained_columns"] == ["owner_user_id"]
+        ]
+        assert len(owner_fks) == 1
+        assert (owner_fks[0].get("options") or {}).get("ondelete") == "SET NULL"
+        assert c.execute(
+            text("SELECT name FROM partners WHERE id=7")
+        ).scalar_one() == "Existing partner"
+        assert any(
+            fk["referred_table"] == "users"
+            and fk["constrained_columns"] == ["owner_user_id"]
+            for fk in inspect(c).get_foreign_keys("partners")
+        )
+        assert any(
+            fk["referred_table"] == "partners"
+            and fk["constrained_columns"] == ["organization_id"]
+            for fk in inspect(c).get_foreign_keys("partners")
+        )
+
+
+def test_fresh_v2_migration_keeps_all_non_user_foreign_keys(migration_engine):
+    engine = migration_engine
+
+    migrate(engine)
+    migrate(engine)
+
+    with engine.connect() as connection:
+        inspector = inspect(connection)
+        assert not inspector.has_table("users")
+
+        for name in CORE_TABLES:
+            expected = {
+                (
+                    tuple(fk.column_keys),
+                    fk.referred_table.name,
+                    tuple(element.column.name for element in fk.elements),
+                    fk.ondelete,
+                )
+                for fk in Base.metadata.tables[name].foreign_key_constraints
+                if fk.referred_table.name != "users"
+            }
+            actual = {
+                (
+                    tuple(fk["constrained_columns"] or ()),
+                    fk["referred_table"],
+                    tuple(fk["referred_columns"] or ()),
+                    (fk.get("options") or {}).get("ondelete"),
+                )
+                for fk in inspector.get_foreign_keys(name)
+            }
+            assert expected <= actual
 
 
 def test_migration_adds_scope_level_column_and_constraint_idempotently(migration_engine):

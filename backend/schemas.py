@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator
+from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, EmailStr
 from typing import Optional, List, Literal
 from datetime import date, datetime, timezone
 
@@ -11,32 +11,56 @@ ScopeLevel = Literal['program', 'faculty', 'university']
 
 
 class PartnerBase(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=255, description="ชื่อหน่วยงานหรือบุคคล ห้ามเป็นค่าว่าง")
     description: Optional[str] = None
-    logo_url: Optional[str] = None
-    type: Optional[str] = None
+    logo_url: Optional[str] = Field(default=None, validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
+    type: Optional[str] = Field(default=None, description="ประเภท เช่น organization, alumni, expert, coordinator")
     country: Optional[str] = None
-    country_code: Optional[str] = Field(default=None, min_length=2, max_length=2, pattern=r"^[A-Z]{2}$")
-    website_url: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_email: Optional[str] = None
+    country_code: Optional[str] = Field(default=None, min_length=2, max_length=2, pattern=r"^[A-Z]{2}$", validation_alias=AliasChoices('country_code', 'countryCode'), serialization_alias='countryCode')
+    website_url: Optional[str] = Field(default=None, validation_alias=AliasChoices('website_url', 'websiteUrl'), serialization_alias='websiteUrl')
+    contact_name: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_name', 'contactName'), serialization_alias='contactName')
+    contact_email: Optional[EmailStr] = Field(default=None, validation_alias=AliasChoices('contact_email', 'contactEmail'), serialization_alias='contactEmail')
+    contact_is_public: bool = Field(default=False, validation_alias=AliasChoices('contact_is_public', 'contactIsPublic'), serialization_alias='contactIsPublic')
+    scope_level: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
+    organization_id: Optional[int] = Field(default=None, validation_alias=AliasChoices('organization_id', 'organizationId'), serialization_alias='organizationId')
 
+
+    @field_validator('name')
+    @classmethod
+    def name_must_not_be_whitespace(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("ชื่อห้ามเป็นช่องว่างเปล่า")
+        return stripped
 
 class PartnerCreate(PartnerBase):
-    is_published: bool = False
+    is_published: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
 
 
 class PartnerUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    logo_url: Optional[str] = None
+    logo_url: Optional[str] = Field(default=None, validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
     type: Optional[str] = None
     country: Optional[str] = None
-    country_code: Optional[str] = Field(default=None, min_length=2, max_length=2, pattern=r"^[A-Z]{2}$")
-    website_url: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_email: Optional[str] = None
-    is_published: Optional[bool] = None
+    country_code: Optional[str] = Field(default=None, min_length=2, max_length=2, pattern=r"^[A-Z]{2}$", validation_alias=AliasChoices('country_code', 'countryCode'), serialization_alias='countryCode')
+    website_url: Optional[str] = Field(default=None, validation_alias=AliasChoices('website_url', 'websiteUrl'), serialization_alias='websiteUrl')
+    contact_name: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_name', 'contactName'), serialization_alias='contactName')
+    contact_email: Optional[EmailStr] = Field(default=None, validation_alias=AliasChoices('contact_email', 'contactEmail'), serialization_alias='contactEmail')
+    contact_is_public: Optional[bool] = Field(default=None, validation_alias=AliasChoices('contact_is_public', 'contactIsPublic'), serialization_alias='contactIsPublic')
+    scope_level: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
+    organization_id: Optional[int] = Field(default=None, validation_alias=AliasChoices('organization_id', 'organizationId'), serialization_alias='organizationId')
+    is_published: Optional[bool] = Field(default=None, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+
+    @field_validator('name')
+    @classmethod
+    def name_must_not_be_whitespace(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None:
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("ชื่อห้ามเป็นช่องว่างเปล่า")
+            return stripped
+        return value
 
 
 class SourceResponse(BaseModel):
@@ -64,15 +88,19 @@ class PartnerResponse(BaseModel):
     id: int
     name: str
     description: Optional[str] = None
-    logoUrl: Optional[str] = Field(validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
+    logoUrl: Optional[str] = Field(default=None, validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
     type: Optional[str] = None
     country: Optional[str] = None
     countryCode: Optional[str] = Field(default=None, validation_alias=AliasChoices('country_code', 'countryCode'), serialization_alias='countryCode')
     websiteUrl: Optional[str] = Field(default=None, validation_alias=AliasChoices('website_url', 'websiteUrl'), serialization_alias='websiteUrl')
     contactName: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_name', 'contactName'), serialization_alias='contactName')
     contactEmail: Optional[str] = Field(default=None, validation_alias=AliasChoices('contact_email', 'contactEmail'), serialization_alias='contactEmail')
+    contactIsPublic: bool = Field(default=False, validation_alias=AliasChoices('contact_is_public', 'contactIsPublic'), serialization_alias='contactIsPublic')
     scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
-    sources: List['SourceResponse'] = Field(default_factory=list)
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
+    organizationId: Optional[int] = Field(default=None, validation_alias=AliasChoices('organization_id', 'organizationId'), serialization_alias='organizationId')
+    sources: List[SourceResponse] = Field(default_factory=list)
 
 
 class ActivityPartnerResponse(BaseModel):
