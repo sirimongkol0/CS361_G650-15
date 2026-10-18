@@ -6,11 +6,11 @@ import Link from "next/link";
 import { PartnerAvatar } from "@/components/partner-avatar";
 import { useUrlState } from "@/lib/url-state";
 import { SearchInput } from "@/components/search-input";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, UserCog } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/data-states";
 import { ScopeLevelBadge, ScopeLevelOptions } from "@/components/scope-level-badge";
 import { loadPublicPartners, useApiResource } from "@/lib/api";
-import { useRole } from "@/lib/role-context";
+import { canManage, useRole } from "@/lib/role-context";
 import {
   downloadCsv, matchesQuery, sortBy, useDocumentTitle, useRememberResults, usePagination, useSort,
 } from "@/lib/list-tools";
@@ -101,6 +101,12 @@ export default function StakeholdersPage() {
               : "ข้อมูลหน่วยงานและบุคคลคู่ความร่วมมือที่เกี่ยวข้อง"}
           </p>
         </div>
+        {canManage(role) && (
+          <Link href="/stakeholders/manage" className="btn btn-primary gap-2">
+            <UserCog className="w-4 h-4" />
+            จัดการหน่วยงาน
+          </Link>
+        )}
       </div>
 
       {partners.status === "loading" && <TableSkeleton columns={4} />}

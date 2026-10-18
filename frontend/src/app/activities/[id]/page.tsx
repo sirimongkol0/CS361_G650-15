@@ -71,8 +71,8 @@ export default function ActivityDetailPage() {
         </div>
         {canManage(role) && (
           <div className="flex gap-2">
-            <button className="btn btn-outline" type="button">แก้ไข</button>
-            <button className="btn btn-primary gap-2" type="button"><FileText className="w-4 h-4" />ออกรายงาน</button>
+            <Link href={`/activities/manage?edit=${item.id}`} className="btn btn-outline">แก้ไข</Link>
+            <button className="btn btn-primary gap-2" type="button" onClick={() => window.print()}><FileText className="w-4 h-4" />ออกรายงาน</button>
           </div>
         )}
       </div>

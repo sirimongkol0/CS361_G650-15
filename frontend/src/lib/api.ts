@@ -199,7 +199,7 @@ export function apiUpload<T>(path: string, file: File, field = "file", method = 
   return apiSend<T>(method, path, form);
 }
 /** GET a JSON list from the API; throws on any failure (caller decides fallback). */
-async function apiGetList<T>(path: string): Promise<T[]> {
+export async function apiGetList<T>(path: string): Promise<T[]> {
   const data = await apiGet<unknown>(path);
   if (!Array.isArray(data)) throw new ApiError(`API ${path} -> unexpected payload`);
   return data as T[];
@@ -357,7 +357,7 @@ interface RawFeedback {
   comment?: string | null;
 }
 
-interface RawExchange {
+export interface RawExchange {
   id: number;
   name: string;
   type?: string | null; // "outbound" | "inbound"
@@ -369,6 +369,10 @@ interface RawExchange {
   status?: string | null;
   partnerId?: number | null;
   activityId?: number | null;
+  // Signed-in view only (GET /exchange/mine).
+  isPublished?: boolean;
+  ownerUserId?: number | null;
+  userId?: number | null;
 }
 
 interface RawUser {
@@ -406,6 +410,8 @@ export interface ExchangeStudent {
   period: string;
   program: string;
   status: string;
+  /** API fields, for the edit form and ownership checks. */
+  raw: RawExchange;
 }
 
 export interface AdminProfile {
@@ -694,6 +700,7 @@ function mapExchange(raw: RawExchange): ExchangeStudent {
     period: formatThaiPeriod(raw.startDate, raw.endDate),
     program: raw.program ?? "—",
     status: raw.status ?? "—",
+    raw,
   };
 }
 

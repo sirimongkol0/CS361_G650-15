@@ -130,6 +130,7 @@ class ActivityBase(BaseModel):
 class ActivityCreate(ActivityBase):
     is_published: bool = False
     partner_id: Optional[int] = None
+    scope_level: Optional[ScopeLevel] = None
 
 
 class ActivityUpdate(BaseModel):
@@ -171,6 +172,13 @@ class ActivityResponse(BaseModel):
     mouDocId: Optional[int] = Field(default=None, validation_alias=AliasChoices('mou_document_id', 'mouDocId'), serialization_alias='mouDocId')
     scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
     sources: List[SourceResponse] = Field(default_factory=list)
+
+class ActivityManageResponse(ActivityResponse):
+    """Internal view for coordinator/staff/admin: adds publication and owner fields."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
+    partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
+
 
 class DocumentBase(BaseModel):
     name: str
@@ -366,6 +374,13 @@ class ExchangeStudentResponse(BaseModel):
     status: Optional[str] = None
     partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
+
+
+class ExchangeStudentManageResponse(ExchangeStudentResponse):
+    """Signed-in view (/exchange/mine and writes): adds publication, owner and student account."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
+    userId: Optional[int] = Field(default=None, validation_alias=AliasChoices('user_id', 'userId'), serialization_alias='userId')
 
 
 class AdminProfileBase(BaseModel):

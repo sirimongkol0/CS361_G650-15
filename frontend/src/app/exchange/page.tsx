@@ -15,6 +15,9 @@ import {
 import { ApiError, loadExchangeStudents, useApiResource, type ExchangeStudent } from "@/lib/api";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { canManage, useRole } from "@/lib/role-context";
+import { Dialog, Notice } from "@/components/form-ui";
+import { ExchangeForm } from "@/components/exchange-form";
+import { downloadCsv } from "@/lib/list-tools";
 
 const statusColors: Record<string, string> = {
   "เสร็จสิ้น": "badge-green",
@@ -28,11 +31,17 @@ export default function StudentExchangePage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { role, status: session } = useRole();
+  const { role, user, status: session } = useRole();
+  const [reload, setReload] = useState(0);
+  const [editing, setEditing] = useState<ExchangeStudent | "new" | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const isStaff = role === "staff" || role === "admin";
+  // Coordinators edit records they created; staff/admin edit all.
+  const canEdit = (s: ExchangeStudent) => isStaff || (role === "coordinator" && s.raw.ownerUserId === user?.id);
   // Wait for the session so a signed-in user never briefly sees the public list.
   const resource = useApiResource<ExchangeStudent[]>(
     () => (session === "loading" ? new Promise<never>(() => {}) : loadExchangeStudents(role)),
-    [role, session]
+    [role, session, reload]
   );
   const exchangeStudents = useMemo(() => resource.data ?? [], [resource.data]);
 
@@ -68,12 +77,15 @@ export default function StudentExchangePage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="btn btn-outline gap-2 text-sm">
+          <button className="btn btn-outline gap-2 text-sm" type="button" disabled={filtered.length === 0}
+            onClick={() => downloadCsv("exchange-students.csv",
+              ["ชื่อ-นามสกุล", "ประเภท", "จาก", "ไป", "ช่วงเวลา", "โครงการ", "สถานะ"],
+              filtered.map((s) => [s.name, s.type, s.from, s.to, s.period, s.program, s.status]))}>
             <Filter className="w-4 h-4" />
-            ส่งออก
+            ส่งออก CSV
           </button>
           {canManage(role) && (
-            <button className="btn btn-primary gap-2">
+            <button className="btn btn-primary gap-2" type="button" onClick={() => { setNotice(null); setEditing("new"); }}>
               <Plus className="w-4 h-4" />
               เพิ่มนักศึกษา
             </button>
@@ -162,16 +174,26 @@ export default function StudentExchangePage() {
             <option value="กำลังสมัคร">กำลังสมัคร</option>
             <option value="วางแผน">วางแผน</option>
           </select>
-          <select
-            className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
-            style={{ width: "auto", minWidth: 140 }}
-          >
-            <option>ช่วงเวลา: ทั้งหมด</option>
-            <option>2568</option>
-            <option>2567</option>
-          </select>
         </div>
       </div>
+
+      <Notice text={notice} />
+      <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มข้อมูลการแลกเปลี่ยน" : "แก้ไขข้อมูลการแลกเปลี่ยน"}
+        onClose={() => setEditing(null)} wide>
+        {editing !== null && (
+          <ExchangeForm
+            key={editing === "new" ? "new" : editing.id}
+            record={editing === "new" ? undefined : editing.raw}
+            isStaff={isStaff}
+            onCancel={() => setEditing(null)}
+            onSaved={(saved, created) => {
+              setEditing(null);
+              setNotice(created ? `เพิ่ม “${saved.name}” แล้ว` : `บันทึก “${saved.name}” แล้ว`);
+              setReload((n) => n + 1);
+            }}
+          />
+        )}
+      </Dialog>
 
       {resource.status === "loading" && <LoadingState />}
       {resource.status === "error" && (
@@ -269,14 +291,13 @@ export default function StudentExchangePage() {
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex gap-1">
-                      <button className="btn btn-outline p-1.5 text-xs">
-                        ดู
-                      </button>
-                      <button className="btn btn-outline p-1.5">
+                    {canEdit(s) && (
+                      <button className="btn btn-outline p-1.5 text-xs" type="button" aria-label={`แก้ไข ${s.name}`}
+                        onClick={() => { setNotice(null); setEditing(s); }}>
                         <MoreHorizontal className="w-4 h-4" />
+                        แก้ไข
                       </button>
-                    </div>
+                    )}
                   </td>
                 </tr>
               ))}

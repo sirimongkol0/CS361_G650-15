@@ -151,7 +151,7 @@ export default function ActivitiesPage() {
           </p>
         </div>
         {canManage(role) && (
-          <button className="btn btn-primary gap-2" type="button"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
+          <Link href="/activities/manage" className="btn btn-primary gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</Link>
         )}
       </div>
 
@@ -263,7 +263,7 @@ export default function ActivitiesPage() {
                       <td className="px-4 py-4"><span className={`badge ${item.statusColor}`}>{item.status}</span></td>
                       <td className="px-4 py-4"><div className="flex gap-1">
                         <Link href={`/activities/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
-                        {canManage(role) && <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" type="button" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></button>}
+                        {canManage(role) && <Link href={`/activities/manage?edit=${item.id}`} className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></Link>}
                       </div></td>
                     </tr>
                     );

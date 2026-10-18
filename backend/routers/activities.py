@@ -135,6 +135,19 @@ def list_published_activities(
     ]
 
 
+@router.get("/manage", response_model=List[schemas.ActivityManageResponse])
+def list_managed_activities(
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("coordinator", "staff", "admin")),
+):
+    """Internal list including unpublished: coordinators see their own, staff/admin see all."""
+    query = db.query(models.Activity).options(joinedload(models.Activity.partner)).filter(
+        models.Activity.is_deleted.is_(False))
+    if user.role == "coordinator":
+        query = query.filter(models.Activity.owner_user_id == user.id)
+    return query.order_by(models.Activity.date.desc(), models.Activity.id.desc()).all()
+
+
 @router.get(
     "/{activity_id}",
     response_model=schemas.ActivityResponse,
@@ -165,7 +178,7 @@ def _can_manage_activity(activity: models.Activity, user: models.User) -> bool:
     return user.role == "coordinator" and activity.owner_user_id == user.id
 
 
-@router.post("/", response_model=schemas.ActivityResponse, status_code=201)
+@router.post("/", response_model=schemas.ActivityManageResponse, status_code=201)
 def create_activity(
     body: schemas.ActivityCreate,
     db: Session = Depends(database.get_db),
@@ -184,7 +197,7 @@ def create_activity(
     return row
 
 
-@router.patch("/{activity_id}", response_model=schemas.ActivityResponse)
+@router.patch("/{activity_id}", response_model=schemas.ActivityManageResponse)
 def update_activity(
     activity_id: int, body: schemas.ActivityUpdate,
     db: Session = Depends(database.get_db),
