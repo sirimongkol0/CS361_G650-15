@@ -84,9 +84,7 @@ export default function UserManagementPage() {
           <span className="text-crimson">ผู้ใช้และสิทธิ์</span>
         </nav>
         <h1 className="text-2xl font-bold text-ink font-display">ผู้ใช้และสิทธิ์</h1>
-        <p className="text-sm mt-0.5 text-faint">
-          เพิ่มบัญชีและเปลี่ยนบทบาทได้ที่ Amazon Cognito รายชื่อนี้แสดงบัญชีที่เข้าสู่ระบบแล้วอย่างน้อยหนึ่งครั้ง
-        </p>
+        <p className="text-sm mt-0.5 text-faint">บัญชีที่เข้าสู่ระบบแล้ว และสิทธิ์ของแต่ละบทบาท</p>
       </div>
 
       {/* Role cards */}

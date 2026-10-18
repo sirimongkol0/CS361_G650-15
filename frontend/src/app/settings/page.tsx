@@ -85,7 +85,7 @@ function ChangePasswordForm() {
 
 export default function SettingsPage() {
   useDocumentTitle("ตั้งค่าบัญชี");
-  const { user, config, status, role } = useRole();
+  const { user, config, status } = useRole();
 
   if (status === "loading") return <div className="p-6"><LoadingState /></div>;
   if (status !== "authenticated" || !user) return <div className="p-6"><AccessState status={401} /></div>;
@@ -126,12 +126,6 @@ export default function SettingsPage() {
             <dd className="text-sm text-ink">{config.label}</dd>
           </div>
         </dl>
-
-        <p className="mt-6 rounded-lg bg-soft border border-line px-4 py-3 text-sm text-mute">
-          {role === "admin"
-            ? "บทบาทของแต่ละบัญชีกำหนดที่ Amazon Cognito ดูรายชื่อบัญชีทั้งหมดได้ที่หน้าผู้ใช้และสิทธิ์"
-            : "หากต้องการเปลี่ยนบทบาท กรุณาติดต่อผู้ดูแลระบบ"}
-        </p>
       </div>
 
       <div className="rounded-lg bg-white shadow-card p-6">

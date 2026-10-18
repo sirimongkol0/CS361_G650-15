@@ -6,7 +6,6 @@ import {
   Search,
   Plus,
   ChevronRight,
-  GraduationCap,
   ArrowUpRight,
   ArrowDownLeft,
   Download,
@@ -106,18 +105,6 @@ export default function StudentExchangePage() {
             </button>
           )}
         </div>
-      </div>
-
-      {/* PDPA / role-based access note */}
-      <div className="flex items-center gap-3 p-3.5 rounded-lg mb-5 bg-blue-50 border border-blue-200">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-100">
-          <GraduationCap className="w-4 h-4 text-blue-700" />
-        </div>
-        <p className="text-sm text-blue-700">
-          {isStudent
-            ? "แสดงเฉพาะข้อมูลของบัญชีนี้ ตาม PDPA"
-            : "ระบบแสดงข้อมูลนักศึกษาตามสิทธิ์ของแต่ละบทบาท ตาม PDPA"}
-        </p>
       </div>
 
       {/* Summary cards */}

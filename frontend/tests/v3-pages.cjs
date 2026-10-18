@@ -212,14 +212,14 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Settings ----------
-    await step('/settings shows the signed-in account for every role, with role-aware wording', async () => {
+    await step('/settings shows the signed-in account for every role, with no extra notes', async () => {
       for (const role of ['public', 'student', 'coordinator', 'staff', 'admin']) {
         const page = pages[role];
         await open(page, '/settings');
         await page.getByText(accounts[role].email).first().waitFor();
         await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน' }).waitFor();
         const text = await page.locator('main').innerText();
-        assert.equal(text.includes('กรุณาติดต่อผู้ดูแลระบบ'), role !== 'admin', `${role} wording`);
+        assert.ok(!text.includes('กรุณาติดต่อผู้ดูแลระบบ') && !text.includes('Amazon Cognito'), `${role} note`);
         assert.equal(await page.getByRole('button', { name: /^บันทึก/ }).count(), 0);
       }
       await shot(pages.student, '05-settings-student');
