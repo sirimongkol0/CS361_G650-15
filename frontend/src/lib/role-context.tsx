@@ -99,6 +99,8 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   ],
   student: [
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
+    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
