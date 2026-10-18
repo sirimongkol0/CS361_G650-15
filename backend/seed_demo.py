@@ -191,11 +191,14 @@ def seed():
 def touch_up(db):
     """Fixes that also apply to a demo seeded earlier; safe to run on every start."""
     renamed = demo_expansion.fix_agreement_names(db)
+    programs = demo_expansion.fix_program_names(db)
     email = os.environ.get("DEMO_STUDENT_EMAIL", "student@example.test")
     linked = demo_expansion.link_student_exchanges(db, email)
     db.commit()
     if renamed:
         print(f"Renamed {renamed} demo agreements to the MoU/MoA naming")
+    if programs:
+        print(f"Renamed the programme on {programs} exchange records to Thai")
     if linked is None:
         print(f"{email} has not logged in yet; run the seed again after its first login to link exchange records")
     elif linked:

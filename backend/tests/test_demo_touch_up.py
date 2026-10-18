@@ -65,3 +65,15 @@ def test_student_link_ignores_non_student_accounts(db_session):
                                     created_at=datetime.now(timezone.utc))])
     db_session.commit()
     assert demo_expansion.link_student_exchanges(db_session, "student@example.test") is None
+
+
+def test_english_programme_names_become_thai(db_session):
+    rows = [_exchange("A", "เสร็จสิ้น"), _exchange("B", "เสร็จสิ้น"), _exchange("C", "เสร็จสิ้น")]
+    for row, program in zip(rows, ["Student Exchange", "Internship", "Summer School"]):
+        row.program = program
+    db_session.add_all(rows)
+    db_session.commit()
+    assert demo_expansion.fix_program_names(db_session) == 2
+    db_session.commit()
+    assert sorted(r.program for r in db_session.query(models.ExchangeStudent)) == ["Summer School", "ฝึกงาน", "แลกเปลี่ยนนักศึกษา"]
+    assert demo_expansion.fix_program_names(db_session) == 0

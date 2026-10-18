@@ -280,7 +280,7 @@ class ExchangeStudent(Base):
     to_organization = Column(String, nullable=True) # destination
     start_date = Column(Date, nullable=True)        # period start
     end_date = Column(Date, nullable=True)          # period end
-    program = Column(String, nullable=True)         # Student Exchange | Internship | ...
+    program = Column(String, nullable=True)         # e.g. แลกเปลี่ยนนักศึกษา | ฝึกงาน (free text)
     status = Column(String, nullable=True)          # Thai status label, e.g. "เสร็จสิ้น"
     is_published = Column(Boolean, default=False, nullable=False)
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)

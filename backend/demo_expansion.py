@@ -16,6 +16,8 @@ VERSION = "cstu-fictional-v3"
 AGREEMENT_LABEL = {"mou": "MoU", "moa": "MoA"}
 # Fictional records the demo student account sees as its own (GET /exchange/mine).
 STUDENT_EXCHANGES = 2
+# Exchange programme names; v3 demos used the English ones.
+PROGRAM_NAMES = {"Student Exchange": "แลกเปลี่ยนนักศึกษา", "Internship": "ฝึกงาน"}
 
 # name, type, country, country code
 PARTNERS = [
@@ -154,7 +156,7 @@ def expand(db, source, today=date(2026, 10, 2)):
     for i in range(30):
         partner = rng.choice(abroad)
         direction = "inbound" if i % 4 == 0 else "outbound"
-        program = "Student Exchange" if partner.type == "university" else "Internship"
+        program = PROGRAM_NAMES["Student Exchange" if partner.type == "university" else "Internship"]
         start = date(2025, rng.choice([1, 6, 8]), 1) + timedelta(days=365 * (i % 2))
         end = start + timedelta(days=rng.choice([30, 90, 120, 150]))
         db.add(models.ExchangeStudent(
@@ -187,6 +189,15 @@ def fix_agreement_names(db) -> int:
             continue
         doc.name = f"{AGREEMENT_LABEL[match.group(1).lower()]} {match.group(2)} กับ {doc.partner.name}"
         renamed += 1
+    return renamed
+
+
+def fix_program_names(db) -> int:
+    """Rename the English demo programme names on exchange records to Thai."""
+    renamed = 0
+    for english, thai in PROGRAM_NAMES.items():
+        renamed += db.query(models.ExchangeStudent).filter(models.ExchangeStudent.program == english).update(
+            {models.ExchangeStudent.program: thai}, synchronize_session=False)
     return renamed
 
 

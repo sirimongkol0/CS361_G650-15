@@ -87,7 +87,7 @@ export function ExchangeForm({
           <DateInput className={inputCls} value={form.end_date} min={form.start_date || undefined} onChange={set("end_date")} />
         </Field>
         <Field label="โครงการ">
-          <input className={inputCls} value={form.program} onChange={set("program")} placeholder="Student Exchange" />
+          <input className={inputCls} value={form.program} onChange={set("program")} placeholder="แลกเปลี่ยนนักศึกษา" />
         </Field>
         {!record && (
           <Field label="เลขบัญชีนักศึกษา" hint="ถ้ามี เชื่อมกับบัญชีนักศึกษา เพื่อให้นักศึกษาเห็นข้อมูลของตัวเอง">
