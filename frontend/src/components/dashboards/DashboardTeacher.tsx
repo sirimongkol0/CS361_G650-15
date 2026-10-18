@@ -48,7 +48,7 @@ export default function DashboardTeacher() {
     { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, data.documents.filter(isAgreement).length), color: "#B45309", bg: "#FEF3C7", href: "/documents" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE", href: "/activities" },
     { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
+    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE" },
   ];
 
   return (
@@ -146,9 +146,6 @@ export default function DashboardTeacher() {
         <div className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
             <h2 className="font-bold" style={{ color: "#111827" }}>ความคิดเห็นล่าสุด</h2>
-            <Link href="/feedback" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
-              ดูทั้งหมด <ChevronRight className="w-3 h-3" />
-            </Link>
           </div>
           <div className="p-4 space-y-3">
             {data.loaded && teacherRecentFeedback.length === 0 && <p className="text-xs text-faint">ยังไม่มีความคิดเห็นที่เผยแพร่</p>}

@@ -112,7 +112,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/feedback', label: 'ความคิดเห็น', icon: 'message' },
     { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],
   staff: [
@@ -124,8 +123,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/feedback', label: 'ความคิดเห็น', icon: 'message' },
-    { to: '/reports', label: 'รายงานและสถิติ', icon: 'chart' },
     { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],
   admin: [
@@ -137,8 +134,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/feedback', label: 'ความคิดเห็น', icon: 'message' },
-    { to: '/reports', label: 'รายงานและสถิติ', icon: 'chart' },
     { to: '/users', label: 'ผู้ใช้และสิทธิ์', icon: 'users' },
     { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],

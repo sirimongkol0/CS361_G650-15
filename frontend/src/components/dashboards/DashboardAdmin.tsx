@@ -33,7 +33,6 @@ const PIE_COLORS = ["#8B1538", "#C8961E", "#1D4ED8", "#15803D", "#7C3AED", "#036
 
 const systemActions = [
   { label: "ผู้ใช้และสิทธิ์", href: "/users", icon: Users },
-  { label: "รายงานและสถิติ", href: "/reports", icon: TrendingUp },
   { label: "ตั้งค่าบัญชี", href: "/settings", icon: Building2 },
 ];
 
@@ -188,7 +187,6 @@ export default function DashboardAdmin() {
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
-            <Link href="/reports" className="text-xs" style={{ color: "#8B1538" }}>ดูรายงาน →</Link>
           </div>
           <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับรวมข้อตกลงและกิจกรรมที่เผยแพร่แล้ว</p>
           <div className="space-y-3.5">
@@ -235,7 +233,6 @@ export default function DashboardAdmin() {
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>ความคิดเห็นเพื่อพัฒนาหลักสูตร</h2>
-            <Link href="/feedback" className="text-xs" style={{ color: "#8B1538" }}>ดูทั้งหมด →</Link>
           </div>
           <div className="space-y-3">
             {data.loaded && adminFeedbackDevelopment.length === 0 && <p className="text-xs text-faint">ยังไม่มีความคิดเห็นที่เผยแพร่</p>}

@@ -30,10 +30,7 @@ const PERMISSIONS: { action: string; roles: Record<UserRole, Allowed> }[] = [
   { action: "อนุมัติ เปลี่ยนสถานะ และเผยแพร่ข้อตกลง", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
   { action: "เพิ่มและแก้ไขกิจกรรม", roles: { public: false, student: false, coordinator: "own", staff: true, admin: true } },
   { action: "ข้อมูลนักศึกษาแลกเปลี่ยน", roles: { public: false, student: "own", coordinator: "own", staff: true, admin: true } },
-  { action: "ดูและตอบความคิดเห็น", roles: { public: false, student: false, coordinator: true, staff: true, admin: true } },
-  { action: "เผยแพร่ความคิดเห็น", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
   { action: "ลบหน่วยงาน กิจกรรม และข้อตกลง", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
-  { action: "ดูรายงานและสถิติ", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
   { action: "ดูรายชื่อผู้ใช้", roles: { public: false, student: false, coordinator: false, staff: false, admin: true } },
 ];
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, GraduationCap, MessageSquare, CheckCircle2, Clock, Star, ChevronRight, Bell, Building2 } from "lucide-react";
+import { CalendarDays, GraduationCap, CheckCircle2, Clock, Star, ChevronRight, Bell, Building2 } from "lucide-react";
 import { shown, upcomingActivities, useDashboardData } from "@/lib/dashboard-data";
 
 const statCard =
@@ -139,9 +139,6 @@ export default function DashboardStudent() {
             <p className="text-xs text-faint">
               ความคิดเห็นจากผู้เข้าร่วมกิจกรรมของหลักสูตร
             </p>
-            <Link href="/feedback" className="btn btn-accent text-xs mt-3 py-1.5 px-3 gap-1 inline-flex">
-              <MessageSquare className="w-3 h-3" />ดูความคิดเห็นทั้งหมด
-            </Link>
           </div>
         </div>
       </div>

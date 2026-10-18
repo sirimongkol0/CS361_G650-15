@@ -8,6 +8,8 @@
 //
 // The credentials file is tab-separated "role<TAB>email<TAB>password" (lines
 // starting with # are ignored). Passwords are never printed or written out.
+// /feedback and /reports are V4 pages (FR6/FR9) that the V3 release redirects
+// away; set RUN_V4_PAGES=1 (after removing them from src/proxy.ts) to test them.
 // The feedback entry it replies to is restored at the end (reply, status and
 // publication); the audit rows of those changes stay, as for any write.
 const assert = require('node:assert/strict');
@@ -32,6 +34,7 @@ const accounts = Object.fromEntries(fs.readFileSync(credentialsFile, 'utf8').spl
   .filter((parts) => parts.length >= 3)
   .map(([role, email, password]) => [role.trim(), { email: email.trim(), password: password.trim() }]));
 
+const v4 = process.env.RUN_V4_PAGES === '1';
 const results = [];
 const consoleErrors = [];
 async function step(name, work) {
@@ -43,6 +46,13 @@ async function step(name, work) {
     results.push({ name, status: 'failed', error: String(error.message).split('\n')[0] });
     console.log('FAIL:', name, '-', String(error.message).split('\n')[0]);
   }
+}
+
+/** A step for the V4 pages; recorded as skipped unless RUN_V4_PAGES=1. */
+async function v4step(name, work) {
+  if (v4) return step(name, work);
+  results.push({ name, status: 'skipped' });
+  console.log('SKIP (V4):', name);
 }
 
 function watch(page, label) {
@@ -92,15 +102,32 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Logged out ----------
-    await step('logged out: /reports and /users ask to log in, /feedback shows published entries read-only', async () => {
+    await step('logged out: /users and /settings ask to log in', async () => {
       const context = await browser.newContext();
       const page = await context.newPage();
       watch(page, 'anonymous');
-      for (const route of ['/reports', '/users', '/settings']) {
+      for (const route of v4 ? ['/reports', '/users', '/settings'] : ['/users', '/settings']) {
         await open(page, route);
         assert.match(page.url(), new RegExp(`${route}$`), `${route} must not redirect`);
         await page.getByText('กรุณาเข้าสู่ระบบ').first().waitFor();
       }
+      await context.close();
+    });
+
+    await step('V3 release: /feedback and /reports redirect to the public dashboard for every role', async () => {
+      if (v4) return;
+      for (const role of ['public', 'staff', 'admin']) {
+        for (const route of ['/feedback', '/reports']) {
+          await open(pages[role], route);
+          assert.match(pages[role].url(), /\/dashboard\/public$/, `${role} ${route} was not redirected`);
+        }
+      }
+    });
+
+    await v4step('logged out: /feedback shows published entries read-only', async () => {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      watch(page, 'anonymous');
       await open(page, '/feedback');
       await page.getByText('ความคิดเห็นที่เผยแพร่แล้ว').waitFor();
       const published = await (await fetch(`${api}/feedback/`)).json();
@@ -115,11 +142,16 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
 
     // ---------- Sidebar ----------
     await step('sidebar links per role', async () => {
-      const expect = {
+      const expect = v4 ? {
         student: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         coordinator: { has: ['ความคิดเห็น', 'ตั้งค่าบัญชี'], not: ['รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         staff: { has: ['ความคิดเห็น', 'รายงานและสถิติ', 'ตั้งค่าบัญชี'], not: ['ผู้ใช้และสิทธิ์'] },
         admin: { has: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์', 'ตั้งค่าบัญชี'], not: [] },
+      } : {
+        student: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
+        coordinator: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
+        staff: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
+        admin: { has: ['ผู้ใช้และสิทธิ์', 'ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ'] },
       };
       for (const [role, { has, not }] of Object.entries(expect)) {
         const links = (await sidebarLinks(pages[role])).join('|');
@@ -129,7 +161,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Reports ----------
-    await step('/reports: staff sees figures, the year selector changes them, CSV downloads', async () => {
+    await v4step('/reports: staff sees figures, the year selector changes them, CSV downloads', async () => {
       const page = pages.staff;
       await open(page, '/reports');
       const heading = page.getByRole('heading', { level: 1 });
@@ -151,7 +183,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
       await shot(page, '03-reports-other-year');
     });
 
-    await step('/reports: coordinator and student see no permission', async () => {
+    await v4step('/reports: coordinator and student see no permission', async () => {
       for (const role of ['coordinator', 'student']) {
         await open(pages[role], '/reports');
         await pages[role].getByText('ไม่มีสิทธิ์เข้าถึง').waitFor();
@@ -171,7 +203,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
       assert.equal(await page.getByRole('button', { name: 'เพิ่มผู้ใช้' }).count(), 0);
       await shot(page, '04-users-admin');
       await page.getByRole('button', { name: 'สิทธิ์ตามบทบาท' }).click();
-      await page.getByText('เผยแพร่ความคิดเห็น').waitFor();
+      await page.getByRole('cell', { name: 'ดูรายชื่อผู้ใช้', exact: true }).waitFor();
       await open(pages.staff, '/users');
       await pages.staff.getByText('ไม่มีสิทธิ์เข้าถึง').waitFor();
       assert.equal((await callApi(pages.staff, 'GET', '/users/')).status, 403);
@@ -189,7 +221,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Feedback ----------
-    await step('/feedback: staff saves a reply and status, publishes and stops publishing; audit rows written', async () => {
+    await v4step('/feedback: staff saves a reply and status, publishes and stops publishing; audit rows written', async () => {
       const page = pages.staff;
       const managed = await callApi(page, 'GET', '/feedback/manage');
       assert.equal(managed.status, 200);
@@ -224,7 +256,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
       assert.ok(rows.filter((r) => r.action === 'update').length >= 3, 'reply, publish and unpublish each audited');
     });
 
-    await step('/feedback: coordinator can reply but has no publish button, and the API refuses publishing', async () => {
+    await v4step('/feedback: coordinator can reply but has no publish button, and the API refuses publishing', async () => {
       const page = pages.coordinator;
       await open(page, '/feedback');
       await page.getByRole('button', { name: 'บันทึกคำตอบ' }).waitFor();
@@ -268,9 +300,10 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
   }
 
   const failed = results.filter((r) => r.status === 'failed');
+  const ran = results.filter((r) => r.status !== 'skipped');
   const errors = [...new Set(consoleErrors)].filter((e) => !/401|403|Unauthorized|Forbidden/.test(e));
   fs.writeFileSync(path.join(output, 'results.json'), JSON.stringify({ results, consoleErrors: errors }, null, 2));
-  console.log(`\n${results.length - failed.length}/${results.length} passed; screenshots in ${output}`);
+  console.log(`\n${ran.length - failed.length}/${ran.length} passed (${results.length - ran.length} V4 steps skipped); screenshots in ${output}`);
   if (errors.length) console.log('console errors:\n  ' + errors.join('\n  '));
   process.exit(failed.length ? 1 : 0);
 })();
