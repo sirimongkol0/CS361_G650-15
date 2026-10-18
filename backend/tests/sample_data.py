@@ -74,7 +74,7 @@ def add_sample_data(session):
             partner=partners[row["partner"]], effective_date=row["effective_date"],
             expiry_date=row["expiry_date"], status=row["status"], responsible=row.get("responsible"),
             signer_our=row.get("signer_our"), signer_partner=row.get("signer_partner"),
-            is_published=True, sources=[_source(f"documents/{row['key']}")],
+            is_published=True, cstu_status="keep", sources=[_source(f"documents/{row['key']}")],
             scope_items=[models.DocumentScopeItem(position=i, text=text)
                          for i, text in enumerate(row.get("scope", []))],
         )

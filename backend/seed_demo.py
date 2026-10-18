@@ -161,7 +161,7 @@ def seed():
                 mime_type="application/pdf" if key else None, size_bytes=len(pdf) if key else None,
                 responsible="ผู้รับผิดชอบสมมติ", signer_our="ผู้ลงนามฝ่ายหลักสูตรสมมติ",
                 signer_partner="ผู้ลงนามฝ่ายคู่ความร่วมมือสมมติ", scope_level="program",
-                is_published=published, sources=[source],
+                is_published=published, cstu_status="keep" if published else "review", sources=[source],
                 scope_items=[models.DocumentScopeItem(position=0, text="สาธิตความร่วมมือด้านการศึกษาและการพัฒนานักศึกษา")],
             )
             db.add(document)

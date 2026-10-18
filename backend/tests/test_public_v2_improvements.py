@@ -10,6 +10,19 @@ def test_internal_routes_are_not_public(client, path):
     assert f"/api/v1/{path}" not in client.get("/openapi.json").json()["paths"]
 
 
+DOCUMENT_WRITE_PATHS = {
+    "/api/v1/documents/": {"get", "post"},
+    "/api/v1/documents/manage": {"get"},
+    "/api/v1/documents/{document_id}": {"get", "patch", "delete"},
+    "/api/v1/documents/{document_id}/transition": {"post"},
+    "/api/v1/documents/{document_id}/cstu-status": {"put"},
+    "/api/v1/documents/{document_id}/publish": {"post"},
+    "/api/v1/documents/{document_id}/unpublish": {"post"},
+    "/api/v1/documents/{document_id}/file": {"put"},
+    "/api/v1/documents/{document_id}/internal-url": {"get"},
+}
+
+
 def test_openapi_exposes_expected_routes_and_auth(client):
     paths = client.get("/openapi.json").json()["paths"]
 
@@ -43,6 +56,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         and path not in {"/api/v1/partners/", "/api/v1/partners/{partner_id}"}
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
+        and path not in DOCUMENT_WRITE_PATHS
     }
     assert all(set(methods) == {"get"} for methods in repository.values())
     assert all(
@@ -59,12 +73,18 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     assert set(paths["/api/v1/exchange/"]) >= {"get", "post"}
     assert set(paths["/api/v1/exchange/{student_id}"]) >= {"get", "patch"}
 
+    # V3-3 adds role-protected document writes.
+    for path, methods in DOCUMENT_WRITE_PATHS.items():
+        assert set(paths[path]) == methods, path
+
 
 @pytest.mark.parametrize(("method", "path", "expected_status"), [
     ("post", "partners/", 401),
     ("put", "partners/1", 401),
     ("delete", "partners/1", 401),
-    ("post", "documents/", 405),
+    ("post", "documents/", 401),
+    ("patch", "documents/1", 401),
+    ("delete", "documents/1", 401),
 ])
 def test_repository_write_routes_are_protected_or_absent(
     client, method, path, expected_status
@@ -84,7 +104,7 @@ def test_search_matches_public_partner_but_never_hidden_partner(client, db_sessi
             source_checked_at=datetime.now(timezone.utc), verification_status="verified")])
     if resource == "documents":
         record = models.Document(name="Independent agreement", partner=partner, document_kind="agreement",
-            file_availability="metadata_only", is_published=True,
+            file_availability="metadata_only", is_published=True, cstu_status="keep",
             sources=[models.Source(source_url="https://example.test/search-document", source_type="official_document",
                 source_checked_at=datetime.now(timezone.utc), verification_status="verified")])
     else:

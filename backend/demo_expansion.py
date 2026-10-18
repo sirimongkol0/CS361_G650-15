@@ -96,7 +96,8 @@ def expand(db, source, today=date(2026, 10, 2)):
             file_availability="metadata_only" if i % 4 else "unavailable",
             responsible=f"อาจารย์ผู้รับผิดชอบสมมติ {i + 1}",
             signer_our="ผู้ลงนามฝ่ายหลักสูตรสมมติ", signer_partner="ผู้ลงนามฝ่ายคู่ความร่วมมือสมมติ",
-            scope_level=partner.scope_level, is_published=partner.is_published, sources=[source],
+            scope_level=partner.scope_level, is_published=partner.is_published,
+            cstu_status="keep" if partner.is_published else "review", sources=[source],
             scope_items=[
                 models.DocumentScopeItem(position=0, text=f"วัตถุประสงค์: ความร่วมมือสมมติด้าน{topic}"),
                 models.DocumentScopeItem(position=1, text="ขอบเขต: กิจกรรมสาธิต ไม่ใช่ข้อตกลงจริง"),

@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     LOCAL_STORAGE_DIR: str = "./storage"  # used when STORAGE_BACKEND=local
+    # V3-3 uploads: PDF only, at most this many bytes per file (10 MB).
+    MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
+    # Signs the local backend's stand-in for S3 presigned URLs. Empty = a random
+    # key per process (links stop working after a restart, fine for dev/CI).
+    LOCAL_SIGNING_KEY: str = ""
 
     # Login (V3): users, passwords and role groups live in an Amazon Cognito
     # User Pool. These IDs are not secrets; the backend needs no AWS keys for
