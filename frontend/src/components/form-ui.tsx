@@ -4,9 +4,9 @@
 // and an error line. Every form submits through the API helpers in lib/api.ts,
 // so the backend's role checks and Thai error messages apply everywhere.
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AlertCircle, CheckCircle2, X } from "lucide-react";
-import { apiErrorMessage } from "@/lib/api";
+import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { AlertCircle, CalendarDays, CheckCircle2, X } from "lucide-react";
+import { apiErrorMessage, formatThaiDate } from "@/lib/api";
 
 export const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
@@ -103,3 +103,35 @@ export function useAction() {
 
 /** Empty strings from inputs become null so optional API fields stay unset. */
 export const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
+
+/**
+ * Native date picker that reads in Thai. The browser's field (mm/dd/yyyy,
+ * Gregorian) is kept for clicks, keyboard and its calendar, but drawn
+ * transparent over a box that shows the date as "5 ธ.ค. 2569".
+ * The value stays ISO (yyyy-mm-dd) for the API.
+ */
+export function DateInput({
+  value, className = inputCls, wrapperClassName = "block", ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value"> & { value: string; wrapperClassName?: string }) {
+  return (
+    <span className={`relative ${wrapperClassName}`}>
+      <input
+        {...props}
+        type="date"
+        value={value}
+        className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+        onClick={(e) => {
+          props.onClick?.(e);
+          try { e.currentTarget.showPicker(); } catch {}
+        }}
+      />
+      <span
+        aria-hidden
+        className={`${className} flex min-w-[10.5rem] items-center justify-between gap-2 peer-focus:border-crimson peer-focus:ring-[3px] peer-focus:ring-crimson/10 peer-disabled:bg-soft`}
+      >
+        <span className={value ? "text-ink" : "text-[#CBD5E1]"}>{value ? formatThaiDate(value) : "เลือกวันที่"}</span>
+        <CalendarDays className="h-4 w-4 flex-shrink-0 text-faint" />
+      </span>
+    </span>
+  );
+}

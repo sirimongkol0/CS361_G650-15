@@ -5,7 +5,7 @@
 
 import { useState, type FormEvent } from "react";
 import { apiPatch, apiPost, type RawExchange } from "@/lib/api";
-import { Field, FormError, inputCls, orNull, useAction } from "@/components/form-ui";
+import { Field, FormError, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 
 const STATUSES = ["วางแผน", "กำลังสมัคร", "กำลังดำเนินการ", "เสร็จสิ้น"];
 
@@ -81,10 +81,10 @@ export function ExchangeForm({
           <input className={inputCls} value={form.to_organization} onChange={set("to_organization")} />
         </Field>
         <Field label="วันที่เริ่ม">
-          <input className={inputCls} type="date" value={form.start_date} onChange={set("start_date")} />
+          <DateInput className={inputCls} value={form.start_date} onChange={set("start_date")} />
         </Field>
         <Field label="วันที่สิ้นสุด">
-          <input className={inputCls} type="date" value={form.end_date} min={form.start_date || undefined} onChange={set("end_date")} />
+          <DateInput className={inputCls} value={form.end_date} min={form.start_date || undefined} onChange={set("end_date")} />
         </Field>
         <Field label="โครงการ">
           <input className={inputCls} value={form.program} onChange={set("program")} placeholder="Student Exchange" />

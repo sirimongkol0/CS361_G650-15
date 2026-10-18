@@ -533,12 +533,18 @@ export interface ActivityView {
   scopeLevel: ScopeLevel | null;
 }
 
+/** Thai country name with flag, from the ISO code or the stored English/Thai name. */
+export function countryLabel(countryCode?: string | null, country?: string | null): string | null {
+  const code = countryCode?.toUpperCase() ?? null;
+  return (code && COUNTRY_CODE_LABELS[code])
+    ?? (country && COUNTRY_LABELS[country.toLowerCase()])
+    ?? country ?? code ?? null;
+}
+
 function mapPartner(raw: RawPartner, index: number): PartnerView {
   const palette = PARTNER_PALETTE[index % PARTNER_PALETTE.length];
   const countryCode = raw.countryCode?.toUpperCase() ?? null;
-  const country = (countryCode && COUNTRY_CODE_LABELS[countryCode])
-    ?? (raw.country && COUNTRY_LABELS[raw.country.toLowerCase()])
-    ?? raw.country ?? countryCode ?? null;
+  const country = countryLabel(countryCode, raw.country);
   return {
     id: raw.id,
     name: raw.name,

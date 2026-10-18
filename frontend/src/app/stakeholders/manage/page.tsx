@@ -7,7 +7,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ChevronRight, Pencil, Trash2, UserPlus } from "lucide-react";
-import { apiDelete, apiGetList, apiPost, apiPut, useApiResource } from "@/lib/api";
+import { apiDelete, apiGetList, apiPost, apiPut, countryLabel, useApiResource } from "@/lib/api";
 import { label, partnerTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
@@ -119,7 +119,7 @@ export default function ManageStakeholdersPage() {
                       {p.ownerUserId === user?.id && <span className="badge badge-indigo ml-2">ของคุณ</span>}
                     </td>
                     <td className="px-4 py-3 text-faint">{label(TYPE_OPTIONS, p.type)}</td>
-                    <td className="px-4 py-3 text-faint">{orgName(p.organizationId) ?? p.country ?? "—"}</td>
+                    <td className="px-4 py-3 text-faint">{orgName(p.organizationId) ?? countryLabel(p.countryCode, p.country) ?? "—"}</td>
                     <td className="px-4 py-3">
                       {p.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ฉบับร่าง</span>}
                     </td>

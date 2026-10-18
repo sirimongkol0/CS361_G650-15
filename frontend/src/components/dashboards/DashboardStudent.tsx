@@ -91,7 +91,7 @@ export default function DashboardStudent() {
           </div>
           <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
             {data.loaded && data.exchange.length === 0 && (
-              <p className="px-5 py-4 text-xs text-faint">ยังไม่มีโครงการแลกเปลี่ยนที่เผยแพร่</p>
+              <p className="px-5 py-4 text-xs text-faint">ยังไม่มีข้อมูลการแลกเปลี่ยนของบัญชีนี้</p>
             )}
             {data.exchange.slice(0, 5).map((p) => (
               <div key={p.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#FAFAFA]">

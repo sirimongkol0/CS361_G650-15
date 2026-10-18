@@ -13,7 +13,7 @@ import {
 import { activityTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
-import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction } from "@/components/form-ui";
+import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
 
 /** GET /activities/manage row (internal view). */
@@ -275,10 +275,10 @@ function ActivityForm({
           </select>
         </Field>
         <Field label="วันที่เริ่ม">
-          <input className={inputCls} type="date" value={form.date} onChange={set("date")} />
+          <DateInput className={inputCls} value={form.date} onChange={set("date")} />
         </Field>
         <Field label="วันที่สิ้นสุด">
-          <input className={inputCls} type="date" value={form.end_date} min={form.date || undefined} onChange={set("end_date")} />
+          <DateInput className={inputCls} value={form.end_date} min={form.date || undefined} onChange={set("end_date")} />
         </Field>
         <Field label="เวลา">
           <input className={inputCls} value={form.time} onChange={set("time")} placeholder="09:00 - 16:00" />

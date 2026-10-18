@@ -24,6 +24,7 @@ import {
   CopyLinkButton, DatePresets, ExportCsvButton, FilterChips, Highlight, PlainHeader, Pagination, SortHeader, TableSkeleton,
   useRowLink, yearPresets, type FilterChip,
 } from "@/components/list-ui";
+import { DateInput } from "@/components/form-ui";
 
 
 const inputCls =
@@ -162,8 +163,8 @@ export default function DocumentsPage() {
           <select className={`${inputCls} cursor-pointer !w-auto`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={event => setScopeFilter(event.target.value)}>
             <ScopeLevelOptions />
           </select>
-          <input type="date" aria-label="มีผลตั้งแต่วันที่" className={`${inputCls} !w-auto`} value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} />
-          <input type="date" aria-label="มีผลถึงวันที่" className={`${inputCls} !w-auto`} value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} />
+          <DateInput wrapperClassName="inline-block" aria-label="มีผลตั้งแต่วันที่" className={`${inputCls} !w-auto`} value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} />
+          <DateInput wrapperClassName="inline-block" aria-label="มีผลถึงวันที่" className={`${inputCls} !w-auto`} value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} />
           <button type="button" className="btn btn-outline disabled:opacity-40 disabled:cursor-not-allowed" disabled={chips.length === 0} onClick={() => {
             setSearch(""); setTypeFilter("all"); setStatusFilter("all"); setScopeFilter("all"); setDateFrom(""); setDateTo("");
           }}>ล้างตัวกรอง</button>

@@ -18,6 +18,7 @@ import {
   CopyLinkButton, DatePresets, ExportCsvButton, FilterChips, Highlight, PlainHeader, Pagination, SortHeader, TableSkeleton,
   useRowLink, yearPresets, type FilterChip,
 } from "@/components/list-ui";
+import { DateInput } from "@/components/form-ui";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
@@ -182,8 +183,7 @@ export default function ActivitiesPage() {
               <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
-              <input
-                type="date"
+              <DateInput wrapperClassName="inline-block"
                 className={`${inputCls} !w-auto`}
                 aria-label="ตั้งแต่วันที่"
                 value={dateFrom}
@@ -191,8 +191,7 @@ export default function ActivitiesPage() {
                 onChange={(event) => setDateFrom(event.target.value)}
               />
 
-              <input
-                type="date"
+              <DateInput wrapperClassName="inline-block"
                 className={`${inputCls} !w-auto`}
                 aria-label="ถึงวันที่"
                 value={dateTo}

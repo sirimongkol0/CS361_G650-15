@@ -14,7 +14,7 @@ import {
 import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, label, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
-import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction } from "@/components/form-ui";
+import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // same limit as the backend (MAX_UPLOAD_BYTES)
@@ -269,10 +269,10 @@ function DocumentForm({
           </select>
         </Field>
         <Field label="วันที่เริ่มมีผล">
-          <input className={inputCls} type="date" value={form.effective_date} onChange={set("effective_date")} />
+          <DateInput className={inputCls} value={form.effective_date} onChange={set("effective_date")} />
         </Field>
         <Field label="วันหมดอายุ" hint="ต้องไม่ก่อนวันที่เริ่มมีผล">
-          <input className={inputCls} type="date" value={form.expiry_date} min={form.effective_date || undefined} onChange={set("expiry_date")} />
+          <DateInput className={inputCls} value={form.expiry_date} min={form.effective_date || undefined} onChange={set("expiry_date")} />
         </Field>
         <Field label="ผู้รับผิดชอบ">
           <input className={inputCls} value={form.responsible} onChange={set("responsible")} />
