@@ -5,11 +5,16 @@
 // NEXT_PUBLIC_API_BROWSER_URL — browser-side base URL (falls back to the above)
 //
 // Public loaders are strict: failures and empty results are surfaced to the UI.
-// Internal-page loaders return an empty result when the API is unavailable.
+// Internal-page loaders return an empty result when the API is unavailable,
+// but never hide 401/403: the page must say "log in" / "no permission".
+//
+// Every request carries the signed-in user's token (V3); the backend decides
+// what each role may see or change.
 
 import { type DependencyList, useEffect, useState } from "react";
 import { activityDateLabel, activityStatusLabel, latestActivities } from "@/lib/activity-display";
 import { parseScopeLevel, type ScopeLevel } from "@/lib/labels";
+import { notifyUnauthorized, readToken } from "@/lib/session";
 
 // ---------- Base URL ----------
 
@@ -34,10 +39,51 @@ export class ApiError extends Error {
   }
 }
 
+/** Thai message for an API error, for forms and notices. */
+export function apiErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return "เกิดข้อผิดพลาดที่ไม่คาดคิด";
+  switch (error.status) {
+    case 401: return "กรุณาเข้าสู่ระบบอีกครั้ง";
+    case 403: return "คุณไม่มีสิทธิ์ทำรายการนี้";
+    case 404: return "ไม่พบรายการนี้";
+    case 409: return `ทำรายการนี้ไม่ได้ในสถานะปัจจุบัน (${error.message})`;
+    case 413: return "ไฟล์มีขนาดใหญ่เกินกำหนด";
+    case 415: return "ชนิดไฟล์ไม่ถูกต้อง รองรับเฉพาะ PDF";
+    case 400:
+    case 422: return `ข้อมูลไม่ถูกต้อง: ${error.message}`;
+    case undefined: return "ไม่สามารถเชื่อมต่อระบบได้ โปรดลองอีกครั้ง";
+    default: return `เกิดข้อผิดพลาด (HTTP ${error.status})`;
+  }
+}
+
+function authHeaders(): Record<string, string> {
+  const token = typeof window === "undefined" ? null : readToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** A 401 while signed in means the token expired or was revoked. */
+function checkUnauthorized(status: number) {
+  if (status === 401 && typeof window !== "undefined" && readToken()) notifyUnauthorized();
+}
+
+/** FastAPI error body -> readable text (`detail` is a string or a list of field errors). */
+async function errorDetail(res: Response): Promise<string> {
+  try {
+    const detail = (await res.json()).detail;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      return detail.map((d) => [d?.loc?.slice(1).join("."), d?.msg].filter(Boolean).join(": ")).join("; ");
+    }
+  } catch {}
+  return `HTTP ${res.status}`;
+}
+
 /*
  * Session cache: identical GETs within CACHE_TTL_MS share one request, so moving
  * between pages does not refetch every list. Failed requests are not cached.
  * A network failure (not an HTTP error) is retried once automatically.
+ * Entries are kept per token, and the cache is cleared on login, logout and
+ * after every write, so one user never sees another's (or stale) data.
  */
 const CACHE_TTL_MS = 60_000;
 const responseCache = new Map<string, { at: number; promise: Promise<unknown> }>();
@@ -53,13 +99,14 @@ export function clearApiCache() {
 
 function apiGet<T>(path: string): Promise<T> {
   if (typeof window === "undefined") return apiGetWithRetry<T>(path);
-  const cached = responseCache.get(path);
+  const key = `${readToken() ?? ""} ${path}`;
+  const cached = responseCache.get(key);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.promise as Promise<T>;
   const promise = apiGetWithRetry<T>(path);
-  responseCache.set(path, { at: Date.now(), promise });
+  responseCache.set(key, { at: Date.now(), promise });
   promise.then(
     () => { lastFetchedAt = new Date(); },
-    () => { if (responseCache.get(path)?.promise === promise) responseCache.delete(path); }
+    () => { if (responseCache.get(key)?.promise === promise) responseCache.delete(key); }
   );
   return promise;
 }
@@ -80,10 +127,11 @@ async function apiGetOnce<T>(path: string): Promise<T> {
   try {
     const res = await fetch(`${apiBase()}${path}`, {
       signal: controller.signal,
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...authHeaders() },
       cache: "no-store",
     });
     if (!res.ok) {
+      checkUnauthorized(res.status);
       throw new ApiError(`API ${path} -> HTTP ${res.status}`, res.status);
     }
     return (await res.json()) as T;
@@ -98,6 +146,55 @@ async function apiGetOnce<T>(path: string): Promise<T> {
   }
 }
 
+// ---------- Writes (V3) ----------
+
+const WRITE_TIMEOUT_MS = 30_000; // uploads can take a while
+
+async function apiSend<T>(method: string, path: string, body?: BodyInit, contentType?: string): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), WRITE_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${apiBase()}${path}`, {
+      method,
+      body,
+      signal: controller.signal,
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        ...(contentType ? { "Content-Type": contentType } : {}),
+        ...authHeaders(),
+      },
+    });
+    if (!res.ok) {
+      checkUnauthorized(res.status);
+      throw new ApiError(await errorDetail(res), res.status);
+    }
+    clearApiCache(); // lists must show the change on the next read
+    return (res.status === 204 ? undefined : await res.json()) as T;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("API request timed out");
+    }
+    throw new ApiError("Unable to connect to the API");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const json = (body: unknown) => JSON.stringify(body ?? {});
+
+export const apiPost = <T>(path: string, body?: unknown) => apiSend<T>("POST", path, json(body), "application/json");
+export const apiPut = <T>(path: string, body?: unknown) => apiSend<T>("PUT", path, json(body), "application/json");
+export const apiPatch = <T>(path: string, body?: unknown) => apiSend<T>("PATCH", path, json(body), "application/json");
+export const apiDelete = (path: string) => apiSend<void>("DELETE", path);
+
+/** Upload one file as multipart form data (the browser sets the boundary header). */
+export function apiUpload<T>(path: string, file: File, field = "file", method = "PUT"): Promise<T> {
+  const form = new FormData();
+  form.append(field, file);
+  return apiSend<T>(method, path, form);
+}
 /** GET a JSON list from the API; throws on any failure (caller decides fallback). */
 async function apiGetList<T>(path: string): Promise<T[]> {
   const data = await apiGet<unknown>(path);
@@ -105,10 +202,14 @@ async function apiGetList<T>(path: string): Promise<T[]> {
   return data as T[];
 }
 
+const isAuthError = (error: unknown) =>
+  error instanceof ApiError && (error.status === 401 || error.status === 403);
+
 /**
  * Try the API and map the result; on any failure (including an empty list)
  * return `fallback` (an empty value, never sample data). `build` runs inside
- * the try so malformed rows also trigger the fallback.
+ * the try so malformed rows also trigger the fallback. 401/403 are rethrown so
+ * the page can say "log in" / "no permission" instead of showing nothing.
  */
 async function safeLoad<T>(
   path: string,
@@ -118,8 +219,9 @@ async function safeLoad<T>(
   try {
     const raw = await apiGetList<unknown>(path);
     if (raw.length === 0) return fallback;
-    return build(raw);
-  } catch {
+    return await build(raw);
+  } catch (error) {
+    if (isAuthError(error)) throw error;
     return fallback;
   }
 }
@@ -662,9 +764,14 @@ export function loadFeedbackEntries(): Promise<FeedbackEntry[]> {
   );
 }
 
-/** GET /exchange/ -> exchange students. */
-export function loadExchangeStudents(): Promise<ExchangeStudent[]> {
-  return safeLoad<ExchangeStudent[]>("/exchange/", (raw) => (raw as RawExchange[]).map(mapExchange), []);
+/**
+ * Exchange students the viewer may see: signed-in students/coordinators get their
+ * own records and staff/admin get all (GET /exchange/mine); everyone else gets
+ * the published list (GET /exchange/).
+ */
+export function loadExchangeStudents(role: string = "public"): Promise<ExchangeStudent[]> {
+  const path = role === "public" ? "/exchange/" : "/exchange/mine";
+  return safeLoad<ExchangeStudent[]>(path, (raw) => (raw as RawExchange[]).map(mapExchange), []);
 }
 
 /** GET /users/ -> the first admin/staff profile. */
@@ -678,7 +785,7 @@ export function loadAdminProfile(): Promise<AdminProfile> {
  * Load data via the API for internal pages: `fallback` (an empty value) is used
  * for the initial render and stays if the loader fails.
  */
-export function useApiData<T>(loader: () => Promise<T>, fallback: T): T {
+export function useApiData<T>(loader: () => Promise<T>, fallback: T, dependencies: DependencyList = []): T {
   const [data, setData] = useState<T>(fallback);
   useEffect(() => {
     let alive = true;
@@ -693,7 +800,7 @@ export function useApiData<T>(loader: () => Promise<T>, fallback: T): T {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, dependencies);
   return data;
 }
 
