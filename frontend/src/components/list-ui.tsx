@@ -34,7 +34,7 @@ export function SortHeader({ label, sortKey, sort, className = "px-4" }: {
   const Icon = !active ? ArrowUpDown : sort.desc ? ArrowDown : ArrowUp;
   return (
     <th
-      className={`sticky top-0 z-10 bg-paper text-left py-3.5 text-xs font-semibold text-faint ${className}`}
+      className={`sticky top-0 z-10 bg-paper text-left py-3.5 text-xs font-semibold text-faint whitespace-nowrap ${className}`}
       aria-sort={active ? (sort.desc ? "descending" : "ascending") : "none"}
     >
       <button type="button" className="inline-flex items-center gap-1 hover:text-ink" onClick={() => sort.toggle(sortKey)}>
@@ -46,7 +46,7 @@ export function SortHeader({ label, sortKey, sort, className = "px-4" }: {
 }
 
 export function PlainHeader({ label = "", className = "px-4" }: { label?: string; className?: string }) {
-  return <th className={`sticky top-0 z-10 bg-paper text-left py-3.5 text-xs font-semibold text-faint ${className}`}>{label}</th>;
+  return <th className={`sticky top-0 z-10 bg-paper text-left py-3.5 text-xs font-semibold text-faint whitespace-nowrap ${className}`}>{label}</th>;
 }
 
 export interface FilterChip {
@@ -80,7 +80,7 @@ export function DatePresets({ presets, onPick }: {
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5 mt-3 text-xs">
-      <span className="text-faint">ช่วงเวลาด่วน:</span>
+      <span className="text-faint">ช่วงเวลาที่ใช้บ่อย:</span>
       {presets.map((preset) => (
         <button
           key={preset.label}
