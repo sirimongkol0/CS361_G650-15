@@ -167,7 +167,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs mt-8 text-faint">
-          © 2568 มหาวิทยาลัยธรรมศาสตร์ • PCSMS
+          © {new Date().getFullYear() + 543} มหาวิทยาลัยธรรมศาสตร์ • PCSMS
         </p>
       </div>
 
