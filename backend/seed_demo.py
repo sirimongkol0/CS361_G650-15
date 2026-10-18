@@ -192,11 +192,14 @@ def touch_up(db):
     """Fixes that also apply to a demo seeded earlier; safe to run on every start."""
     renamed = demo_expansion.fix_agreement_names(db)
     programs = demo_expansion.fix_program_names(db)
+    natural = demo_expansion.naturalize_demo(db)
     email = os.environ.get("DEMO_STUDENT_EMAIL", "student@example.test")
     linked = demo_expansion.link_student_exchanges(db, email)
     db.commit()
     if renamed:
         print(f"Renamed {renamed} demo agreements to the MoU/MoA naming")
+    if natural:
+        print(f"Gave {natural} demo records natural-looking names and text")
     if programs:
         print(f"Renamed the programme on {programs} exchange records to Thai")
     if linked is None:

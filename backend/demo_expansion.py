@@ -226,3 +226,109 @@ def link_student_exchanges(db, email: str):
         row.user_id = user.id
         row.name = picks[0].name  # one student who went on two exchanges
     return len(picks)
+
+
+# --- Natural-looking names --------------------------------------------------
+# The generators above label every person and place "สมมติ" (fictional). The
+# web shows those values, so the touch-up below swaps them for ordinary-looking
+# (still invented) names. The NOTICE line at the start of descriptions stays:
+# it is what marks the whole dataset as fictional, and the demo UI hides it.
+
+CONTACT_NAMES = [
+    "คุณนภัสวรรณ ศรีสุข", "คุณกิตติพงษ์ วงศ์ไทย", "คุณศิริพร แก้วมณี", "คุณธนกฤต พึ่งบุญ",
+    "คุณพิมพ์ชนก อินทร์แก้ว", "คุณวีรยุทธ ทองคำ", "คุณอรอุมา จันทร์เพ็ญ", "คุณณัฐพล รุ่งเรือง",
+    "คุณปวีณา บุญมา", "คุณชยพล สายทอง", "คุณสุภาวดี มีสุข", "คุณอนุชา ศรีวงศ์",
+]
+LECTURER_NAMES = [
+    "ผศ.ดร.วรวุฒิ ศักดิ์เจริญ", "อ.ดร.กมลชนก ทองประเสริฐ", "ผศ.ปิยะพงษ์ แสงทอง", "อ.ดร.สุนิสา วัฒนกุล",
+    "รศ.ดร.ธีรวัฒน์ ชัยมงคล", "อ.ณัฐวดี ศรีอรุณ", "ผศ.ดร.ภาณุพงศ์ อินทรสุวรรณ", "อ.ดร.จิราพร ปัญญาดี",
+]
+SIGNER_OUR = "รศ.ดร.ประภาพร อินทรสุวรรณ"
+PARTNER_SIGNER_NAMES = ["คุณสมเกียรติ ธนากร", "คุณรัชนี พงษ์พานิช", "คุณประเสริฐ วงศ์สวัสดิ์", "คุณมาลัย เกษมสุข"]
+# Students get a surname picked by their first name, so one student's records agree.
+SURNAMES = ["ศรีวงศ์", "วัฒนกุล", "ทองสกุล", "ชัยมงคล", "เจริญศักดิ์", "พรหมมา", "แสงอรุณ", "บุญประเสริฐ",
+            "รัตนพันธ์", "สุขเจริญ", "อินทร์ทอง", "ปัญญาวงศ์", "ศรีสวัสดิ์", "มณีรัตน์", "ทองดี"]
+# Surnames an earlier version of the rules gave every student.
+_OLD_SURNAMES = ("ศรีวงศ์", "วัฒนกุล", "ทองสกุล", "ชัยมงคล", "เจริญศักดิ์")
+
+
+def student_name(first: str) -> str:
+    return f"{first} {SURNAMES[sum(map(ord, first)) % len(SURNAMES)]}"
+PLACES = {
+    "สถานที่สมมติของคู่ความร่วมมือ": "สำนักงานของหน่วยงานคู่ความร่วมมือ",
+    "ห้องประชุมสมมติ อาคาร 1": "ห้องประชุม 1 อาคารเรียนรวม",
+    "หอประชุมสมมติ": "หอประชุมคณะ",
+    "ออนไลน์ (สมมติ)": "ออนไลน์",
+    "ห้องปฏิบัติการสมมติ 302": "ห้องปฏิบัติการคอมพิวเตอร์ 302",
+}
+_PHRASES = [
+    (re.compile(r"นักศึกษาสมมติ (\S+) \S+ \(\d+\)"), lambda m: student_name(m.group(1))),
+    # Titles are unique, so the entry number stays.
+    (re.compile(r"ความคิดเห็นสมมติ #(\d+): "), lambda m: f"ความคิดเห็นที่ {m.group(1)} ต่อ "),
+    (re.compile(r"คู่ความร่วมมือสมมติเพิ่มเติมสำหรับทดสอบการค้นหา ตัวกรอง และแดชบอร์ด"),
+     "หน่วยงานที่ร่วมมือกับหลักสูตรด้านการฝึกงาน การวิจัย และกิจกรรมนักศึกษา"),
+    (re.compile(r"กิจกรรมสมมติหัวข้อ (.+?) สำหรับทดสอบการแสดงผลและสถิติ"),
+     lambda m: f"กิจกรรมหัวข้อ {m.group(1)} สำหรับนักศึกษาและอาจารย์ของหลักสูตร"),
+    (re.compile(r"\s?\(สมมติ\)"), ""),
+    (re.compile(r" สมมติ(?=\S)"), " "),  # between two words: keep one space
+    (re.compile(r"\s?สมมติ"), ""),
+]
+# Text an earlier version of the rules joined together.
+_REPAIRS = {"checklistสำหรับ": "checklist สำหรับ"}
+
+
+def naturalize(text):
+    """Drop the 'สมมติ' labels from demo text, keeping the NOTICE prefix."""
+    if text:
+        for broken, fixed in _REPAIRS.items():
+            text = text.replace(broken, fixed)
+    if not text or "สมมติ" not in text.replace(NOTICE, ""):
+        return text
+    head = NOTICE if text.startswith(NOTICE) else ""
+    body = text[len(head):]
+    if body.strip() in PLACES:
+        return head + PLACES[body.strip()]
+    for pattern, replacement in _PHRASES:
+        body = pattern.sub(replacement, body)
+    return head + body
+
+
+def _labelled(value):
+    return bool(value) and "สมมติ" in value
+
+
+def naturalize_demo(db) -> int:
+    """Rewrite the demo's 'สมมติ' names and text in place; returns rows changed."""
+    changed = set()
+
+    def put(row, field, value):
+        if getattr(row, field) != value:
+            setattr(row, field, value)
+            changed.add((type(row).__name__, row.id))
+
+    for partner in db.query(models.Partner).all():
+        if _labelled(partner.contact_name):
+            put(partner, "contact_name", CONTACT_NAMES[partner.id % len(CONTACT_NAMES)])
+        put(partner, "description", naturalize(partner.description))
+    for doc in db.query(models.Document).all():
+        if _labelled(doc.responsible):
+            put(doc, "responsible", LECTURER_NAMES[doc.id % len(LECTURER_NAMES)])
+        if _labelled(doc.signer_our):
+            put(doc, "signer_our", SIGNER_OUR)
+        if _labelled(doc.signer_partner):
+            put(doc, "signer_partner", PARTNER_SIGNER_NAMES[doc.id % len(PARTNER_SIGNER_NAMES)])
+        for item in doc.scope_items:
+            put(item, "text", naturalize(item.text))
+    for activity in db.query(models.Activity).all():
+        put(activity, "description", naturalize(activity.description))
+        put(activity, "location", naturalize(activity.location))
+    for row in db.query(models.ExchangeStudent).all():
+        for field in ("name", "from_program", "to_organization"):
+            put(row, field, naturalize(getattr(row, field)))
+        first, _, last = row.name.partition(" ")
+        if last in _OLD_SURNAMES:  # renamed before the wider surname list
+            put(row, "name", student_name(first))
+    for row in db.query(models.Feedback).all():
+        put(row, "title", naturalize(row.title))
+        put(row, "comment", naturalize(row.comment))
+    return len(changed)

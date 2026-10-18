@@ -77,3 +77,41 @@ def test_english_programme_names_become_thai(db_session):
     db_session.commit()
     assert sorted(r.program for r in db_session.query(models.ExchangeStudent)) == ["Summer School", "ฝึกงาน", "แลกเปลี่ยนนักศึกษา"]
     assert demo_expansion.fix_program_names(db_session) == 0
+
+
+def test_naturalize_drops_fictional_labels_but_keeps_the_notice():
+    n = demo_expansion.naturalize
+    notice = demo_expansion.NOTICE
+    assert n("นักศึกษาสมมติ ฟ้า ทดสอบชัย (6)") == demo_expansion.student_name("ฟ้า")
+    assert n("นักศึกษาสมมติ ฟ้า เดโมสกุล (9)") == demo_expansion.student_name("ฟ้า")  # same first name, same person
+    assert n("ห้องปฏิบัติการสมมติ 302") == "ห้องปฏิบัติการคอมพิวเตอร์ 302"
+    assert n("ห้องปฏิบัติการสมมติของ Sakuragaoka") == "ห้องปฏิบัติการของ Sakuragaoka"
+    assert n("วิทยาการคอมพิวเตอร์ (สมมติ)") == "วิทยาการคอมพิวเตอร์"
+    assert n("ความคิดเห็นสมมติ #3: สัมมนา AI") == "ความคิดเห็นที่ 3 ต่อ สัมมนา AI"
+    assert n(f"{notice}\n\nนักศึกษาชั้นปีที่ 2-3 จำนวนสมมติ 20 คน") == f"{notice}\n\nนักศึกษาชั้นปีที่ 2-3 จำนวน 20 คน"
+    assert n("ได้ checklist สมมติสำหรับตรวจข้อมูล") == "ได้ checklist สำหรับตรวจข้อมูล"
+    assert n("ได้ checklistสำหรับตรวจข้อมูล") == "ได้ checklist สำหรับตรวจข้อมูล"  # repaired
+    assert n("ส่งมอบต้นแบบ dashboard สมมติ 3 ชุด") == "ส่งมอบต้นแบบ dashboard 3 ชุด"
+    assert n(notice) == notice  # the dataset disclaimer itself is untouched
+    assert n(None) is None and n("ไม่มีคำนี้") == "ไม่มีคำนี้"
+
+
+def test_naturalize_demo_gives_people_names_and_is_idempotent(db_session):
+    partner = models.Partner(name="Hangang", contact_name="ผู้ประสานงานสมมติ 4",
+                             description=f"{demo_expansion.NOTICE}\n\nคู่ความร่วมมือสมมติเพิ่มเติมสำหรับทดสอบการค้นหา ตัวกรอง และแดชบอร์ด")
+    doc = models.Document(name="MoU วิจัย กับ Hangang", partner=partner, responsible="อาจารย์ผู้รับผิดชอบสมมติ 2",
+                          signer_our="ผู้ลงนามฝ่ายหลักสูตรสมมติ", signer_partner="ผู้ลงนามฝ่ายคู่ความร่วมมือสมมติ",
+                          scope_items=[models.DocumentScopeItem(position=0, text="วัตถุประสงค์: ความร่วมมือสมมติด้านวิจัย")])
+    activity = models.Activity(name="สัมมนา", location="หอประชุมสมมติ",
+                               description="กิจกรรมสมมติหัวข้อ AI สำหรับทดสอบการแสดงผลและสถิติ")
+    db_session.add_all([partner, doc, activity])
+    db_session.commit()
+    assert demo_expansion.naturalize_demo(db_session) == 4  # partner, document, scope item, activity
+    db_session.commit()
+    assert partner.contact_name in demo_expansion.CONTACT_NAMES
+    assert partner.description.endswith("หน่วยงานที่ร่วมมือกับหลักสูตรด้านการฝึกงาน การวิจัย และกิจกรรมนักศึกษา")
+    assert doc.responsible in demo_expansion.LECTURER_NAMES
+    assert (doc.signer_our, doc.signer_partner in demo_expansion.PARTNER_SIGNER_NAMES) == (demo_expansion.SIGNER_OUR, True)
+    assert doc.scope_items[0].text == "วัตถุประสงค์: ความร่วมมือด้านวิจัย"
+    assert (activity.location, activity.description) == ("หอประชุมคณะ", "กิจกรรมหัวข้อ AI สำหรับนักศึกษาและอาจารย์ของหลักสูตร")
+    assert demo_expansion.naturalize_demo(db_session) == 0
