@@ -162,6 +162,7 @@ jobs:
           python scripts/wait_v2_servers.py
           node frontend/tests/v2-integration.cjs
           node frontend/tests/v2-improvements.cjs
+          node frontend/tests/v3-auth.cjs
       - name: Upload commit/environment, API transcript and role-free screenshots
         if: always()
         uses: actions/upload-artifact@v4

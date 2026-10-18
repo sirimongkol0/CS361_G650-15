@@ -16,6 +16,7 @@ import {
   type FeedbackEntry,
   type PartnerView,
 } from "@/lib/api";
+import { useRole } from "@/lib/role-context";
 
 /** Agreements expiring within this many days need follow-up. */
 export const EXPIRING_WITHIN_DAYS = 90;
@@ -35,18 +36,22 @@ const EMPTY: DashboardData = {
 
 const orEmpty = <T,>(promise: Promise<T[]>) => promise.catch(() => [] as T[]);
 
-/** Load every list the dashboards use; an unavailable list is treated as empty. */
+/**
+ * Load every list the dashboards use; an unavailable list (including one the
+ * role may not read) is treated as empty so the rest of the dashboard still shows.
+ */
 export function useDashboardData(): DashboardData {
+  const { role } = useRole();
   return useApiData<DashboardData>(async () => {
     const [partners, documents, activities, feedback, exchange] = await Promise.all([
       orEmpty(loadPublicPartners()),
       orEmpty(loadDocuments()),
       orEmpty(loadActivities()),
-      loadFeedbackEntries(),
-      loadExchangeStudents(),
+      orEmpty(loadFeedbackEntries()),
+      orEmpty(loadExchangeStudents(role)),
     ]);
     return { loaded: true, partners, documents, activities, feedback, exchange };
-  }, EMPTY);
+  }, EMPTY, [role]);
 }
 
 export type AgreementState = "expired" | "expiring" | "active" | "draft";

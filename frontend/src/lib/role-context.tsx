@@ -11,7 +11,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import Link from 'next/link';
-import { ApiError } from '@/lib/api';
+import { usePathname, useRouter } from 'next/navigation';
+import { ApiError, clearApiCache } from '@/lib/api';
+import { onUnauthorized, readToken, writeToken } from '@/lib/session';
 import * as authApi from '@/lib/auth-api';
 import type { SessionUser } from '@/lib/auth-api';
 
@@ -98,24 +100,28 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   student: [
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   coordinator: [
     { to: '/dashboard/coordinator', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
     { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   staff: [
     { to: '/dashboard/staff', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
     { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   admin: [
     { to: '/dashboard/admin', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
     { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
 };
 
@@ -141,25 +147,24 @@ const RoleContext = createContext<RoleContextType>({
   logout: async () => {},
 });
 
-// Per-tab storage: the token disappears when the tab is closed and is never
-// shared with other sites. It expires on the server after 60 minutes anyway.
-const TOKEN_KEY = 'pcsms_access_token';
-
-function readToken(): string | null {
-  try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
-}
-
-function writeToken(token: string | null) {
-  try {
-    if (token) sessionStorage.setItem(TOKEN_KEY, token);
-    else sessionStorage.removeItem(TOKEN_KEY);
-  } catch {}
-}
-
 export function RoleProvider({ children }: { children: ReactNode }) {
   // SSR-safe and least-privilege: until the session is confirmed, show the public role.
   const [user, setUser] = useState<SessionUser | null>(null);
   const [status, setStatus] = useState<SessionStatus>('loading');
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // The API rejected the token (expired/revoked): sign out, then return here after login.
+  useEffect(() => {
+    onUnauthorized(() => {
+      writeToken(null);
+      clearApiCache();
+      setUser(null);
+      setStatus('anonymous');
+      if (pathname !== '/login') router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    });
+    return () => onUnauthorized(null);
+  }, [pathname, router]);
 
   useEffect(() => {
     try { localStorage.removeItem('pcsms_role'); } catch {} // old prototype role picker
@@ -181,6 +186,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const result = await authApi.login(email, password);
     writeToken(result.access_token);
+    clearApiCache();
     const me = await authApi.fetchMe(result.access_token);
     setUser(me);
     setStatus('authenticated');
@@ -190,6 +196,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     const token = readToken();
     writeToken(null);
+    clearApiCache(); // no internal data may survive logout
     setUser(null);
     setStatus('anonymous');
     if (token) await authApi.logout(token).catch(() => {});

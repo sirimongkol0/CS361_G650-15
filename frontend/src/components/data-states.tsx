@@ -1,4 +1,5 @@
-import { AlertCircle, Inbox, LoaderCircle, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, Inbox, LoaderCircle, Lock, LogIn, RefreshCw } from "lucide-react";
 import { ApiError } from "@/lib/api";
 
 interface StateProps {
@@ -49,6 +50,7 @@ export function ErrorState({
   onRetry: () => void;
   compact?: boolean;
 }) {
+  if (error.status === 401 || error.status === 403) return <AccessState status={error.status} compact={compact} />;
   const notFound = error.status === 404;
   return (
     <div className={container(compact)} role="alert">
@@ -65,6 +67,29 @@ export function ErrorState({
         <RefreshCw className="h-4 w-4" />
         ลองอีกครั้ง
       </button>
+    </div>
+  );
+}
+
+/** 401 -> ask to log in (and come back here); 403 -> the role may not see this. */
+export function AccessState({ status, compact = false }: { status: 401 | 403; compact?: boolean }) {
+  const login = status === 401;
+  const next = typeof window === "undefined" ? "/" : window.location.pathname;
+  return (
+    <div className={container(compact)} role="alert">
+      <Lock className="mb-3 h-7 w-7 text-crimson" />
+      <h2 className="font-semibold text-ink">{login ? "กรุณาเข้าสู่ระบบ" : "ไม่มีสิทธิ์เข้าถึง"}</h2>
+      <p className="mt-1 text-sm text-faint">
+        {login
+          ? "ข้อมูลส่วนนี้แสดงเฉพาะผู้ใช้ที่เข้าสู่ระบบแล้ว"
+          : "บทบาทของคุณไม่ได้รับสิทธิ์ดูข้อมูลส่วนนี้ หากคิดว่าไม่ถูกต้อง โปรดติดต่อผู้ดูแลระบบ"}
+      </p>
+      {login && (
+        <Link className="btn btn-primary mt-4 gap-2" href={`/login?next=${encodeURIComponent(next)}`}>
+          <LogIn className="h-4 w-4" />
+          เข้าสู่ระบบ
+        </Link>
+      )}
     </div>
   );
 }

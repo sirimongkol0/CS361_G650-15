@@ -12,7 +12,9 @@ import {
   Filter,
   MoreHorizontal,
 } from "lucide-react";
-import { loadExchangeStudents, useApiData, type ExchangeStudent } from "@/lib/api";
+import { ApiError, loadExchangeStudents, useApiResource, type ExchangeStudent } from "@/lib/api";
+import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
+import { canManage, useRole } from "@/lib/role-context";
 
 const statusColors: Record<string, string> = {
   "เสร็จสิ้น": "badge-green",
@@ -26,7 +28,13 @@ export default function StudentExchangePage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const exchangeStudents = useApiData<ExchangeStudent[]>(loadExchangeStudents, []);
+  const { role, status: session } = useRole();
+  // Wait for the session so a signed-in user never briefly sees the public list.
+  const resource = useApiResource<ExchangeStudent[]>(
+    () => (session === "loading" ? new Promise<never>(() => {}) : loadExchangeStudents(role)),
+    [role, session]
+  );
+  const exchangeStudents = useMemo(() => resource.data ?? [], [resource.data]);
 
   const filtered = useMemo(
     () =>
@@ -64,10 +72,12 @@ export default function StudentExchangePage() {
             <Filter className="w-4 h-4" />
             ส่งออก
           </button>
-          <button className="btn btn-primary gap-2">
-            <Plus className="w-4 h-4" />
-            เพิ่มนักศึกษา
-          </button>
+          {canManage(role) && (
+            <button className="btn btn-primary gap-2">
+              <Plus className="w-4 h-4" />
+              เพิ่มนักศึกษา
+            </button>
+          )}
         </div>
       </div>
 
@@ -163,7 +173,13 @@ export default function StudentExchangePage() {
         </div>
       </div>
 
+      {resource.status === "loading" && <LoadingState />}
+      {resource.status === "error" && (
+        <ErrorState error={resource.error ?? new ApiError("Unexpected API error")} onRetry={resource.retry} />
+      )}
+
       {/* Table */}
+      {resource.status === "success" && (
       <div className="rounded-lg bg-white shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -266,21 +282,17 @@ export default function StudentExchangePage() {
               ))}
             </tbody>
           </table>
+          {filtered.length === 0 && (
+            <EmptyState compact title="ไม่มีข้อมูลการแลกเปลี่ยน" message="ไม่มีรายการที่คุณมีสิทธิ์ดูหรือที่ตรงกับตัวกรอง" />
+          )}
         </div>
         <div className="flex items-center justify-between px-5 py-4 border-t border-line">
           <span className="text-sm text-faint">
             แสดง 1–{filtered.length} จาก {exchangeStudents.length} คน
           </span>
-          <div className="flex gap-1">
-            <button className="btn text-xs px-3 py-1.5 bg-crimson text-white">
-              1
-            </button>
-            <button className="btn text-xs px-3 py-1.5 bg-soft text-faint">
-              2
-            </button>
-          </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
