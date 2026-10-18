@@ -1,103 +1,75 @@
 "use client";
 
-// Ported from legacy/figma-mock/src/pages/UserManagement.tsx (Next.js App Router + TU theme tokens).
+// Admin-only account list (GET /users/). Accounts and roles live in Amazon Cognito;
+// a row appears here after the account's first login, so this page only reads.
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, Search, Shield, Check, X, MoreHorizontal } from "lucide-react";
+import { ChevronRight, Search, Shield } from "lucide-react";
+import { formatThaiDateTime, loadUsers, useApiResource, type UserAccount } from "@/lib/api";
+import { ROLES, getRoleConfig, useRole, type UserRole } from "@/lib/role-context";
+import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
+import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 
-const roles = [
-  { id: "public", label: "ผู้ใช้ทั่วไป", color: "#94a3b8", bg: "#f1f5f9", desc: "ดูข้อมูลสาธารณะ" },
-  { id: "student", label: "นักศึกษา", color: "#16a34a", bg: "#dcfce7", desc: "ดูและจัดการข้อมูลตัวเอง" },
-  { id: "coordinator", label: "อาจารย์ผู้ประสานงาน", color: "#1d4ed8", bg: "#dbeafe", desc: "จัดการกิจกรรมและความคิดเห็น" },
-  { id: "staff", label: "เจ้าหน้าที่หลักสูตร", color: "#7c3aed", bg: "#ede9fe", desc: "จัดการข้อมูลและรายงาน" },
-  { id: "admin", label: "ผู้ดูแลระบบ", color: "#dc2626", bg: "#fee2e2", desc: "สิทธิ์เต็ม" },
+const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
+  public: "ดูข้อมูลที่เผยแพร่",
+  student: "ดูข้อมูลการแลกเปลี่ยนของตัวเอง",
+  coordinator: "เพิ่มและแก้ไขรายการของตัวเอง",
+  staff: "อนุมัติ เผยแพร่ และดูแลข้อมูลทั้งหมด",
+  admin: "ทุกอย่างของเจ้าหน้าที่ และดูรายชื่อผู้ใช้",
+};
+
+// ✓ = all records, "own" = only records the account created, false = not allowed.
+// Mirrors the require_role checks in backend/routers (docs/decisions/v3-role-permissions.md).
+type Allowed = boolean | "own";
+const PERMISSIONS: { action: string; roles: Record<UserRole, Allowed> }[] = [
+  { action: "ดูหน่วยงาน ข้อตกลง และกิจกรรมที่เผยแพร่", roles: { public: true, student: true, coordinator: true, staff: true, admin: true } },
+  { action: "ดูรายการที่ยังไม่เผยแพร่", roles: { public: false, student: false, coordinator: "own", staff: true, admin: true } },
+  { action: "เพิ่มและแก้ไขหน่วยงาน", roles: { public: false, student: false, coordinator: "own", staff: true, admin: true } },
+  { action: "สร้างและแก้ไขข้อตกลงฉบับร่าง แนบไฟล์", roles: { public: false, student: false, coordinator: "own", staff: true, admin: true } },
+  { action: "อนุมัติ เปลี่ยนสถานะ และเผยแพร่ข้อตกลง", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
+  { action: "เพิ่มและแก้ไขกิจกรรม", roles: { public: false, student: false, coordinator: "own", staff: true, admin: true } },
+  { action: "ข้อมูลนักศึกษาแลกเปลี่ยน", roles: { public: false, student: "own", coordinator: "own", staff: true, admin: true } },
+  { action: "ดูและตอบความคิดเห็น", roles: { public: false, student: false, coordinator: true, staff: true, admin: true } },
+  { action: "เผยแพร่ความคิดเห็น", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
+  { action: "ลบหน่วยงาน กิจกรรม และข้อตกลง", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
+  { action: "ดูรายงานและสถิติ", roles: { public: false, student: false, coordinator: false, staff: true, admin: true } },
+  { action: "ดูรายชื่อผู้ใช้", roles: { public: false, student: false, coordinator: false, staff: false, admin: true } },
 ];
 
-const permissions = [
-  {
-    module: "หน่วยงานคู่ความร่วมมือ",
-    perms: [
-      { role: "public", view: true, create: false, edit: false, delete: false, export: false },
-      { role: "student", view: true, create: false, edit: false, delete: false, export: false },
-      { role: "coordinator", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "staff", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "admin", view: true, create: true, edit: true, delete: true, export: true },
-    ],
-  },
-  {
-    module: "ข้อตกลง",
-    perms: [
-      { role: "public", view: false, create: false, edit: false, delete: false, export: false },
-      { role: "student", view: false, create: false, edit: false, delete: false, export: false },
-      { role: "coordinator", view: true, create: false, edit: false, delete: false, export: false },
-      { role: "staff", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "admin", view: true, create: true, edit: true, delete: true, export: true },
-    ],
-  },
-  {
-    module: "กิจกรรม",
-    perms: [
-      { role: "public", view: true, create: false, edit: false, delete: false, export: false },
-      { role: "student", view: true, create: false, edit: false, delete: false, export: false },
-      { role: "coordinator", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "staff", view: true, create: true, edit: true, delete: true, export: true },
-      { role: "admin", view: true, create: true, edit: true, delete: true, export: true },
-    ],
-  },
-  {
-    module: "นักศึกษาแลกเปลี่ยน",
-    perms: [
-      { role: "public", view: false, create: false, edit: false, delete: false, export: false },
-      { role: "student", view: true, create: false, edit: true, delete: false, export: false },
-      { role: "coordinator", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "staff", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "admin", view: true, create: true, edit: true, delete: true, export: true },
-    ],
-  },
-  {
-    module: "ความคิดเห็น",
-    perms: [
-      { role: "public", view: false, create: true, edit: false, delete: false, export: false },
-      { role: "student", view: false, create: true, edit: true, delete: false, export: false },
-      { role: "coordinator", view: true, create: true, edit: true, delete: false, export: true },
-      { role: "staff", view: true, create: true, edit: true, delete: true, export: true },
-      { role: "admin", view: true, create: true, edit: true, delete: true, export: true },
-    ],
-  },
-  {
-    module: "รายงานและสถิติ",
-    perms: [
-      { role: "public", view: false, create: false, edit: false, delete: false, export: false },
-      { role: "student", view: false, create: false, edit: false, delete: false, export: false },
-      { role: "coordinator", view: true, create: false, edit: false, delete: false, export: false },
-      { role: "staff", view: true, create: false, edit: false, delete: false, export: true },
-      { role: "admin", view: true, create: true, edit: true, delete: true, export: true },
-    ],
-  },
-];
-
-const users = [
-  { name: "Admin System", email: "admin@university.ac.th", role: "admin", lastLogin: "วันนี้ 09:15" },
-  { name: "ผศ.ดร.วิชัย สอนดี", email: "wichai@university.ac.th", role: "coordinator", lastLogin: "เมื่อวาน 14:30" },
-  { name: "นางสมหมาย จัดการ", email: "sommai@university.ac.th", role: "staff", lastLogin: "วันนี้ 10:00" },
-  { name: "นายสมศักดิ์ ใจดี", email: "somsak@student.ac.th", role: "student", lastLogin: "3 วันที่แล้ว" },
-];
-
-function TCell({ val }: { val: boolean }) {
+function PermissionCell({ value }: { value: Allowed }) {
+  if (value === "own") return <td className="px-3 py-3 text-center text-xs text-[#1d4ed8]">ของตัวเอง</td>;
   return (
     <td className="px-3 py-3 text-center">
-      {val ? (
-        <Check className="w-4 h-4 mx-auto text-[#16a34a]" />
-      ) : (
-        <X className="w-4 h-4 mx-auto text-[#e2e8f0]" />
-      )}
+      {value ? <span className="text-[#16a34a]" aria-label="ทำได้">✓</span> : <span className="text-[#cbd5e1]" aria-label="ทำไม่ได้">—</span>}
     </td>
   );
 }
 
+function RoleBadge({ role }: { role: UserRole }) {
+  const config = getRoleConfig(role);
+  return <span className="badge" style={{ background: config.pillBg, color: config.pillColor }}>{config.label}</span>;
+}
+
 export default function UserManagementPage() {
-  const [activeTab, setActiveTab] = useState("matrix");
+  useDocumentTitle("ผู้ใช้และสิทธิ์");
+  const { role, status: session } = useRole();
+  const [activeTab, setActiveTab] = useState<"users" | "matrix">("users");
+  const [query, setQuery] = useState("");
+
+  const allowed = session === "authenticated" && role === "admin";
+  const users = useApiResource<UserAccount[]>(
+    () => (allowed ? loadUsers() : new Promise<never>(() => {})),
+    [allowed]
+  );
+
+  if (session === "loading") return <div className="p-6"><LoadingState /></div>;
+  if (session !== "authenticated") return <div className="p-6"><AccessState status={401} /></div>;
+  if (role !== "admin") return <div className="p-6"><AccessState status={403} /></div>;
+
+  const rows = users.status === "success" ? users.data : [];
+  const filtered = rows.filter((u) => matchesQuery(query, u.email, getRoleConfig(u.role).label));
+  const countByRole = (id: UserRole) => rows.filter((u) => u.role === id).length;
 
   const tabCls = (t: string) =>
     `px-4 py-2.5 text-sm transition-colors border-b-2 -mb-px ${
@@ -108,111 +80,60 @@ export default function UserManagementPage() {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-            <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">จัดการผู้ใช้และสิทธิ์</span>
-          </nav>
-          <h1 className="text-2xl font-bold text-ink font-display">จัดการผู้ใช้และสิทธิ์</h1>
-          <p className="text-sm mt-0.5 text-faint">Role-based Access Control (RBAC)</p>
-        </div>
-        <button className="btn btn-primary gap-2">
-          <Plus className="w-4 h-4" />เพิ่มผู้ใช้
-        </button>
+      <div className="mb-6">
+        <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
+          <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-crimson">ผู้ใช้และสิทธิ์</span>
+        </nav>
+        <h1 className="text-2xl font-bold text-ink font-display">ผู้ใช้และสิทธิ์</h1>
+        <p className="text-sm mt-0.5 text-faint">
+          เพิ่มบัญชีและเปลี่ยนบทบาทได้ที่ Amazon Cognito รายชื่อนี้แสดงบัญชีที่เข้าสู่ระบบแล้วอย่างน้อยหนึ่งครั้ง
+        </p>
       </div>
 
       {/* Role cards */}
       <div className="grid gap-4 mb-6" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-        {roles.map((r) => (
-          <div
-            key={r.id}
-            className="bg-white border border-line rounded-lg shadow-card p-5 transition-shadow hover:shadow-card-hover"
-          >
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: r.bg }}>
-              <Shield className="w-4 h-4" style={{ color: r.color }} />
+        {ROLES.map((r) => (
+          <div key={r.id} className="bg-white border border-line rounded-lg shadow-card p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: r.pillBg }}>
+                <Shield className="w-4 h-4" style={{ color: r.pillColor }} />
+              </div>
+              <span className="text-lg font-bold text-ink font-display">{users.status === "success" ? countByRole(r.id) : "—"}</span>
             </div>
             <div className="font-bold text-sm mb-0.5 text-ink">{r.label}</div>
-            <div className="text-xs text-faint">{r.desc}</div>
+            <div className="text-xs text-faint">{ROLE_DESCRIPTIONS[r.id]}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
       <div className="flex border-b border-line mb-5">
-        {[
-          { id: "matrix", label: "Permissions Matrix" },
+        {([
           { id: "users", label: "รายชื่อผู้ใช้" },
-        ].map((t) => (
-          <button key={t.id} className={tabCls(t.id)} onClick={() => setActiveTab(t.id)}>
+          { id: "matrix", label: "สิทธิ์ตามบทบาท" },
+        ] as const).map((t) => (
+          <button key={t.id} type="button" className={tabCls(t.id)} onClick={() => setActiveTab(t.id)}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {activeTab === "matrix" && (
-        <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-line bg-[#F8FAFC]">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-faint">โมดูล</th>
-                  {["ผู้ใช้ทั่วไป", "นักศึกษา", "อาจารย์ผู้ประสานงาน", "เจ้าหน้าที่", "ผู้ดูแลระบบ"].map((r) => (
-                    <th
-                      key={r}
-                      colSpan={5}
-                      className="text-center px-2 py-3.5 text-xs font-semibold border-l border-line text-faint"
-                    >
-                      {r}
-                    </th>
-                  ))}
-                </tr>
-                <tr className="border-b border-line bg-[#FAFAFA]">
-                  <th className="px-5 py-2" />
-                  {[0, 1, 2, 3, 4].map((ri) =>
-                    ["ดู", "สร้าง", "แก้ไข", "ลบ", "ส่งออก"].map((p) => (
-                      <th
-                        key={`${ri}-${p}`}
-                        className={`text-center px-1 py-2 text-xs border-l font-medium text-faint ${
-                          p === "ดู" ? "border-line" : "border-transparent"
-                        }`}
-                      >
-                        {p}
-                      </th>
-                    ))
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {permissions.map((mod, mi) => (
-                  <tr key={mi} className="border-b border-[#f1f5f9]">
-                    <td className="px-5 py-3.5 text-sm font-semibold text-ink">{mod.module}</td>
-                    {mod.perms.map((p, pi) => (
-                      <Fragment key={`${pi}-${p.role}`}>
-                        <TCell val={p.view} />
-                        <TCell val={p.create} />
-                        <TCell val={p.edit} />
-                        <TCell val={p.delete} />
-                        <TCell val={p.export} />
-                      </Fragment>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {activeTab === "users" && (
+        users.status === "loading" ? <LoadingState title="กำลังโหลดรายชื่อผู้ใช้…" /> :
+        users.status === "error" ? <ErrorState error={users.error} onRetry={users.retry} /> :
+        rows.length === 0 ? <EmptyState title="ยังไม่มีผู้ใช้" message="บัญชีจะแสดงที่นี่หลังเข้าสู่ระบบครั้งแรก" /> : (
         <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
           <div className="p-4 border-b border-line">
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
               <input
                 className="w-full rounded-lg border-[1.5px] border-line bg-white pl-9 pr-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
-                placeholder="ค้นหาชื่อหรืออีเมลผู้ใช้"
+                placeholder="ค้นหาอีเมลหรือบทบาท"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="ค้นหาผู้ใช้"
               />
             </div>
           </div>
@@ -220,51 +141,54 @@ export default function UserManagementPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-line bg-[#F8FAFC]">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-faint">ผู้ใช้</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">อีเมล</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">บทบาท</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">เข้าสู่ระบบล่าสุด</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-faint">สถานะ</th>
-                  <th className="px-4 py-3.5" />
+                  {["อีเมล", "บทบาท", "เข้าสู่ระบบล่าสุด", "เข้าสู่ระบบครั้งแรก", "สถานะ"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-faint whitespace-nowrap">{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {users.map((u, i) => {
-                  const role = roles.find((r) => r.id === u.role)!;
-                  return (
-                    <tr
-                      key={i}
-                      className="border-b border-[#f1f5f9] hover:bg-[#FAFAFA] transition-colors"
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="flex items-center justify-center rounded-full font-bold text-sm shrink-0 w-9 h-9"
-                            style={{ background: role.bg, color: role.color }}
-                          >
-                            {u.name[0]}
-                          </div>
-                          <span className="font-semibold text-sm text-ink">{u.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-faint">{u.email}</td>
-                      <td className="px-4 py-4">
-                        <span className="badge" style={{ background: role.bg, color: role.color }}>
-                          {role.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-faint">{u.lastLogin}</td>
-                      <td className="px-4 py-4">
-                        <span className="badge badge-green">Active</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {filtered.map((u) => (
+                  <tr key={u.id} className="border-b border-[#f1f5f9] hover:bg-[#FAFAFA] transition-colors">
+                    <td className="px-4 py-4 text-sm font-semibold text-ink">{u.email}</td>
+                    <td className="px-4 py-4"><RoleBadge role={u.role} /></td>
+                    <td className="px-4 py-4 text-sm text-faint whitespace-nowrap">{formatThaiDateTime(u.lastLoginAt)}</td>
+                    <td className="px-4 py-4 text-sm text-faint whitespace-nowrap">{formatThaiDateTime(u.createdAt)}</td>
+                    <td className="px-4 py-4">
+                      {u.isActive
+                        ? <span className="badge badge-green">ใช้งานได้</span>
+                        : <span className="badge badge-gray">ปิดใช้งาน</span>}
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-faint">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        )
+      )}
+
+      {activeTab === "matrix" && (
+        <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-line bg-[#F8FAFC]">
+                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-faint">การทำงาน</th>
+                  {ROLES.map((r) => (
+                    <th key={r.id} className="text-center px-3 py-3.5 text-xs font-semibold text-faint whitespace-nowrap">{r.labelShort}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PERMISSIONS.map((p) => (
+                  <tr key={p.action} className="border-b border-[#f1f5f9]">
+                    <td className="px-5 py-3 text-sm text-ink">{p.action}</td>
+                    {ROLES.map((r) => <PermissionCell key={r.id} value={p.roles[r.id]} />)}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

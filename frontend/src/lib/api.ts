@@ -355,6 +355,10 @@ interface RawFeedback {
   date?: string | null; // ISO
   status?: string | null;
   comment?: string | null;
+  // Signed-in view only (GET /feedback/manage).
+  isPublished?: boolean;
+  reply?: string | null;
+  repliedAt?: string | null;
 }
 
 export interface RawExchange {
@@ -375,14 +379,14 @@ export interface RawExchange {
   userId?: number | null;
 }
 
-interface RawUser {
+/** GET /users/ row (admin only): an account that has signed in at least once. */
+export interface UserAccount {
   id: number;
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  position?: string | null;
-  department?: string | null;
+  email: string;
+  role: "public" | "student" | "coordinator" | "staff" | "admin";
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
 }
 
 // ---------- View types for internal pages ----------
@@ -399,6 +403,10 @@ export interface FeedbackEntry {
   dateIso: string | null;
   status: string;
   comment: string;
+  /** Signed-in view only; the public list has published entries without replies. */
+  isPublished: boolean;
+  reply: string | null;
+  repliedAt: string | null;
 }
 
 export interface ExchangeStudent {
@@ -413,19 +421,6 @@ export interface ExchangeStudent {
   /** API fields, for the edit form and ownership checks. */
   raw: RawExchange;
 }
-
-export interface AdminProfile {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  position: string;
-  department: string;
-}
-
-export const EMPTY_ADMIN_PROFILE: AdminProfile = {
-  firstName: "", lastName: "", email: "", phone: "", position: "", department: "",
-};
 
 // ---------- Mappers ----------
 
@@ -687,6 +682,9 @@ function mapFeedback(
     dateIso: raw.date ?? null,
     status: raw.status ?? "—",
     comment: raw.comment ?? "",
+    isPublished: raw.isPublished ?? true,
+    reply: raw.reply ?? null,
+    repliedAt: raw.repliedAt ?? null,
   };
 }
 
@@ -701,17 +699,6 @@ function mapExchange(raw: RawExchange): ExchangeStudent {
     program: raw.program ?? "—",
     status: raw.status ?? "—",
     raw,
-  };
-}
-
-function mapAdminProfile(raw: RawUser): AdminProfile {
-  return {
-    firstName: raw.firstName ?? "",
-    lastName: raw.lastName ?? "",
-    email: raw.email ?? "",
-    phone: raw.phone ?? "",
-    position: raw.position ?? "",
-    department: raw.department ?? "",
   };
 }
 
@@ -791,16 +778,28 @@ async function loadNames(path: string): Promise<Map<number, string>> {
   }
 }
 
-/** GET /feedback/ (+ /activities/ and /partners/ joins for names) -> feedback entries. */
-export function loadFeedbackEntries(): Promise<FeedbackEntry[]> {
-  return safeLoad<FeedbackEntry[]>(
-    "/feedback/",
-    async (raw) => {
-      const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
-      return (raw as RawFeedback[]).map((f) => mapFeedback(f, activityNames, partnerNames));
-    },
-    []
-  );
+/** Roles that read every feedback entry with its reply (GET /feedback/manage). */
+export const FEEDBACK_MANAGER_ROLES = ["coordinator", "staff", "admin"];
+
+async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
+  const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
+  return (raw as RawFeedback[]).map((f) => mapFeedback(f, activityNames, partnerNames));
+}
+
+/**
+ * Feedback entries (+ /activities/ and /partners/ joins for names): coordinators,
+ * staff and admin get every entry with replies (GET /feedback/manage); everyone
+ * else gets the published list (GET /feedback/). Failures fall back to [].
+ */
+export function loadFeedbackEntries(role: string = "public"): Promise<FeedbackEntry[]> {
+  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/manage" : "/feedback/";
+  return safeLoad<FeedbackEntry[]>(path, buildFeedback, []);
+}
+
+/** Like loadFeedbackEntries, but a failed request is thrown so the page can say so. */
+export async function loadFeedbackStrict(role: string = "public"): Promise<FeedbackEntry[]> {
+  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/manage" : "/feedback/";
+  return buildFeedback(await apiGetList<unknown>(path));
 }
 
 /**
@@ -813,9 +812,16 @@ export function loadExchangeStudents(role: string = "public"): Promise<ExchangeS
   return safeLoad<ExchangeStudent[]>(path, (raw) => (raw as RawExchange[]).map(mapExchange), []);
 }
 
-/** GET /users/ -> the first admin/staff profile. */
-export function loadAdminProfile(): Promise<AdminProfile> {
-  return safeLoad<AdminProfile>("/users/", (raw) => mapAdminProfile((raw as RawUser[])[0]), EMPTY_ADMIN_PROFILE);
+/** GET /users/ (admin only) -> every account that has signed in. */
+export const loadUsers = () => apiGetList<UserAccount>("/users/");
+
+/** ISO timestamp -> "20 ส.ค. 2568 14:05" in local time; "—" if missing. */
+export function formatThaiDateTime(iso?: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${formatThaiDate(iso)} ${time}`;
 }
 
 // ---------- Hook for pages ----------

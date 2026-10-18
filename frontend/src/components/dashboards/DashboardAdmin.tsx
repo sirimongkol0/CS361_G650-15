@@ -32,9 +32,9 @@ function Stars({ n }: { n: number }) {
 const PIE_COLORS = ["#8B1538", "#C8961E", "#1D4ED8", "#15803D", "#7C3AED", "#0369A1", "#B45309", "#6B7280"];
 
 const systemActions = [
-  { label: "จัดการผู้ใช้", href: "/users", icon: Users },
+  { label: "ผู้ใช้และสิทธิ์", href: "/users", icon: Users },
   { label: "รายงานและสถิติ", href: "/reports", icon: TrendingUp },
-  { label: "ตั้งค่าระบบ", href: "/settings", icon: Building2 },
+  { label: "ตั้งค่าบัญชี", href: "/settings", icon: Building2 },
 ];
 
 export default function DashboardAdmin() {

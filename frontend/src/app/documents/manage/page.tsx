@@ -72,6 +72,15 @@ export default function ManageDocumentsPage() {
   }, [documents.status, documents.data]);
   const selected = rows?.find((d) => d.id === selectedId) ?? null;
 
+  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "ต่ออายุ").
+  useEffect(() => {
+    const id = Number(new URLSearchParams(window.location.search).get("open"));
+    if (id && rows) {
+      if (rows.some((d) => d.id === id)) setSelectedId(id);
+      window.history.replaceState(null, "", "/documents/manage");
+    }
+  }, [rows]);
+
   const refresh = (message?: string) => {
     setNotice(message ?? null);
     setReload((n) => n + 1);

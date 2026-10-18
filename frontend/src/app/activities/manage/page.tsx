@@ -61,9 +61,16 @@ export default function ManageActivitiesPage() {
     if (activities.status === "success") setRows(activities.data);
   }, [activities.status, activities.data]);
 
-  // /activities/manage?edit=<id> opens that activity (from the detail page's "แก้ไข").
+  // /activities/manage?edit=<id> opens that activity (from the detail page's "แก้ไข");
+  // ?new=1 opens the add form (from the staff dashboard's "เพิ่มกิจกรรม").
   useEffect(() => {
-    const id = Number(new URLSearchParams(window.location.search).get("edit"));
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("new") === "1") {
+      setEditing("new");
+      window.history.replaceState(null, "", "/activities/manage");
+      return;
+    }
+    const id = Number(params.get("edit"));
     if (id && rows) {
       const row = rows.find((a) => a.id === id);
       if (row) setEditing(row);

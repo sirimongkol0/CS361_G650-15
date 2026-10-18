@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, Plus, Download } from "lucide-react";
+import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, Plus } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
   recentActivities, shown, useDashboardData, yearsIn,
 } from "@/lib/dashboard-data";
+import { downloadCsv } from "@/lib/list-tools";
+import { ExportCsvButton } from "@/components/list-ui";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150";
@@ -29,11 +31,16 @@ export default function DashboardStaff() {
   const year = selectedYear ?? years[0] ?? new Date().getFullYear();
 
   const agreements = data.documents.filter(isAgreement);
-  const staffExpiringDocs = expiringAgreements(data.documents).map((d) => ({title: d.title, org: d.org, expire: d.expire, days: d.daysLeft}));
+  const staffExpiringDocs = expiringAgreements(data.documents).map((d) => ({id: d.id, title: d.title, org: d.org, expire: d.expire, days: d.daysLeft}));
   const activeAgreements = agreements.filter((d) => agreementState(d) === "active").length;
   const monthly = countByMonth(data.activities.map((a) => a.startDate), year)
     .map((count, i) => ({ month: monthLabel(i), กิจกรรม: count }));
   const staffRecentActivities = recentActivities(data.activities, 5);
+  const exportMonthly = () => downloadCsv(
+    `pcsms-activities-${beYear(year)}.csv`,
+    ["เดือน", "กิจกรรม"],
+    monthly.map((row) => [`${row.month} ${beYear(year)}`, row.กิจกรรม]),
+  );
 
   const kpis: Kpi[] = [
     { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
@@ -67,8 +74,8 @@ export default function DashboardStaff() {
           >
             {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />ส่งออก</button>
-          <button className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
+          <ExportCsvButton onExport={exportMonthly} disabled={!data.loaded} />
+          <Link href="/activities/manage?new=1" className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</Link>
         </div>
       </div>
 
@@ -120,8 +127,8 @@ export default function DashboardStaff() {
             <h2 className="font-bold" style={{ color: "#111827" }}>ข้อตกลงที่ต้องติดตาม</h2>
           </div>
           <div className="space-y-3">
-            {staffExpiringDocs.map((d, i) => (
-              <div key={i} className="p-3.5 rounded-xl" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
+            {staffExpiringDocs.map((d) => (
+              <div key={d.id} className="p-3.5 rounded-xl" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-bold text-sm" style={{ color: "#92400E" }}>{d.title}</div>
@@ -131,7 +138,7 @@ export default function DashboardStaff() {
                 </div>
                 <div className="text-xs mt-1" style={{ color: "#B45309" }}>หมดอายุ {d.expire}</div>
                 <div className="flex gap-2 mt-2.5">
-                  <button className="btn btn-outline text-xs py-1.5 flex-1">ต่ออายุ</button>
+                  <Link href={`/documents/manage?open=${d.id}`} className="btn btn-outline text-xs py-1.5 flex-1">ต่ออายุ</Link>
                 </div>
               </div>
             ))}

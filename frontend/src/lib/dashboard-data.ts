@@ -47,7 +47,7 @@ export function useDashboardData(): DashboardData {
       orEmpty(loadPublicPartners()),
       orEmpty(loadDocuments()),
       orEmpty(loadActivities()),
-      orEmpty(loadFeedbackEntries()),
+      orEmpty(loadFeedbackEntries(role)),
       orEmpty(loadExchangeStudents(role)),
     ]);
     return { loaded: true, partners, documents, activities, feedback, exchange };
