@@ -96,10 +96,10 @@ def main():
                 effective_date=date(2026, 1, 1), expiry_date=date(2027, 12, 31),
                 file_availability='available', storage_key='v2-6/missing.pdf',
                 file_name='ตัวอย่าง V2-6.pdf', mime_type='application/pdf', size_bytes=len(sample),
-                is_published=True, sources=[source('missing-doc')])
+                is_published=True, cstu_status='keep', sources=[source('missing-doc')])
             metadata = models.Document(name='V2-6 Metadata Only Agreement', partner=primary,
                 doc_type='moa', document_kind='agreement', file_availability='metadata_only',
-                is_published=True, sources=[source('metadata-doc')])
+                is_published=True, cstu_status='keep', sources=[source('metadata-doc')])
             hidden_activity = models.Activity(name='V2-6 Unpublished Activity', partner=primary,
                 mou_document=draft_doc, date=date(2026, 10, 1), is_published=False)
             hidden_targets = models.Activity(name='V2-6 Public Activity Private Targets', partner=hidden,
