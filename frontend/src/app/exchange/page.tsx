@@ -9,7 +9,7 @@ import {
   GraduationCap,
   ArrowUpRight,
   ArrowDownLeft,
-  Filter,
+  Download,
   MoreHorizontal,
 } from "lucide-react";
 import { ApiError, loadExchangeStudents, useApiResource, type ExchangeStudent } from "@/lib/api";
@@ -36,6 +36,7 @@ export default function StudentExchangePage() {
   const [editing, setEditing] = useState<ExchangeStudent | "new" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const isStaff = role === "staff" || role === "admin";
+  const isStudent = role === "student";
   // Coordinators edit records they created; staff/admin edit all.
   const canEdit = (s: ExchangeStudent) => isStaff || (role === "coordinator" && s.raw.ownerUserId === user?.id);
   // Wait for the session so a signed-in user never briefly sees the public list.
@@ -57,6 +58,20 @@ export default function StudentExchangePage() {
       }),
     [search, typeFilter, statusFilter, exchangeStudents]
   );
+  const loaded = resource.status === "success";
+  const hasRecords = loaded && exchangeStudents.length > 0;
+  // A student sees only their own one or two records: no totals or filters needed.
+  const showOverview = hasRecords && !isStudent;
+  const subtitle = isStudent
+    ? "ข้อมูลการแลกเปลี่ยนที่เชื่อมกับบัญชีนี้"
+    : role === "coordinator"
+      ? "ข้อมูลนักศึกษาแลกเปลี่ยนที่บันทึกไว้"
+      : "ข้อมูลนักศึกษาแลกเปลี่ยนขาออกและขาเข้า";
+  const emptyState = isStudent
+    ? { title: "ยังไม่มีข้อมูลการแลกเปลี่ยนของบัญชีนี้", message: "หากเข้าร่วมโครงการแลกเปลี่ยนแล้ว กรุณาติดต่อเจ้าหน้าที่หลักสูตรเพื่อเชื่อมข้อมูลกับบัญชี" }
+    : canManage(role)
+      ? { title: "ยังไม่มีข้อมูลนักศึกษาแลกเปลี่ยน", message: "กด “เพิ่มนักศึกษา” เพื่อเริ่ม" }
+      : { title: "ยังไม่มีข้อมูลนักศึกษาแลกเปลี่ยน", message: "ข้อมูลจะแสดงที่นี่เมื่อเผยแพร่แล้ว" };
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -72,18 +87,18 @@ export default function StudentExchangePage() {
           <h1 className="text-2xl font-bold text-ink font-display">
             นักศึกษาแลกเปลี่ยน
           </h1>
-          <p className="text-sm mt-0.5 text-faint">
-            ข้อมูลนักศึกษาแลกเปลี่ยนขาออกและขาเข้า
-          </p>
+          <p className="text-sm mt-0.5 text-faint">{subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <button className="btn btn-outline gap-2 text-sm" type="button" disabled={filtered.length === 0}
-            onClick={() => downloadCsv("exchange-students.csv",
-              ["ชื่อ-นามสกุล", "ประเภท", "จาก", "ไป", "ช่วงเวลา", "โครงการ", "สถานะ"],
-              filtered.map((s) => [s.name, s.type, s.from, s.to, s.period, s.program, s.status]))}>
-            <Filter className="w-4 h-4" />
-            ส่งออก CSV
-          </button>
+          {hasRecords && (
+            <button className="btn btn-outline gap-2 text-sm" type="button" disabled={filtered.length === 0}
+              onClick={() => downloadCsv("exchange-students.csv",
+                ["ชื่อ-นามสกุล", "ประเภท", "จาก", "ไป", "ช่วงเวลา", "โครงการ", "สถานะ"],
+                filtered.map((s) => [s.name, s.type === "outbound" ? "ขาออก" : "ขาเข้า", s.from, s.to, s.period, s.program, s.status]))}>
+              <Download className="w-4 h-4" />
+              ส่งออก CSV
+            </button>
+          )}
           {canManage(role) && (
             <button className="btn btn-primary gap-2" type="button" onClick={() => { setNotice(null); setEditing("new"); }}>
               <Plus className="w-4 h-4" />
@@ -99,13 +114,14 @@ export default function StudentExchangePage() {
           <GraduationCap className="w-4 h-4 text-blue-700" />
         </div>
         <p className="text-sm text-blue-700">
-          <span className="font-semibold">Security &amp; Privacy:</span>{" "}
-          ระบบแสดงข้อมูลนักศึกษาตามสิทธิ์ของแต่ละบทบาท ตาม PDPA
-          (Role-based Access)
+          {isStudent
+            ? "แสดงเฉพาะข้อมูลของบัญชีนี้ ตาม PDPA"
+            : "ระบบแสดงข้อมูลนักศึกษาตามสิทธิ์ของแต่ละบทบาท ตาม PDPA"}
         </p>
       </div>
 
       {/* Summary cards */}
+      {showOverview && (<>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
         {[
           {
@@ -176,6 +192,7 @@ export default function StudentExchangePage() {
           </select>
         </div>
       </div>
+      </>)}
 
       <Notice text={notice} />
       <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มนักศึกษาแลกเปลี่ยน" : "แก้ไขข้อมูลนักศึกษาแลกเปลี่ยน"}
@@ -200,8 +217,10 @@ export default function StudentExchangePage() {
         <ErrorState error={resource.error ?? new ApiError("Unexpected API error")} onRetry={resource.retry} />
       )}
 
+      {loaded && !hasRecords && <EmptyState title={emptyState.title} message={emptyState.message} />}
+
       {/* Table */}
-      {resource.status === "success" && (
+      {hasRecords && (
       <div className="rounded-lg bg-white shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -309,7 +328,7 @@ export default function StudentExchangePage() {
         </div>
         <div className="flex items-center justify-between px-5 py-4 border-t border-line">
           <span className="text-sm text-faint">
-            แสดง 1–{filtered.length} จาก {exchangeStudents.length} คน
+            แสดง {filtered.length} จาก {exchangeStudents.length} คน
           </span>
         </div>
       </div>
