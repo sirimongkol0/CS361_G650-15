@@ -189,6 +189,9 @@ export const apiPut = <T>(path: string, body?: unknown) => apiSend<T>("PUT", pat
 export const apiPatch = <T>(path: string, body?: unknown) => apiSend<T>("PATCH", path, json(body), "application/json");
 export const apiDelete = (path: string) => apiSend<void>("DELETE", path);
 
+/** GET that never uses the cache, e.g. a short-lived download link. */
+export const apiGetFresh = <T>(path: string) => apiGetWithRetry<T>(path);
+
 /** Upload one file as multipart form data (the browser sets the boundary header). */
 export function apiUpload<T>(path: string, file: File, field = "file", method = "PUT"): Promise<T> {
   const form = new FormData();
@@ -741,6 +744,34 @@ export async function loadDocuments(): Promise<DocumentView[]> {
 export async function loadDocument(id: number): Promise<DocumentView> {
   return mapDocument(await apiGet<RawDocument>(`/documents/${id}`));
 }
+
+/** Internal agreement view (V3-3): drafts, review and publication fields included. */
+export interface ManagedDocument {
+  id: number;
+  name: string;
+  docType: string | null;
+  documentKind: string | null;
+  fileAvailability: string | null;
+  fileName: string | null;
+  sizeBytes: number | null;
+  uploadedAt: string | null;
+  effectiveDate: string | null;
+  expiryDate: string | null;
+  partnerId: number | null;
+  partner: { id: number; name: string } | null;
+  responsible: string | null;
+  status: string | null;
+  signerOur: string | null;
+  signerPartner: string | null;
+  scopeLevel: ScopeLevel | null;
+  isPublished: boolean;
+  cstuStatus: "keep" | "review" | "out_of_scope";
+  cstuEvidence: string | null;
+  ownerUserId: number | null;
+}
+
+/** GET /documents/manage: coordinators get their own, staff/admin all (needs login). */
+export const loadManagedDocuments = () => apiGetList<ManagedDocument>("/documents/manage");
 
 /** GET a list of {id, name} rows as a lookup map; an unavailable join yields an empty map. */
 async function loadNames(path: string): Promise<Map<number, string>> {

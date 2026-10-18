@@ -10,7 +10,9 @@ import Link from "next/link";
 import {
   ChevronRight,
   FileText,
+  FolderCog,
 } from "lucide-react";
+import { canManage, useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState } from "@/components/data-states";
 import { ScopeLevelBadge, ScopeLevelOptions } from "@/components/scope-level-badge";
 import { ExpiryBadge } from "@/components/expiry-badge";
@@ -30,6 +32,7 @@ const inputCls =
 
 export default function DocumentsPage() {
   useDocumentTitle("เอกสารข้อตกลง");
+  const { role } = useRole();
   const [search, setSearch] = useUrlState("q", "");
   const [typeFilter, setTypeFilter] = useUrlState("type", "all");
   const [statusFilter, setStatusFilter] = useUrlState("status", "all");
@@ -118,6 +121,12 @@ export default function DocumentsPage() {
             ค้นหาและดู MoU, MoA และเอกสารความร่วมมือที่เผยแพร่
           </p>
         </div>
+        {canManage(role) && (
+          <Link href="/documents/manage" className="btn btn-primary gap-2">
+            <FolderCog className="w-4 h-4" />
+            จัดการข้อตกลง
+          </Link>
+        )}
       </div>
 
       {documents.status === "loading" && <TableSkeleton columns={5} />}

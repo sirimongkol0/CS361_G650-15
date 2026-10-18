@@ -170,7 +170,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
         {navItems.map(({ to, icon, label, end }) => {
           const Icon = ICON_MAP[icon] ?? LayoutDashboard;
-          const active = end ? pathname === to : pathname.startsWith(to);
+          // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.
+          const active = end
+            ? pathname === to
+            : pathname.startsWith(to) && !navItems.some((other) => other.to.length > to.length && pathname.startsWith(other.to));
           return (
             <Link
               key={`${to}-${label}`}

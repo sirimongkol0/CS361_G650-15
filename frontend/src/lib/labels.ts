@@ -90,6 +90,21 @@ export const documentStatusLabels: Record<string, string> = {
   expiring: "ใกล้หมดอายุ",
   expired: "หมดอายุ",
   draft: "อยู่ระหว่างจัดทำ",
+  approved: "อนุมัติแล้ว",
+  cancelled: "ยกเลิก",
+};
+
+/* V3-3 CSTU relevance review; only "keep" can appear publicly. */
+export const cstuStatusLabels: Record<string, string> = {
+  keep: "เกี่ยวข้องกับ CSTU (คงไว้)",
+  review: "รอทบทวน",
+  out_of_scope: "นอกขอบเขต CSTU",
+};
+
+export const cstuStatusColors: Record<string, string> = {
+  keep: "badge-green",
+  review: "badge-gold",
+  out_of_scope: "badge-gray",
 };
 
 // The shared demo banner carries this notice; downloadable PDFs keep theirs.
