@@ -202,3 +202,23 @@ def test_exchange_mine_exposes_owner_fields_but_public_list_does_not(client, db_
     assert "userId" in mine[0]
     public = client.get("/api/v1/exchange/").json()
     assert "ownerUserId" not in public[0] and "userId" not in public[0]
+
+
+@pytest.mark.parametrize("role,status", [("public", 403), ("student", 403), ("coordinator", 403),
+                                         ("staff", 204), ("admin", 204)])
+def test_exchange_delete_is_staff_admin_only_and_audited(client, db_session, cognito, role, status):
+    row = models.ExchangeStudent(name="Delete me", is_published=True)
+    db_session.add(row)
+    db_session.commit()
+    record_id = row.id
+    response = client.delete(f"/api/v1/exchange/{record_id}", headers=bearer(token_for(client, role)))
+    assert response.status_code == status
+    db_session.expire_all()
+    remaining = db_session.get(models.ExchangeStudent, record_id)
+    logs = db_session.query(models.AuditLog).filter_by(entity="exchange_students", entity_id=record_id, action="delete")
+    if status == 204:
+        assert remaining is None
+        assert logs.one().before is not None
+        assert client.delete(f"/api/v1/exchange/{record_id}", headers=bearer(token_for(client, role))).status_code == 404
+    else:
+        assert remaining is not None and logs.count() == 0

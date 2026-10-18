@@ -112,3 +112,18 @@ def update_exchange_student(
     db.commit()
     db.refresh(row)
     return row
+
+
+@router.delete("/{student_id}", status_code=204)
+def delete_exchange_student(
+    student_id: int, db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("staff", "admin")),
+):
+    """Hard delete: the table has no soft-delete flag; the audit row keeps the last snapshot."""
+    row = db.query(models.ExchangeStudent).filter(models.ExchangeStudent.id == student_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Exchange student not found")
+    audit.record(db, user, "delete", "exchange_students", row.id, before=audit.snapshot(row))
+    db.delete(row)
+    db.commit()
+    return None

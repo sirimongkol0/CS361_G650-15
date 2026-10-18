@@ -7,8 +7,7 @@
 //
 // The credentials file is tab-separated "role<TAB>email<TAB>password" (lines
 // starting with # are ignored). Passwords are never printed or written out.
-// Every record it creates is named "FT-<timestamp> ..." and deleted at the end
-// where the API allows deletion.
+// Every record it creates is named "FT-<timestamp> ..." and deleted at the end.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -320,13 +319,13 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       assert.equal(res.status, 401);
     });
   } finally {
-    // ---------- Cleanup (soft deletes; history stays in the audit log) ----------
+    // ---------- Cleanup (exchange records are hard-deleted, the rest soft-deleted;
+    // history stays in the audit log) ----------
     if (pages.staff) {
       for (const [p, id] of [['/documents/', ids.agreement], ['/activities/', ids.activity],
-        ['/partners/', ids.partner], ['/partners/', ids.organisation]]) {
+        ['/partners/', ids.partner], ['/partners/', ids.organisation], ['/exchange/', ids.exchange]]) {
         if (id) await callApi(pages.staff, 'DELETE', `${p}${id}`).catch(() => {});
       }
-      if (ids.exchange) await callApi(pages.staff, 'PATCH', `/exchange/${ids.exchange}`, { is_published: false }).catch(() => {});
     }
     await browser.close();
   }
