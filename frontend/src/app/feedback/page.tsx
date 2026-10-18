@@ -34,7 +34,7 @@ function StarRow({ rating }: { rating: number }) {
 const sourceColors: Record<string, string> = {
   "ผู้เข้าร่วมกิจกรรม": "badge-blue",
   "ศิษย์เก่า": "badge-purple",
-  "คู่ความร่วมมือ": "badge-crimson",
+  "หน่วยงานคู่ความร่วมมือ": "badge-crimson",
   "ระบบสหกิจศึกษา": "badge-gold",
   "นักศึกษา": "badge-green",
 };

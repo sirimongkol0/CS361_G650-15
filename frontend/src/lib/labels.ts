@@ -24,6 +24,15 @@ export const partnerTypeLabels: Record<string, string> = {
   international_organization: "องค์การระหว่างประเทศ",
 };
 
+/* Feedback channel (API field source). */
+export const feedbackSourceLabels: Record<string, string> = {
+  participant: "ผู้เข้าร่วมกิจกรรม",
+  alumni: "ศิษย์เก่า",
+  partner: "หน่วยงานคู่ความร่วมมือ",
+  student: "นักศึกษา",
+  coop_system: "ระบบสหกิจศึกษา",
+};
+
 export const label = (map: Record<string, string>, value: string | null | undefined) =>
   value ? map[value] ?? value : "—";
 

@@ -13,7 +13,7 @@
 
 import { type DependencyList, useEffect, useState } from "react";
 import { activityDateLabel, activityStatusLabel, latestActivities } from "@/lib/activity-display";
-import { parseScopeLevel, type ScopeLevel } from "@/lib/labels";
+import { feedbackSourceLabels, label, parseScopeLevel, type ScopeLevel } from "@/lib/labels";
 import { notifyUnauthorized, readToken } from "@/lib/session";
 
 // ---------- Base URL ----------
@@ -674,7 +674,7 @@ function mapFeedback(
   return {
     id: raw.id,
     title: raw.title,
-    source: raw.source ?? "—",
+    source: label(feedbackSourceLabels, raw.source),
     org: (raw.partnerId != null && partnerNames.get(raw.partnerId)) || "—",
     activity: (raw.activityId != null && activityNames.get(raw.activityId)) || "—",
     rating: raw.rating ?? 0,
