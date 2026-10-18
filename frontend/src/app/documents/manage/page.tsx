@@ -11,7 +11,7 @@ import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadPublicPartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
-import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, label, scopeLevelLabels } from "@/lib/labels";
+import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
@@ -381,7 +381,7 @@ function ManagePanel({
       <Section title="ข้อมูลข้อตกลง">
         <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
           <div><dt className="inline text-faint">หน่วยงาน: </dt><dd className="inline">{doc.partner?.name ?? "—"}</dd></div>
-          <div><dt className="inline text-faint">ประเภท: </dt><dd className="inline">{doc.docType?.toUpperCase() ?? "—"}</dd></div>
+          <div><dt className="inline text-faint">ประเภท: </dt><dd className="inline">{doc.docType ? label(documentTypeLabels, doc.docType.toUpperCase()) : "—"}</dd></div>
           <div><dt className="inline text-faint">ช่วงเวลา: </dt><dd className="inline">{formatThaiDate(doc.effectiveDate)} – {formatThaiDate(doc.expiryDate)}</dd></div>
           <div><dt className="inline text-faint">ผู้รับผิดชอบ: </dt><dd className="inline">{doc.responsible ?? "—"}</dd></div>
         </dl>

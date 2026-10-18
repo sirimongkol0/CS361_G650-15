@@ -324,6 +324,7 @@ def naturalize_demo(db) -> int:
             put(doc, "signer_our", SIGNER_OUR)
         if _labelled(doc.signer_partner):
             put(doc, "signer_partner", PARTNER_SIGNER_NAMES[doc.id % len(PARTNER_SIGNER_NAMES)])
+        put(doc, "file_name", naturalize(doc.file_name))
         for item in doc.scope_items:
             put(item, "text", naturalize(item.text))
     for activity in db.query(models.Activity).all():

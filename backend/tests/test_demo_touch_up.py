@@ -92,6 +92,7 @@ def test_naturalize_drops_fictional_labels_but_keeps_the_notice():
     assert n("ได้ checklist สมมติสำหรับตรวจข้อมูล") == "ได้ checklist สำหรับตรวจข้อมูล"
     assert n("ได้ checklistสำหรับตรวจข้อมูล") == "ได้ checklist สำหรับตรวจข้อมูล"  # repaired
     assert n("ส่งมอบต้นแบบ dashboard สมมติ 3 ชุด") == "ส่งมอบต้นแบบ dashboard 3 ชุด"
+    assert n("เอกสารสมมติ-2.pdf") == "เอกสาร-2.pdf"
     assert n(notice) == notice  # the dataset disclaimer itself is untouched
     assert n(None) is None and n("ไม่มีคำนี้") == "ไม่มีคำนี้"
 
