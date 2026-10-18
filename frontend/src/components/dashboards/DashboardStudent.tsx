@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, GraduationCap, CheckCircle2, Clock, Star, ChevronRight, Bell, Building2 } from "lucide-react";
+import { CalendarDays, GraduationCap, CheckCircle2, Clock, ChevronRight, Bell, Building2 } from "lucide-react";
 import { shown, upcomingActivities, useDashboardData } from "@/lib/dashboard-data";
 
 const statCard =
@@ -128,17 +128,6 @@ export default function DashboardStudent() {
                 </Link>
               ))}
             </div>
-          </div>
-
-          {/* Feedback */}
-          <div className={`${contentCard} p-4`}>
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="w-4 h-4" style={{ color: "#C8961E" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>ความคิดเห็น</h3>
-            </div>
-            <p className="text-xs text-faint">
-              ความคิดเห็นจากผู้เข้าร่วมกิจกรรมของหลักสูตร
-            </p>
           </div>
         </div>
       </div>

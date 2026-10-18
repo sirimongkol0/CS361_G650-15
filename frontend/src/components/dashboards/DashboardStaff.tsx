@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, Plus } from "lucide-react";
+import { Building2, FileText, CalendarDays, GraduationCap, AlertTriangle, Plus } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
@@ -47,7 +47,6 @@ export default function DashboardStaff() {
     { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
     { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE" },
     { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(data.loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
   ];
 
@@ -82,7 +81,7 @@ export default function DashboardStaff() {
       {staffExpiringDocs.length > 0 && (<div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">มีข้อตกลงใกล้หมดอายุ {staffExpiringDocs.length} ฉบับ</div>)}
 
       {/* KPI row */}
-      <div className="grid grid-cols-6 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-5 gap-3 mb-6 stagger">
         {kpis.map((s) => {
           const inner = (
             <>
