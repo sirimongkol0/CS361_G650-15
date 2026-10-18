@@ -77,10 +77,10 @@ async function check(name,work) {await work();cases.push({name,status:'passed'})
     };
     await check('UI stakeholder combined filters, empty search and reset',async()=>{
       const p=records.partners.find(x=>x.id===ids.partner);await go('/stakeholders');await page.getByRole('link',{name:p.name,exact:true}).waitFor();
-      await page.getByPlaceholder(/^ค้นหาหน่วยงาน/).fill(p.name);
+      await page.getByPlaceholder(/^ค้นหาชื่อหน่วยงาน/).fill(p.name);
       await page.getByLabel('ประเภทหน่วยงาน').selectOption(p.type);await page.getByLabel('ประเทศ').selectOption({label:'🇹🇭 ไทย'});
       assert.equal(await page.locator('tbody tr').count(),1);await capture('stakeholder-filters');
-      await page.getByPlaceholder(/^ค้นหาหน่วยงาน/).fill('V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบหน่วยงานที่ค้นหา',exact:true}).waitFor();
+      await page.getByPlaceholder(/^ค้นหาชื่อหน่วยงาน/).fill('V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบหน่วยงานที่ค้นหา',exact:true}).waitFor();
       await page.getByRole('button',{name:'ล้างตัวกรอง',exact:true}).click();assert.equal(await page.locator('tbody tr').count(),records.partners.length);
     });
     await check('UI main flow stakeholder → agreement → activity → stakeholder/download and refresh',async()=>{
@@ -96,56 +96,56 @@ async function check(name,work) {await work();cases.push({name,status:'passed'})
       await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link',{name:a.name,exact:true}).click();await page.getByRole('heading',{name:a.name,exact:true}).waitFor();
       assert.equal(await section('ข้อมูลกิจกรรม').getByRole('link').getAttribute('href'),`/stakeholders/${p.id}`);
       await capture('activity-relationships');await page.reload();await page.getByRole('heading',{name:a.name,exact:true}).waitFor();
-      await section('เอกสารที่เกี่ยวข้อง').getByRole('link').click();await page.getByRole('heading',{name:d.name,exact:true}).waitFor();
+      await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link').click();await page.getByRole('heading',{name:d.name,exact:true}).waitFor();
       await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link',{name:a.name,exact:true}).click();await page.getByRole('heading',{name:a.name,exact:true}).waitFor();
       await section('ข้อมูลกิจกรรม').getByRole('link').click();await page.getByRole('heading',{name:p.name,exact:true}).waitFor();
       await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link',{name:d.name,exact:true}).click();await page.getByRole('heading',{name:d.name,exact:true}).waitFor();
-      const promise=page.waitForEvent('download');await page.getByRole('button',{name:`ดาวน์โหลดเอกสาร ${d.id}`,exact:true}).first().click();const download=await promise;
+      const promise=page.waitForEvent('download');await page.getByRole('button',{name:`ดาวน์โหลดไฟล์ข้อตกลง ${d.id}`,exact:true}).first().click();const download=await promise;
       assert.equal(download.suggestedFilename(),d.fileName);assert.equal(sha(fs.readFileSync(await download.path())),manifest.sampleSha256);
       await section('หน่วยงาน').getByRole('link').click();await page.getByRole('heading',{name:p.name,exact:true}).waitFor();
     });
     await check('UI agreement search/type/status/inclusive dates, invalid range, empty and reset',async()=>{
       const d=records.documents.find(x=>x.id===ids.document);await go('/documents');await page.getByRole('link',{name:d.name,exact:true}).waitFor();
-      await page.getByPlaceholder('ค้นหาชื่อข้อตกลง, หน่วยงาน...').fill(d.name);await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,d.name);await page.getByLabel('ประเภทเอกสาร').selectOption(d.type.toUpperCase());await page.getByLabel('สถานะเอกสาร').selectOption(d.status);
-      await page.getByLabel('ช่วงเวลาที่มีผลจาก').fill(d.expiryDate);await page.getByLabel('ช่วงเวลาที่มีผลถึง').fill(d.expiryDate);/* Search matches every word in any field, so other agreements may also match; each must satisfy the other filters. */const shown=await page.locator('tbody tr td:first-child a[href^="/documents/"]').allInnerTexts();assert.ok(shown.includes(d.name),shown.join(', '));for(const name of shown){const r=records.documents.find(x=>x.name===name);assert.ok(r,name);assert.equal(r.type,d.type,name);assert.equal(r.status,d.status,name);assert.ok(r.expiryDate>=d.expiryDate&&(!r.effectiveDate||r.effectiveDate<=d.expiryDate),name);}await capture('agreement-filters');
+      await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill(d.name);await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,d.name);await page.getByLabel('ประเภทข้อตกลง').selectOption(d.type.toUpperCase());await page.getByLabel('สถานะข้อตกลง').selectOption(d.status);
+      await page.getByLabel('มีผลตั้งแต่วันที่').fill(d.expiryDate);await page.getByLabel('มีผลถึงวันที่').fill(d.expiryDate);/* Search matches every word in any field, so other agreements may also match; each must satisfy the other filters. */const shown=await page.locator('tbody tr td:first-child a[href^="/documents/"]').allInnerTexts();assert.ok(shown.includes(d.name),shown.join(', '));for(const name of shown){const r=records.documents.find(x=>x.name===name);assert.ok(r,name);assert.equal(r.type,d.type,name);assert.equal(r.status,d.status,name);assert.ok(r.expiryDate>=d.expiryDate&&(!r.effectiveDate||r.effectiveDate<=d.expiryDate),name);}await capture('agreement-filters');
       const afterExpiry=new Date(d.expiryDate+'T00:00:00Z');afterExpiry.setUTCDate(afterExpiry.getUTCDate()+1);
-      await page.getByLabel('ช่วงเวลาที่มีผลจาก').fill(afterExpiry.toISOString().slice(0,10));await page.getByText('วันเริ่มต้องไม่เกินวันสิ้นสุด',{exact:true}).waitFor();assert.equal(await page.locator('tbody tr').count(),0);
+      await page.getByLabel('มีผลตั้งแต่วันที่').fill(afterExpiry.toISOString().slice(0,10));await page.getByText('วันเริ่มต้องไม่หลังวันสิ้นสุด',{exact:true}).waitFor();assert.equal(await page.locator('tbody tr').count(),0);
       await page.getByRole('button',{name:'ล้างตัวกรอง',exact:true}).click();assert.equal(await page.locator('tbody tr').count(),records.documents.length);
-      await page.getByPlaceholder('ค้นหาชื่อข้อตกลง, หน่วยงาน...').fill('V2-NO-SUCH-RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบเอกสารที่ค้นหา',exact:true}).waitFor();
+      await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill('V2-NO-SUCH-RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบข้อตกลงที่ค้นหา',exact:true}).waitFor();
     });
     await check('UI activity combined search/type/organization/status/dates, empty and reset',async()=>{
       const a=records.activities.find(x=>x.id===ids.activity),p=records.partners.find(x=>x.id===a.partnerId);await go('/activities');await page.getByRole('link',{name:a.name,exact:true}).waitFor();
-      await page.getByPlaceholder('ค้นหากิจกรรมหรือหน่วยงาน...').fill(a.name);await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,a.name);
+      await page.getByPlaceholder('ค้นหาชื่อกิจกรรมหรือหน่วยงาน').fill(a.name);await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,a.name);
       const filters=page.locator('main select');await filters.nth(0).selectOption(a.type);await filters.nth(1).selectOption(p.name);await filters.nth(2).selectOption(a.status);
-      await page.getByLabel('วันที่เริ่มต้น').fill(a.date);await page.getByLabel('วันที่สิ้นสุด').fill(a.date);assert.equal(await page.locator('tbody tr').count(),1);await capture('activity-filters');
-      await page.getByPlaceholder('ค้นหากิจกรรมหรือหน่วยงาน...').fill('V2-NO-SUCH-RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบกิจกรรมที่ค้นหา',exact:true}).waitFor();
+      await page.getByLabel('ตั้งแต่วันที่').fill(a.date);await page.getByLabel('ถึงวันที่').fill(a.date);assert.equal(await page.locator('tbody tr').count(),1);await capture('activity-filters');
+      await page.getByPlaceholder('ค้นหาชื่อกิจกรรมหรือหน่วยงาน').fill('V2-NO-SUCH-RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบกิจกรรมที่ค้นหา',exact:true}).waitFor();
       await page.getByRole('button',{name:'ล้างตัวกรอง',exact:true}).click();assert.equal(await page.locator('tbody tr').count(),records.activities.length);
     });
     await check('UI no agreement/related records, metadata-only and draft/unknown ID Not Found',async()=>{
-      await go(`/stakeholders/${ids.emptyPartner}`);await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();await capture('empty-relationships');
-      await go(`/activities/${ids.noAgreementActivity}`);await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();
-      await go(`/documents/${ids.metadataDocument}`);await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:/ดาวน์โหลดเอกสาร/}).count(),0);
-      for(const route of [`/stakeholders/${ids.hiddenPartner}`,`/documents/${ids.hiddenDocument}`,`/activities/${ids.hiddenActivity}`,'/stakeholders/999999','/documents/999999','/activities/999999']) {await go(route);await page.getByRole('heading',{name:'ไม่พบข้อมูลที่เผยแพร่',exact:true}).waitFor();}
+      await go(`/stakeholders/${ids.emptyPartner}`);await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้อง',exact:true}).waitFor();await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();await capture('empty-relationships');
+      await go(`/activities/${ids.noAgreementActivity}`);await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้อง',exact:true}).waitFor();
+      await go(`/documents/${ids.metadataDocument}`);await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:/ดาวน์โหลดไฟล์ข้อตกลง/}).count(),0);
+      for(const route of [`/stakeholders/${ids.hiddenPartner}`,`/documents/${ids.hiddenDocument}`,`/activities/${ids.hiddenActivity}`,'/stakeholders/999999','/documents/999999','/activities/999999']) {await go(route);await page.getByRole('heading',{name:'ไม่พบรายการนี้',exact:true}).waitFor();}
       await capture('not-found');await go(`/activities/${ids.privateTargetsActivity}`);await page.getByRole('heading',{name:'V2-6 Public Activity Private Targets',exact:true}).waitFor();assert.equal(await page.locator(`a[href="/stakeholders/${ids.hiddenPartner}"],a[href="/documents/${ids.hiddenDocument}"]`).count(),0);
     });
-    for(const [route,endpoint,loading,emptyTitle] of [['/stakeholders','/partners/','กำลังโหลดหน่วยงาน','ยังไม่มีข้อมูลที่เผยแพร่'],['/documents','/documents/','กำลังโหลดเอกสาร','ยังไม่มีเอกสารที่เผยแพร่'],['/activities','/activities/','กำลังโหลดกิจกรรม','ยังไม่มีกิจกรรมที่เผยแพร่']]) {
+    for(const [route,endpoint,loading,emptyTitle] of [['/stakeholders','/partners/','กำลังโหลดหน่วยงาน','ยังไม่มีข้อมูล'],['/documents','/documents/','กำลังโหลดข้อตกลง…','ยังไม่มีข้อตกลงที่เผยแพร่'],['/activities','/activities/','กำลังโหลดกิจกรรม','ยังไม่มีกิจกรรมที่เผยแพร่']]) {
       await check(`UI ${route} Loading/real empty list/Error/Retry without fallback`,async()=>{
         let release;gatePath=endpoint;gate=new Promise(r=>release=r);await go(route);await page.getByRole('status',{name:'กำลังโหลดข้อมูล',exact:true}).waitFor();await capture(route.slice(1)+'-loading');release();gate=null;gatePath=null;await page.locator('tbody tr').first().waitFor();
         emptyPath=endpoint;await page.reload();await page.getByRole('heading',{name:emptyTitle,exact:true}).waitFor();await capture(route.slice(1)+'-empty');emptyPath=null;
-        failPath=endpoint;await page.reload();await page.getByRole('heading',{name:'ไม่สามารถโหลดข้อมูลได้',exact:true}).waitFor();assert.equal(await page.locator('tbody tr').count(),0);await capture(route.slice(1)+'-error');
+        failPath=endpoint;await page.reload();await page.getByRole('heading',{name:'โหลดข้อมูลไม่สำเร็จ',exact:true}).waitFor();assert.equal(await page.locator('tbody tr').count(),0);await capture(route.slice(1)+'-error');
         failPath=null;await page.getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();await page.locator('tbody tr').first().waitFor();
       });
     }
     await check('UI detail and relationship errors recover through Retry',async()=>{
       for(const [route,endpoint,name] of [[`/stakeholders/${ids.partner}`,`/partners/${ids.partner}`,records.partners.find(x=>x.id===ids.partner).name],[`/documents/${ids.document}`,`/documents/${ids.document}`,records.documents.find(x=>x.id===ids.document).name],[`/activities/${ids.activity}`,`/activities/${ids.activity}`,records.activities.find(x=>x.id===ids.activity).name]]) {
-        failPath=endpoint;await go(route);await page.getByRole('heading',{name:'ไม่สามารถโหลดข้อมูลได้',exact:true}).waitFor();failPath=null;await page.getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();await page.getByRole('heading',{name,exact:true}).waitFor();
+        failPath=endpoint;await go(route);await page.getByRole('heading',{name:'โหลดข้อมูลไม่สำเร็จ',exact:true}).waitFor();failPath=null;await page.getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();await page.getByRole('heading',{name,exact:true}).waitFor();
       }
       for(const [route,endpoint,title,name] of [[`/stakeholders/${ids.partner}`,'/documents/','ข้อตกลงที่เกี่ยวข้อง',records.documents.find(x=>x.id===ids.document).name],[`/stakeholders/${ids.partner}`,'/activities/','กิจกรรมที่เกี่ยวข้อง',records.activities.find(x=>x.id===ids.activity).name],[`/documents/${ids.document}`,'/activities/','กิจกรรมที่เกี่ยวข้อง',records.activities.find(x=>x.id===ids.activity).name]]) {
-        failPath=endpoint;await go(route);await section(title).getByRole('heading',{name:'ไม่สามารถโหลดข้อมูลได้',exact:true}).waitFor();assert.equal(await section(title).getByRole('link').count(),0);failPath=null;await section(title).getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();await section(title).getByRole('link',{name,exact:true}).waitFor();
+        failPath=endpoint;await go(route);await section(title).getByRole('heading',{name:'โหลดข้อมูลไม่สำเร็จ',exact:true}).waitFor();assert.equal(await section(title).getByRole('link').count(),0);failPath=null;await section(title).getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();await section(title).getByRole('link',{name,exact:true}).waitFor();
       }
     });
     await check('UI actual missing file 404, restored fixture and download Retry',async()=>{
-      await go(`/documents/${ids.missingDocument}`);const button=page.getByRole('button',{name:`ดาวน์โหลดเอกสาร ${ids.missingDocument}`,exact:true}).first();await button.click();await page.getByText('ไม่พบไฟล์เอกสารที่พร้อมดาวน์โหลด',{exact:true}).waitFor();await capture('missing-file');
+      await go(`/documents/${ids.missingDocument}`);const button=page.getByRole('button',{name:`ดาวน์โหลดไฟล์ข้อตกลง ${ids.missingDocument}`,exact:true}).first();await button.click();await page.getByText('ไม่พบไฟล์ข้อตกลง',{exact:true}).waitFor();await capture('missing-file');
       const storageRoot=path.resolve(manifest.storageDirectory),target=path.resolve(storageRoot,manifest.missingStorageKey);assert.ok(target.startsWith(storageRoot+path.sep));fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,fs.readFileSync(manifest.sampleFile));
       const promise=page.waitForEvent('download');await button.click();const download=await promise;assert.equal(download.suggestedFilename(),'ตัวอย่าง V2-6.pdf');assert.equal(sha(fs.readFileSync(await download.path())),manifest.sampleSha256);
     });

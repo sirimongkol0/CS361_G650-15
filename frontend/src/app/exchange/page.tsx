@@ -6,15 +6,17 @@ import {
   Search,
   Plus,
   ChevronRight,
-  GraduationCap,
   ArrowUpRight,
   ArrowDownLeft,
-  Filter,
+  Download,
   MoreHorizontal,
 } from "lucide-react";
 import { ApiError, loadExchangeStudents, useApiResource, type ExchangeStudent } from "@/lib/api";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { canManage, useRole } from "@/lib/role-context";
+import { Dialog, Notice } from "@/components/form-ui";
+import { ExchangeForm } from "@/components/exchange-form";
+import { downloadCsv } from "@/lib/list-tools";
 
 const statusColors: Record<string, string> = {
   "เสร็จสิ้น": "badge-green",
@@ -28,11 +30,18 @@ export default function StudentExchangePage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { role, status: session } = useRole();
+  const { role, user, status: session } = useRole();
+  const [reload, setReload] = useState(0);
+  const [editing, setEditing] = useState<ExchangeStudent | "new" | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const isStaff = role === "staff" || role === "admin";
+  const isStudent = role === "student";
+  // Coordinators edit records they created; staff/admin edit all.
+  const canEdit = (s: ExchangeStudent) => isStaff || (role === "coordinator" && s.raw.ownerUserId === user?.id);
   // Wait for the session so a signed-in user never briefly sees the public list.
   const resource = useApiResource<ExchangeStudent[]>(
     () => (session === "loading" ? new Promise<never>(() => {}) : loadExchangeStudents(role)),
-    [role, session]
+    [role, session, reload]
   );
   const exchangeStudents = useMemo(() => resource.data ?? [], [resource.data]);
 
@@ -48,6 +57,20 @@ export default function StudentExchangePage() {
       }),
     [search, typeFilter, statusFilter, exchangeStudents]
   );
+  const loaded = resource.status === "success";
+  const hasRecords = loaded && exchangeStudents.length > 0;
+  // A student sees only their own one or two records: no totals or filters needed.
+  const showOverview = hasRecords && !isStudent;
+  const subtitle = isStudent
+    ? "ข้อมูลการแลกเปลี่ยนที่เชื่อมกับบัญชีนี้"
+    : role === "coordinator"
+      ? "ข้อมูลนักศึกษาแลกเปลี่ยนที่บันทึกไว้"
+      : "ข้อมูลนักศึกษาแลกเปลี่ยนขาออกและขาเข้า";
+  const emptyState = isStudent
+    ? { title: "ยังไม่มีข้อมูลการแลกเปลี่ยนของบัญชีนี้", message: "หากเข้าร่วมโครงการแลกเปลี่ยนแล้ว กรุณาติดต่อเจ้าหน้าที่หลักสูตรเพื่อเชื่อมข้อมูลกับบัญชี" }
+    : canManage(role)
+      ? { title: "ยังไม่มีข้อมูลนักศึกษาแลกเปลี่ยน", message: "กด “เพิ่มนักศึกษา” เพื่อเริ่ม" }
+      : { title: "ยังไม่มีข้อมูลนักศึกษาแลกเปลี่ยน", message: "ข้อมูลจะแสดงที่นี่เมื่อเผยแพร่แล้ว" };
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -63,17 +86,20 @@ export default function StudentExchangePage() {
           <h1 className="text-2xl font-bold text-ink font-display">
             นักศึกษาแลกเปลี่ยน
           </h1>
-          <p className="text-sm mt-0.5 text-faint">
-            บริหารจัดการโครงการแลกเปลี่ยนนักศึกษา
-          </p>
+          <p className="text-sm mt-0.5 text-faint">{subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <button className="btn btn-outline gap-2 text-sm">
-            <Filter className="w-4 h-4" />
-            ส่งออก
-          </button>
+          {hasRecords && (
+            <button className="btn btn-outline gap-2 text-sm" type="button" disabled={filtered.length === 0}
+              onClick={() => downloadCsv("exchange-students.csv",
+                ["ชื่อ-นามสกุล", "ประเภท", "จาก", "ไป", "ช่วงเวลา", "โครงการ", "สถานะ"],
+                filtered.map((s) => [s.name, s.type === "outbound" ? "ขาออก" : "ขาเข้า", s.from, s.to, s.period, s.program, s.status]))}>
+              <Download className="w-4 h-4" />
+              ส่งออก CSV
+            </button>
+          )}
           {canManage(role) && (
-            <button className="btn btn-primary gap-2">
+            <button className="btn btn-primary gap-2" type="button" onClick={() => { setNotice(null); setEditing("new"); }}>
               <Plus className="w-4 h-4" />
               เพิ่มนักศึกษา
             </button>
@@ -81,19 +107,8 @@ export default function StudentExchangePage() {
         </div>
       </div>
 
-      {/* PDPA / role-based access note */}
-      <div className="flex items-center gap-3 p-3.5 rounded-lg mb-5 bg-blue-50 border border-blue-200">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-100">
-          <GraduationCap className="w-4 h-4 text-blue-700" />
-        </div>
-        <p className="text-sm text-blue-700">
-          <span className="font-semibold">Security &amp; Privacy:</span>{" "}
-          ข้อมูลส่วนตัวนักศึกษาถูกปกป้องตาม PDPA การแสดงผลถูกควบคุมตามสิทธิ์ผู้ใช้
-          (Role-based Access)
-        </p>
-      </div>
-
       {/* Summary cards */}
+      {showOverview && (<>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
         {[
           {
@@ -102,12 +117,12 @@ export default function StudentExchangePage() {
             color: "text-crimson",
           },
           {
-            label: "ไปแลกเปลี่ยน (Outbound)",
+            label: "ขาออก",
             value: exchangeStudents.filter((s: ExchangeStudent) => s.type === "outbound").length,
             color: "text-blue-700",
           },
           {
-            label: "มารับการแลกเปลี่ยน (Inbound)",
+            label: "ขาเข้า",
             value: exchangeStudents.filter((s: ExchangeStudent) => s.type === "inbound").length,
             color: "text-green-600",
           },
@@ -135,7 +150,7 @@ export default function StudentExchangePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
             <input
               className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
-              placeholder="ค้นหาชื่อนักศึกษา, สถาบัน..."
+              placeholder="ค้นหาชื่อนักศึกษาหรือสถาบัน"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -147,8 +162,8 @@ export default function StudentExchangePage() {
             onChange={(e) => setTypeFilter(e.target.value)}
           >
             <option value="all">ประเภท: ทั้งหมด</option>
-            <option value="outbound">ไปแลกเปลี่ยน (Outbound)</option>
-            <option value="inbound">มารับการแลกเปลี่ยน (Inbound)</option>
+            <option value="outbound">ขาออก</option>
+            <option value="inbound">ขาเข้า</option>
           </select>
           <select
             className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
@@ -162,24 +177,37 @@ export default function StudentExchangePage() {
             <option value="กำลังสมัคร">กำลังสมัคร</option>
             <option value="วางแผน">วางแผน</option>
           </select>
-          <select
-            className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
-            style={{ width: "auto", minWidth: 140 }}
-          >
-            <option>ช่วงเวลา: ทั้งหมด</option>
-            <option>2568</option>
-            <option>2567</option>
-          </select>
         </div>
       </div>
+      </>)}
+
+      <Notice text={notice} />
+      <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มนักศึกษาแลกเปลี่ยน" : "แก้ไขข้อมูลนักศึกษาแลกเปลี่ยน"}
+        onClose={() => setEditing(null)} wide>
+        {editing !== null && (
+          <ExchangeForm
+            key={editing === "new" ? "new" : editing.id}
+            record={editing === "new" ? undefined : editing.raw}
+            isStaff={isStaff}
+            onCancel={() => setEditing(null)}
+            onSaved={(saved, created) => {
+              setEditing(null);
+              setNotice(created ? `เพิ่ม “${saved.name}” แล้ว` : `บันทึก “${saved.name}” แล้ว`);
+              setReload((n) => n + 1);
+            }}
+          />
+        )}
+      </Dialog>
 
       {resource.status === "loading" && <LoadingState />}
       {resource.status === "error" && (
         <ErrorState error={resource.error ?? new ApiError("Unexpected API error")} onRetry={resource.retry} />
       )}
 
+      {loaded && !hasRecords && <EmptyState title={emptyState.title} message={emptyState.message} />}
+
       {/* Table */}
-      {resource.status === "success" && (
+      {hasRecords && (
       <div className="rounded-lg bg-white shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -248,7 +276,7 @@ export default function StudentExchangePage() {
                           s.type === "outbound" ? "badge-blue" : "badge-green"
                         }`}
                       >
-                        {s.type === "outbound" ? "ไปแลกเปลี่ยน" : "มารับ"}
+                        {s.type === "outbound" ? "ขาออก" : "ขาเข้า"}
                       </span>
                     </div>
                   </td>
@@ -269,26 +297,25 @@ export default function StudentExchangePage() {
                     </span>
                   </td>
                   <td className="px-4 py-4">
-                    <div className="flex gap-1">
-                      <button className="btn btn-outline p-1.5 text-xs">
-                        ดู
-                      </button>
-                      <button className="btn btn-outline p-1.5">
+                    {canEdit(s) && (
+                      <button className="btn btn-outline p-1.5 text-xs" type="button" aria-label={`แก้ไข ${s.name}`}
+                        onClick={() => { setNotice(null); setEditing(s); }}>
                         <MoreHorizontal className="w-4 h-4" />
+                        แก้ไข
                       </button>
-                    </div>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <EmptyState compact title="ไม่มีข้อมูลการแลกเปลี่ยน" message="ไม่มีรายการที่คุณมีสิทธิ์ดูหรือที่ตรงกับตัวกรอง" />
+            <EmptyState compact title="ไม่พบนักศึกษาแลกเปลี่ยน" message="ลองเปลี่ยนคำค้นหาหรือตัวกรอง" />
           )}
         </div>
         <div className="flex items-center justify-between px-5 py-4 border-t border-line">
           <span className="text-sm text-faint">
-            แสดง 1–{filtered.length} จาก {exchangeStudents.length} คน
+            แสดง {filtered.length} จาก {exchangeStudents.length} คน
           </span>
         </div>
       </div>

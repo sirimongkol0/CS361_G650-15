@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
+import audit
 import auth
 import database
 import models
@@ -42,6 +44,22 @@ def login(body: schemas.LoginRequest, db: Session = Depends(database.get_db)):
 @router.get("/me", response_model=schemas.CurrentUserResponse)
 def me(user: models.User = Depends(auth.get_current_user)):
     return user
+
+
+@router.post("/change-password", status_code=204)
+def change_password(
+    body: schemas.ChangePasswordRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(auth._bearer_scheme),
+    user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Change the signed-in user's own password (checked by Cognito). Passwords are never stored or logged."""
+    if body.new_password == body.current_password:
+        raise HTTPException(status_code=422, detail="New password must differ from the current password")
+    auth.change_password(credentials.credentials, body.current_password, body.new_password)
+    audit.record(db, user, "change_password", "users", user.id)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.post("/logout", status_code=204)

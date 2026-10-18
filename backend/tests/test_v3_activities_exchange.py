@@ -145,3 +145,80 @@ def test_coordinator_cannot_edit_another_owners_exchange(
 
     db_session.refresh(row)
     assert row.name == "Another coordinator's record"
+
+
+# --- V3-7: internal lists for the web forms ---------------------------------------
+
+import pytest  # noqa: E402
+
+
+def _user(db_session, email):
+    return db_session.query(models.User).filter_by(email=email).one()
+
+
+@pytest.mark.parametrize("role,status", [("public", 403), ("student", 403), ("coordinator", 200),
+                                         ("staff", 200), ("admin", 200)])
+def test_activity_manage_list_by_role(client, db_session, cognito, role, status):
+    headers = bearer(token_for(client, role))
+    response = client.get("/api/v1/activities/manage", headers=headers)
+    assert response.status_code == status
+
+
+def test_activity_manage_list_scopes_coordinators_and_shows_unpublished(client, db_session, cognito):
+    coordinator = bearer(token_for(client, "coordinator"))
+    staff = bearer(token_for(client, "staff"))
+    owner = _user(db_session, "coordinator@example.test")
+    db_session.add_all([
+        models.Activity(name="Mine draft", owner_user_id=owner.id, is_published=False),
+        models.Activity(name="Someone else's", owner_user_id=None, is_published=True),
+        models.Activity(name="Deleted", owner_user_id=owner.id, is_deleted=True),
+    ])
+    db_session.commit()
+    mine = client.get("/api/v1/activities/manage", headers=coordinator).json()
+    assert [(a["name"], a["isPublished"], a["ownerUserId"]) for a in mine] == [("Mine draft", False, owner.id)]
+    assert {a["name"] for a in client.get("/api/v1/activities/manage", headers=staff).json()} == {"Mine draft", "Someone else's"}
+    assert client.get("/api/v1/activities/manage").status_code == 401
+
+
+def test_activity_writes_return_owner_and_publication(client, db_session, cognito):
+    headers = bearer(token_for(client, "staff"))
+    created = client.post("/api/v1/activities/", json={"name": "Visible fields"}, headers=headers).json()
+    assert created["ownerUserId"] == _user(db_session, "staff@example.test").id
+    assert created["isPublished"] is False
+    # The public list still has no owner fields.
+    db_session.query(models.Activity).filter_by(id=created["id"]).update({"is_published": True})
+    db_session.commit()
+    public = client.get("/api/v1/activities/").json()
+    assert public and "ownerUserId" not in public[0] and "isPublished" not in public[0]
+
+
+def test_exchange_mine_exposes_owner_fields_but_public_list_does_not(client, db_session, cognito):
+    headers = bearer(token_for(client, "staff"))
+    staff = _user(db_session, "staff@example.test")
+    db_session.add(models.ExchangeStudent(name="Published record", is_published=True, owner_user_id=staff.id))
+    db_session.commit()
+    mine = client.get("/api/v1/exchange/mine", headers=headers).json()
+    assert (mine[0]["isPublished"], mine[0]["ownerUserId"]) == (True, staff.id)
+    assert "userId" in mine[0]
+    public = client.get("/api/v1/exchange/").json()
+    assert "ownerUserId" not in public[0] and "userId" not in public[0]
+
+
+@pytest.mark.parametrize("role,status", [("public", 403), ("student", 403), ("coordinator", 403),
+                                         ("staff", 204), ("admin", 204)])
+def test_exchange_delete_is_staff_admin_only_and_audited(client, db_session, cognito, role, status):
+    row = models.ExchangeStudent(name="Delete me", is_published=True)
+    db_session.add(row)
+    db_session.commit()
+    record_id = row.id
+    response = client.delete(f"/api/v1/exchange/{record_id}", headers=bearer(token_for(client, role)))
+    assert response.status_code == status
+    db_session.expire_all()
+    remaining = db_session.get(models.ExchangeStudent, record_id)
+    logs = db_session.query(models.AuditLog).filter_by(entity="exchange_students", entity_id=record_id, action="delete")
+    if status == 204:
+        assert remaining is None
+        assert logs.one().before is not None
+        assert client.delete(f"/api/v1/exchange/{record_id}", headers=bearer(token_for(client, role))).status_code == 404
+    else:
+        assert remaining is not None and logs.count() == 0

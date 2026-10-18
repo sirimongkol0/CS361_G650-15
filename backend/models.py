@@ -252,6 +252,11 @@ class Feedback(Base):
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     activity_id = Column(Integer, ForeignKey("activities.id", ondelete="SET NULL"), nullable=True)
 
+    # V3-7: staff/coordinator reply. Kept off the public response.
+    reply = Column(String, nullable=True)
+    replied_at = Column(DateTime(timezone=True), nullable=True)
+    replied_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
     partner = relationship("Partner")
     activity = relationship("Activity")
 
@@ -275,7 +280,7 @@ class ExchangeStudent(Base):
     to_organization = Column(String, nullable=True) # destination
     start_date = Column(Date, nullable=True)        # period start
     end_date = Column(Date, nullable=True)          # period end
-    program = Column(String, nullable=True)         # Student Exchange | Internship | ...
+    program = Column(String, nullable=True)         # e.g. แลกเปลี่ยนนักศึกษา | ฝึกงาน (free text)
     status = Column(String, nullable=True)          # Thai status label, e.g. "เสร็จสิ้น"
     is_published = Column(Boolean, default=False, nullable=False)
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)

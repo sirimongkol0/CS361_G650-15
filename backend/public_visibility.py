@@ -1,6 +1,30 @@
 """Shared eligibility rules for public records and relationship targets."""
+from datetime import datetime, timezone
+
 from sqlalchemy import func, or_
 import models
+
+
+def has_verified_source(record) -> bool:
+    return any(source.verification_status == "verified" for source in record.sources)
+
+
+def attach_verified_source(db, record, url: str, title: str) -> models.Source:
+    """Attach a staff-checked https source to a partner/document (reusing a known URL).
+
+    Public pages list only records with a verified source; this is how staff
+    provide one from the web (V3-7).
+    """
+    source = db.query(models.Source).filter(models.Source.source_url == url).first()
+    if source is None:
+        source = models.Source(source_url=url, source_title=title, source_type="staff_verified",
+                               source_checked_at=datetime.now(timezone.utc))
+        db.add(source)
+    source.verification_status = "verified"
+    source.source_checked_at = datetime.now(timezone.utc)
+    if source not in record.sources:
+        record.sources.append(source)
+    return source
 
 
 def partner_criteria():

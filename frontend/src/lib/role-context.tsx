@@ -39,7 +39,7 @@ export const ROLES: RoleConfig[] = [
   },
   {
     id: 'student',
-    label: 'นักศึกษา / ผู้เข้าร่วมโครงการ',
+    label: 'นักศึกษา',
     labelShort: 'นักศึกษา',
     dashboardPath: '/dashboard/student',
     pillColor: '#1D4ED8',
@@ -47,7 +47,7 @@ export const ROLES: RoleConfig[] = [
   },
   {
     id: 'coordinator',
-    label: 'อาจารย์ / ผู้ประสานงาน',
+    label: 'อาจารย์ผู้ประสานงาน',
     labelShort: 'ผู้ประสานงาน',
     dashboardPath: '/dashboard/coordinator',
     pillColor: '#15803D',
@@ -63,8 +63,8 @@ export const ROLES: RoleConfig[] = [
   },
   {
     id: 'admin',
-    label: 'ผู้บริหาร / ผู้ดูแลระบบ',
-    labelShort: 'ผู้บริหาร',
+    label: 'ผู้ดูแลระบบ',
+    labelShort: 'ผู้ดูแลระบบ',
     dashboardPath: '/dashboard/admin',
     pillColor: '#8B1538',
     pillBg: '#F5D6DE',
@@ -94,36 +94,51 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   public: [
     { to: '/dashboard/public', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
-    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
+    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
   student: [
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
+    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   coordinator: [
     { to: '/dashboard/coordinator', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
-    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
+    { to: '/stakeholders/manage', label: 'จัดการหน่วยงาน', icon: 'folder' },
+    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
+    { to: '/documents/manage', label: 'จัดการข้อตกลง', icon: 'folder' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   staff: [
     { to: '/dashboard/staff', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
-    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
+    { to: '/stakeholders/manage', label: 'จัดการหน่วยงาน', icon: 'folder' },
+    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
+    { to: '/documents/manage', label: 'จัดการข้อตกลง', icon: 'folder' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   admin: [
     { to: '/dashboard/admin', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
-    { to: '/documents', label: 'เอกสารข้อตกลง', icon: 'file' },
+    { to: '/stakeholders/manage', label: 'จัดการหน่วยงาน', icon: 'folder' },
+    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
+    { to: '/documents/manage', label: 'จัดการข้อตกลง', icon: 'folder' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
+    { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
+    { to: '/users', label: 'ผู้ใช้และสิทธิ์', icon: 'users' },
   ],
 };
+
+/** Shown to every signed-in account, including the public role (whose sidebar anonymous visitors share). */
+export const ACCOUNT_NAV: NavItem = { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' };
 
 /* ---- Context ---- */
 export type SessionStatus = 'loading' | 'anonymous' | 'authenticated';

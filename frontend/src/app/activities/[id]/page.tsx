@@ -27,13 +27,13 @@ export default function ActivityDetailPage() {
   useDocumentTitle(activity.status === "success" ? activity.data.name : "กิจกรรม");
 
   if (activity.status === "loading") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดรายละเอียดกิจกรรม" /></div>;
+    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดกิจกรรม…" /></div>;
   }
   if (activity.status === "error") {
     return (
       <div className="p-6 max-w-screen-xl mx-auto">
         <ErrorState error={activity.error} onRetry={activity.retry} />
-        <div className="mt-4 text-center"><Link href="/activities" className="text-sm font-semibold text-crimson hover:underline">กลับไปหน้ารายการกิจกรรม</Link></div>
+        <div className="mt-4 text-center"><Link href="/activities" className="text-sm font-semibold text-crimson hover:underline">กลับไปที่รายการกิจกรรม</Link></div>
       </div>
     );
   }
@@ -66,13 +66,13 @@ export default function ActivityDetailPage() {
             })()}</span>
             {item.time && <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{item.time}</span>}
             {item.location && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{item.location}</span>}
-            {item.participants > 0 && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />{item.participants} ผู้เข้าร่วม</span>}
+            {item.participants > 0 && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />ผู้เข้าร่วม {item.participants} คน</span>}
           </div>
         </div>
         {canManage(role) && (
           <div className="flex gap-2">
-            <button className="btn btn-outline" type="button">แก้ไข</button>
-            <button className="btn btn-primary gap-2" type="button"><FileText className="w-4 h-4" />ออกรายงาน</button>
+            <Link href={`/activities/manage?edit=${item.id}`} className="btn btn-outline">แก้ไข</Link>
+            <button className="btn btn-primary gap-2" type="button" onClick={() => window.print()}><FileText className="w-4 h-4" />พิมพ์</button>
           </div>
         )}
       </div>
@@ -105,11 +105,11 @@ export default function ActivityDetailPage() {
           </section>
           {item.mouDocId != null && (
             <section className="bg-white rounded-base shadow-card p-5">
-              <h2 className="font-bold mb-3 text-ink">เอกสารที่เกี่ยวข้อง</h2>
+              <h2 className="font-bold mb-3 text-ink">ข้อตกลงที่เกี่ยวข้อง</h2>
               <Link href={`/documents/${item.mouDocId}`} className="flex items-center gap-2 text-sm font-semibold text-crimson hover:underline"><FileText className="w-4 h-4" />{(documents.status === "success" && documents.data.find((doc) => doc.id === item.mouDocId)?.title) || item.mou}</Link>
             </section>
           )}
-          {item.mouDocId == null && <EmptyState compact title="ยังไม่มีข้อตกลงที่เกี่ยวข้องที่เผยแพร่" />}
+          {item.mouDocId == null && <EmptyState compact title="ยังไม่มีข้อตกลงที่เกี่ยวข้อง" />}
         </aside>
       </div>
     </div>

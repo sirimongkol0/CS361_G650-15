@@ -167,7 +167,8 @@ def test_cstu_review_by_role(client, db_session, cognito, role):
     headers = bearer(token_for(client, role))
     doc = make_doc(db_session, user_id(db_session, role))
     response = client.put(f"/api/v1/documents/{doc.id}/cstu-status",
-                          json={"cstu_status": "keep", "cstu_evidence": "CSTU เป็นคู่สัญญา (ข้อ 1)"}, headers=headers)
+                          json={"cstu_status": "keep", "cstu_evidence": "CSTU เป็นคู่สัญญา (ข้อ 1)",
+                                "source_url": "https://example.test/mou-1"}, headers=headers)
     assert response.status_code == STAFF_ONLY[role]
     if response.status_code == 200:
         assert response.json()["cstuStatus"] == "keep"
@@ -365,8 +366,8 @@ def test_every_document_write_leaves_an_audit_row_naming_the_user(client, db_ses
     doc_id = client.post("/api/v1/documents/", json={"name": "Audited MoU"}, headers=headers).json()["id"]
     client.patch(f"/api/v1/documents/{doc_id}", json={"responsible": "x"}, headers=headers)
     upload(client, doc_id, headers)
-    client.put(f"/api/v1/documents/{doc_id}/cstu-status", json={"cstu_status": "keep", "cstu_evidence": "e"},
-               headers=headers)
+    client.put(f"/api/v1/documents/{doc_id}/cstu-status", headers=headers,
+               json={"cstu_status": "keep", "cstu_evidence": "e", "source_url": "https://example.test/audited"})
     client.post(f"/api/v1/documents/{doc_id}/transition", json={"status": "approved"}, headers=headers)
     client.post(f"/api/v1/documents/{doc_id}/publish", headers=headers)
     client.post(f"/api/v1/documents/{doc_id}/unpublish", headers=headers)
@@ -375,3 +376,48 @@ def test_every_document_write_leaves_an_audit_row_naming_the_user(client, db_ses
         "create", "update", "upload", "cstu_review", "approved", "publish", "unpublish", "delete"]
     rows = db_session.query(models.AuditLog).filter_by(entity="documents", entity_id=doc_id).all()
     assert all(row.user_id == staff_id for row in rows)
+
+
+# --- verified source on "keep" (public pages need one) ------------------------------
+
+def test_keep_without_any_verified_source_needs_a_source_url(client, db_session, cognito):
+    headers = bearer(token_for(client, "staff"))
+    doc = make_doc(db_session)
+    body = {"cstu_status": "keep", "cstu_evidence": "e"}
+    response = client.put(f"/api/v1/documents/{doc.id}/cstu-status", json=body, headers=headers)
+    assert response.status_code == 422
+    bad = client.put(f"/api/v1/documents/{doc.id}/cstu-status", json={**body, "source_url": "http://insecure.example"}, headers=headers)
+    assert bad.status_code == 422  # https only, like the sources table
+    db_session.refresh(doc)
+    assert doc.cstu_status == "review"
+
+
+def test_web_created_agreement_becomes_public_after_keep_with_source_and_publish(client, db_session, cognito):
+    """The whole V3 workflow through the API: draft -> keep (+source) -> approve -> active -> publish."""
+    coordinator, staff = bearer(token_for(client, "coordinator")), bearer(token_for(client, "staff"))
+    doc_id = client.post("/api/v1/documents/", json={"name": "Web MoU"}, headers=coordinator).json()["id"]
+    assert client.put(f"/api/v1/documents/{doc_id}/cstu-status", headers=staff, json={
+        "cstu_status": "keep", "cstu_evidence": "CSTU signs", "source_url": "https://example.test/web-mou"}).status_code == 200
+    for status in ("approved", "active"):
+        assert client.post(f"/api/v1/documents/{doc_id}/transition", json={"status": status}, headers=staff).status_code == 200
+    assert client.post(f"/api/v1/documents/{doc_id}/publish", headers=staff).status_code == 200
+    public = client.get("/api/v1/documents/").json()
+    assert [d["id"] for d in public] == [doc_id]
+    assert public[0]["sources"][0]["sourceUrl"] == "https://example.test/web-mou"
+    log = db_session.query(models.AuditLog).filter_by(entity_id=doc_id, action="cstu_review").one()
+    assert log.after["source_url"] == "https://example.test/web-mou"
+
+
+def test_keep_reuses_an_existing_verified_source(client, db_session, cognito):
+    doc = make_doc(db_session, sources=[models.Source(
+        source_url="https://example.test/already", source_type="official_document",
+        source_checked_at=datetime.now(timezone.utc), verification_status="verified")])
+    response = client.put(f"/api/v1/documents/{doc.id}/cstu-status", json={"cstu_status": "keep", "cstu_evidence": "e"},
+                          headers=bearer(token_for(client, "staff")))
+    assert response.status_code == 200
+
+
+def test_internal_url_is_a_path_so_it_works_behind_a_proxy(client, db_session, cognito):
+    doc = _doc_with_file(db_session)
+    url = client.get(f"/api/v1/documents/{doc.id}/internal-url", headers=bearer(token_for(client, "staff"))).json()["url"]
+    assert url.startswith(f"/api/v1/documents/{doc.id}/signed-download?")

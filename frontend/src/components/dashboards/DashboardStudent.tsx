@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, GraduationCap, MessageSquare, CheckCircle2, Clock, Star, ChevronRight, Bell, Building2 } from "lucide-react";
+import { CalendarDays, GraduationCap, CheckCircle2, Clock, ChevronRight, Bell, Building2 } from "lucide-react";
 import { shown, upcomingActivities, useDashboardData } from "@/lib/dashboard-data";
 
 const statCard =
@@ -23,7 +23,7 @@ export default function DashboardStudent() {
   const completedExchange = data.exchange.filter((e) => e.status === "เสร็จสิ้น").length;
 
   const summaryCards = [
-    { icon: CalendarDays, label: "กิจกรรมที่กำลังจะมา", value: shown(data.loaded, upcoming.length), color: "#B45309", bg: "#FEF3C7" },
+    { icon: CalendarDays, label: "กิจกรรมที่จะถึง", value: shown(data.loaded, upcoming.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CheckCircle2, label: "เปิดรับสมัคร", value: shown(data.loaded, openActivities.length), color: "#15803D", bg: "#DCFCE7" },
     { icon: GraduationCap, label: "โครงการแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#8B1538", bg: "#F5D6DE" },
     { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#1D4ED8", bg: "#DBEAFE" },
@@ -36,10 +36,10 @@ export default function DashboardStudent() {
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
           <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            พื้นที่นักศึกษา
+            หน้าหลักนักศึกษา
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>กิจกรรมและโครงการแลกเปลี่ยนที่เผยแพร่</p>
+        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>กิจกรรมและโครงการแลกเปลี่ยนที่เผยแพร่แล้ว</p>
       </div>
 
       {/* Welcome card */}
@@ -57,7 +57,7 @@ export default function DashboardStudent() {
           <div className="font-extrabold text-lg" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             สวัสดี
           </div>
-          <div className="text-sm opacity-80">ติดตามกิจกรรมที่กำลังจะมาและโครงการแลกเปลี่ยนได้ที่นี่</div>
+          <div className="text-sm opacity-80">ติดตามกิจกรรมที่จะถึงและโครงการแลกเปลี่ยนได้ที่นี่</div>
         </div>
         <div className="text-right">
           <div className="text-2xl font-extrabold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -91,7 +91,7 @@ export default function DashboardStudent() {
           </div>
           <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
             {data.loaded && data.exchange.length === 0 && (
-              <p className="px-5 py-4 text-xs text-faint">ยังไม่มีโครงการแลกเปลี่ยนที่เผยแพร่</p>
+              <p className="px-5 py-4 text-xs text-faint">ยังไม่มีข้อมูลการแลกเปลี่ยนของบัญชีนี้</p>
             )}
             {data.exchange.slice(0, 5).map((p) => (
               <div key={p.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#FAFAFA]">
@@ -114,10 +114,10 @@ export default function DashboardStudent() {
           <div className={`${contentCard} p-4`}>
             <div className="flex items-center gap-2 mb-3">
               <Bell className="w-4 h-4" style={{ color: "#8B1538" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>กิจกรรมที่กำลังจะมาถึง</h3>
+              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>กิจกรรมที่จะถึง</h3>
             </div>
             <div className="space-y-2.5">
-              {data.loaded && upcoming.length === 0 && <p className="text-xs text-faint">ยังไม่มีกิจกรรมที่กำลังจะมาถึง</p>}
+              {data.loaded && upcoming.length === 0 && <p className="text-xs text-faint">ยังไม่มีกิจกรรมที่จะถึง</p>}
               {upcoming.slice(0, 5).map((a) => (
                 <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-3 p-2.5 rounded-lg bg-paper">
                   <Clock className="w-4 h-4 flex-shrink-0" style={{ color: "#C8961E" }} />
@@ -128,20 +128,6 @@ export default function DashboardStudent() {
                 </Link>
               ))}
             </div>
-          </div>
-
-          {/* Feedback */}
-          <div className={`${contentCard} p-4`}>
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="w-4 h-4" style={{ color: "#C8961E" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>ความคิดเห็น</h3>
-            </div>
-            <p className="text-xs text-faint">
-              รายการแบบประเมินความคิดเห็นที่ต้องทำจะแสดงเมื่อระบบรองรับบัญชีนักศึกษา
-            </p>
-            <Link href="/feedback" className="btn btn-accent text-xs mt-3 py-1.5 px-3 gap-1 inline-flex">
-              <MessageSquare className="w-3 h-3" />ดูความคิดเห็นทั้งหมด
-            </Link>
           </div>
         </div>
       </div>

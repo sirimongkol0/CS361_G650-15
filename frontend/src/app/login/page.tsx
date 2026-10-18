@@ -19,16 +19,16 @@ function nextPath(): string | null {
 }
 
 function loginErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่';
+  if (!(error instanceof ApiError)) return 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองอีกครั้ง';
   if (error.status === 401 && error.message === 'Password change required') {
     return 'บัญชีนี้ต้องตั้งรหัสผ่านใหม่ กรุณาติดต่อผู้ดูแลระบบ';
   }
   switch (error.status) {
     case 401: return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-    case 403: return 'บัญชีนี้ถูกปิดการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+    case 403: return 'บัญชีนี้ปิดใช้งานอยู่ กรุณาติดต่อผู้ดูแลระบบ';
     case 422: return 'กรุณากรอกอีเมลและรหัสผ่านให้ถูกต้อง';
-    case 429: return 'พยายามเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองใหม่';
-    default: return 'ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน กรุณาลองใหม่ภายหลัง';
+    case 429: return 'ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่แล้วลองอีกครั้ง';
+    default: return 'ตอนนี้ยังเข้าสู่ระบบไม่ได้ กรุณาลองอีกครั้งภายหลัง';
   }
 }
 
@@ -87,7 +87,7 @@ export default function LoginPage() {
 
           <h1 className="text-2xl font-bold mb-1.5 text-ink">ยินดีต้อนรับ</h1>
           <p className="text-faint" style={{ fontSize: 14, lineHeight: 1.6 }}>
-            เข้าสู่ระบบบริหารความร่วมมือและผู้มีส่วนได้ส่วนเสียของหลักสูตร
+            เข้าสู่ระบบด้วยบัญชีที่ได้รับจากผู้ดูแลระบบ
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export default function LoginPage() {
 
           <p className="flex items-start gap-2 text-xs text-faint">
             <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-            บัญชีผู้ใช้สร้างโดยผู้ดูแลระบบ สิทธิ์การใช้งานกำหนดตามบัญชีของคุณ
+            หากยังไม่มีบัญชี กรุณาติดต่อผู้ดูแลระบบ
           </p>
         </form>
 
@@ -198,15 +198,15 @@ export default function LoginPage() {
               และผู้มีส่วนได้ส่วนเสีย
             </h2>
             <p className="text-[#9CA3AF]" style={{ fontSize: 14, lineHeight: 1.7 }}>
-              บริหารจัดการ MoU/MoA กิจกรรม และนักศึกษาแลกเปลี่ยน
-              อย่างเป็นระบบในที่เดียว
+              รวม MoU/MoA กิจกรรม และข้อมูลนักศึกษาแลกเปลี่ยน
+              ของหลักสูตรไว้ในที่เดียว
             </p>
           </div>
 
           {/* Role preview chips */}
           <div>
             <div className="text-xs font-semibold mb-2.5 text-faint">
-              รองรับผู้ใช้งาน 5 ประเภท
+              ผู้ใช้ 5 บทบาท
             </div>
             <div className="flex flex-wrap gap-2">
               {ROLES.map((r) => (

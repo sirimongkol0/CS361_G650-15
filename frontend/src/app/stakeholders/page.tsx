@@ -6,11 +6,11 @@ import Link from "next/link";
 import { PartnerAvatar } from "@/components/partner-avatar";
 import { useUrlState } from "@/lib/url-state";
 import { SearchInput } from "@/components/search-input";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, UserCog } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/data-states";
 import { ScopeLevelBadge, ScopeLevelOptions } from "@/components/scope-level-badge";
 import { loadPublicPartners, useApiResource } from "@/lib/api";
-import { useRole } from "@/lib/role-context";
+import { canManage, useRole } from "@/lib/role-context";
 import {
   downloadCsv, matchesQuery, sortBy, useDocumentTitle, useRememberResults, usePagination, useSort,
 } from "@/lib/list-tools";
@@ -97,10 +97,16 @@ export default function StakeholdersPage() {
           <h1 className="text-2xl font-bold text-ink font-display">หน่วยงานคู่ความร่วมมือ</h1>
           <p className="text-sm mt-0.5 text-faint">
             {role === "public"
-              ? "ข้อมูลหน่วยงานและบุคคลคู่ความร่วมมือที่ได้รับอนุญาตให้เผยแพร่"
-              : "ข้อมูลหน่วยงานและบุคคลคู่ความร่วมมือที่เกี่ยวข้อง"}
+              ? "หน่วยงานและผู้ประสานงานที่ร่วมมือกับหลักสูตร"
+              : "หน่วยงานและผู้ประสานงานที่ร่วมมือกับหลักสูตร"}
           </p>
         </div>
+        {canManage(role) && (
+          <Link href="/stakeholders/manage" className="btn btn-primary gap-2">
+            <UserCog className="w-4 h-4" />
+            จัดการหน่วยงาน
+          </Link>
+        )}
       </div>
 
       {partners.status === "loading" && <TableSkeleton columns={4} />}
@@ -113,7 +119,7 @@ export default function StakeholdersPage() {
             <div className="flex flex-wrap gap-3 items-center">
               <SearchInput
                 className={inputCls}
-                placeholder={showContact ? "ค้นหาหน่วยงานหรือผู้ติดต่อ..." : "ค้นหาหน่วยงาน..."}
+                placeholder={showContact ? "ค้นหาชื่อหน่วยงานหรือผู้ติดต่อ" : "ค้นหาชื่อหน่วยงาน"}
                 value={search}
                 onChange={setSearch}
               />
@@ -151,7 +157,7 @@ export default function StakeholdersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-line">
-                      <SortHeader label="หน่วยงาน / บุคคล" sortKey="name" sort={sort} className="px-5" />
+                      <SortHeader label="ชื่อ" sortKey="name" sort={sort} className="px-5" />
                       <SortHeader label="ประเภท" sortKey="type" sort={sort} />
                       <SortHeader label="ประเทศ" sortKey="country" sort={sort} />
                       <SortHeader label="ระดับ" sortKey="scope" sort={sort} />
@@ -172,7 +178,7 @@ export default function StakeholdersPage() {
                                 <Link href={`/stakeholders/${item.id}`} className="text-sm font-semibold hover:underline text-ink">
                                   <Highlight text={item.name} query={search} />
                                 </Link>
-                                {item.sources.length > 0 && <a href={item.sources[0].url} target="_blank" rel="noreferrer" className="block text-[11px] text-crimson hover:underline">แหล่งยืนยัน {item.sources.length}</a>}
+                                {item.sources.length > 0 && <a href={item.sources[0].url} target="_blank" rel="noreferrer" className="block text-[11px] text-crimson hover:underline">แหล่งที่มา {item.sources.length}</a>}
                               </div>
                             </div>
                           </td>
@@ -182,7 +188,7 @@ export default function StakeholdersPage() {
                           {showContact && <td className="px-4 py-4 text-sm text-faint">{item.contactName && <Highlight text={item.contactName} query={search} />}</td>}
                           {showEmail && <td className="px-4 py-4 text-sm text-faint">{item.contactEmail}</td>}
                           <td className="px-4 py-4">
-                            <Link href={`/stakeholders/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
+                            <Link href={`/stakeholders/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดู</Link>
                           </td>
                         </tr>
                       );

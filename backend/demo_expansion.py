@@ -5,11 +5,19 @@ no files (metadata_only / unavailable) so the S3 demo bucket needs no uploads.
 """
 from datetime import date, timedelta
 import random
+import re
+
+from sqlalchemy import or_
 
 import models
 from demo_content import NOTICE
 
 VERSION = "cstu-fictional-v3"
+AGREEMENT_LABEL = {"mou": "MoU", "moa": "MoA"}
+# Fictional records the demo student account sees as its own (GET /exchange/mine).
+STUDENT_EXCHANGES = 2
+# Exchange programme names; v3 demos used the English ones.
+PROGRAM_NAMES = {"Student Exchange": "แลกเปลี่ยนนักศึกษา", "Internship": "ฝึกงาน"}
 
 # name, type, country, country code
 PARTNERS = [
@@ -90,7 +98,7 @@ def expand(db, source, today=date(2026, 10, 2)):
         doc_type = "moa" if partner.type == "private_company" else "mou"
         topic = DOC_TOPICS[i % len(DOC_TOPICS)]
         document = models.Document(
-            name=f"{doc_type.upper()} {topic}กับ{partner.name}", partner=partner,
+            name=f"{AGREEMENT_LABEL[doc_type]} {topic} กับ {partner.name}", partner=partner,
             doc_type=doc_type, document_kind="agreement", status=_status_for(start, end, today),
             effective_date=start, expiry_date=end,
             file_availability="metadata_only" if i % 4 else "unavailable",
@@ -148,7 +156,7 @@ def expand(db, source, today=date(2026, 10, 2)):
     for i in range(30):
         partner = rng.choice(abroad)
         direction = "inbound" if i % 4 == 0 else "outbound"
-        program = "Student Exchange" if partner.type == "university" else "Internship"
+        program = PROGRAM_NAMES["Student Exchange" if partner.type == "university" else "Internship"]
         start = date(2025, rng.choice([1, 6, 8]), 1) + timedelta(days=365 * (i % 2))
         end = start + timedelta(days=rng.choice([30, 90, 120, 150]))
         db.add(models.ExchangeStudent(
@@ -162,3 +170,172 @@ def expand(db, source, today=date(2026, 10, 2)):
         ))
     db.flush()
     return [len(partners), len(documents), len(activities)]
+
+
+_OLD_NAME = re.compile(r"^(MOU|MOA) (.+?)กับ(\S.*)$")
+
+
+def fix_agreement_names(db) -> int:
+    """Rename v3 demo agreements from 'MOU topicกับPartner' to 'MoU topic กับ Partner'.
+
+    Only fictional demo records whose name still ends with their partner's name change.
+    """
+    renamed = 0
+    old = db.query(models.Document).filter(or_(models.Document.name.like("MOU %"), models.Document.name.like("MOA %")))
+    for doc in old.all():
+        match = _OLD_NAME.match(doc.name)
+        demo = doc.sources and all(source.source_type == "demo_fixture" for source in doc.sources)
+        if not (match and demo and doc.partner and match.group(3) == doc.partner.name):
+            continue
+        doc.name = f"{AGREEMENT_LABEL[match.group(1).lower()]} {match.group(2)} กับ {doc.partner.name}"
+        renamed += 1
+    return renamed
+
+
+def fix_program_names(db) -> int:
+    """Rename the English demo programme names on exchange records to Thai."""
+    renamed = 0
+    for english, thai in PROGRAM_NAMES.items():
+        renamed += db.query(models.ExchangeStudent).filter(models.ExchangeStudent.program == english).update(
+            {models.ExchangeStudent.program: thai}, synchronize_session=False)
+    return renamed
+
+
+def link_student_exchanges(db, email: str):
+    """Give the demo student account its own exchange records (exchange_students.user_id).
+
+    The users row exists only after that account's first login, so this returns
+    None until then; 0 when the account already has records. Picks a current or
+    planned record and a finished one, so the student sees both states, and
+    gives them the same student name.
+    """
+    user = db.query(models.User).filter(models.User.email == email, models.User.role == "student").first()
+    if user is None:
+        return None
+    if db.query(models.ExchangeStudent).filter(models.ExchangeStudent.user_id == user.id).count():
+        return 0
+    free = db.query(models.ExchangeStudent).filter(
+        models.ExchangeStudent.user_id.is_(None), models.ExchangeStudent.is_published.is_(True),
+        # A CSTU student goes out on exchange; inbound records are other universities' students.
+        models.ExchangeStudent.type == "outbound",
+    ).order_by(models.ExchangeStudent.id)
+    picks = [free.filter(models.ExchangeStudent.status != "เสร็จสิ้น").first(),
+             free.filter(models.ExchangeStudent.status == "เสร็จสิ้น").first()]
+    picks = [row for row in picks if row is not None][:STUDENT_EXCHANGES]
+    for row in picks:
+        row.user_id = user.id
+        row.name = picks[0].name  # one student who went on two exchanges
+    return len(picks)
+
+
+# --- Natural-looking names --------------------------------------------------
+# The generators above label every person and place "สมมติ" (fictional). The
+# web shows those values, so the touch-up below swaps them for ordinary-looking
+# (still invented) names. The NOTICE line at the start of descriptions stays:
+# it is what marks the whole dataset as fictional, and the demo UI hides it.
+
+CONTACT_NAMES = [
+    "คุณนภัสวรรณ ศรีสุข", "คุณกิตติพงษ์ วงศ์ไทย", "คุณศิริพร แก้วมณี", "คุณธนกฤต พึ่งบุญ",
+    "คุณพิมพ์ชนก อินทร์แก้ว", "คุณวีรยุทธ ทองคำ", "คุณอรอุมา จันทร์เพ็ญ", "คุณณัฐพล รุ่งเรือง",
+    "คุณปวีณา บุญมา", "คุณชยพล สายทอง", "คุณสุภาวดี มีสุข", "คุณอนุชา ศรีวงศ์",
+]
+LECTURER_NAMES = [
+    "ผศ.ดร.วรวุฒิ ศักดิ์เจริญ", "อ.ดร.กมลชนก ทองประเสริฐ", "ผศ.ปิยะพงษ์ แสงทอง", "อ.ดร.สุนิสา วัฒนกุล",
+    "รศ.ดร.ธีรวัฒน์ ชัยมงคล", "อ.ณัฐวดี ศรีอรุณ", "ผศ.ดร.ภาณุพงศ์ อินทรสุวรรณ", "อ.ดร.จิราพร ปัญญาดี",
+]
+SIGNER_OUR = "รศ.ดร.ประภาพร อินทรสุวรรณ"
+# The dataset's source, listed under "ที่มาของข้อมูล" on every detail page.
+SOURCE_TITLE = "ชุดข้อมูลสาธิต CSTU"
+SOURCE_PUBLISHER = "รายวิชา CS361"
+PARTNER_SIGNER_NAMES = ["คุณสมเกียรติ ธนากร", "คุณรัชนี พงษ์พานิช", "คุณประเสริฐ วงศ์สวัสดิ์", "คุณมาลัย เกษมสุข"]
+# Students get a surname picked by their first name, so one student's records agree.
+SURNAMES = ["ศรีวงศ์", "วัฒนกุล", "ทองสกุล", "ชัยมงคล", "เจริญศักดิ์", "พรหมมา", "แสงอรุณ", "บุญประเสริฐ",
+            "รัตนพันธ์", "สุขเจริญ", "อินทร์ทอง", "ปัญญาวงศ์", "ศรีสวัสดิ์", "มณีรัตน์", "ทองดี"]
+# Surnames an earlier version of the rules gave every student.
+_OLD_SURNAMES = ("ศรีวงศ์", "วัฒนกุล", "ทองสกุล", "ชัยมงคล", "เจริญศักดิ์")
+
+
+def student_name(first: str) -> str:
+    return f"{first} {SURNAMES[sum(map(ord, first)) % len(SURNAMES)]}"
+PLACES = {
+    "สถานที่สมมติของคู่ความร่วมมือ": "สำนักงานของหน่วยงานคู่ความร่วมมือ",
+    "ห้องประชุมสมมติ อาคาร 1": "ห้องประชุม 1 อาคารเรียนรวม",
+    "หอประชุมสมมติ": "หอประชุมคณะ",
+    "ออนไลน์ (สมมติ)": "ออนไลน์",
+    "ห้องปฏิบัติการสมมติ 302": "ห้องปฏิบัติการคอมพิวเตอร์ 302",
+}
+_PHRASES = [
+    (re.compile(r"นักศึกษาสมมติ (\S+) \S+ \(\d+\)"), lambda m: student_name(m.group(1))),
+    # Titles are unique, so the entry number stays.
+    (re.compile(r"ความคิดเห็นสมมติ #(\d+): "), lambda m: f"ความคิดเห็นที่ {m.group(1)} ต่อ "),
+    (re.compile(r"คู่ความร่วมมือสมมติเพิ่มเติมสำหรับทดสอบการค้นหา ตัวกรอง และแดชบอร์ด"),
+     "หน่วยงานที่ร่วมมือกับหลักสูตรด้านการฝึกงาน การวิจัย และกิจกรรมนักศึกษา"),
+    (re.compile(r"กิจกรรมสมมติหัวข้อ (.+?) สำหรับทดสอบการแสดงผลและสถิติ"),
+     lambda m: f"กิจกรรมหัวข้อ {m.group(1)} สำหรับนักศึกษาและอาจารย์ของหลักสูตร"),
+    (re.compile(r"\s?\(สมมติ\)"), ""),
+    (re.compile(r" สมมติ(?=\S)"), " "),  # between two words: keep one space
+    (re.compile(r"\s?สมมติ"), ""),
+]
+# Text an earlier version of the rules joined together.
+_REPAIRS = {"checklistสำหรับ": "checklist สำหรับ"}
+
+
+def naturalize(text):
+    """Drop the 'สมมติ' labels from demo text, keeping the NOTICE prefix."""
+    if text:
+        for broken, fixed in _REPAIRS.items():
+            text = text.replace(broken, fixed)
+    if not text or "สมมติ" not in text.replace(NOTICE, ""):
+        return text
+    head = NOTICE if text.startswith(NOTICE) else ""
+    body = text[len(head):]
+    if body.strip() in PLACES:
+        return head + PLACES[body.strip()]
+    for pattern, replacement in _PHRASES:
+        body = pattern.sub(replacement, body)
+    return head + body
+
+
+def _labelled(value):
+    return bool(value) and "สมมติ" in value
+
+
+def naturalize_demo(db) -> int:
+    """Rewrite the demo's 'สมมติ' names and text in place; returns rows changed."""
+    changed = set()
+
+    def put(row, field, value):
+        if getattr(row, field) != value:
+            setattr(row, field, value)
+            changed.add((type(row).__name__, row.id))
+
+    for source in db.query(models.Source).filter(models.Source.source_type == "demo_fixture").all():
+        if _labelled(source.source_title) or _labelled(source.source_publisher):
+            put(source, "source_title", SOURCE_TITLE)
+            put(source, "source_publisher", SOURCE_PUBLISHER)
+    for partner in db.query(models.Partner).all():
+        if _labelled(partner.contact_name):
+            put(partner, "contact_name", CONTACT_NAMES[partner.id % len(CONTACT_NAMES)])
+        put(partner, "description", naturalize(partner.description))
+    for doc in db.query(models.Document).all():
+        if _labelled(doc.responsible):
+            put(doc, "responsible", LECTURER_NAMES[doc.id % len(LECTURER_NAMES)])
+        if _labelled(doc.signer_our):
+            put(doc, "signer_our", SIGNER_OUR)
+        if _labelled(doc.signer_partner):
+            put(doc, "signer_partner", PARTNER_SIGNER_NAMES[doc.id % len(PARTNER_SIGNER_NAMES)])
+        for item in doc.scope_items:
+            put(item, "text", naturalize(item.text))
+    for activity in db.query(models.Activity).all():
+        put(activity, "description", naturalize(activity.description))
+        put(activity, "location", naturalize(activity.location))
+    for row in db.query(models.ExchangeStudent).all():
+        for field in ("name", "from_program", "to_organization"):
+            put(row, field, naturalize(getattr(row, field)))
+        first, _, last = row.name.partition(" ")
+        if last in _OLD_SURNAMES:  # renamed before the wider surname list
+            put(row, "name", student_name(first))
+    for row in db.query(models.Feedback).all():
+        put(row, "title", naturalize(row.title))
+        put(row, "comment", naturalize(row.comment))
+    return len(changed)

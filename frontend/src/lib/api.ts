@@ -13,7 +13,7 @@
 
 import { type DependencyList, useEffect, useState } from "react";
 import { activityDateLabel, activityStatusLabel, latestActivities } from "@/lib/activity-display";
-import { parseScopeLevel, type ScopeLevel } from "@/lib/labels";
+import { feedbackSourceLabels, label, parseScopeLevel, type ScopeLevel } from "@/lib/labels";
 import { notifyUnauthorized, readToken } from "@/lib/session";
 
 // ---------- Base URL ----------
@@ -41,18 +41,18 @@ export class ApiError extends Error {
 
 /** Thai message for an API error, for forms and notices. */
 export function apiErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return "เกิดข้อผิดพลาดที่ไม่คาดคิด";
+  if (!(error instanceof ApiError)) return "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง";
   switch (error.status) {
     case 401: return "กรุณาเข้าสู่ระบบอีกครั้ง";
-    case 403: return "คุณไม่มีสิทธิ์ทำรายการนี้";
+    case 403: return "ไม่มีสิทธิ์ทำรายการนี้";
     case 404: return "ไม่พบรายการนี้";
-    case 409: return `ทำรายการนี้ไม่ได้ในสถานะปัจจุบัน (${error.message})`;
-    case 413: return "ไฟล์มีขนาดใหญ่เกินกำหนด";
-    case 415: return "ชนิดไฟล์ไม่ถูกต้อง รองรับเฉพาะ PDF";
+    case 409: return "ทำรายการนี้ไม่ได้ในสถานะปัจจุบันของรายการ";
+    case 413: return "ไฟล์ใหญ่เกินกำหนด";
+    case 415: return "เลือกได้เฉพาะไฟล์ PDF";
     case 400:
     case 422: return `ข้อมูลไม่ถูกต้อง: ${error.message}`;
-    case undefined: return "ไม่สามารถเชื่อมต่อระบบได้ โปรดลองอีกครั้ง";
-    default: return `เกิดข้อผิดพลาด (HTTP ${error.status})`;
+    case undefined: return "เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง";
+    default: return "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง";
   }
 }
 
@@ -189,6 +189,9 @@ export const apiPut = <T>(path: string, body?: unknown) => apiSend<T>("PUT", pat
 export const apiPatch = <T>(path: string, body?: unknown) => apiSend<T>("PATCH", path, json(body), "application/json");
 export const apiDelete = (path: string) => apiSend<void>("DELETE", path);
 
+/** GET that never uses the cache, e.g. a short-lived download link. */
+export const apiGetFresh = <T>(path: string) => apiGetWithRetry<T>(path);
+
 /** Upload one file as multipart form data (the browser sets the boundary header). */
 export function apiUpload<T>(path: string, file: File, field = "file", method = "PUT"): Promise<T> {
   const form = new FormData();
@@ -196,7 +199,7 @@ export function apiUpload<T>(path: string, file: File, field = "file", method = 
   return apiSend<T>(method, path, form);
 }
 /** GET a JSON list from the API; throws on any failure (caller decides fallback). */
-async function apiGetList<T>(path: string): Promise<T[]> {
+export async function apiGetList<T>(path: string): Promise<T[]> {
   const data = await apiGet<unknown>(path);
   if (!Array.isArray(data)) throw new ApiError(`API ${path} -> unexpected payload`);
   return data as T[];
@@ -352,9 +355,13 @@ interface RawFeedback {
   date?: string | null; // ISO
   status?: string | null;
   comment?: string | null;
+  // Signed-in view only (GET /feedback/manage).
+  isPublished?: boolean;
+  reply?: string | null;
+  repliedAt?: string | null;
 }
 
-interface RawExchange {
+export interface RawExchange {
   id: number;
   name: string;
   type?: string | null; // "outbound" | "inbound"
@@ -366,16 +373,20 @@ interface RawExchange {
   status?: string | null;
   partnerId?: number | null;
   activityId?: number | null;
+  // Signed-in view only (GET /exchange/mine).
+  isPublished?: boolean;
+  ownerUserId?: number | null;
+  userId?: number | null;
 }
 
-interface RawUser {
+/** GET /users/ row (admin only): an account that has signed in at least once. */
+export interface UserAccount {
   id: number;
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  position?: string | null;
-  department?: string | null;
+  email: string;
+  role: "public" | "student" | "coordinator" | "staff" | "admin";
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
 }
 
 // ---------- View types for internal pages ----------
@@ -392,6 +403,10 @@ export interface FeedbackEntry {
   dateIso: string | null;
   status: string;
   comment: string;
+  /** Signed-in view only; the public list has published entries without replies. */
+  isPublished: boolean;
+  reply: string | null;
+  repliedAt: string | null;
 }
 
 export interface ExchangeStudent {
@@ -403,20 +418,9 @@ export interface ExchangeStudent {
   period: string;
   program: string;
   status: string;
+  /** API fields, for the edit form and ownership checks. */
+  raw: RawExchange;
 }
-
-export interface AdminProfile {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  position: string;
-  department: string;
-}
-
-export const EMPTY_ADMIN_PROFILE: AdminProfile = {
-  firstName: "", lastName: "", email: "", phone: "", position: "", department: "",
-};
 
 // ---------- Mappers ----------
 
@@ -529,12 +533,18 @@ export interface ActivityView {
   scopeLevel: ScopeLevel | null;
 }
 
+/** Thai country name with flag, from the ISO code or the stored English/Thai name. */
+export function countryLabel(countryCode?: string | null, country?: string | null): string | null {
+  const code = countryCode?.toUpperCase() ?? null;
+  return (code && COUNTRY_CODE_LABELS[code])
+    ?? (country && COUNTRY_LABELS[country.toLowerCase()])
+    ?? country ?? code ?? null;
+}
+
 function mapPartner(raw: RawPartner, index: number): PartnerView {
   const palette = PARTNER_PALETTE[index % PARTNER_PALETTE.length];
   const countryCode = raw.countryCode?.toUpperCase() ?? null;
-  const country = (countryCode && COUNTRY_CODE_LABELS[countryCode])
-    ?? (raw.country && COUNTRY_LABELS[raw.country.toLowerCase()])
-    ?? raw.country ?? countryCode ?? null;
+  const country = countryLabel(countryCode, raw.country);
   return {
     id: raw.id,
     name: raw.name,
@@ -670,7 +680,7 @@ function mapFeedback(
   return {
     id: raw.id,
     title: raw.title,
-    source: raw.source ?? "—",
+    source: label(feedbackSourceLabels, raw.source),
     org: (raw.partnerId != null && partnerNames.get(raw.partnerId)) || "—",
     activity: (raw.activityId != null && activityNames.get(raw.activityId)) || "—",
     rating: raw.rating ?? 0,
@@ -678,6 +688,9 @@ function mapFeedback(
     dateIso: raw.date ?? null,
     status: raw.status ?? "—",
     comment: raw.comment ?? "",
+    isPublished: raw.isPublished ?? true,
+    reply: raw.reply ?? null,
+    repliedAt: raw.repliedAt ?? null,
   };
 }
 
@@ -691,17 +704,7 @@ function mapExchange(raw: RawExchange): ExchangeStudent {
     period: formatThaiPeriod(raw.startDate, raw.endDate),
     program: raw.program ?? "—",
     status: raw.status ?? "—",
-  };
-}
-
-function mapAdminProfile(raw: RawUser): AdminProfile {
-  return {
-    firstName: raw.firstName ?? "",
-    lastName: raw.lastName ?? "",
-    email: raw.email ?? "",
-    phone: raw.phone ?? "",
-    position: raw.position ?? "",
-    department: raw.department ?? "",
+    raw,
   };
 }
 
@@ -742,6 +745,62 @@ export async function loadDocument(id: number): Promise<DocumentView> {
   return mapDocument(await apiGet<RawDocument>(`/documents/${id}`));
 }
 
+/** Internal agreement view (V3-3): drafts, review and publication fields included. */
+export interface ManagedDocument {
+  id: number;
+  name: string;
+  docType: string | null;
+  documentKind: string | null;
+  fileAvailability: string | null;
+  fileName: string | null;
+  sizeBytes: number | null;
+  uploadedAt: string | null;
+  effectiveDate: string | null;
+  expiryDate: string | null;
+  partnerId: number | null;
+  partner: { id: number; name: string } | null;
+  responsible: string | null;
+  status: string | null;
+  signerOur: string | null;
+  signerPartner: string | null;
+  scopeLevel: ScopeLevel | null;
+  isPublished: boolean;
+  cstuStatus: "keep" | "review" | "out_of_scope";
+  cstuEvidence: string | null;
+  ownerUserId: number | null;
+  sources: { id: number; sourceUrl: string }[];
+}
+
+/** GET /documents/manage: coordinators get their own, staff/admin all (needs login). */
+export const loadManagedDocuments = () => apiGetList<ManagedDocument>("/documents/manage");
+
+/** An agreement an activity may be linked to (activities.mou_document_id). */
+export interface AgreementOption {
+  id: number;
+  name: string;
+  partnerId: number | null;
+}
+
+const isAgreementRow = (d: { documentKind?: string | null; docType?: string | null }) =>
+  d.documentKind === "agreement" || ["mou", "moa"].includes((d.docType ?? "").toLowerCase());
+
+/**
+ * Agreements the signed-in manager may link an activity to, by name: staff/admin
+ * get every live one (GET /documents/manage); coordinators their own plus the
+ * public ones (GET /documents/). The backend checks the same rule.
+ */
+export async function loadAgreementOptions(role: string): Promise<AgreementOption[]> {
+  const [managed, published] = await Promise.all([
+    loadManagedDocuments(),
+    role === "coordinator" ? apiGetList<RawDocument>("/documents/").catch(() => [] as RawDocument[]) : Promise.resolve([] as RawDocument[]),
+  ]);
+  const byId = new Map<number, AgreementOption>();
+  for (const d of [...managed, ...published]) {
+    if (isAgreementRow(d) && !byId.has(d.id)) byId.set(d.id, { id: d.id, name: d.name, partnerId: d.partnerId ?? null });
+  }
+  return Array.from(byId.values()).sort((x, y) => x.name.localeCompare(y.name, "th"));
+}
+
 /** GET a list of {id, name} rows as a lookup map; an unavailable join yields an empty map. */
 async function loadNames(path: string): Promise<Map<number, string>> {
   try {
@@ -752,16 +811,28 @@ async function loadNames(path: string): Promise<Map<number, string>> {
   }
 }
 
-/** GET /feedback/ (+ /activities/ and /partners/ joins for names) -> feedback entries. */
-export function loadFeedbackEntries(): Promise<FeedbackEntry[]> {
-  return safeLoad<FeedbackEntry[]>(
-    "/feedback/",
-    async (raw) => {
-      const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
-      return (raw as RawFeedback[]).map((f) => mapFeedback(f, activityNames, partnerNames));
-    },
-    []
-  );
+/** Roles that read every feedback entry with its reply (GET /feedback/manage). */
+export const FEEDBACK_MANAGER_ROLES = ["coordinator", "staff", "admin"];
+
+async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
+  const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
+  return (raw as RawFeedback[]).map((f) => mapFeedback(f, activityNames, partnerNames));
+}
+
+/**
+ * Feedback entries (+ /activities/ and /partners/ joins for names): coordinators,
+ * staff and admin get every entry with replies (GET /feedback/manage); everyone
+ * else gets the published list (GET /feedback/). Failures fall back to [].
+ */
+export function loadFeedbackEntries(role: string = "public"): Promise<FeedbackEntry[]> {
+  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/manage" : "/feedback/";
+  return safeLoad<FeedbackEntry[]>(path, buildFeedback, []);
+}
+
+/** Like loadFeedbackEntries, but a failed request is thrown so the page can say so. */
+export async function loadFeedbackStrict(role: string = "public"): Promise<FeedbackEntry[]> {
+  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/manage" : "/feedback/";
+  return buildFeedback(await apiGetList<unknown>(path));
 }
 
 /**
@@ -774,9 +845,16 @@ export function loadExchangeStudents(role: string = "public"): Promise<ExchangeS
   return safeLoad<ExchangeStudent[]>(path, (raw) => (raw as RawExchange[]).map(mapExchange), []);
 }
 
-/** GET /users/ -> the first admin/staff profile. */
-export function loadAdminProfile(): Promise<AdminProfile> {
-  return safeLoad<AdminProfile>("/users/", (raw) => mapAdminProfile((raw as RawUser[])[0]), EMPTY_ADMIN_PROFILE);
+/** GET /users/ (admin only) -> every account that has signed in. */
+export const loadUsers = () => apiGetList<UserAccount>("/users/");
+
+/** ISO timestamp -> "20 ส.ค. 2568 14:05" in local time; "—" if missing. */
+export function formatThaiDateTime(iso?: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${formatThaiDate(iso)} ${time}`;
 }
 
 // ---------- Hook for pages ----------

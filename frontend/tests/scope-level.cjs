@@ -91,8 +91,8 @@ const docs = [doc(1, 'Program Agreement', 'program'), doc(2, 'Faculty Agreement'
       const text = await card(name).innerText();
       assert.match(text, /CSTU โดยตรง/);
       assert.match(text, new RegExp(`ระดับคณะ/มหาวิทยาลัยอีก ${broader} `));
-      assert.equal(/ยังไม่จัดระดับ/.test(text), unclassified > 0);
-      if (unclassified) assert.match(text, new RegExp(`ยังไม่จัดระดับ ${unclassified}`));
+      assert.equal(/ยังไม่ระบุระดับ/.test(text), unclassified > 0);
+      if (unclassified) assert.match(text, new RegExp(`ยังไม่ระบุระดับ ${unclassified}`));
     }
     const intro = await page.locator('h1').first().locator('xpath=../..').innerText();
     assert.match(intro, /ข้อตกลงระดับคณะ\/มหาวิทยาลัยที่เกี่ยวข้อง/);

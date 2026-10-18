@@ -4,42 +4,31 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Building2, FileText, CalendarDays, GraduationCap,
-  TrendingUp, AlertTriangle, Download, Star, Users,
+  TrendingUp, Users,
 } from "lucide-react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { label, partnerTypeLabels } from "@/lib/labels";
 import {
-  agreementState, expiringAgreements, isAgreement, averageRating, beYear, countByMonth, monthLabel,
+  agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
   partnersByEngagement, shown, useDashboardData, yearsIn,
 } from "@/lib/dashboard-data";
+import { downloadCsv } from "@/lib/list-tools";
+import { ExportCsvButton } from "@/components/list-ui";
 
 const statCard = "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover transition-all duration-150";
 const contentCard = "content-card bg-white rounded-base shadow-card";
 
-function Stars({ n }: { n: number }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className="w-3 h-3" fill={i <= n ? "#F59E0B" : "none"} color={i <= n ? "#F59E0B" : "#E5E7EB"} />
-      ))}
-    </span>
-  );
-}
-
-const PIE_COLORS = ["#8B1538", "#C8961E", "#1D4ED8", "#15803D", "#7C3AED", "#0369A1", "#B45309", "#6B7280"];
-
 const systemActions = [
-  { label: "จัดการผู้ใช้", href: "/users", icon: Users },
-  { label: "รายงานและสถิติ", href: "/reports", icon: TrendingUp },
-  { label: "ตั้งค่าระบบ", href: "/settings", icon: Building2 },
+  { label: "ผู้ใช้และสิทธิ์", href: "/users", icon: Users },
+  { label: "ตั้งค่าบัญชี", href: "/settings", icon: Building2 },
 ];
 
 export default function DashboardAdmin() {
   const data = useDashboardData();
-  const years = yearsIn([...data.activities.map((a) => a.startDate), ...data.feedback.map((f) => f.dateIso)]);
+  const years = yearsIn(data.activities.map((a) => a.startDate));
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const year = selectedYear ?? years[0] ?? new Date().getFullYear();
 
@@ -51,35 +40,31 @@ export default function DashboardAdmin() {
   const adminTopCollaborations = engagement.slice(0, 5).map((row) => ({
     name: row.partner.name, score: row.total, pct: topTotal ? Math.round((row.total / topTotal) * 100) : 0,
   }));
-  const adminFeedbackDevelopment = data.feedback
-    .filter((f) => f.comment)
-    .slice(0, 3)
-    .map((f) => ({ text: f.comment, source: f.source, rating: f.rating }));
-  const avgRating = averageRating(data.feedback);
 
   const effectiveYears = yearsIn(agreements.map((d) => d.effectiveDate)).reverse();
   const adminYearlyTrend = effectiveYears.map((y) => ({ year: beYear(y), ความร่วมมือ: agreements.filter((d) => d.effectiveDate?.startsWith(String(y))).length }));
   const activityCounts = countByMonth(data.activities.map((a) => a.startDate), year);
-  const feedbackCounts = countByMonth(data.feedback.map((f) => f.dateIso), year);
-  const adminMonthlyActivities = activityCounts.map((count, i) => ({
-    month: monthLabel(i), กิจกรรม: count, ความคิดเห็น: feedbackCounts[i],
-  }));
+  const adminMonthlyActivities = activityCounts.map((count, i) => ({ month: monthLabel(i), กิจกรรม: count }));
   const typeCounts = new Map<string, number>();
   for (const p of data.partners) {
-    const name = label(partnerTypeLabels, p.type);
+    const name = p.type ? label(partnerTypeLabels, p.type) : "ไม่ระบุประเภท";
     typeCounts.set(name, (typeCounts.get(name) ?? 0) + 1);
   }
-  const adminStakeholderTypes = Array.from(typeCounts, ([name, value], i) => ({
-    name, value, color: PIE_COLORS[i % PIE_COLORS.length],
-  })).sort((a, b) => b.value - a.value);
+  const adminStakeholderTypes = Array.from(typeCounts, ([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "th"));
+  const topTypeCount = adminStakeholderTypes[0]?.value ?? 1;
+  const exportMonthly = () => downloadCsv(
+    `pcsms-activities-${beYear(year)}.csv`,
+    ["เดือน", "กิจกรรม"],
+    adminMonthlyActivities.map((row) => [`${row.month} ${beYear(year)}`, row.กิจกรรม]),
+  );
 
   const kpis = [
     { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE" },
     { icon: TrendingUp, label: "หน่วยงานที่ยังมีความร่วมมืออยู่", value: shown(data.loaded, engagement.length), color: "#C8961E", bg: "#FEF6E4" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(data.loaded, activeAgreements), warn: adminWatchMOU.length ? `${adminWatchMOU.length} ใกล้หมด` : null, color: "#B45309", bg: "#FEF3C7" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(data.loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, color: "#B45309", bg: "#FEF3C7" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
     { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7" },
-    { icon: Star, label: "คะแนนความคิดเห็นเฉลี่ย", value: avgRating == null ? "—" : `${avgRating.toFixed(1)}★`, color: "#7C3AED", bg: "#EDE9FE" },
   ];
 
   return (
@@ -93,7 +78,7 @@ export default function DashboardAdmin() {
               ภาพรวมความร่วมมือระดับหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมสำหรับผู้บริหาร — ปี {beYear(year)}</p>
+          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมปี {beYear(year)}</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -105,13 +90,12 @@ export default function DashboardAdmin() {
           >
             {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />PDF</button>
-          <button className="btn btn-accent text-sm gap-2"><Download className="w-4 h-4" />Excel</button>
+          <ExportCsvButton onExport={exportMonthly} disabled={!data.loaded} />
         </div>
       </div>
 
       {/* Executive KPI */}
-      <div className="grid grid-cols-6 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-5 gap-3 mb-6 stagger">
         {kpis.map((s) => (
           <div key={s.label} className={statCard} style={{ padding: "16px 14px" }}>
             <div className="flex items-center justify-between mb-2">
@@ -131,7 +115,7 @@ export default function DashboardAdmin() {
         {/* Yearly trend */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>จำนวนความร่วมมือรายปี</h2>
-          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>หน่วยงานที่ยังมีความร่วมมืออยู่</p>
+          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>นับจากปีที่ข้อตกลงเริ่มมีผล</p>
           <ResponsiveContainer width="100%" height={170}>
             <AreaChart data={adminYearlyTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <defs>
@@ -152,45 +136,47 @@ export default function DashboardAdmin() {
         {/* Monthly activities */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>กิจกรรมรายเดือน</h2>
-          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>กิจกรรมเทียบกับความคิดเห็น • ปี {beYear(year)}</p>
+          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
           <ResponsiveContainer width="100%" height={170}>
             <BarChart data={adminMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
               <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
-              <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="กิจกรรม" fill="#8B1538" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="ความคิดเห็น" fill="#C8961E" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Stakeholder types pie */}
+        {/* Stakeholder types: one labelled bar per type, largest first */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>หน่วยงานคู่ความร่วมมือ</h2>
-          <p className="text-xs mb-1" style={{ color: "#9CA3AF" }}>ตามประเภท</p>
-          <ResponsiveContainer width="100%" height={170}>
-            <PieChart>
-              <Pie data={adminStakeholderTypes} cx="50%" cy="50%" innerRadius={45} outerRadius={65} dataKey="value" paddingAngle={3}>
-                {adminStakeholderTypes.map((e, i) => <Cell key={i} fill={e.color} />)}
-              </Pie>
-              <Legend iconType="circle" iconSize={7} wrapperStyle={{ fontSize: 10 }} />
-              <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 11 }} />
-            </PieChart>
-          </ResponsiveContainer>
+          <p className="text-xs mb-3" style={{ color: "#9CA3AF" }}>ตามประเภท • {shown(data.loaded, data.partners.length)} หน่วยงาน</p>
+          {data.loaded && adminStakeholderTypes.length === 0 && <p className="text-xs text-faint">ยังไม่มีหน่วยงาน</p>}
+          <ul className="space-y-2">
+            {adminStakeholderTypes.map((t) => (
+              <li key={t.name}>
+                <div className="flex items-center justify-between text-xs mb-0.5">
+                  <span style={{ color: "#374151" }}>{t.name}</span>
+                  <span className="font-semibold" style={{ color: "#111827" }}>{t.value}</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#F3F4F6" }}>
+                  <div className="h-full rounded-full" style={{ width: `${(t.value / topTypeCount) * 100}%`, background: "#8B1538" }} />
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
       {/* Bottom row */}
-      <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+      <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr" }}>
         {/* Top collabs */}
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
-            <Link href="/reports" className="text-xs" style={{ color: "#8B1538" }}>ดูรายงาน →</Link>
           </div>
-          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>จำนวนข้อตกลง + กิจกรรมที่เผยแพร่</p>
+          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับรวมข้อตกลงและกิจกรรมที่เผยแพร่แล้ว</p>
           <div className="space-y-3.5">
             {data.loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
@@ -226,28 +212,8 @@ export default function DashboardAdmin() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>{shown(data.loaded, activeAgreements)} ข้อตกลงปกติ ✓</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(data.loaded, activeAgreements)} ฉบับ ✓</div>
             </div>
-          </div>
-        </div>
-
-        {/* Feedback for development */}
-        <div className={`${contentCard} p-5`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-sm" style={{ color: "#111827" }}>ความคิดเห็นเพื่อพัฒนาหลักสูตร</h2>
-            <Link href="/feedback" className="text-xs" style={{ color: "#8B1538" }}>ดูทั้งหมด →</Link>
-          </div>
-          <div className="space-y-3">
-            {data.loaded && adminFeedbackDevelopment.length === 0 && <p className="text-xs text-faint">ยังไม่มีความคิดเห็นที่เผยแพร่</p>}
-            {adminFeedbackDevelopment.map((f, i) => (
-              <div key={i} className="p-3 rounded-xl bg-paper shadow-lightring">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="text-xs leading-relaxed flex-1" style={{ color: "#374151" }}>{f.text}</p>
-                  <Stars n={f.rating} />
-                </div>
-                <span className="badge badge-blue text-xs">{f.source}</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -257,7 +223,7 @@ export default function DashboardAdmin() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-bold" style={{ color: "#111827" }}>การจัดการระบบ</h2>
-            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>สิทธิ์เฉพาะผู้ดูแลระบบ</p>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>เฉพาะผู้ดูแลระบบ</p>
           </div>
           <div className="flex gap-3">
             {systemActions.map((a) => (

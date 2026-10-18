@@ -50,18 +50,18 @@ export default function DashboardPublic() {
 
       <div className="flex items-center gap-3 p-4 rounded-xl mb-6 bg-paper shadow-lightring">
         <Globe className="w-5 h-5 flex-shrink-0 text-crimson" />
-        <p className="text-sm text-mute flex-1">แสดงเฉพาะข้อมูลที่อนุญาตให้เผยแพร่ ทุกรายการมีป้ายระดับความร่วมมือ และตัวเลข CSTU โดยตรงแยกจากระดับคณะ/มหาวิทยาลัย</p>
+        <p className="text-sm text-mute flex-1">แสดงเฉพาะข้อมูลที่เผยแพร่แล้ว ตัวเลขด้านล่างนับเฉพาะความร่วมมือของ CSTU โดยตรง และแยกระดับคณะ/มหาวิทยาลัยไว้ต่างหาก</p>
         {lastFetched && (
           <span className="flex items-center gap-1.5 text-xs text-faint whitespace-nowrap" title={lastFetched.toLocaleString("th-TH")}>
             <RefreshCw className="w-3 h-3" />
-            อัปเดตข้อมูลเมื่อ {lastFetched.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.
+            ข้อมูล ณ เวลา {lastFetched.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.
           </span>
         )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 stagger">
         {kpis.map((item) => (
-          <Link key={item.label} href={`${item.href}?scope=program`} className={`${statCard} block`} title={`ดู${item.label} CSTU โดยตรงทั้งหมด`}>
+          <Link key={item.label} href={`${item.href}?scope=program`} className={`${statCard} block`} title={`ดู${item.label}ของ CSTU โดยตรง`}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: item.bg }}><item.icon className="w-5 h-5" style={{ color: item.color }} /></div>
             <div className="text-2xl font-extrabold mb-0.5 text-ink font-display">{item.loaded ? String(item.counts.program) : "—"}</div>
             <div className="text-xs text-faint">{item.label} (CSTU โดยตรง){item.note && ` • ${item.note}`}</div>
@@ -69,7 +69,7 @@ export default function DashboardPublic() {
               <div className="text-xs mt-1.5 text-faint">
                 {[
                   item.counts.broader > 0 && `ระดับคณะ/มหาวิทยาลัยอีก ${item.counts.broader} ${item.sub}`,
-                  item.counts.unclassified > 0 && `ยังไม่จัดระดับ ${item.counts.unclassified}`,
+                  item.counts.unclassified > 0 && `ยังไม่ระบุระดับ ${item.counts.unclassified}`,
                 ].filter(Boolean).join(" • ")}
               </div>
             )}
@@ -84,7 +84,7 @@ export default function DashboardPublic() {
             <Link href="/activities" className="text-xs font-semibold flex items-center gap-1 text-crimson">ดูทั้งหมด <ChevronRight className="w-3 h-3" /></Link>
           </div>
           <div className="p-3">
-            {activities.status === "loading" && <LoadingState compact title="กำลังโหลดกิจกรรม" />}
+            {activities.status === "loading" && <LoadingState compact title="กำลังโหลดกิจกรรม…" />}
             {activities.status === "error" && <ErrorState compact error={activities.error} onRetry={activities.retry} />}
             {activities.status === "success" && activities.data.length === 0 && <EmptyState compact title="ยังไม่มีกิจกรรมที่เผยแพร่" />}
             {activities.status === "success" && activities.data.length > 0 && (
@@ -106,7 +106,7 @@ export default function DashboardPublic() {
             <Link href="/stakeholders" className="text-xs font-semibold flex items-center gap-1 text-crimson">ดูทั้งหมด <ChevronRight className="w-3 h-3" /></Link>
           </div>
           <div className="p-4">
-            {partners.status === "loading" && <LoadingState compact title="กำลังโหลดหน่วยงาน" />}
+            {partners.status === "loading" && <LoadingState compact title="กำลังโหลดหน่วยงาน…" />}
             {partners.status === "error" && <ErrorState compact error={partners.error} onRetry={partners.retry} />}
             {partners.status === "success" && partners.data.length === 0 && <EmptyState compact />}
             {partners.status === "success" && partners.data.length > 0 && (
@@ -140,11 +140,11 @@ export default function DashboardPublic() {
 
       <section className={`${contentCard} mt-5`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-          <h2 className="font-bold text-ink">เอกสารข้อตกลง</h2>
+          <h2 className="font-bold text-ink">ข้อตกลง</h2>
           <Link href="/documents" className="text-xs font-semibold text-crimson">ดูทั้งหมด</Link>
         </div>
         <div className="p-3">
-          {documents.status === "loading" && <LoadingState compact title="กำลังโหลดเอกสาร" />}
+          {documents.status === "loading" && <LoadingState compact title="กำลังโหลดข้อตกลง…" />}
           {documents.status === "error" && <ErrorState compact error={documents.error} onRetry={documents.retry} />}
           {documents.status === "success" && agreementData.length === 0 && <EmptyState compact title="ยังไม่มีข้อตกลงที่เผยแพร่" />}
           <div className="divide-y divide-soft">{agreementPreview.map((doc) => (

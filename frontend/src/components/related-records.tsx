@@ -25,7 +25,7 @@ export function RelatedRecords({ kind, partnerId, documentId }: Props) {
     <h2 className="font-bold mb-3 text-ink">{title}</h2>
     {records.status === "loading" ? <LoadingState compact />
       : records.status === "error" ? <ErrorState compact error={records.error} onRetry={records.retry} />
-      : records.data.length === 0 ? <EmptyState compact title={`ยังไม่มี${title}ที่เผยแพร่`} />
+      : records.data.length === 0 ? <EmptyState compact title={`ยังไม่มี${title}`} />
       : <ul className="space-y-3">{records.data.map((item) => <li key={item.id}>
         <Link href={item.href} className="text-sm font-semibold text-crimson hover:underline">{item.title}</Link>
       </li>)}</ul>}

@@ -14,7 +14,7 @@ const container = (compact: boolean) =>
   }`;
 
 export function LoadingState({
-  title = "กำลังโหลดข้อมูล",
+  title = "กำลังโหลด…",
   message = "กรุณารอสักครู่",
   compact = false,
 }: StateProps) {
@@ -28,8 +28,8 @@ export function LoadingState({
 }
 
 export function EmptyState({
-  title = "ยังไม่มีข้อมูลที่เผยแพร่",
-  message = "เมื่อมีข้อมูลที่พร้อมเผยแพร่ รายการจะแสดงที่นี่",
+  title = "ยังไม่มีข้อมูล",
+  message = "ข้อมูลจะแสดงที่นี่เมื่อเผยแพร่แล้ว",
   compact = false,
 }: StateProps) {
   return (
@@ -56,12 +56,12 @@ export function ErrorState({
     <div className={container(compact)} role="alert">
       <AlertCircle className="mb-3 h-7 w-7 text-crimson" />
       <h2 className="font-semibold text-ink">
-        {notFound ? "ไม่พบข้อมูลที่เผยแพร่" : "ไม่สามารถโหลดข้อมูลได้"}
+        {notFound ? "ไม่พบรายการนี้" : "โหลดข้อมูลไม่สำเร็จ"}
       </h2>
       <p className="mt-1 text-sm text-faint">
         {notFound
-          ? "รายการนี้อาจไม่มีอยู่หรือยังไม่ได้รับอนุญาตให้เผยแพร่"
-          : "โปรดตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง"}
+          ? "รายการนี้อาจยังไม่เผยแพร่หรือลบไปแล้ว"
+          : "กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง"}
       </p>
       <button className="btn btn-outline mt-4 gap-2" onClick={onRetry} type="button">
         <RefreshCw className="h-4 w-4" />
@@ -81,8 +81,8 @@ export function AccessState({ status, compact = false }: { status: 401 | 403; co
       <h2 className="font-semibold text-ink">{login ? "กรุณาเข้าสู่ระบบ" : "ไม่มีสิทธิ์เข้าถึง"}</h2>
       <p className="mt-1 text-sm text-faint">
         {login
-          ? "ข้อมูลส่วนนี้แสดงเฉพาะผู้ใช้ที่เข้าสู่ระบบแล้ว"
-          : "บทบาทของคุณไม่ได้รับสิทธิ์ดูข้อมูลส่วนนี้ หากคิดว่าไม่ถูกต้อง โปรดติดต่อผู้ดูแลระบบ"}
+          ? "ต้องเข้าสู่ระบบก่อนจึงจะดูข้อมูลส่วนนี้ได้"
+          : "บทบาทนี้ดูข้อมูลส่วนนี้ไม่ได้ หากคิดว่าไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ"}
       </p>
       {login && (
         <Link className="btn btn-primary mt-4 gap-2" href={`/login?next=${encodeURIComponent(next)}`}>

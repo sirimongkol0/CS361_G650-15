@@ -26,7 +26,7 @@ const partners = [
     await page.getByRole('status', { name: 'กำลังโหลดข้อมูล', exact: true }).waitFor();
     releaseLoading();
     await page.getByRole('link', { name: 'Alpha University', exact: true }).waitFor();
-    await page.getByPlaceholder('ค้นหาหน่วยงานหรือผู้ติดต่อ...').fill('Beta');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Beta');
+    await page.getByPlaceholder('ค้นหาชื่อหน่วยงานหรือผู้ติดต่อ').fill('Beta');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Beta');
     const filters = page.locator('select[aria-label]');
     await filters.nth(0).selectOption('government');
     await filters.nth(1).selectOption('🇯🇵 ญี่ปุ่น'); // countryCode JP is shown as a localized label
@@ -40,17 +40,17 @@ const partners = [
     await page.reload();
     await page.getByRole('link', { name: 'approved@example.test', exact: true }).waitFor();
     await page.goto(`${base}/stakeholders/999999`);
-    await page.getByText('ไม่พบข้อมูลที่เผยแพร่', { exact: true }).waitFor();
+    await page.getByText('ไม่พบรายการนี้', { exact: true }).waitFor();
     fail = true;
     await page.goto(`${base}/stakeholders`);
-    await page.getByText('ไม่สามารถโหลดข้อมูลได้', { exact: true }).waitFor();
+    await page.getByText('โหลดข้อมูลไม่สำเร็จ', { exact: true }).waitFor();
     assert.equal(await page.locator('tbody tr').count(), 0);
     fail = false;
     await page.getByRole('button', { name: 'ลองอีกครั้ง', exact: true }).click();
     await page.getByRole('link', { name: 'Alpha University', exact: true }).waitFor();
     empty = true;
     await page.reload();
-    await page.getByText('ยังไม่มีข้อมูลที่เผยแพร่', { exact: true }).waitFor();
+    await page.getByText('ยังไม่มีข้อมูล', { exact: true }).waitFor();
     console.log('PASS: stakeholders filters/reset, refresh, contact, 404, empty, error without mock, retry');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, AlertTriangle, Plus, Download } from "lucide-react";
+import { Building2, FileText, CalendarDays, GraduationCap, AlertTriangle, Plus } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import {
   agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
   recentActivities, shown, useDashboardData, yearsIn,
 } from "@/lib/dashboard-data";
+import { downloadCsv } from "@/lib/list-tools";
+import { ExportCsvButton } from "@/components/list-ui";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150";
@@ -29,18 +31,22 @@ export default function DashboardStaff() {
   const year = selectedYear ?? years[0] ?? new Date().getFullYear();
 
   const agreements = data.documents.filter(isAgreement);
-  const staffExpiringDocs = expiringAgreements(data.documents).map((d) => ({title: d.title, org: d.org, expire: d.expire, days: d.daysLeft}));
+  const staffExpiringDocs = expiringAgreements(data.documents).map((d) => ({id: d.id, title: d.title, org: d.org, expire: d.expire, days: d.daysLeft}));
   const activeAgreements = agreements.filter((d) => agreementState(d) === "active").length;
   const monthly = countByMonth(data.activities.map((a) => a.startDate), year)
     .map((count, i) => ({ month: monthLabel(i), กิจกรรม: count }));
   const staffRecentActivities = recentActivities(data.activities, 5);
+  const exportMonthly = () => downloadCsv(
+    `pcsms-activities-${beYear(year)}.csv`,
+    ["เดือน", "กิจกรรม"],
+    monthly.map((row) => [`${row.month} ${beYear(year)}`, row.กิจกรรม]),
+  );
 
   const kpis: Kpi[] = [
     { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
     { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
-    { icon: GraduationCap, label: "นักศึกษา", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
+    { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
     { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(data.loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
   ];
 
@@ -52,10 +58,10 @@ export default function DashboardStaff() {
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
             <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              การบริหารความร่วมมือของหลักสูตร
+              ภาพรวมความร่วมมือของหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมการบริหารความร่วมมือหลักสูตร</p>
+          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อตกลง กิจกรรม และเรื่องที่ต้องติดตาม</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -67,15 +73,15 @@ export default function DashboardStaff() {
           >
             {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <button className="btn btn-outline text-sm gap-2"><Download className="w-4 h-4" />ส่งออก</button>
-          <button className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
+          <ExportCsvButton onExport={exportMonthly} disabled={!data.loaded} />
+          <Link href="/activities/manage?new=1" className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</Link>
         </div>
       </div>
 
       {staffExpiringDocs.length > 0 && (<div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">มีข้อตกลงใกล้หมดอายุ {staffExpiringDocs.length} ฉบับ</div>)}
 
       {/* KPI row */}
-      <div className="grid grid-cols-6 gap-3 mb-6 stagger">
+      <div className="grid grid-cols-5 gap-3 mb-6 stagger">
         {kpis.map((s) => {
           const inner = (
             <>
@@ -120,8 +126,8 @@ export default function DashboardStaff() {
             <h2 className="font-bold" style={{ color: "#111827" }}>ข้อตกลงที่ต้องติดตาม</h2>
           </div>
           <div className="space-y-3">
-            {staffExpiringDocs.map((d, i) => (
-              <div key={i} className="p-3.5 rounded-xl" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
+            {staffExpiringDocs.map((d) => (
+              <div key={d.id} className="p-3.5 rounded-xl" style={{ background: "#FEF3C7", border: "1px solid #FDE68A" }}>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-bold text-sm" style={{ color: "#92400E" }}>{d.title}</div>
@@ -131,13 +137,15 @@ export default function DashboardStaff() {
                 </div>
                 <div className="text-xs mt-1" style={{ color: "#B45309" }}>หมดอายุ {d.expire}</div>
                 <div className="flex gap-2 mt-2.5">
-                  <button className="btn btn-outline text-xs py-1.5 flex-1">ต่ออายุ</button>
+                  <Link href={`/documents/manage?open=${d.id}`} className="btn btn-outline text-xs py-1.5 flex-1">เปิดข้อตกลง</Link>
                 </div>
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>{shown(data.loaded, activeAgreements)} ข้อตกลงที่ใช้งานปกติ</div>
-              <div className="text-xs" style={{ color: "#16A34A" }}>ไม่มีการดำเนินการที่จำเป็น</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(data.loaded, activeAgreements)} ฉบับ</div>
+              {data.loaded && staffExpiringDocs.length === 0 && (
+                <div className="text-xs" style={{ color: "#16A34A" }}>ยังไม่มีเรื่องที่ต้องดำเนินการ</div>
+              )}
             </div>
           </div>
         </div>
