@@ -252,6 +252,11 @@ class Feedback(Base):
     partner_id = Column(Integer, ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     activity_id = Column(Integer, ForeignKey("activities.id", ondelete="SET NULL"), nullable=True)
 
+    # V3-7: staff/coordinator reply. Kept off the public response.
+    reply = Column(String, nullable=True)
+    replied_at = Column(DateTime(timezone=True), nullable=True)
+    replied_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
     partner = relationship("Partner")
     activity = relationship("Activity")
 

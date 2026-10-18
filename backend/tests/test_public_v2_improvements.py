@@ -4,10 +4,11 @@ import pytest
 import models
 
 
-@pytest.mark.parametrize("path", ["users/", "users/1", "feedback/", "feedback/1", "exchange/1"])
-def test_internal_routes_are_not_public(client, path):
-    assert client.get(f"/api/v1/{path}").status_code == 404
-    assert f"/api/v1/{path}" not in client.get("/openapi.json").json()["paths"]
+@pytest.mark.parametrize(("path", "status"), [
+    ("users/", 401), ("users/1", 401), ("feedback/manage", 401), ("feedback/1", 404), ("exchange/1", 404),
+])
+def test_internal_routes_are_not_public(client, path, status):
+    assert client.get(f"/api/v1/{path}").status_code == status
 
 
 DOCUMENT_WRITE_PATHS = {
@@ -56,6 +57,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         and path not in {"/api/v1/partners/", "/api/v1/partners/{partner_id}"}
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
+        and not path.startswith(("/api/v1/feedback", "/api/v1/users"))
         and path not in DOCUMENT_WRITE_PATHS
     }
     assert all(set(methods) == {"get"} for methods in repository.values())
@@ -72,6 +74,12 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     assert set(paths["/api/v1/activities/{activity_id}"]) >= {"get", "patch", "delete"}
     assert set(paths["/api/v1/exchange/"]) >= {"get", "post"}
     assert set(paths["/api/v1/exchange/{student_id}"]) >= {"get", "patch"}
+
+    # V3-7: feedback replies and the admin user list.
+    assert set(paths["/api/v1/feedback/{feedback_id}"]) == {"get", "patch"}
+    assert set(paths["/api/v1/feedback/manage"]) == {"get"}
+    assert set(paths["/api/v1/users/"]) == {"get"}
+    assert set(paths["/api/v1/users/{user_id}"]) == {"get"}
 
     # V3-3 adds role-protected document writes.
     for path, methods in DOCUMENT_WRITE_PATHS.items():

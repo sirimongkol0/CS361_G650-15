@@ -340,6 +340,26 @@ class FeedbackResponse(BaseModel):
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
 
 
+FeedbackStatus = Literal["รอตรวจสอบ", "ตรวจสอบแล้ว"]
+
+
+class FeedbackManageResponse(FeedbackResponse):
+    """Signed-in view (/feedback/manage and writes): adds publication and the reply."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    reply: Optional[str] = None
+    repliedAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('replied_at', 'repliedAt'), serialization_alias='repliedAt')
+    repliedByUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('replied_by_user_id', 'repliedByUserId'), serialization_alias='repliedByUserId')
+
+
+class FeedbackUpdate(BaseModel):
+    """PATCH /feedback/{id}: record a reply and/or status; publishing is staff/admin only."""
+    model_config = ConfigDict(extra="forbid")
+
+    reply: Optional[str] = Field(default=None, max_length=2000)
+    status: Optional[FeedbackStatus] = None
+    is_published: Optional[bool] = None
+
+
 class ExchangeStudentCreate(BaseModel):
     name: str
     type: Optional[str] = None          # outbound | inbound
@@ -391,27 +411,6 @@ class ExchangeStudentManageResponse(ExchangeStudentResponse):
     userId: Optional[int] = Field(default=None, validation_alias=AliasChoices('user_id', 'userId'), serialization_alias='userId')
 
 
-class AdminProfileBase(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    position: Optional[str] = None
-    department: Optional[str] = None
-
-
-class AdminProfileResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    firstName: Optional[str] = Field(default=None, validation_alias=AliasChoices('first_name', 'firstName'), serialization_alias='firstName')
-    lastName: Optional[str] = Field(default=None, validation_alias=AliasChoices('last_name', 'lastName'), serialization_alias='lastName')
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    position: Optional[str] = None
-    department: Optional[str] = None
-
-
 # Resolve forward references (scopeItems declared before their models)
 DocumentResponse.model_rebuild()
 DocumentManageResponse.model_rebuild()
@@ -440,6 +439,18 @@ class CurrentUserResponse(BaseModel):
     id: int
     email: str
     role: str
+
+
+class UserResponse(BaseModel):
+    """Account row for the admin user list (GET /users/)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    role: str
+    isActive: bool = Field(validation_alias=AliasChoices('is_active', 'isActive'), serialization_alias='isActive')
+    createdAt: datetime = Field(validation_alias=AliasChoices('created_at', 'createdAt'), serialization_alias='createdAt')
+    lastLoginAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('last_login_at', 'lastLoginAt'), serialization_alias='lastLoginAt')
 
 
 class AuditLogResponse(BaseModel):
