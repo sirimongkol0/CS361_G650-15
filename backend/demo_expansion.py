@@ -244,6 +244,9 @@ LECTURER_NAMES = [
     "รศ.ดร.ธีรวัฒน์ ชัยมงคล", "อ.ณัฐวดี ศรีอรุณ", "ผศ.ดร.ภาณุพงศ์ อินทรสุวรรณ", "อ.ดร.จิราพร ปัญญาดี",
 ]
 SIGNER_OUR = "รศ.ดร.ประภาพร อินทรสุวรรณ"
+# The dataset's source, listed under "ที่มาของข้อมูล" on every detail page.
+SOURCE_TITLE = "ชุดข้อมูลสาธิต CSTU"
+SOURCE_PUBLISHER = "รายวิชา CS361"
 PARTNER_SIGNER_NAMES = ["คุณสมเกียรติ ธนากร", "คุณรัชนี พงษ์พานิช", "คุณประเสริฐ วงศ์สวัสดิ์", "คุณมาลัย เกษมสุข"]
 # Students get a surname picked by their first name, so one student's records agree.
 SURNAMES = ["ศรีวงศ์", "วัฒนกุล", "ทองสกุล", "ชัยมงคล", "เจริญศักดิ์", "พรหมมา", "แสงอรุณ", "บุญประเสริฐ",
@@ -306,6 +309,10 @@ def naturalize_demo(db) -> int:
             setattr(row, field, value)
             changed.add((type(row).__name__, row.id))
 
+    for source in db.query(models.Source).filter(models.Source.source_type == "demo_fixture").all():
+        if _labelled(source.source_title) or _labelled(source.source_publisher):
+            put(source, "source_title", SOURCE_TITLE)
+            put(source, "source_publisher", SOURCE_PUBLISHER)
     for partner in db.query(models.Partner).all():
         if _labelled(partner.contact_name):
             put(partner, "contact_name", CONTACT_NAMES[partner.id % len(CONTACT_NAMES)])

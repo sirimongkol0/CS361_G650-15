@@ -129,8 +129,8 @@ def seed():
             raise RuntimeError("First demo preparation requires an empty dedicated database")
         source = models.Source(
             source_url="https://cstu-demo.example.test/dataset/v1",
-            source_title="ชุดข้อมูลสมมติ CSTU สำหรับสาธิต V2",
-            source_publisher="ชุดสาธิตรายวิชา CS361 (ข้อมูลสมมติ)",
+            source_title=demo_expansion.SOURCE_TITLE,
+            source_publisher=demo_expansion.SOURCE_PUBLISHER,
             source_type="demo_fixture", verification_status="verified",
             source_checked_at=datetime(2026, 10, 2, tzinfo=timezone.utc),
             source_locator="ตรวจความสอดคล้องของชุดสาธิต ไม่ใช่การรับรองข้อเท็จจริงหรือความร่วมมือจริง",

@@ -115,3 +115,17 @@ def test_naturalize_demo_gives_people_names_and_is_idempotent(db_session):
     assert doc.scope_items[0].text == "วัตถุประสงค์: ความร่วมมือด้านวิจัย"
     assert (activity.location, activity.description) == ("หอประชุมคณะ", "กิจกรรมหัวข้อ AI สำหรับนักศึกษาและอาจารย์ของหลักสูตร")
     assert demo_expansion.naturalize_demo(db_session) == 0
+
+
+def test_demo_source_label_loses_the_word_but_other_sources_keep_theirs(db_session):
+    demo = models.Source(source_url="https://cstu-demo.example.test/dataset/v1", source_type="demo_fixture",
+                         source_title="ชุดข้อมูลสมมติ CSTU สำหรับสาธิต V2", source_publisher="ชุดสาธิตรายวิชา CS361 (ข้อมูลสมมติ)",
+                         verification_status="verified", source_checked_at=datetime.now(timezone.utc))
+    other = models.Source(source_url="https://example.test/x", source_type="official_document",
+                          source_title="ข้อมูลสมมติจากหน่วยงาน", verification_status="verified",
+                          source_checked_at=datetime.now(timezone.utc))
+    db_session.add_all([demo, other])
+    db_session.commit()
+    assert demo_expansion.naturalize_demo(db_session) == 1
+    assert (demo.source_title, demo.source_publisher) == (demo_expansion.SOURCE_TITLE, demo_expansion.SOURCE_PUBLISHER)
+    assert other.source_title == "ข้อมูลสมมติจากหน่วยงาน"
