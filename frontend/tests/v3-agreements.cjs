@@ -70,6 +70,8 @@ function fakeApi(role, userId) {
     }
     if (req.method() === 'PUT' && sub === '/cstu-status') {
       if (body.cstu_status !== 'review' && !body.cstu_evidence) return reply(route, 422, { detail: 'cstu_evidence is required for keep and out_of_scope' });
+      if (body.cstu_status === 'keep' && !body.source_url && !doc.sources.length) return reply(route, 422, { detail: 'source_url is required' });
+      if (body.source_url) doc.sources.push({ id: doc.sources.length + 1, sourceUrl: body.source_url });
       doc.cstuStatus = body.cstu_status; doc.cstuEvidence = body.cstu_evidence; return reply(route, 200, doc);
     }
     if (req.method() === 'POST' && sub === '/publish') { doc.isPublished = true; return reply(route, 200, doc); }
@@ -177,6 +179,8 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await dialog.getByLabel('ผลการตรวจ').selectOption('keep');
       assert.ok(await dialog.getByRole('button', { name: 'บันทึกผลการตรวจ' }).isDisabled(), 'evidence required');
       await dialog.getByLabel('หลักฐาน / แหล่งที่มา').fill('CSTU เป็นคู่สัญญาตามข้อ 1');
+      assert.ok(await dialog.getByRole('button', { name: 'บันทึกผลการตรวจ' }).isDisabled(), 'keep needs a verified source');
+      await dialog.getByLabel('ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)').fill('https://example.test/mou');
       await dialog.getByRole('button', { name: 'บันทึกผลการตรวจ' }).click();
       await page.getByText('บันทึกผลการตรวจ CSTU แล้ว').waitFor();
 

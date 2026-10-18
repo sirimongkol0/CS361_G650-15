@@ -8,7 +8,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ChevronRight, Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
 import {
-  apiDelete, apiGetFresh, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
+  apiBase, apiDelete, apiGetFresh, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadPublicPartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
 import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, label, scopeLevelLabels } from "@/lib/labels";
@@ -307,6 +307,9 @@ function ManagePanel({
   const [fileProblem, setFileProblem] = useState<string | null>(null);
   const [cstu, setCstu] = useState<string>(doc.cstuStatus);
   const [evidence, setEvidence] = useState(doc.cstuEvidence ?? "");
+  const [sourceUrl, setSourceUrl] = useState("");
+  // Public pages list only documents with a verified source; "keep" needs one.
+  const needsSource = cstu === "keep" && doc.sources.length === 0 && !sourceUrl.trim();
   const action = useAction();
 
   const act = async (fn: () => Promise<unknown>, message: string) => {
@@ -329,8 +332,10 @@ function ManagePanel({
     if (tab) tab.opener = null;
     const ok = await action.run(async () => {
       const { url } = await apiGetFresh<{ url: string }>(`/documents/${doc.id}/internal-url`);
-      if (tab) tab.location.href = url;
-      else window.location.href = url;
+      // Local storage answers with a path on the API; S3 with a full presigned URL.
+      const target = new URL(url, new URL(apiBase(), window.location.href)).toString();
+      if (tab) tab.location.href = target;
+      else window.location.href = target;
     });
     if (!ok) tab?.close();
   }
@@ -425,8 +430,20 @@ function ManagePanel({
               <textarea className={inputCls} rows={2} value={evidence} onChange={(e) => setEvidence(e.target.value)} />
             </Field>
           </div>
-          <button className="btn btn-primary text-sm" type="button" disabled={action.busy || (cstu !== "review" && !evidence.trim())}
-            onClick={() => act(() => apiPut(`/documents/${doc.id}/cstu-status`, { cstu_status: cstu, cstu_evidence: orNull(evidence) }), "บันทึกผลการตรวจ CSTU แล้ว")}>
+          <Field
+            label="ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)"
+            hint={doc.sources.length
+              ? `มีแหล่งที่มาแล้ว ${doc.sources.length} รายการ เพิ่มได้ถ้าต้องการ`
+              : "จำเป็นเมื่อเลือก “คงไว้” หน้าสาธารณะแสดงเฉพาะเอกสารที่มีแหล่งที่มาที่ตรวจแล้ว"}
+          >
+            <input className={inputCls} type="url" pattern="https://.*" value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" />
+          </Field>
+          <button className="btn btn-primary text-sm" type="button"
+            disabled={action.busy || (cstu !== "review" && !evidence.trim()) || needsSource}
+            onClick={() => act(() => apiPut(`/documents/${doc.id}/cstu-status`, {
+              cstu_status: cstu, cstu_evidence: orNull(evidence), source_url: orNull(sourceUrl),
+            }), "บันทึกผลการตรวจ CSTU แล้ว")}>
             บันทึกผลการตรวจ
           </button>
         </Section>

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, EmailStr
-from typing import Optional, List, Literal
+from typing import Annotated, Optional, List, Literal
 from datetime import date, datetime, timezone
 
 # Alias for annotations: pydantic 2.5.3 mis-resolves a field literally named
@@ -34,10 +34,13 @@ class PartnerBase(BaseModel):
         return stripped
 
 class PartnerCreate(PartnerBase):
+    source_url: Optional[str] = Field(default=None, pattern=r"^https://\S+$", max_length=2000)
     is_published: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
 
 
 class PartnerUpdate(BaseModel):
+    # Staff/admin only: a checked https source, needed before a partner can appear publicly.
+    source_url: Optional[str] = Field(default=None, pattern=r"^https://\S+$", max_length=2000)
     name: Optional[str] = None
     description: Optional[str] = None
     logo_url: Optional[str] = Field(default=None, validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
@@ -280,9 +283,14 @@ class DocumentTransition(BaseModel):
     status: AgreementStatus
 
 
+HttpsUrl = Annotated[str, Field(pattern=r"^https://\S+$", max_length=2000)]
+
+
 class DocumentCstuReview(BaseModel):
     cstu_status: CstuStatus
     cstu_evidence: Optional[str] = None
+    # Staff-checked source; required to keep a document that has no verified source yet.
+    source_url: Optional[HttpsUrl] = None
 
 
 class DocumentManageResponse(DocumentResponse):

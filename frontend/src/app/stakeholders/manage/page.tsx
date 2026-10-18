@@ -189,6 +189,7 @@ function PartnerForm({
     contact_email: partner?.contactEmail ?? "",
     contact_is_public: partner?.contactIsPublic ?? false,
     is_published: partner?.isPublished ?? false,
+    source_url: "",
   });
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
@@ -209,7 +210,10 @@ function PartnerForm({
       contact_email: orNull(form.contact_email),
       contact_is_public: form.contact_is_public,
     };
-    if (isStaff) body.is_published = form.is_published;
+    if (isStaff) {
+      body.is_published = form.is_published;
+      if (form.source_url.trim()) body.source_url = form.source_url.trim();
+    }
     let saved: ManagedPartner | null = null;
     const ok = await action.run(async () => {
       saved = partner
@@ -269,10 +273,19 @@ function PartnerForm({
         แสดงข้อมูลผู้ติดต่อในหน้าสาธารณะ (ข้อมูลส่วนบุคคล ต้องได้รับความยินยอม)
       </label>
       {isStaff ? (
-        <label className="mb-3 flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
-          เผยแพร่ในหน้าสาธารณะ
-        </label>
+        <>
+          <Field label="ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)" hint="เจ้าหน้าที่ยืนยันแหล่งที่มา จำเป็นก่อนแสดงในหน้าสาธารณะ">
+            <input className={inputCls} type="url" pattern="https://.*" value={form.source_url}
+              onChange={(e) => setForm({ ...form, source_url: e.target.value })} placeholder="https://" />
+          </Field>
+          <label className="mb-1 flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
+            เผยแพร่ในหน้าสาธารณะ
+          </label>
+          <p className="mb-3 text-xs text-faint">
+            หน้าสาธารณะแสดงเมื่อมีครบ: ประเภท, รายละเอียด, เว็บไซต์, รหัสประเทศ และแหล่งที่มาที่ตรวจแล้ว
+          </p>
+        </>
       ) : (
         <p className="mb-3 text-xs text-faint">รายการที่คุณเพิ่มจะเป็นฉบับร่าง จนกว่าเจ้าหน้าที่จะเผยแพร่</p>
       )}

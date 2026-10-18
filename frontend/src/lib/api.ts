@@ -775,6 +775,7 @@ export interface ManagedDocument {
   cstuStatus: "keep" | "review" | "out_of_scope";
   cstuEvidence: string | null;
   ownerUserId: number | null;
+  sources: { id: number; sourceUrl: string }[];
 }
 
 /** GET /documents/manage: coordinators get their own, staff/admin all (needs login). */

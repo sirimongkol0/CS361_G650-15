@@ -282,3 +282,37 @@ def test_validation_errors(client, cognito):
     res_empty = client.post(f"{BASE_URL}/", json={"name": "   "}, headers=headers)
     assert res_empty.status_code == 422
     
+
+# --- V3-7: staff attach a verified source so web-created partners can be public ----
+
+def _public_partner_body(**extra):
+    return {"name": "Web Partner University", "type": "university", "description": "Created on the web",
+            "website_url": "https://partner.example.test", "country": "Japan", "country_code": "JP", **extra}
+
+
+def test_staff_partner_with_source_and_publish_appears_publicly(client, db_session, cognito):
+    staff = bearer(token_for(client, "staff"))
+    created = client.post("/api/v1/partners/", headers=staff, json=_public_partner_body(
+        is_published=True, source_url="https://partner.example.test/mou"))
+    assert created.status_code == 201, created.text
+    public = client.get("/api/v1/partners/").json()
+    assert [p["name"] for p in public] == ["Web Partner University"]
+    log = db_session.query(models.AuditLog).filter_by(entity="partners", entity_id=created.json()["id"]).one()
+    assert log.after["source_url"] == "https://partner.example.test/mou"
+
+
+def test_partner_source_can_be_added_later_by_update(client, db_session, cognito):
+    staff = bearer(token_for(client, "staff"))
+    partner_id = client.post("/api/v1/partners/", headers=staff, json=_public_partner_body(is_published=True)).json()["id"]
+    assert client.get("/api/v1/partners/").json() == []  # no verified source yet
+    updated = client.put(f"/api/v1/partners/{partner_id}", headers=staff, json={"source_url": "https://partner.example.test/later"})
+    assert updated.status_code == 200, updated.text
+    assert [p["id"] for p in client.get("/api/v1/partners/").json()] == [partner_id]
+
+
+def test_coordinator_cannot_verify_partner_sources(client, db_session, cognito):
+    coordinator = bearer(token_for(client, "coordinator"))
+    response = client.post("/api/v1/partners/", headers=coordinator,
+                           json=_public_partner_body(source_url="https://partner.example.test/x"))
+    assert response.status_code == 403
+    assert db_session.query(models.Partner).count() == 0
