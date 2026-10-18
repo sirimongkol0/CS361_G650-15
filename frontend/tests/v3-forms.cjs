@@ -89,6 +89,10 @@ async function session(browser, role, userId = 7) {
   });
   await context.route(/\/api\/v1\/exchange\/(mine|\d+)?$/, route(exchange));
   await context.route(/\/api\/v1\/partners\/(\d+)?$/, route(partners));
+  // Agreements the activity form offers to link (activities.mou_document_id).
+  await context.route(/\/api\/v1\/documents\/(manage)?$/, (r) => reply(r, 200, [
+    { id: 501, name: 'MoU ทดสอบ', documentKind: 'agreement', docType: 'mou', partnerId: null },
+  ]));
   return { context, activities, exchange, partners };
 }
 

@@ -768,6 +768,33 @@ export interface ManagedDocument {
 /** GET /documents/manage: coordinators get their own, staff/admin all (needs login). */
 export const loadManagedDocuments = () => apiGetList<ManagedDocument>("/documents/manage");
 
+/** An agreement an activity may be linked to (activities.mou_document_id). */
+export interface AgreementOption {
+  id: number;
+  name: string;
+  partnerId: number | null;
+}
+
+const isAgreementRow = (d: { documentKind?: string | null; docType?: string | null }) =>
+  d.documentKind === "agreement" || ["mou", "moa"].includes((d.docType ?? "").toLowerCase());
+
+/**
+ * Agreements the signed-in manager may link an activity to, by name: staff/admin
+ * get every live one (GET /documents/manage); coordinators their own plus the
+ * public ones (GET /documents/). The backend checks the same rule.
+ */
+export async function loadAgreementOptions(role: string): Promise<AgreementOption[]> {
+  const [managed, published] = await Promise.all([
+    loadManagedDocuments(),
+    role === "coordinator" ? apiGetList<RawDocument>("/documents/").catch(() => [] as RawDocument[]) : Promise.resolve([] as RawDocument[]),
+  ]);
+  const byId = new Map<number, AgreementOption>();
+  for (const d of [...managed, ...published]) {
+    if (isAgreementRow(d) && !byId.has(d.id)) byId.set(d.id, { id: d.id, name: d.name, partnerId: d.partnerId ?? null });
+  }
+  return Array.from(byId.values()).sort((x, y) => x.name.localeCompare(y.name, "th"));
+}
+
 /** GET a list of {id, name} rows as a lookup map; an unavailable join yields an empty map. */
 async function loadNames(path: string): Promise<Map<number, string>> {
   try {

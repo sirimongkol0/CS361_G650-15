@@ -91,6 +91,8 @@ async function session(browser, role, userId = 7) {
   await context.route('**/api/v1/auth/me', (r) => reply(r, 200, { id: userId, email: `${role}@example.test`, role }));
   const api = fakeApi(role, userId);
   await context.route(/\/api\/v1\/documents\/(manage|\d+.*|)$/, (r) => api.handle(r));
+  // Activities linked to an agreement, listed in its panel.
+  await context.route(/\/api\/v1\/activities\/manage$/, (r) => reply(r, 200, []));
   await context.route('**/fake-signed.pdf', (r) => r.fulfill({ status: 200, contentType: 'application/pdf', body: PDF }));
   return { context, api };
 }

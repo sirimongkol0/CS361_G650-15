@@ -7,8 +7,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { CalendarPlus, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import {
-  apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadPublicPartners, useApiResource,
-  type PartnerView,
+  apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadPublicPartners, useApiResource,
+  type AgreementOption, type PartnerView,
 } from "@/lib/api";
 import { activityTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
@@ -31,6 +31,7 @@ interface ManagedActivity {
   scopeLevel: ScopeLevel | null;
   partner: { id: number; name: string } | null;
   partnerId: number | null;
+  mouDocId: number | null;
   isPublished: boolean;
   ownerUserId: number | null;
 }
@@ -54,6 +55,10 @@ export default function ManageActivitiesPage() {
   const partners = useApiResource<PartnerView[]>(
     () => (allowed ? loadPublicPartners() : new Promise<never>(() => {})),
     [allowed]
+  );
+  const agreements = useApiResource<AgreementOption[]>(
+    () => (allowed ? loadAgreementOptions(role) : new Promise<never>(() => {})),
+    [allowed, role]
   );
   // Keep the last list on screen while reloading after a change.
   const [rows, setRows] = useState<ManagedActivity[] | null>(null);
@@ -173,6 +178,7 @@ export default function ManageActivitiesPage() {
             key={editing === "new" ? "new" : editing.id}
             activity={editing === "new" ? undefined : editing}
             partners={partners.status === "success" ? partners.data : []}
+            agreements={agreements.status === "success" ? agreements.data : []}
             isStaff={isStaff}
             onCancel={() => setEditing(null)}
             onSaved={(saved, created) => { setEditing(null); refresh(created ? `เพิ่ม “${saved.name}” แล้ว` : `บันทึก “${saved.name}” แล้ว`); }}
@@ -184,10 +190,11 @@ export default function ManageActivitiesPage() {
 }
 
 function ActivityForm({
-  activity, partners, isStaff, onSaved, onCancel,
+  activity, partners, agreements, isStaff, onSaved, onCancel,
 }: {
   activity?: ManagedActivity;
   partners: PartnerView[];
+  agreements: AgreementOption[];
   isStaff: boolean;
   onSaved: (activity: ManagedActivity, created: boolean) => void;
   onCancel: () => void;
@@ -202,12 +209,25 @@ function ActivityForm({
     participants: activity?.participants != null ? String(activity.participants) : "",
     status: activity?.status ?? "วางแผน",
     partner_id: activity?.partnerId ? String(activity.partnerId) : "",
+    mou_document_id: activity?.mouDocId ? String(activity.mouDocId) : "",
     scope_level: activity?.scopeLevel ?? "",
     description: activity?.description ?? "",
     is_published: activity?.isPublished ?? false,
   });
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
+  // Agreements of the chosen partner (all when none is chosen); the current link always stays listed.
+  const agreementChoices = agreements.filter((d) =>
+    !form.partner_id || d.partnerId === Number(form.partner_id) || String(d.id) === form.mou_document_id);
+  const pickAgreement = (e: { target: { value: string } }) => {
+    const chosen = agreements.find((d) => String(d.id) === e.target.value);
+    setForm({
+      ...form,
+      mou_document_id: e.target.value,
+      // Choosing an agreement also fills in its partner when none is set yet.
+      partner_id: form.partner_id || (chosen?.partnerId ? String(chosen.partnerId) : ""),
+    });
+  };
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -221,6 +241,7 @@ function ActivityForm({
       participants: form.participants === "" ? null : Number(form.participants),
       status: orNull(form.status),
       partner_id: form.partner_id ? Number(form.partner_id) : null,
+      mou_document_id: form.mou_document_id ? Number(form.mou_document_id) : null,
       scope_level: orNull(form.scope_level),
       description: orNull(form.description),
     };
@@ -272,6 +293,15 @@ function ActivityForm({
           <select className={inputCls} value={form.partner_id} onChange={set("partner_id")}>
             <option value="">— ไม่ระบุ —</option>
             {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </Field>
+        <Field label="ข้อตกลงที่เกี่ยวข้อง">
+          <select className={inputCls} value={form.mou_document_id} onChange={pickAgreement}>
+            <option value="">— ไม่ระบุ —</option>
+            {agreementChoices.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            {form.mou_document_id && !agreements.some((d) => String(d.id) === form.mou_document_id) && (
+              <option value={form.mou_document_id}>ข้อตกลง #{form.mou_document_id}</option>
+            )}
           </select>
         </Field>
         <Field label="ระดับความร่วมมือ">

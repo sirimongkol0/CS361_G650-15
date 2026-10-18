@@ -8,7 +8,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ChevronRight, Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
 import {
-  apiBase, apiDelete, apiGetFresh, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
+  apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadPublicPartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
 import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, label, scopeLevelLabels } from "@/lib/labels";
@@ -65,6 +65,12 @@ export default function ManageDocumentsPage() {
     [allowed]
   );
   const partnerList = partners.status === "success" ? partners.data : [];
+  // Activities linked to an agreement (activities.mou_document_id); coordinators see their own.
+  const activities = useApiResource<{ id: number; name: string; date: string | null; mouDocId: number | null }[]>(
+    () => (allowed ? apiGetList("/activities/manage") : new Promise<never>(() => {})),
+    [allowed, reload]
+  );
+  const activityList = activities.status === "success" ? activities.data : [];
   // Keep the last loaded list while reloading after an action, so the open dialog stays open.
   const [rows, setRows] = useState<ManagedDocument[] | null>(null);
   useEffect(() => {
@@ -185,6 +191,7 @@ export default function ManageDocumentsPage() {
             key={selected.id}
             doc={selected}
             partners={partnerList}
+            relatedActivities={activityList.filter((a) => a.mouDocId === selected.id)}
             isStaff={isStaff}
             isOwner={selected.ownerUserId === user?.id}
             onChanged={(message) => refresh(message)}
@@ -305,10 +312,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function ManagePanel({
-  doc, partners, isStaff, isOwner, onChanged, onDeleted,
+  doc, partners, relatedActivities, isStaff, isOwner, onChanged, onDeleted,
 }: {
   doc: ManagedDocument;
   partners: PartnerView[];
+  relatedActivities: { id: number; name: string; date: string | null }[];
   isStaff: boolean;
   isOwner: boolean;
   onChanged: (message: string) => void;
@@ -381,6 +389,21 @@ function ManagePanel({
           <button className="btn btn-outline mt-3 text-sm" type="button" onClick={() => setEditing(true)}>แก้ไขข้อมูล</button>
         ) : (
           <p className="mt-3 text-xs text-faint">ผู้สร้างแก้ไขได้เฉพาะตอนเป็นฉบับร่าง หลังจากนั้นเจ้าหน้าที่เป็นผู้แก้ไข</p>
+        )}
+      </Section>
+
+      <Section title="กิจกรรมที่เกี่ยวข้อง">
+        {relatedActivities.length === 0 ? (
+          <p className="text-sm text-faint">ยังไม่มีกิจกรรมที่เกี่ยวข้อง</p>
+        ) : (
+          <ul className="space-y-1.5 text-sm">
+            {relatedActivities.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-3">
+                <Link href={`/activities/manage?edit=${a.id}`} className="font-medium text-ink hover:text-crimson">{a.name}</Link>
+                <span className="text-xs text-faint">{formatThaiDate(a.date)}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
 

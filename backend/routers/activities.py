@@ -178,6 +178,19 @@ def _can_manage_activity(activity: models.Activity, user: models.User) -> bool:
     return user.role == "coordinator" and activity.owner_user_id == user.id
 
 
+def _check_agreement_link(db: Session, user: models.User, document_id: int | None) -> None:
+    """An activity may link to an agreement the caller can see: any live one for
+    staff/admin; for coordinators their own or a public one. Otherwise 422."""
+    if document_id is None:
+        return
+    query = db.query(models.Document).filter(
+        models.Document.id == document_id, models.Document.is_deleted.is_(False))
+    if user.role == "coordinator":
+        query = query.filter(or_(models.Document.owner_user_id == user.id, and_(*document_criteria())))
+    if query.first() is None:
+        raise HTTPException(status_code=422, detail="mou_document_id must reference an agreement you can see")
+
+
 @router.post("/", response_model=schemas.ActivityManageResponse, status_code=201)
 def create_activity(
     body: schemas.ActivityCreate,
@@ -185,6 +198,7 @@ def create_activity(
     user: models.User = Depends(auth.require_role("coordinator", "staff", "admin")),
 ):
     data = body.model_dump()
+    _check_agreement_link(db, user, data.get("mou_document_id"))
     if user.role == "coordinator":
         # Coordinators can create records, but publication remains a staff/admin action.
         data["is_published"] = False
@@ -211,6 +225,8 @@ def update_activity(
     data = body.model_dump(exclude_unset=True)
     if user.role == "coordinator" and "is_published" in data:
         raise HTTPException(status_code=403, detail="Only staff/admin can change publication status")
+    if data.get("mou_document_id") not in (None, row.mou_document_id):
+        _check_agreement_link(db, user, data["mou_document_id"])
     before = audit.snapshot(row)
     for key, value in data.items():
         setattr(row, key, value)
