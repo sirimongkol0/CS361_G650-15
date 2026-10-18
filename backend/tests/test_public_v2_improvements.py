@@ -34,6 +34,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     }
     assert auth_paths == {
         "/api/v1/auth/login": {"post"},
+        "/api/v1/auth/change-password": {"post"},
         "/api/v1/auth/logout": {"post"},
         "/api/v1/auth/me": {"get"},
     }

@@ -125,6 +125,31 @@ def sign_in(email: str, password: str) -> dict:
     return response["AuthenticationResult"]
 
 
+def change_password(access_token: str, current_password: str, new_password: str) -> None:
+    """Change the caller's own password in Cognito, authorised by their access token.
+
+    A wrong current password is 400, not 401: the web signs the user out on 401.
+    """
+    _require_configured()
+    try:
+        cognito_client().change_password(
+            PreviousPassword=current_password,
+            ProposedPassword=new_password,
+            AccessToken=access_token,
+        )
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code")
+        if code == "NotAuthorizedException":
+            raise HTTPException(status_code=400, detail="Current password is incorrect") from exc
+        if code in {"InvalidPasswordException", "InvalidParameterException"}:
+            raise HTTPException(status_code=422, detail="New password does not meet the password policy") from exc
+        if code in {"LimitExceededException", "TooManyRequestsException"}:
+            raise HTTPException(status_code=429, detail="Too many password change attempts") from exc
+        raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
+    except BotoCoreError as exc:
+        raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
+
+
 def get_token_claims(
     credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
     db: Session = Depends(database.get_db),

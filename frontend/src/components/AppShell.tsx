@@ -16,7 +16,7 @@ import {
   Users, Globe, Folder, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
-import { ROLE_NAV, useRole } from '@/lib/role-context';
+import { ACCOUNT_NAV, ROLE_NAV, useRole } from '@/lib/role-context';
 
 /* Map icon string → Lucide component */
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -50,7 +50,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [offline, setOffline] = useState(false);
   const cameBack = useRef(false);
 
-  const navItems = ROLE_NAV[role];
+  const navItems = status === 'authenticated' ? [...ROLE_NAV[role], ACCOUNT_NAV] : ROLE_NAV[role];
 
   const handleLogout = async () => {
     await logout();

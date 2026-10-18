@@ -101,7 +101,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],
   coordinator: [
     { to: '/dashboard/coordinator', label: 'หน้าหลัก', icon: 'home', end: true },
@@ -112,7 +111,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],
   staff: [
     { to: '/dashboard/staff', label: 'หน้าหลัก', icon: 'home', end: true },
@@ -123,7 +121,6 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
-    { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],
   admin: [
     { to: '/dashboard/admin', label: 'หน้าหลัก', icon: 'home', end: true },
@@ -135,9 +132,11 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
     { to: '/users', label: 'ผู้ใช้และสิทธิ์', icon: 'users' },
-    { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' },
   ],
 };
+
+/** Shown to every signed-in account, including the public role (whose sidebar anonymous visitors share). */
+export const ACCOUNT_NAV: NavItem = { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' };
 
 /* ---- Context ---- */
 export type SessionStatus = 'loading' | 'anonymous' | 'authenticated';

@@ -425,6 +425,12 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=256)
+    # Cognito enforces the full policy (8+ chars, upper, lower, number); this is a first check.
+    new_password: str = Field(min_length=8, max_length=256)
+
+
 class LoginResponse(BaseModel):
     """OAuth-style bearer token; send it as ``Authorization: Bearer <access_token>``."""
     access_token: str

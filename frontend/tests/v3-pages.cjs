@@ -143,11 +143,13 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     // ---------- Sidebar ----------
     await step('sidebar links per role', async () => {
       const expect = v4 ? {
+        public: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         student: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         coordinator: { has: ['ความคิดเห็น', 'ตั้งค่าบัญชี'], not: ['รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         staff: { has: ['ความคิดเห็น', 'รายงานและสถิติ', 'ตั้งค่าบัญชี'], not: ['ผู้ใช้และสิทธิ์'] },
         admin: { has: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์', 'ตั้งค่าบัญชี'], not: [] },
       } : {
+        public: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         student: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         coordinator: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
         staff: { has: ['ตั้งค่าบัญชี'], not: ['ความคิดเห็น', 'รายงานและสถิติ', 'ผู้ใช้และสิทธิ์'] },
@@ -210,14 +212,34 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Settings ----------
-    await step('/settings shows the signed-in account, with no fake save buttons', async () => {
-      for (const role of ['student', 'admin']) {
+    await step('/settings shows the signed-in account for every role, with role-aware wording', async () => {
+      for (const role of ['public', 'student', 'coordinator', 'staff', 'admin']) {
         const page = pages[role];
         await open(page, '/settings');
         await page.getByText(accounts[role].email).first().waitFor();
-        assert.equal(await page.getByRole('button', { name: /บันทึก|เปลี่ยนรหัสผ่าน/ }).count(), 0);
+        await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน' }).waitFor();
+        const text = await page.locator('main').innerText();
+        assert.equal(text.includes('กรุณาติดต่อผู้ดูแลระบบ'), role !== 'admin', `${role} wording`);
+        assert.equal(await page.getByRole('button', { name: /^บันทึก/ }).count(), 0);
       }
       await shot(pages.student, '05-settings-student');
+    });
+
+    await step('/settings: a wrong current password says so and keeps the user signed in (no real change)', async () => {
+      const page = pages.student;
+      await open(page, '/settings');
+      await page.getByLabel('รหัสผ่านเดิม').fill('Definitely-Wr0ng-Password');
+      await page.getByLabel('รหัสผ่านใหม่', { exact: true }).fill('Another-Passw0rd');
+      await page.getByLabel('ยืนยันรหัสผ่านใหม่').fill('Another-Passw0rd');
+      await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน' }).click();
+      await page.getByText('รหัสผ่านเดิมไม่ถูกต้อง').waitFor();
+      assert.match(page.url(), /\/settings$/);
+      assert.equal((await callApi(page, 'GET', '/auth/me')).status, 200);
+      // Checks in the browser stop a mismatch before anything is sent.
+      await page.getByLabel('ยืนยันรหัสผ่านใหม่').fill('Different-Passw0rd');
+      await page.getByRole('button', { name: 'เปลี่ยนรหัสผ่าน' }).click();
+      await page.getByText('รหัสผ่านใหม่ทั้งสองช่องไม่ตรงกัน').waitFor();
+      await shot(page, '05b-settings-wrong-password');
     });
 
     // ---------- Feedback ----------
