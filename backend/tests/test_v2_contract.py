@@ -69,7 +69,7 @@ def test_draft_links_and_scope_are_not_exposed(db_session, client):
     draft = models.Document(name='Draft agreement', partner=partner)
     source = verified_source("draft-links")
     public = models.Document(
-        name='Public agreement', partner=partner, is_published=True,
+        name='Public agreement', partner=partner, is_published=True, cstu_status="keep",
         document_kind="agreement", file_availability="metadata_only", sources=[source],
     )
     draft.scope_items.append(models.DocumentScopeItem(position=0, text='Private scope'))
@@ -115,7 +115,7 @@ def test_foreign_keys_and_delete_behaviour(db_session):
 
 def test_metadata_only_document_can_be_read_but_not_deleted_publicly(db_session, client):
     document = models.Document(
-        name='No attachment', is_published=True, document_kind="agreement",
+        name='No attachment', is_published=True, cstu_status="keep", document_kind="agreement",
         file_availability="metadata_only", sources=[verified_source("metadata-only")],
     )
     db_session.add(document)
@@ -123,7 +123,7 @@ def test_metadata_only_document_can_be_read_but_not_deleted_publicly(db_session,
     doc_id = document.id
     assert client.get('/api/v1/documents/').status_code == 200
     assert client.get(f'/api/v1/documents/{doc_id}/download').status_code == 404
-    assert client.delete(f'/api/v1/documents/{doc_id}').status_code == 405
+    assert client.delete(f'/api/v1/documents/{doc_id}').status_code == 401  # V3-3: staff/admin only
     assert db_session.get(models.Document, doc_id) is not None
 
 
@@ -137,7 +137,7 @@ def test_scope_level_is_exposed_and_filters_every_public_list(db_session, client
         )
         db_session.add_all([
             partner,
-            models.Document(name=f"Agreement {label}", is_published=True, document_kind="agreement",
+            models.Document(name=f"Agreement {label}", is_published=True, cstu_status="keep", document_kind="agreement",
                             file_availability="metadata_only", scope_level=level, sources=[source]),
             models.Activity(name=f"Activity {label}", is_published=True, scope_level=level),
         ])

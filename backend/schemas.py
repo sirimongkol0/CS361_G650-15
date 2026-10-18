@@ -221,6 +221,75 @@ class DocumentResponse(BaseModel):
     sources: List[SourceResponse] = Field(default_factory=list)
 
 
+AgreementStatus = Literal['draft', 'approved', 'active', 'expiring', 'expired', 'cancelled']
+CstuStatus = Literal['keep', 'review', 'out_of_scope']
+
+
+class DocumentCreate(BaseModel):
+    """V3-3: a new agreement/document always starts as an unpublished draft."""
+    name: str = Field(..., min_length=1, max_length=255)
+    doc_type: Optional[str] = None
+    document_kind: Literal['agreement', 'template', 'procedure', 'announcement', 'other'] = 'agreement'
+    file_availability: Literal['metadata_only', 'unavailable'] = 'metadata_only'
+    partner_id: Optional[int] = None
+    effective_date: Optional[datetime_date] = None
+    expiry_date: Optional[datetime_date] = None
+    responsible: Optional[str] = None
+    signer_our: Optional[str] = None
+    signer_partner: Optional[str] = None
+    scope_level: Optional[ScopeLevel] = None
+
+    @field_validator('name')
+    @classmethod
+    def name_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError('name must not be blank')
+        return value.strip()
+
+
+class DocumentUpdate(BaseModel):
+    """Metadata only; status, CSTU review, publication and file have their own endpoints."""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    doc_type: Optional[str] = None
+    document_kind: Optional[Literal['agreement', 'template', 'procedure', 'announcement', 'other']] = None
+    partner_id: Optional[int] = None
+    effective_date: Optional[datetime_date] = None
+    expiry_date: Optional[datetime_date] = None
+    responsible: Optional[str] = None
+    signer_our: Optional[str] = None
+    signer_partner: Optional[str] = None
+    scope_level: Optional[ScopeLevel] = None
+
+    @field_validator('name')
+    @classmethod
+    def name_not_blank(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError('name must not be blank')
+        return value.strip() if value is not None else None
+
+
+class DocumentTransition(BaseModel):
+    status: AgreementStatus
+
+
+class DocumentCstuReview(BaseModel):
+    cstu_status: CstuStatus
+    cstu_evidence: Optional[str] = None
+
+
+class DocumentManageResponse(DocumentResponse):
+    """Internal view for coordinator/staff/admin: adds review, publication and owner fields."""
+    isPublished: bool = Field(validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    cstuStatus: CstuStatus = Field(validation_alias=AliasChoices('cstu_status', 'cstuStatus'), serialization_alias='cstuStatus')
+    cstuEvidence: Optional[str] = Field(default=None, validation_alias=AliasChoices('cstu_evidence', 'cstuEvidence'), serialization_alias='cstuEvidence')
+    ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
+
+
+class DocumentInternalUrlResponse(BaseModel):
+    url: str
+    expiresIn: int
+
+
 class DocumentScopeItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -322,6 +391,7 @@ class AdminProfileResponse(BaseModel):
 
 # Resolve forward references (scopeItems declared before their models)
 DocumentResponse.model_rebuild()
+DocumentManageResponse.model_rebuild()
 
 
 class ErrorResponse(BaseModel):

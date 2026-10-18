@@ -14,7 +14,7 @@ def document(db, published=True):
         name="report.pdf", document_kind="agreement", file_availability="available",
         storage_key=key, file_name="report.pdf", mime_type="application/pdf",
         size_bytes=len(PDF_BYTES), uploaded_at=datetime.now(timezone.utc),
-        is_published=published, sources=[models.Source(
+        is_published=published, cstu_status="keep", sources=[models.Source(
             source_url="https://test.example.test/document", source_type="official_document",
             source_checked_at=datetime.now(timezone.utc), verification_status="verified",
         )],
@@ -37,16 +37,16 @@ def test_download_roundtrip(client, db_session):
     assert dl.headers["content-type"].startswith("application/pdf")
 
 
-def test_public_upload_is_disabled_without_creating_records(client, db_session, tmp_path):
+def test_upload_without_login_is_401_without_creating_records(client, db_session, tmp_path):
     resp = client.post("/api/v1/documents/", files={"file": ("report.pdf", PDF_BYTES, "application/pdf")})
-    assert resp.status_code == 405
+    assert resp.status_code == 401
     assert db_session.query(models.Document).count() == 0
     assert not list(tmp_path.rglob("*.pdf"))
 
 
-def test_public_delete_is_disabled_and_preserves_row_and_file(client, db_session):
+def test_delete_without_login_is_401_and_preserves_row_and_file(client, db_session):
     doc = document(db_session)
-    assert client.delete(f"/api/v1/documents/{doc.id}").status_code == 405
+    assert client.delete(f"/api/v1/documents/{doc.id}").status_code == 401
     db_session.expire_all()
     assert db_session.get(models.Document, doc.id) is not None
     assert storage.get_file(doc.storage_key) == PDF_BYTES

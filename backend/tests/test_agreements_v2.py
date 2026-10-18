@@ -5,7 +5,7 @@ import storage
 
 
 def agreement(name, **values):
-    defaults = dict(is_published=True, document_kind="agreement", doc_type="mou",
+    defaults = dict(is_published=True, cstu_status="keep", document_kind="agreement", doc_type="mou",
                     file_availability="metadata_only", status="active",
                     effective_date=date(2026, 1, 1), expiry_date=date(2026, 12, 31),
                     sources=[models.Source(source_url=f"https://example.test/{name}",

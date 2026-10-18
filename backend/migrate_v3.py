@@ -1,5 +1,5 @@
 
-"""Idempotent V3/V3-4 migration for SQLite and PostgreSQL.
+"""Idempotent V3 (V3-1 to V3-5) migration for SQLite and PostgreSQL.
 
 Run with the application stopped and after taking a database backup.
 Preserves existing rows and supports repeated migration runs.
@@ -95,15 +95,29 @@ def migrate(engine):
             "Only SQLite and PostgreSQL are supported"
         )
 
-    # Create or upgrade the V2 core schema first.
-    migrate_v2.migrate(engine)
-
+    # Authentication and audit tables first, so the V2 sync below can add
+    # foreign keys to users (e.g. documents.owner_user_id) on the first run.
     with engine.begin() as connection:
-        # Authentication and audit tables.
         for name in V3_TABLES:
             Base.metadata.tables[name].create(
                 connection,
                 checkfirst=True,
+            )
+        inspector = inspect(connection)
+        backfill_cstu = inspector.has_table("documents") and "cstu_status" not in {
+            column["name"] for column in inspector.get_columns("documents")
+        }
+
+    # Create or upgrade the V2 core schema (adds the V3-3 document columns).
+    migrate_v2.migrate(engine)
+
+    with engine.begin() as connection:
+        # V3-3: documents that were already public stay public. Runs only when
+        # cstu_status is first added, so later staff decisions are never undone.
+        if backfill_cstu:
+            connection.exec_driver_sql(
+                "UPDATE documents SET cstu_status = 'keep' "
+                "WHERE is_published = TRUE"
             )
 
         # V3-4: ensure exchange_students exists on a fresh database.

@@ -18,6 +18,8 @@ def partner_criteria():
 def document_criteria():
     return (
         models.Document.is_published.is_(True),
+        models.Document.is_deleted.is_(False),
+        models.Document.cstu_status == "keep",
         func.length(func.trim(models.Document.name)) > 0,
         models.Document.document_kind.is_not(None),
         models.Document.file_availability.is_not(None),

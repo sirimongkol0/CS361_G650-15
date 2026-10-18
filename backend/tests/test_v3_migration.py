@@ -125,3 +125,25 @@ def test_v3_4_migration_preserves_existing_exchange_rows(
     assert row.name == "Existing exchange record"
     assert row.user_id is None
     assert row.owner_user_id is None
+
+
+def test_v3_3_migration_keeps_published_documents_public(migration_engine):
+    engine = migration_engine
+    with engine.begin() as c:
+        c.exec_driver_sql("CREATE TABLE documents (id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, "
+                          "is_published BOOLEAN NOT NULL DEFAULT false)")
+        c.exec_driver_sql("INSERT INTO documents (id, name, is_published) VALUES "
+                          "(1, 'Published MoU', true), (2, 'Draft MoU', false)")
+    migrate(engine)
+    with engine.begin() as c:
+        rows = dict(c.execute(text("SELECT id, cstu_status FROM documents")).all())
+        assert rows == {1: "keep", 2: "review"}
+        assert c.execute(text("SELECT count(*) FROM documents WHERE is_deleted")).scalar_one() == 0
+        # A later staff decision must survive re-running the migration.
+        c.execute(text("UPDATE documents SET cstu_status = 'out_of_scope' WHERE id = 1"))
+    migrate(engine)
+    inspector = inspect(engine)
+    assert any(fk["constrained_columns"] == ["owner_user_id"] and fk["referred_table"] == "users"
+               for fk in inspector.get_foreign_keys("documents"))
+    with engine.connect() as c:
+        assert c.execute(text("SELECT cstu_status FROM documents WHERE id = 1")).scalar_one() == "out_of_scope"

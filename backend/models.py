@@ -37,6 +37,8 @@ document_sources = Table(
 # Shared by partners/documents/activities; the constraint name is per table.
 SCOPE_LEVELS = ("program", "faculty", "university")
 SCOPE_LEVEL_CHECK = "scope_level IS NULL OR scope_level IN ('program', 'faculty', 'university')"
+# V3-3: relevance to the CSTU program; only "keep" rows can appear publicly.
+CSTU_STATUSES = ("keep", "review", "out_of_scope")  # คงไว้ | รอทบทวน | นอกขอบเขต
 
 
 class Source(Base):
@@ -131,6 +133,7 @@ class Document(Base):
             name="ck_documents_available_file_has_storage_key",
         ),
         CheckConstraint(SCOPE_LEVEL_CHECK, name="ck_documents_scope_level"),
+        CheckConstraint("cstu_status IN ('keep', 'review', 'out_of_scope')", name="ck_documents_cstu_status"),
     )
 
     name = Column(String, index=True, nullable=False)
@@ -151,10 +154,15 @@ class Document(Base):
     expiry_date = Column(Date, nullable=True)
     # --- agreement detail fields: all nullable -> backwards compatible ---
     responsible = Column(String, nullable=True)     # person responsible for the agreement
-    status = Column(String, nullable=True)          # active | expiring | expired | draft (must agree with expiry_date)
+    status = Column(String, nullable=True)          # draft | approved | active | expiring | expired | cancelled (see routers/documents.py)
     signer_our = Column(String, nullable=True)      # "ผู้ลงนาม (ฝ่ายเรา)"
     signer_partner = Column(String, nullable=True)  # "ผู้ลงนาม (หน่วยงาน)"
     scope_level = Column(String, nullable=True)     # program | faculty | university (NULL = not yet classified)
+    # --- [V3-3] CSTU relevance review, ownership and soft delete ---
+    cstu_status = Column(String, default="review", server_default="review", nullable=False)  # keep | review | out_of_scope
+    cstu_evidence = Column(Text, nullable=True)     # evidence / source for the relevance decision
+    owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    is_deleted = Column(Boolean, default=False, server_default=false(), nullable=False)
 
     partner = relationship("Partner", back_populates="documents")
     sources = relationship("Source", secondary=document_sources, back_populates="documents")

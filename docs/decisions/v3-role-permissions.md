@@ -91,6 +91,25 @@
 
 ## สถานะปัจจุบันในโค้ด
 
-- backend: `require_role(...)` พร้อมใช้ (V3-1), `audit.record(...)` และ `GET /api/v1/audit-logs` (staff/admin) พร้อมใช้ (V3-5) ยังไม่มี endpoint เขียนข้อมูล
+- backend: `require_role(...)` พร้อมใช้ (V3-1), `audit.record(...)` และ `GET /api/v1/audit-logs` (staff/admin) พร้อมใช้ (V3-5)
+- backend V3-3: ข้อตกลงคือแถวในตาราง `documents` endpoint เขียนข้อมูลอยู่ใน `backend/routers/documents.py`
+  และทุกตัวบันทึก audit log
+
+  | Endpoint | สิทธิ์ |
+  |---|---|
+  | `POST /documents/` สร้างร่าง (`status=draft`, ไม่เผยแพร่, `cstu_status=review`) | coordinator, staff, admin |
+  | `PATCH /documents/{id}` แก้ไขข้อมูล | coordinator 🔸 เฉพาะร่าง, staff, admin |
+  | `PUT /documents/{id}/file` อัปโหลด/แทนไฟล์ PDF ไม่เกิน `MAX_UPLOAD_BYTES` (10 MB) | coordinator 🔸 เฉพาะร่าง, staff, admin |
+  | `GET /documents/manage` รายการรวมร่าง | coordinator 🔸, staff, admin |
+  | `GET /documents/{id}/internal-url` ลิงก์ดาวน์โหลดอายุ 5 นาที (S3 presigned URL) | coordinator 🔸, staff, admin |
+  | `POST /documents/{id}/transition` เปลี่ยนสถานะ | staff, admin |
+  | `PUT /documents/{id}/cstu-status` ตรวจความเกี่ยวข้อง (`keep`/`out_of_scope` ต้องมี `cstu_evidence`) | staff, admin |
+  | `POST /documents/{id}/publish`, `/unpublish` | staff, admin |
+  | `DELETE /documents/{id}` soft delete | staff, admin |
+
+  สถานะ: `draft → approved → active → expired` และยกเลิก (`cancelled`) ได้จากทุกสถานะที่ยังไม่ปิด
+  (`expiring` ถือเป็น `active`) transition อื่นตอบ 409
+  หน้าสาธารณะแสดงเฉพาะเอกสารที่ `is_published` และ `cstu_status = keep`
+  (`migrate_v3.py` ตั้งเอกสารที่เผยแพร่อยู่แล้วเป็น `keep` ให้ครั้งแรกที่เพิ่มคอลัมน์)
 - frontend: ปุ่มเพิ่ม/แก้ไขแสดงให้ coordinator, staff, admin (`canManage` ใน
   `frontend/src/lib/role-context.tsx`) ปุ่มยังไม่ทำงานจนกว่า V3-2 ถึง V3-4 เสร็จ

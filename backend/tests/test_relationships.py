@@ -19,7 +19,7 @@ def partner(label):
 
 def agreement(label, owner):
     return models.Document(name=label, partner=owner, document_kind="agreement",
-        file_availability="metadata_only", is_published=True, sources=[source(label)])
+        file_availability="metadata_only", is_published=True, cstu_status="keep", sources=[source(label)])
 
 
 def activity(label, owner, document):

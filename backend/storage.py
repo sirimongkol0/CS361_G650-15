@@ -11,10 +11,19 @@ Two backends:
 
 Switch with STORAGE_BACKEND env var ("local" | "s3").
 """
+import hashlib
+import hmac
 import os
+import secrets
+import time
 import uuid
+from urllib.parse import quote
 
 import config
+
+# How long a presigned download link stays valid.
+PRESIGNED_TTL_SECONDS = 300
+_random_signing_key = secrets.token_bytes(32)
 
 
 class StorageError(Exception):
@@ -120,6 +129,34 @@ def _s3_delete(key: str):
     _s3_client().delete_object(Bucket=_s3_bucket(), Key=key)
 
 
+def _s3_presigned_url(key: str, filename: str, expires_in: int) -> str:
+    return _s3_client().generate_presigned_url(
+        "get_object",
+        Params={
+            "Bucket": _s3_bucket(), "Key": key, "ResponseContentType": "application/pdf",
+            "ResponseContentDisposition": f"attachment; filename*=UTF-8''{quote(filename, safe='')}",
+        },
+        ExpiresIn=expires_in,
+    )
+
+
+# ----------------------------------------------------- local signed links
+
+
+def _local_signing_key() -> bytes:
+    configured = getattr(config.settings, "LOCAL_SIGNING_KEY", "")
+    return configured.encode() if configured else _random_signing_key
+
+
+def sign_local(key: str, expires: int) -> str:
+    """HMAC signature for the local backend's stand-in for an S3 presigned URL."""
+    return hmac.new(_local_signing_key(), f"{key}\n{expires}".encode(), hashlib.sha256).hexdigest()
+
+
+def verify_local(key: str, expires: int, signature: str) -> bool:
+    return expires >= int(time.time()) and hmac.compare_digest(sign_local(key, expires), signature)
+
+
 # ------------------------------------------------------------- public API
 
 
@@ -144,3 +181,14 @@ def delete_file(key: str):
         _s3_delete(key)
     else:
         _local_delete(key)
+
+
+def presigned_url(key: str, filename: str, expires_in: int = PRESIGNED_TTL_SECONDS) -> str | None:
+    """Short-lived S3 download URL, or None on the local backend.
+
+    The local backend has no presigning, so the API builds its own link signed
+    with ``sign_local`` and serves it from ``GET /documents/{id}/signed-download``.
+    """
+    if _get_backend_name() == "s3":
+        return _s3_presigned_url(key, filename, expires_in)
+    return None
