@@ -86,19 +86,19 @@ export function formatFileSize(bytes: number): string {
 }
 
 export const documentStatusLabels: Record<string, string> = {
-  active: "ใช้งาน",
+  active: "มีผล",
   expiring: "ใกล้หมดอายุ",
   expired: "หมดอายุ",
-  draft: "อยู่ระหว่างจัดทำ",
+  draft: "ฉบับร่าง",
   approved: "อนุมัติแล้ว",
-  cancelled: "ยกเลิก",
+  cancelled: "ยกเลิกแล้ว",
 };
 
 /* V3-3 CSTU relevance review; only "keep" can appear publicly. */
 export const cstuStatusLabels: Record<string, string> = {
-  keep: "เกี่ยวข้องกับ CSTU (คงไว้)",
-  review: "รอทบทวน",
-  out_of_scope: "นอกขอบเขต CSTU",
+  keep: "เกี่ยวข้องกับ CSTU",
+  review: "รอตรวจ",
+  out_of_scope: "ไม่เกี่ยวข้องกับ CSTU",
 };
 
 export const cstuStatusColors: Record<string, string> = {

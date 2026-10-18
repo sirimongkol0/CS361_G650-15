@@ -90,7 +90,7 @@ export default function ManageActivitiesPage() {
           </nav>
           <h1 className="font-display text-2xl font-bold text-ink">จัดการกิจกรรม</h1>
           <p className="mt-0.5 text-sm text-faint">
-            {isStaff ? "กิจกรรมทั้งหมด รวมรายการที่ยังไม่เผยแพร่" : "กิจกรรมที่คุณบันทึก การเผยแพร่และการลบเป็นของเจ้าหน้าที่"}
+            {isStaff ? "กิจกรรมทั้งหมด รวมรายการที่ยังไม่เผยแพร่" : "เพิ่มและแก้ไขกิจกรรมของตัวเองได้ เจ้าหน้าที่เป็นผู้เผยแพร่และลบ"}
           </p>
         </div>
         <button className="btn btn-primary gap-2" type="button" onClick={() => { setNotice(null); setEditing("new"); }}>
@@ -104,7 +104,7 @@ export default function ManageActivitiesPage() {
 
       {rows === null && activities.status === "loading" && <LoadingState />}
       {activities.status === "error" && <ErrorState error={activities.error} onRetry={activities.retry} />}
-      {rows !== null && rows.length === 0 && <EmptyState title="ยังไม่มีกิจกรรมที่คุณจัดการได้" message="กด “เพิ่มกิจกรรม” เพื่อเริ่ม" />}
+      {rows !== null && rows.length === 0 && <EmptyState title="ยังไม่มีกิจกรรม" message="กด “เพิ่มกิจกรรม” เพื่อเริ่ม" />}
       {rows !== null && rows.length > 0 && (
         <div className="overflow-hidden rounded-lg bg-white shadow-card">
           <div className="overflow-x-auto">
@@ -130,7 +130,7 @@ export default function ManageActivitiesPage() {
                     <td className="px-4 py-3 text-faint">{a.partner?.name ?? "—"}</td>
                     <td className="px-4 py-3 text-faint">{a.status ?? "—"}</td>
                     <td className="px-4 py-3">
-                      {a.isPublished ? <span className="badge badge-green">เผยแพร่</span> : <span className="badge badge-gray">ไม่เผยแพร่</span>}
+                      {a.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       {canEdit(a) && (
@@ -144,7 +144,7 @@ export default function ManageActivitiesPage() {
                         <button className="btn ml-1 gap-1.5 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50" type="button"
                           disabled={action.busy}
                           onClick={async () => {
-                            if (!confirm(`ลบ “${a.name}”? รายการจะถูกซ่อนและเก็บประวัติไว้ใน audit log`)) return;
+                            if (!confirm(`ลบกิจกรรม “${a.name}” ใช่ไหม\nกิจกรรมนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
                             if (await action.run(() => apiDelete(`/activities/${a.id}`))) refresh(`ลบ “${a.name}” แล้ว`);
                           }}>
                           <Trash2 className="h-3.5 w-3.5" />
@@ -283,12 +283,12 @@ function ActivityForm({
           เผยแพร่ในหน้าสาธารณะ
         </label>
       ) : (
-        <p className="mb-3 text-xs text-faint">กิจกรรมที่คุณบันทึกจะยังไม่เผยแพร่ จนกว่าเจ้าหน้าที่จะอนุญาต</p>
+        <p className="mb-3 text-xs text-faint">กิจกรรมใหม่จะแสดงในหน้าสาธารณะเมื่อเจ้าหน้าที่เผยแพร่</p>
       )}
       <div className="flex justify-end gap-2">
         <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
         <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : activity ? "บันทึกการแก้ไข" : "เพิ่มกิจกรรม"}
+          {action.busy ? "กำลังบันทึก…" : activity ? "บันทึก" : "เพิ่ม"}
         </button>
       </div>
     </form>

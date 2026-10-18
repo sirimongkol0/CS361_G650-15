@@ -31,7 +31,7 @@ type Kpi = {
 };
 
 const quickActions = [
-  { label: "ดูนักศึกษา", href: "/exchange", color: "#1D4ED8", bg: "#DBEAFE" },
+  { label: "ดูนักศึกษาแลกเปลี่ยน", href: "/exchange", color: "#1D4ED8", bg: "#DBEAFE" },
 ];
 
 export default function DashboardTeacher() {
@@ -61,7 +61,7 @@ export default function DashboardTeacher() {
             ภาพรวมความร่วมมือ
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อมูลที่เผยแพร่ทั้งหมด (ยังไม่แยกตามผู้รับผิดชอบ)</p>
+        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อมูลที่เผยแพร่ทั้งหมด</p>
       </div>
 
       {/* KPI */}
@@ -84,7 +84,7 @@ export default function DashboardTeacher() {
         })}
       </div>
 
-      {nextExpiring && <div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">{nextExpiring.title} ใกล้หมดอายุใน {nextExpiring.daysLeft} วัน</div>}
+      {nextExpiring && <div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">{nextExpiring.title} จะหมดอายุในอีก {nextExpiring.daysLeft} วัน</div>}
 
       <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr" }}>
         {/* My stakeholders */}
@@ -169,7 +169,7 @@ export default function DashboardTeacher() {
 
         {/* Quick actions */}
         <div className={`${contentCard} p-5`}>
-          <h2 className="font-bold mb-4" style={{ color: "#111827" }}>การดำเนินการด่วน</h2>
+          <h2 className="font-bold mb-4" style={{ color: "#111827" }}>ทางลัด</h2>
           <div className="grid grid-cols-2 gap-3">
             {quickActions.map((a) => (
               <Link key={a.label} href={a.href}

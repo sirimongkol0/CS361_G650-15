@@ -21,7 +21,7 @@ const settingsTabs = [
   { id: "notifications", label: "การแจ้งเตือน", icon: Bell },
   { id: "privacy", label: "Data Privacy", icon: Shield },
   { id: "security", label: "Security", icon: Lock },
-  { id: "system", label: "System Configuration", icon: SettingsIcon },
+  { id: "system", label: "ตั้งค่าระบบ", icon: SettingsIcon },
 ] as const;
 
 type TabId = (typeof settingsTabs)[number]["id"];
@@ -175,13 +175,13 @@ export default function SettingsPage() {
                   },
                   {
                     key: "activityReminder",
-                    label: "เตือนกิจกรรมที่กำลังจะมาถึง",
+                    label: "เตือนกิจกรรมที่จะถึง",
                     desc: "รับแจ้งเตือน 3 วันก่อนกิจกรรม",
                   },
                   {
                     key: "feedbackAlert",
-                    label: "แจ้งเตือน Feedback ใหม่",
-                    desc: "รับแจ้งเตือนเมื่อมี Feedback ที่ยังไม่ได้ตอบ",
+                    label: "แจ้งเตือนความคิดเห็นใหม่",
+                    desc: "รับแจ้งเตือนเมื่อมีความคิดเห็นที่ยังไม่ได้ตอบ",
                   },
                   {
                     key: "systemAlert",
@@ -237,13 +237,13 @@ export default function SettingsPage() {
                   },
                   {
                     key: "logAccess",
-                    label: "บันทึก Access Log",
+                    label: "บันทึกประวัติการเข้าถึง",
                     desc: "บันทึกการเข้าถึงข้อมูลละเอียดอ่อนทุกครั้ง",
                   },
                   {
                     key: "exportApproval",
-                    label: "ต้องได้รับอนุมัติก่อน Export",
-                    desc: "การส่งออกข้อมูลต้องผ่านการอนุมัติจากผู้บริหาร",
+                    label: "ต้องได้รับอนุมัติก่อนส่งออก",
+                    desc: "ผู้ดูแลระบบต้องอนุมัติก่อนส่งออกข้อมูล",
                   },
                   {
                     key: "dataRetention",
@@ -325,7 +325,7 @@ export default function SettingsPage() {
                       2FA เปิดใช้งานแล้ว
                     </div>
                     <div className="text-xs mt-0.5 text-green-600">
-                      บัญชีของคุณได้รับการป้องกันด้วย Authenticator App
+                      บัญชีนี้ใช้แอปยืนยันตัวตน (Authenticator) ป้องกันอีกชั้น
                     </div>
                   </div>
                   <span className="badge badge-green">Active</span>
@@ -338,7 +338,7 @@ export default function SettingsPage() {
             <div className="space-y-5">
               <div className="rounded-lg bg-white shadow-card p-6">
                 <h2 className="font-bold text-base mb-4 text-ink">
-                  System Configuration
+                  ตั้งค่าระบบ
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-5">
                   {[
@@ -375,12 +375,12 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   {[
                     {
-                      label: "Registrar System API",
+                      label: "ระบบทะเบียน (API)",
                       status: "connected",
                       url: "https://registrar.university.ac.th/api",
                     },
                     {
-                      label: "สหกิจศึกษา System",
+                      label: "ระบบสหกิจศึกษา",
                       status: "connected",
                       url: "https://coop.university.ac.th/api",
                     },

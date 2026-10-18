@@ -73,7 +73,7 @@ export default function StudentExchangePage() {
             นักศึกษาแลกเปลี่ยน
           </h1>
           <p className="text-sm mt-0.5 text-faint">
-            บริหารจัดการโครงการแลกเปลี่ยนนักศึกษา
+            ข้อมูลนักศึกษาแลกเปลี่ยนขาออกและขาเข้า
           </p>
         </div>
         <div className="flex gap-2">
@@ -100,7 +100,7 @@ export default function StudentExchangePage() {
         </div>
         <p className="text-sm text-blue-700">
           <span className="font-semibold">Security &amp; Privacy:</span>{" "}
-          ข้อมูลส่วนตัวนักศึกษาถูกปกป้องตาม PDPA การแสดงผลถูกควบคุมตามสิทธิ์ผู้ใช้
+          ระบบแสดงข้อมูลนักศึกษาตามสิทธิ์ของแต่ละบทบาท ตาม PDPA
           (Role-based Access)
         </p>
       </div>
@@ -114,12 +114,12 @@ export default function StudentExchangePage() {
             color: "text-crimson",
           },
           {
-            label: "ไปแลกเปลี่ยน (Outbound)",
+            label: "ขาออก",
             value: exchangeStudents.filter((s: ExchangeStudent) => s.type === "outbound").length,
             color: "text-blue-700",
           },
           {
-            label: "มารับการแลกเปลี่ยน (Inbound)",
+            label: "ขาเข้า",
             value: exchangeStudents.filter((s: ExchangeStudent) => s.type === "inbound").length,
             color: "text-green-600",
           },
@@ -147,7 +147,7 @@ export default function StudentExchangePage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
             <input
               className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
-              placeholder="ค้นหาชื่อนักศึกษา, สถาบัน..."
+              placeholder="ค้นหาชื่อนักศึกษาหรือสถาบัน"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -159,8 +159,8 @@ export default function StudentExchangePage() {
             onChange={(e) => setTypeFilter(e.target.value)}
           >
             <option value="all">ประเภท: ทั้งหมด</option>
-            <option value="outbound">ไปแลกเปลี่ยน (Outbound)</option>
-            <option value="inbound">มารับการแลกเปลี่ยน (Inbound)</option>
+            <option value="outbound">ขาออก</option>
+            <option value="inbound">ขาเข้า</option>
           </select>
           <select
             className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
@@ -178,7 +178,7 @@ export default function StudentExchangePage() {
       </div>
 
       <Notice text={notice} />
-      <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มข้อมูลการแลกเปลี่ยน" : "แก้ไขข้อมูลการแลกเปลี่ยน"}
+      <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มนักศึกษาแลกเปลี่ยน" : "แก้ไขข้อมูลนักศึกษาแลกเปลี่ยน"}
         onClose={() => setEditing(null)} wide>
         {editing !== null && (
           <ExchangeForm
@@ -270,7 +270,7 @@ export default function StudentExchangePage() {
                           s.type === "outbound" ? "badge-blue" : "badge-green"
                         }`}
                       >
-                        {s.type === "outbound" ? "ไปแลกเปลี่ยน" : "มารับ"}
+                        {s.type === "outbound" ? "ขาออก" : "ขาเข้า"}
                       </span>
                     </div>
                   </td>
@@ -304,7 +304,7 @@ export default function StudentExchangePage() {
             </tbody>
           </table>
           {filtered.length === 0 && (
-            <EmptyState compact title="ไม่มีข้อมูลการแลกเปลี่ยน" message="ไม่มีรายการที่คุณมีสิทธิ์ดูหรือที่ตรงกับตัวกรอง" />
+            <EmptyState compact title="ไม่พบนักศึกษาแลกเปลี่ยน" message="ลองเปลี่ยนคำค้นหาหรือตัวกรอง" />
           )}
         </div>
         <div className="flex items-center justify-between px-5 py-4 border-t border-line">

@@ -8,10 +8,10 @@ import { ChevronRight, Plus, Search, Shield, Check, X, MoreHorizontal } from "lu
 
 const roles = [
   { id: "public", label: "ผู้ใช้ทั่วไป", color: "#94a3b8", bg: "#f1f5f9", desc: "ดูข้อมูลสาธารณะ" },
-  { id: "student", label: "นักศึกษา/ผู้เข้าร่วม", color: "#16a34a", bg: "#dcfce7", desc: "ดูและจัดการข้อมูลตัวเอง" },
-  { id: "coordinator", label: "อาจารย์/ผู้ประสานงาน", color: "#1d4ed8", bg: "#dbeafe", desc: "จัดการกิจกรรมและ Feedback" },
+  { id: "student", label: "นักศึกษา", color: "#16a34a", bg: "#dcfce7", desc: "ดูและจัดการข้อมูลตัวเอง" },
+  { id: "coordinator", label: "อาจารย์ผู้ประสานงาน", color: "#1d4ed8", bg: "#dbeafe", desc: "จัดการกิจกรรมและความคิดเห็น" },
   { id: "staff", label: "เจ้าหน้าที่หลักสูตร", color: "#7c3aed", bg: "#ede9fe", desc: "จัดการข้อมูลและรายงาน" },
-  { id: "admin", label: "ผู้บริหาร/ผู้ดูแลระบบ", color: "#dc2626", bg: "#fee2e2", desc: "สิทธิ์เต็ม" },
+  { id: "admin", label: "ผู้ดูแลระบบ", color: "#dc2626", bg: "#fee2e2", desc: "สิทธิ์เต็ม" },
 ];
 
 const permissions = [
@@ -26,7 +26,7 @@ const permissions = [
     ],
   },
   {
-    module: "เอกสารข้อตกลง",
+    module: "ข้อตกลง",
     perms: [
       { role: "public", view: false, create: false, edit: false, delete: false, export: false },
       { role: "student", view: false, create: false, edit: false, delete: false, export: false },
@@ -56,7 +56,7 @@ const permissions = [
     ],
   },
   {
-    module: "Feedback",
+    module: "ความคิดเห็น",
     perms: [
       { role: "public", view: false, create: true, edit: false, delete: false, export: false },
       { role: "student", view: false, create: true, edit: true, delete: false, export: false },
@@ -158,7 +158,7 @@ export default function UserManagementPage() {
               <thead>
                 <tr className="border-b border-line bg-[#F8FAFC]">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-faint">โมดูล</th>
-                  {["ผู้ใช้ทั่วไป", "นักศึกษา", "อาจารย์/ผู้ประสานงาน", "เจ้าหน้าที่", "ผู้บริหาร"].map((r) => (
+                  {["ผู้ใช้ทั่วไป", "นักศึกษา", "อาจารย์ผู้ประสานงาน", "เจ้าหน้าที่", "ผู้ดูแลระบบ"].map((r) => (
                     <th
                       key={r}
                       colSpan={5}
@@ -171,7 +171,7 @@ export default function UserManagementPage() {
                 <tr className="border-b border-line bg-[#FAFAFA]">
                   <th className="px-5 py-2" />
                   {[0, 1, 2, 3, 4].map((ri) =>
-                    ["ดู", "สร้าง", "แก้ไข", "ลบ", "Export"].map((p) => (
+                    ["ดู", "สร้าง", "แก้ไข", "ลบ", "ส่งออก"].map((p) => (
                       <th
                         key={`${ri}-${p}`}
                         className={`text-center px-1 py-2 text-xs border-l font-medium text-faint ${
@@ -212,7 +212,7 @@ export default function UserManagementPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
               <input
                 className="w-full rounded-lg border-[1.5px] border-line bg-white pl-9 pr-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
-                placeholder="ค้นหาผู้ใช้..."
+                placeholder="ค้นหาชื่อหรืออีเมลผู้ใช้"
               />
             </div>
           </div>

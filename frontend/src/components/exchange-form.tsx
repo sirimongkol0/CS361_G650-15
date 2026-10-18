@@ -65,8 +65,8 @@ export function ExchangeForm({
       <div className="grid gap-x-4 sm:grid-cols-2">
         <Field label="ประเภท">
           <select className={inputCls} value={form.type} onChange={set("type")}>
-            <option value="outbound">ไปแลกเปลี่ยน (Outbound)</option>
-            <option value="inbound">มารับการแลกเปลี่ยน (Inbound)</option>
+            <option value="outbound">ขาออก</option>
+            <option value="inbound">ขาเข้า</option>
           </select>
         </Field>
         <Field label="สถานะ">
@@ -74,10 +74,10 @@ export function ExchangeForm({
             {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </Field>
-        <Field label="จาก (หลักสูตร/สถาบันต้นทาง)">
+        <Field label="สถาบันต้นทาง">
           <input className={inputCls} value={form.from_program} onChange={set("from_program")} />
         </Field>
-        <Field label="ไป (สถาบันปลายทาง)">
+        <Field label="สถาบันปลายทาง">
           <input className={inputCls} value={form.to_organization} onChange={set("to_organization")} />
         </Field>
         <Field label="วันที่เริ่ม">
@@ -90,7 +90,7 @@ export function ExchangeForm({
           <input className={inputCls} value={form.program} onChange={set("program")} placeholder="Student Exchange" />
         </Field>
         {!record && (
-          <Field label="รหัสบัญชีนักศึกษา (ถ้ามี)" hint="ผูกกับบัญชีเพื่อให้นักศึกษาเห็นข้อมูลของตน">
+          <Field label="เลขบัญชีนักศึกษา" hint="ถ้ามี เชื่อมกับบัญชีนักศึกษา เพื่อให้นักศึกษาเห็นข้อมูลของตัวเอง">
             <input className={inputCls} type="number" min={1} value={form.user_id} onChange={set("user_id")} />
           </Field>
         )}
@@ -101,12 +101,12 @@ export function ExchangeForm({
           เผยแพร่ในหน้าสาธารณะ
         </label>
       ) : (
-        <p className="mb-3 text-xs text-faint">ข้อมูลที่คุณบันทึกจะยังไม่เผยแพร่ จนกว่าเจ้าหน้าที่จะอนุญาต</p>
+        <p className="mb-3 text-xs text-faint">ข้อมูลใหม่จะแสดงในหน้าสาธารณะเมื่อเจ้าหน้าที่เผยแพร่</p>
       )}
       <div className="flex justify-end gap-2">
         <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
         <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : record ? "บันทึกการแก้ไข" : "เพิ่มข้อมูล"}
+          {action.busy ? "กำลังบันทึก…" : record ? "บันทึก" : "เพิ่ม"}
         </button>
       </div>
     </form>

@@ -31,7 +31,7 @@ const api = process.env.TEST_API_URL || 'http://127.0.0.1:8125';
     let release;
     gate=new Promise(r=>release=r);
     await go(`/stakeholders/${ids.alpha}`);
-    await page.getByRole('heading',{name:'กำลังโหลดข้อมูลหน่วยงาน',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'กำลังโหลดหน่วยงาน…',exact:true}).waitFor();
     release(); gate=null;
     await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link',{name:'Audit Agreement Alpha',exact:true}).waitFor();
     assert.equal(await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link').count(),1);
@@ -49,13 +49,13 @@ const api = process.env.TEST_API_URL || 'http://127.0.0.1:8125';
     await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link',{name:'Audit Activity Alpha',exact:true}).click();
     await page.getByRole('heading',{name:'Audit Activity Alpha',exact:true}).waitFor();
     assert.equal(await section('ข้อมูลกิจกรรม').getByRole('link').getAttribute('href'),`/stakeholders/${ids.alpha}`);
-    assert.equal(await section('เอกสารที่เกี่ยวข้อง').getByRole('link').getAttribute('href'),`/documents/${ids.docAlpha}`);
+    assert.equal(await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link').getAttribute('href'),`/documents/${ids.docAlpha}`);
     await captureEvidence('docs/evidence/v2-5-activity.png');
     await section('ข้อมูลกิจกรรม').getByRole('link').click();
     await page.getByRole('heading',{name:'Audit Alpha',exact:true}).waitFor();
     await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link',{name:'Audit Activity Alpha',exact:true}).click();
     await page.getByRole('heading',{name:'Audit Activity Alpha',exact:true}).waitFor();
-    await section('เอกสารที่เกี่ยวข้อง').getByRole('link').click();
+    await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link').click();
     await page.getByRole('heading',{name:'Audit Agreement Alpha',exact:true}).waitFor();
     await go(`/stakeholders/${ids.beta}`);
     await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link',{name:'Audit Agreement Beta',exact:true}).waitFor();
@@ -63,27 +63,27 @@ const api = process.env.TEST_API_URL || 'http://127.0.0.1:8125';
     await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link',{name:'Audit Activity Beta',exact:true}).waitFor();
     assert.equal(await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link').count(),1);
     await go(`/stakeholders/${ids.empty}`);
-    await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();
-    await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้อง',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();
     await go(`/documents/${ids.docEmpty}`);
-    await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();
     await go(`/activities/${ids.solo}`);
-    await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้องที่เผยแพร่',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้อง',exact:true}).waitFor();
     await go(`/activities/${ids.hiddenEvent}`);
     await page.getByRole('heading',{name:'Audit Public Hidden Targets',exact:true}).waitFor();
     assert.equal(await page.locator(`a[href="/stakeholders/${ids.hiddenPartner}"]`).count(),0);
     assert.equal(await page.locator(`a[href="/documents/${ids.hiddenDoc}"]`).count(),0);
     await go(`/stakeholders/${ids.hiddenPartner}`);
-    await page.getByRole('heading',{name:'ไม่พบข้อมูลที่เผยแพร่',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'ไม่พบรายการนี้',exact:true}).waitFor();
     await go(`/documents/${ids.hiddenDoc}`);
-    await page.getByRole('heading',{name:'ไม่พบข้อมูลที่เผยแพร่',exact:true}).waitFor();
+    await page.getByRole('heading',{name:'ไม่พบรายการนี้',exact:true}).waitFor();
     for (const [path,target,title,label] of [
       [`/stakeholders/${ids.alpha}`,'/api/v1/documents/','ข้อตกลงที่เกี่ยวข้อง','Audit Agreement Alpha'],
       [`/stakeholders/${ids.alpha}`,'/api/v1/activities/','กิจกรรมที่เกี่ยวข้อง','Audit Activity Alpha'],
       [`/documents/${ids.docAlpha}`,'/api/v1/activities/','กิจกรรมที่เกี่ยวข้อง','Audit Activity Alpha'],
     ]) {
       failPath=target; await go(path);
-      await section(title).getByRole('heading',{name:'ไม่สามารถโหลดข้อมูลได้',exact:true}).waitFor();
+      await section(title).getByRole('heading',{name:'โหลดข้อมูลไม่สำเร็จ',exact:true}).waitFor();
       assert.equal(await section(title).getByRole('link').count(),0);
       failPath=null;
       await section(title).getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();
@@ -96,7 +96,7 @@ const api = process.env.TEST_API_URL || 'http://127.0.0.1:8125';
       [`/activities/${ids.eventAlpha}`,`/api/v1/activities/${ids.eventAlpha}`,'Audit Activity Alpha'],
     ]) {
       failPath=target; await go(path);
-      await page.getByRole('heading',{name:'ไม่สามารถโหลดข้อมูลได้',exact:true}).waitFor();
+      await page.getByRole('heading',{name:'โหลดข้อมูลไม่สำเร็จ',exact:true}).waitFor();
       failPath=null;
       await page.getByRole('button',{name:'ลองอีกครั้ง',exact:true}).click();
       await page.getByRole('heading',{name:label,exact:true}).waitFor();

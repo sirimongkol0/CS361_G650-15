@@ -122,14 +122,14 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
     await step('coordinator creates an agreement draft and uploads its PDF through the web', async () => {
       const page = pages.coordinator;
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'สร้างร่างข้อตกลง' }).click();
+      await page.getByRole('button', { name: 'สร้างฉบับร่าง' }).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อข้อตกลง *').fill(agreementName);
       await dialog.getByLabel('วันที่เริ่มมีผล').fill('2026-11-01');
       await dialog.getByLabel('วันหมดอายุ').fill('2029-10-31');
       await dialog.getByLabel('ระดับความร่วมมือ').selectOption('program');
-      await dialog.getByRole('button', { name: 'สร้างร่าง', exact: true }).click();
-      await page.getByText(`สร้างร่าง “${agreementName}” แล้ว`).waitFor({ timeout: 15000 });
+      await dialog.getByRole('button', { name: 'สร้างฉบับร่าง', exact: true }).click();
+      await page.getByText(`สร้างฉบับร่าง “${agreementName}” แล้ว`).waitFor({ timeout: 15000 });
       await dialog.getByLabel('เลือกไฟล์ PDF').setInputFiles(samplePdf);
       await dialog.getByRole('button', { name: 'อัปโหลด' }).click();
       await page.getByText('อัปโหลดไฟล์แล้ว').waitFor({ timeout: 15000 });
@@ -165,17 +165,17 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
       await page.getByRole('row', { name: new RegExp(agreementName) }).getByRole('button', { name: 'จัดการ' }).click();
       const dialog = page.getByRole('dialog');
-      await dialog.getByLabel('ผลการตรวจ').selectOption('keep');
-      await dialog.getByLabel('หลักฐาน / แหล่งที่มา').fill('ทดสอบ: CSTU เป็นคู่สัญญา (ข้อมูลสมมติ)');
-      await dialog.getByLabel('ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)').fill(`https://example.com/functional-test/${tag}`);
-      await dialog.getByRole('button', { name: 'บันทึกผลการตรวจ' }).click();
-      await page.getByText('บันทึกผลการตรวจ CSTU แล้ว').waitFor({ timeout: 15000 });
-      for (const [button, label] of [['อนุมัติ', 'อนุมัติแล้ว'], ['เริ่มมีผล', 'ใช้งาน']]) {
+      await dialog.getByLabel('ความเกี่ยวข้องกับ CSTU').selectOption('keep');
+      await dialog.getByLabel('เหตุผล').fill('ทดสอบ: CSTU เป็นคู่สัญญา (ข้อมูลสมมติ)');
+      await dialog.getByLabel('ลิงก์แหล่งที่มา').fill(`https://example.com/functional-test/${tag}`);
+      await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click();
+      await page.getByText('บันทึกความเกี่ยวข้องกับ CSTU แล้ว').waitFor({ timeout: 15000 });
+      for (const [button, label] of [['อนุมัติ', 'อนุมัติข้อตกลงแล้ว'], ['เริ่มมีผล', 'ข้อตกลงมีผลแล้ว']]) {
         await dialog.getByRole('button', { name: button, exact: true }).click();
-        await page.getByText(`เปลี่ยนสถานะเป็น “${label}” แล้ว`).waitFor({ timeout: 15000 });
+        await page.getByText(label).waitFor({ timeout: 15000 });
       }
       await dialog.getByRole('button', { name: 'เผยแพร่', exact: true }).click();
-      await page.getByText('เผยแพร่แล้ว', { exact: true }).waitFor({ timeout: 15000 });
+      await page.getByText('เผยแพร่ข้อตกลงแล้ว', { exact: true }).waitFor({ timeout: 15000 });
       await shot(page, '04-staff-agreement-published');
       const doc = (await callApi(page, 'GET', '/documents/manage')).data.find((d) => d.id === ids.agreement);
       assert.deepEqual([doc.status, doc.cstuStatus, doc.isPublished], ['active', 'keep', true]);
@@ -205,7 +205,7 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       await dialog.getByLabel('ชื่อกิจกรรม *').fill(activityName);
       await dialog.getByLabel('วันที่เริ่ม').fill('2026-12-05');
       await dialog.getByLabel('ประเภทกิจกรรม').selectOption('seminar');
-      await dialog.getByRole('button', { name: 'เพิ่มกิจกรรม' }).click();
+      await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText(`เพิ่ม “${activityName}” แล้ว`).waitFor({ timeout: 15000 });
       const row = (await callApi(page, 'GET', '/activities/manage')).data.find((a) => a.name === activityName);
       assert.deepEqual([row.isPublished, row.ownerUserId], [false, ids.coordinator]);
@@ -216,7 +216,7 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       const staff = pages.staff;
       await staff.goto(`${base}/activities/manage?edit=${ids.activity}`, { waitUntil: 'networkidle' });
       await staff.getByRole('dialog').getByLabel('เผยแพร่ในหน้าสาธารณะ').check();
-      await staff.getByRole('dialog').getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+      await staff.getByRole('dialog').getByRole('button', { name: 'บันทึก', exact: true }).click();
       await staff.getByText(`บันทึก “${activityName}” แล้ว`).waitFor({ timeout: 15000 });
       await staff.goto(`${base}/activities`, { waitUntil: 'networkidle' });
       await staff.getByText(activityName).first().waitFor({ timeout: 15000 });
@@ -231,9 +231,9 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       await page.getByRole('button', { name: 'เพิ่มนักศึกษา' }).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อ-นามสกุลนักศึกษา *').fill(exchangeName);
-      await dialog.getByLabel('ไป (สถาบันปลายทาง)').fill('Sakuragaoka Institute of Technology');
-      await dialog.getByLabel('รหัสบัญชีนักศึกษา (ถ้ามี)').fill(String(ids.student));
-      await dialog.getByRole('button', { name: 'เพิ่มข้อมูล' }).click();
+      await dialog.getByLabel('สถาบันปลายทาง').fill('Sakuragaoka Institute of Technology');
+      await dialog.getByLabel('เลขบัญชีนักศึกษา').fill(String(ids.student));
+      await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText(`เพิ่ม “${exchangeName}” แล้ว`).waitFor({ timeout: 15000 });
 
       const student = pages.student;
@@ -252,12 +252,12 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
     await step('coordinator adds a coordinator person as a draft; staff can edit and delete it', async () => {
       const page = pages.coordinator;
       await page.goto(`${base}/stakeholders/manage`, { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'เพิ่มหน่วยงาน / บุคคล' }).click();
+      await page.getByRole('button', { name: 'เพิ่มหน่วยงานหรือผู้ประสานงาน' }).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อ *').fill(personName);
       await dialog.getByLabel('ประเภท').selectOption('coordinator');
-      await dialog.getByLabel('สังกัดหน่วยงาน').selectOption({ index: 1 });
-      await dialog.getByLabel('อีเมลผู้ติดต่อ').fill('ft.coordinator@example.com');
+      await dialog.getByLabel('หน่วยงานที่สังกัด').selectOption({ index: 1 });
+      await dialog.getByLabel('อีเมลผู้ติดต่อ', { exact: true }).fill('ft.coordinator@example.com');
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText(`เพิ่ม “${personName}” แล้ว`).waitFor({ timeout: 15000 });
       const row = (await callApi(page, 'GET', '/partners/')).data.find((p) => p.name === personName);
@@ -272,7 +272,7 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
     await step('staff adds a complete organisation with a verified source and publishes it; it shows publicly', async () => {
       const page = pages.staff;
       await page.goto(`${base}/stakeholders/manage`, { waitUntil: 'networkidle' });
-      await page.getByRole('button', { name: 'เพิ่มหน่วยงาน / บุคคล' }).click();
+      await page.getByRole('button', { name: 'เพิ่มหน่วยงานหรือผู้ประสานงาน' }).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อ *').fill(orgName);
       await dialog.getByLabel('ประเภท').selectOption('university');
@@ -280,7 +280,7 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       await dialog.getByLabel('รหัสประเทศ').fill('JP');
       await dialog.getByLabel('เว็บไซต์').fill('https://example.com/ft-university');
       await dialog.getByLabel('รายละเอียด').fill('หน่วยงานสมมติสำหรับทดสอบการทำงาน');
-      await dialog.getByLabel('ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)').fill(`https://example.com/ft-university/${tag}`);
+      await dialog.getByLabel('ลิงก์แหล่งที่มา').fill(`https://example.com/ft-university/${tag}`);
       await dialog.getByLabel('เผยแพร่ในหน้าสาธารณะ').check();
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText(`เพิ่ม “${orgName}” แล้ว`).waitFor({ timeout: 15000 });

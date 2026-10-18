@@ -31,8 +31,14 @@ const TRANSITIONS: Record<string, string[]> = {
 const transitionLabels: Record<string, string> = {
   approved: "อนุมัติ",
   active: "เริ่มมีผล",
-  expired: "หมดอายุ",
-  cancelled: "ยกเลิก",
+  expired: "บันทึกว่าหมดอายุ",
+  cancelled: "ยกเลิกข้อตกลง",
+};
+const transitionDone: Record<string, string> = {
+  approved: "อนุมัติข้อตกลงแล้ว",
+  active: "ข้อตกลงมีผลแล้ว",
+  expired: "บันทึกว่าหมดอายุแล้ว",
+  cancelled: "ยกเลิกข้อตกลงแล้ว",
 };
 const statusColors: Record<string, string> = {
   draft: "badge-gray", approved: "badge-blue", active: "badge-green",
@@ -82,7 +88,7 @@ export default function ManageDocumentsPage() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-            <Link href="/documents" className="text-faint hover:text-crimson">เอกสารข้อตกลง</Link>
+            <Link href="/documents" className="text-faint hover:text-crimson">ข้อตกลง</Link>
             <ChevronRight className="h-3 w-3" />
             <span className="text-crimson">จัดการข้อตกลง</span>
           </nav>
@@ -90,12 +96,12 @@ export default function ManageDocumentsPage() {
           <p className="mt-0.5 text-sm text-faint">
             {isStaff
               ? "ข้อตกลงทั้งหมด รวมฉบับร่างและรายการที่ยังไม่เผยแพร่"
-              : "ข้อตกลงที่คุณรับผิดชอบ สร้างร่างและแนบไฟล์ได้ การอนุมัติและเผยแพร่เป็นของเจ้าหน้าที่"}
+              : "สร้างฉบับร่างและแนบไฟล์ได้ เจ้าหน้าที่เป็นผู้อนุมัติและเผยแพร่"}
           </p>
         </div>
         <button className="btn btn-primary gap-2" type="button" onClick={() => { setNotice(null); setCreating(true); }}>
           <FilePlus2 className="h-4 w-4" />
-          สร้างร่างข้อตกลง
+          สร้างฉบับร่าง
         </button>
       </div>
 
@@ -104,7 +110,7 @@ export default function ManageDocumentsPage() {
       {rows === null && documents.status === "loading" && <LoadingState />}
       {documents.status === "error" && <ErrorState error={documents.error} onRetry={documents.retry} />}
       {rows !== null && rows.length === 0 && (
-        <EmptyState title="ยังไม่มีข้อตกลงที่คุณจัดการได้" message="กด “สร้างร่างข้อตกลง” เพื่อเริ่ม" />
+        <EmptyState title="ยังไม่มีข้อตกลง" message="กด “สร้างฉบับร่าง” เพื่อเริ่ม" />
       )}
       {rows !== null && rows.length > 0 && (
         <div className="overflow-hidden rounded-lg bg-white shadow-card">
@@ -138,7 +144,7 @@ export default function ManageDocumentsPage() {
                       <span className={`badge ${cstuStatusColors[doc.cstuStatus]}`}>{label(cstuStatusLabels, doc.cstuStatus)}</span>
                     </td>
                     <td className="px-4 py-3">
-                      {doc.isPublished ? <span className="badge badge-green">เผยแพร่</span> : <span className="badge badge-gray">ไม่เผยแพร่</span>}
+                      {doc.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
                     </td>
                     <td className="px-4 py-3 text-faint">{doc.fileName ? "PDF" : "—"}</td>
                     <td className="px-4 py-3 text-right">
@@ -156,15 +162,15 @@ export default function ManageDocumentsPage() {
         </div>
       )}
 
-      <Dialog open={creating} title="สร้างร่างข้อตกลง" onClose={() => setCreating(false)} wide>
+      <Dialog open={creating} title="สร้างฉบับร่าง" onClose={() => setCreating(false)} wide>
         <DocumentForm
           partners={partnerList}
           onCancel={() => setCreating(false)}
-          onSaved={(doc) => { setCreating(false); refresh(`สร้างร่าง “${doc.name}” แล้ว`); setSelectedId(doc.id); }}
+          onSaved={(doc) => { setCreating(false); refresh(`สร้างฉบับร่าง “${doc.name}” แล้ว`); setSelectedId(doc.id); }}
         />
       </Dialog>
 
-      <Dialog open={selected !== null} title={selected ? `จัดการ: ${selected.name}` : ""} onClose={() => setSelectedId(null)} wide>
+      <Dialog open={selected !== null} title={selected ? selected.name : ""} onClose={() => setSelectedId(null)} wide>
         {selected && (
           <ManagePanel
             key={selected.id}
@@ -271,7 +277,7 @@ function DocumentForm({
       <div className="mt-2 flex justify-end gap-2">
         <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
         <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : doc ? "บันทึกการแก้ไข" : "สร้างร่าง"}
+          {action.busy ? "กำลังบันทึก…" : doc ? "บันทึก" : "สร้างฉบับร่าง"}
         </button>
       </div>
     </form>
@@ -320,7 +326,7 @@ function ManagePanel({
     setFile(null);
     setFileProblem(null);
     if (!selected) return;
-    if (selected.type !== "application/pdf") return setFileProblem("รองรับเฉพาะไฟล์ PDF");
+    if (selected.type !== "application/pdf") return setFileProblem("เลือกได้เฉพาะไฟล์ PDF");
     if (selected.size > MAX_UPLOAD_BYTES) return setFileProblem("ไฟล์ต้องไม่เกิน 10 MB");
     setFile(selected);
   }
@@ -365,11 +371,11 @@ function ManagePanel({
         {canEdit ? (
           <button className="btn btn-outline mt-3 text-sm" type="button" onClick={() => setEditing(true)}>แก้ไขข้อมูล</button>
         ) : (
-          <p className="mt-3 text-xs text-faint">แก้ไขได้เฉพาะฉบับร่างของคุณ หรือโดยเจ้าหน้าที่</p>
+          <p className="mt-3 text-xs text-faint">ผู้สร้างแก้ไขได้เฉพาะตอนเป็นฉบับร่าง หลังจากนั้นเจ้าหน้าที่เป็นผู้แก้ไข</p>
         )}
       </Section>
 
-      <Section title="ไฟล์ข้อตกลง (PDF)">
+      <Section title="ไฟล์ข้อตกลง">
         <p className="mb-2 text-sm">
           {doc.fileName ? <>ไฟล์ปัจจุบัน: <span className="font-medium">{doc.fileName}</span></> : "ยังไม่มีไฟล์"}
         </p>
@@ -377,7 +383,7 @@ function ManagePanel({
           {doc.fileName && (
             <button className="btn btn-outline gap-1.5 text-sm" type="button" onClick={openInternalFile} disabled={action.busy}>
               <Download className="h-4 w-4" />
-              เปิดไฟล์ (ลิงก์ 5 นาที)
+              เปิดไฟล์
             </button>
           )}
           {canEdit && (
@@ -385,20 +391,20 @@ function ManagePanel({
               <input type="file" accept="application/pdf" className="text-sm"
                 onChange={(e) => pickFile(e.target.files?.[0] ?? null)} aria-label="เลือกไฟล์ PDF" />
               <button className="btn btn-primary gap-1.5 text-sm" type="button" disabled={!file || action.busy}
-                onClick={() => file && act(() => apiUpload(`/documents/${doc.id}/file`, file), doc.fileName ? "แทนไฟล์แล้ว" : "อัปโหลดไฟล์แล้ว")}>
+                onClick={() => file && act(() => apiUpload(`/documents/${doc.id}/file`, file), doc.fileName ? "เปลี่ยนไฟล์แล้ว" : "อัปโหลดไฟล์แล้ว")}>
                 <Upload className="h-4 w-4" />
-                {doc.fileName ? "แทนไฟล์" : "อัปโหลด"}
+                {doc.fileName ? "เปลี่ยนไฟล์" : "อัปโหลด"}
               </button>
             </>
           )}
         </div>
         {fileProblem && <p className="mt-2 text-sm text-red-700">{fileProblem}</p>}
-        <p className="mt-2 text-xs text-faint">PDF เท่านั้น ไม่เกิน 10 MB</p>
+        <p className="mt-2 text-xs text-faint">ไฟล์ PDF ขนาดไม่เกิน 10 MB{doc.fileName ? " · ลิงก์เปิดไฟล์ใช้ได้ 5 นาที" : ""}</p>
       </Section>
 
       <Section title="สถานะข้อตกลง">
         <p className="mb-2 text-sm">
-          ปัจจุบัน: <span className={`badge ${statusColors[status] ?? "badge-gray"}`}>{label(documentStatusLabels, status)}</span>
+          สถานะ: <span className={`badge ${statusColors[status] ?? "badge-gray"}`}>{label(documentStatusLabels, status)}</span>
         </p>
         {isStaff ? (
           TRANSITIONS[status]?.length ? (
@@ -406,35 +412,35 @@ function ManagePanel({
               {TRANSITIONS[status].map((next) => (
                 <button key={next} type="button" disabled={action.busy}
                   className={`btn text-sm ${next === "cancelled" ? "btn-outline" : "btn-primary"}`}
-                  onClick={() => (next !== "cancelled" || confirm("ยืนยันยกเลิกข้อตกลงนี้? ย้อนกลับไม่ได้")) &&
-                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), `เปลี่ยนสถานะเป็น “${label(documentStatusLabels, next)}” แล้ว`)}>
+                  onClick={() => (next !== "cancelled" || confirm(`ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม\nการยกเลิกย้อนกลับไม่ได้`)) &&
+                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next])}>
                   {transitionLabels[next]}
                 </button>
               ))}
             </div>
-          ) : <p className="text-xs text-faint">สถานะนี้สิ้นสุดแล้ว เปลี่ยนต่อไม่ได้</p>
+          ) : <p className="text-xs text-faint">ข้อตกลงนี้ปิดแล้ว เปลี่ยนสถานะไม่ได้อีก</p>
         ) : (
-          <p className="text-xs text-faint">การอนุมัติและเปลี่ยนสถานะทำโดยเจ้าหน้าที่ (ผู้สร้างไม่ใช่ผู้อนุมัติ)</p>
+          <p className="text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างข้อตกลงอนุมัติเองไม่ได้</p>
         )}
       </Section>
 
       {isStaff && (
         <Section title="ความเกี่ยวข้องกับ CSTU">
           <div className="grid gap-x-4 sm:grid-cols-[200px_1fr]">
-            <Field label="ผลการตรวจ">
+            <Field label="ความเกี่ยวข้องกับ CSTU">
               <select className={inputCls} value={cstu} onChange={(e) => setCstu(e.target.value)}>
                 {Object.entries(cstuStatusLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
               </select>
             </Field>
-            <Field label="หลักฐาน / แหล่งที่มา" hint="จำเป็นเมื่อเลือก “คงไว้” หรือ “นอกขอบเขต”">
+            <Field label="เหตุผล" hint="จำเป็นเมื่อระบุว่าเกี่ยวข้องหรือไม่เกี่ยวข้องกับ CSTU">
               <textarea className={inputCls} rows={2} value={evidence} onChange={(e) => setEvidence(e.target.value)} />
             </Field>
           </div>
           <Field
-            label="ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)"
+            label="ลิงก์แหล่งที่มา"
             hint={doc.sources.length
-              ? `มีแหล่งที่มาแล้ว ${doc.sources.length} รายการ เพิ่มได้ถ้าต้องการ`
-              : "จำเป็นเมื่อเลือก “คงไว้” หน้าสาธารณะแสดงเฉพาะเอกสารที่มีแหล่งที่มาที่ตรวจแล้ว"}
+              ? `มีแหล่งที่มาแล้ว ${doc.sources.length} รายการ จะเพิ่มอีกก็ได้`
+              : "ลิงก์ที่ตรวจแล้วว่ายืนยันข้อตกลงนี้ได้ ขึ้นต้นด้วย https:// จำเป็นเมื่อระบุว่าเกี่ยวข้องกับ CSTU"}
           >
             <input className={inputCls} type="url" pattern="https://.*" value={sourceUrl}
               onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" />
@@ -443,8 +449,8 @@ function ManagePanel({
             disabled={action.busy || (cstu !== "review" && !evidence.trim()) || needsSource}
             onClick={() => act(() => apiPut(`/documents/${doc.id}/cstu-status`, {
               cstu_status: cstu, cstu_evidence: orNull(evidence), source_url: orNull(sourceUrl),
-            }), "บันทึกผลการตรวจ CSTU แล้ว")}>
-            บันทึกผลการตรวจ
+            }), "บันทึกความเกี่ยวข้องกับ CSTU แล้ว")}>
+            บันทึก
           </button>
         </Section>
       )}
@@ -452,15 +458,15 @@ function ManagePanel({
       {isStaff && (
         <Section title="การเผยแพร่">
           <p className="mb-2 text-sm">
-            {doc.isPublished ? "อนุญาตให้เผยแพร่" : "ไม่เผยแพร่"}
+            {doc.isPublished ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่"}
             {doc.isPublished && doc.cstuStatus !== "keep" && (
-              <span className="ml-2 text-xs text-gold-dark">ยังไม่แสดงสาธารณะจนกว่าผลการตรวจ CSTU เป็น “คงไว้”</span>
+              <span className="ml-2 text-xs text-gold-dark">จะแสดงในหน้าสาธารณะเมื่อระบุว่าเกี่ยวข้องกับ CSTU</span>
             )}
           </p>
           <button className="btn btn-outline text-sm" type="button" disabled={action.busy}
             onClick={() => act(() => apiPost(`/documents/${doc.id}/${doc.isPublished ? "unpublish" : "publish"}`),
-              doc.isPublished ? "ยกเลิกการเผยแพร่แล้ว" : "เผยแพร่แล้ว")}>
-            {doc.isPublished ? "ยกเลิกการเผยแพร่" : "เผยแพร่"}
+              doc.isPublished ? "หยุดเผยแพร่ข้อตกลงแล้ว" : "เผยแพร่ข้อตกลงแล้ว")}>
+            {doc.isPublished ? "หยุดเผยแพร่" : "เผยแพร่"}
           </button>
         </Section>
       )}
@@ -469,7 +475,7 @@ function ManagePanel({
         <div className="flex justify-end">
           <button className="btn gap-1.5 text-sm text-red-700 hover:bg-red-50" type="button" disabled={action.busy}
             onClick={async () => {
-              if (!confirm(`ลบ “${doc.name}”? รายการจะถูกซ่อนและเก็บประวัติไว้ใน audit log`)) return;
+              if (!confirm(`ลบข้อตกลง “${doc.name}” ใช่ไหม\nข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
               if (await action.run(() => apiDelete(`/documents/${doc.id}`))) onDeleted(`ลบ “${doc.name}” แล้ว`);
             }}>
             <Trash2 className="h-4 w-4" />

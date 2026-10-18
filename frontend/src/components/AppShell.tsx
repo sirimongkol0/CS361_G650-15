@@ -238,8 +238,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <button
             className="p-1.5 rounded hover:bg-soft"
             onClick={toggleSidebar}
-            title="สลับแถบเมนู"
-            aria-label="สลับแถบเมนู"
+            title="แสดงหรือซ่อนเมนู"
+            aria-label="แสดงหรือซ่อนเมนู"
             aria-expanded={mobileOpen || !collapsed}
           >
             <Menu className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
@@ -316,7 +316,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {offline && (
             <div role="alert" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-900">
               <WifiOff className="w-4 h-4" />
-              ขาดการเชื่อมต่ออินเทอร์เน็ต ข้อมูลที่แสดงอาจไม่เป็นปัจจุบัน
+              ไม่ได้เชื่อมต่ออินเทอร์เน็ต ข้อมูลที่เห็นอาจไม่ใช่ข้อมูลล่าสุด
             </div>
           )}
           <div key={pathname} className="flex-grow animate-fade-up">{children}</div>

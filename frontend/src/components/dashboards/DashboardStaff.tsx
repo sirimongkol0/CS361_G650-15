@@ -39,7 +39,7 @@ export default function DashboardStaff() {
     { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
     { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
-    { icon: GraduationCap, label: "นักศึกษา", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
+    { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
     { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
     { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(data.loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
   ];
@@ -52,10 +52,10 @@ export default function DashboardStaff() {
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
             <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              การบริหารความร่วมมือของหลักสูตร
+              ภาพรวมความร่วมมือของหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมการบริหารความร่วมมือหลักสูตร</p>
+          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อตกลง กิจกรรม และเรื่องที่ต้องติดตาม</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -136,8 +136,8 @@ export default function DashboardStaff() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>{shown(data.loaded, activeAgreements)} ข้อตกลงที่ใช้งานปกติ</div>
-              <div className="text-xs" style={{ color: "#16A34A" }}>ไม่มีการดำเนินการที่จำเป็น</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(data.loaded, activeAgreements)} ฉบับ</div>
+              <div className="text-xs" style={{ color: "#16A34A" }}>ยังไม่มีเรื่องที่ต้องดำเนินการ</div>
             </div>
           </div>
         </div>

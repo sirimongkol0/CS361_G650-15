@@ -70,10 +70,10 @@ export default function FeedbackPage() {
             หน้าหลัก
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-crimson">Feedback</span>
+          <span className="text-crimson">ความคิดเห็น</span>
         </nav>
-        <h1 className="text-2xl font-bold text-ink font-display">Feedback</h1>
-        <p className="text-sm mt-0.5 text-faint">จัดการ Feedback จากทุกแหล่ง</p>
+        <h1 className="text-2xl font-bold text-ink font-display">ความคิดเห็น</h1>
+        <p className="text-sm mt-0.5 text-faint">ความคิดเห็นจากทุกช่องทาง</p>
       </div>
 
       {/* Summary */}
@@ -102,7 +102,7 @@ export default function FeedbackPage() {
             color: "text-gold-dark",
           },
           {
-            label: "แหล่ง Feedback",
+            label: "ช่องทาง",
             value: new Set(feedbackEntries.map((f: FeedbackEntry) => f.source)).size,
             color: "text-purple-600",
           },
@@ -125,7 +125,7 @@ export default function FeedbackPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
                 <input
                   className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
-                  placeholder="ค้นหา Feedback..."
+                  placeholder="ค้นหาความคิดเห็น"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -136,7 +136,7 @@ export default function FeedbackPage() {
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
               >
-                <option value="all">แหล่ง: ทั้งหมด</option>
+                <option value="all">ช่องทาง: ทั้งหมด</option>
                 {Object.keys(sourceColors).map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -241,7 +241,7 @@ export default function FeedbackPage() {
 
               <div className="space-y-3 mb-5">
                 {[
-                  { label: "แหล่ง", value: selected.source },
+                  { label: "ช่องทาง", value: selected.source },
                   { label: "หน่วยงาน", value: selected.org },
                   { label: "กิจกรรม", value: selected.activity },
                 ]
@@ -279,7 +279,7 @@ export default function FeedbackPage() {
                 <textarea
                   className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink resize-none focus:outline-none focus:ring-1 focus:ring-crimson"
                   rows={3}
-                  placeholder="พิมพ์คำตอบหรือการดำเนินการ..."
+                  placeholder="พิมพ์คำตอบหรือสิ่งที่ดำเนินการแล้ว"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                 />

@@ -41,18 +41,18 @@ export class ApiError extends Error {
 
 /** Thai message for an API error, for forms and notices. */
 export function apiErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return "เกิดข้อผิดพลาดที่ไม่คาดคิด";
+  if (!(error instanceof ApiError)) return "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง";
   switch (error.status) {
     case 401: return "กรุณาเข้าสู่ระบบอีกครั้ง";
-    case 403: return "คุณไม่มีสิทธิ์ทำรายการนี้";
+    case 403: return "ไม่มีสิทธิ์ทำรายการนี้";
     case 404: return "ไม่พบรายการนี้";
-    case 409: return `ทำรายการนี้ไม่ได้ในสถานะปัจจุบัน (${error.message})`;
-    case 413: return "ไฟล์มีขนาดใหญ่เกินกำหนด";
-    case 415: return "ชนิดไฟล์ไม่ถูกต้อง รองรับเฉพาะ PDF";
+    case 409: return "ทำรายการนี้ไม่ได้ในสถานะปัจจุบันของรายการ";
+    case 413: return "ไฟล์ใหญ่เกินกำหนด";
+    case 415: return "เลือกได้เฉพาะไฟล์ PDF";
     case 400:
     case 422: return `ข้อมูลไม่ถูกต้อง: ${error.message}`;
-    case undefined: return "ไม่สามารถเชื่อมต่อระบบได้ โปรดลองอีกครั้ง";
-    default: return `เกิดข้อผิดพลาด (HTTP ${error.status})`;
+    case undefined: return "เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง";
+    default: return "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง";
   }
 }
 

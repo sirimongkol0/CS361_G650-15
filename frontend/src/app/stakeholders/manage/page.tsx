@@ -32,7 +32,7 @@ interface ManagedPartner {
   ownerUserId: number | null;
 }
 
-const TYPE_OPTIONS: Record<string, string> = { ...partnerTypeLabels, coordinator: "ผู้ประสานงาน (บุคคล)" };
+const TYPE_OPTIONS: Record<string, string> = { ...partnerTypeLabels, coordinator: "ผู้ประสานงาน" };
 
 export default function ManageStakeholdersPage() {
   useDocumentTitle("จัดการหน่วยงาน");
@@ -83,12 +83,12 @@ export default function ManageStakeholdersPage() {
           </nav>
           <h1 className="font-display text-2xl font-bold text-ink">จัดการหน่วยงานและผู้ประสานงาน</h1>
           <p className="mt-0.5 text-sm text-faint">
-            {isStaff ? "ทุกรายการ รวมฉบับร่าง" : "รายการที่เผยแพร่และฉบับร่างของคุณ แก้ไขได้เฉพาะรายการของคุณ"}
+            {isStaff ? "ทุกรายการ รวมฉบับร่าง" : "รายการที่เผยแพร่แล้วและฉบับร่างของตัวเอง แก้ไขได้เฉพาะรายการของตัวเอง"}
           </p>
         </div>
         <button className="btn btn-primary gap-2" type="button" onClick={() => { setNotice(null); setEditing("new"); }}>
           <UserPlus className="h-4 w-4" />
-          เพิ่มหน่วยงาน / บุคคล
+          เพิ่มหน่วยงานหรือผู้ประสานงาน
         </button>
       </div>
 
@@ -97,7 +97,7 @@ export default function ManageStakeholdersPage() {
 
       {rows === null && partners.status === "loading" && <LoadingState />}
       {partners.status === "error" && <ErrorState error={partners.error} onRetry={partners.retry} />}
-      {rows !== null && rows.length === 0 && <EmptyState title="ยังไม่มีหน่วยงาน" message="กด “เพิ่มหน่วยงาน / บุคคล” เพื่อเริ่ม" />}
+      {rows !== null && rows.length === 0 && <EmptyState title="ยังไม่มีหน่วยงานหรือผู้ประสานงาน" message="กด “เพิ่มหน่วยงานหรือผู้ประสานงาน” เพื่อเริ่ม" />}
       {rows !== null && rows.length > 0 && (
         <div className="overflow-hidden rounded-lg bg-white shadow-card">
           <div className="overflow-x-auto">
@@ -121,7 +121,7 @@ export default function ManageStakeholdersPage() {
                     <td className="px-4 py-3 text-faint">{label(TYPE_OPTIONS, p.type)}</td>
                     <td className="px-4 py-3 text-faint">{orgName(p.organizationId) ?? p.country ?? "—"}</td>
                     <td className="px-4 py-3">
-                      {p.isPublished ? <span className="badge badge-green">เผยแพร่</span> : <span className="badge badge-gray">ฉบับร่าง</span>}
+                      {p.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ฉบับร่าง</span>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       {canEdit(p) && (
@@ -135,7 +135,7 @@ export default function ManageStakeholdersPage() {
                         <button className="btn ml-1 gap-1.5 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50" type="button"
                           disabled={action.busy}
                           onClick={async () => {
-                            if (!confirm(`ลบ “${p.name}”? รายการจะถูกซ่อนและเก็บประวัติไว้ใน audit log`)) return;
+                            if (!confirm(`ลบ “${p.name}” ใช่ไหม\nรายการนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
                             if (await action.run(() => apiDelete(`/partners/${p.id}`))) refresh(`ลบ “${p.name}” แล้ว`);
                           }}>
                           <Trash2 className="h-3.5 w-3.5" />
@@ -151,7 +151,7 @@ export default function ManageStakeholdersPage() {
         </div>
       )}
 
-      <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มหน่วยงาน / บุคคล" : "แก้ไขข้อมูล"} onClose={() => setEditing(null)} wide>
+      <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มหน่วยงานหรือผู้ประสานงาน" : "แก้ไขข้อมูล"} onClose={() => setEditing(null)} wide>
         {editing !== null && (
           <PartnerForm
             key={editing === "new" ? "new" : editing.id}
@@ -236,7 +236,7 @@ function PartnerForm({
           </select>
         </Field>
         {isPerson && (
-          <Field label="สังกัดหน่วยงาน" hint="ผูกผู้ประสานงานกับหน่วยงานคู่ความร่วมมือ">
+          <Field label="หน่วยงานที่สังกัด">
             <select className={inputCls} value={form.organization_id} onChange={set("organization_id")}>
               <option value="">— ไม่ระบุ —</option>
               {organisations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -270,11 +270,11 @@ function PartnerForm({
       </Field>
       <label className="mb-2 flex items-center gap-2 text-sm">
         <input type="checkbox" checked={form.contact_is_public} onChange={(e) => setForm({ ...form, contact_is_public: e.target.checked })} />
-        แสดงข้อมูลผู้ติดต่อในหน้าสาธารณะ (ข้อมูลส่วนบุคคล ต้องได้รับความยินยอม)
+        แสดงชื่อและอีเมลผู้ติดต่อในหน้าสาธารณะ (ต้องได้รับความยินยอมจากเจ้าของข้อมูลก่อน)
       </label>
       {isStaff ? (
         <>
-          <Field label="ลิงก์แหล่งที่มาที่ตรวจแล้ว (https://)" hint="เจ้าหน้าที่ยืนยันแหล่งที่มา จำเป็นก่อนแสดงในหน้าสาธารณะ">
+          <Field label="ลิงก์แหล่งที่มา" hint="ลิงก์ที่ตรวจแล้วว่ายืนยันข้อมูลนี้ได้ ขึ้นต้นด้วย https:// ต้องมีก่อนแสดงในหน้าสาธารณะ">
             <input className={inputCls} type="url" pattern="https://.*" value={form.source_url}
               onChange={(e) => setForm({ ...form, source_url: e.target.value })} placeholder="https://" />
           </Field>
@@ -283,16 +283,16 @@ function PartnerForm({
             เผยแพร่ในหน้าสาธารณะ
           </label>
           <p className="mb-3 text-xs text-faint">
-            หน้าสาธารณะแสดงเมื่อมีครบ: ประเภท, รายละเอียด, เว็บไซต์, รหัสประเทศ และแหล่งที่มาที่ตรวจแล้ว
+            จะแสดงในหน้าสาธารณะเมื่อกรอกประเภท รายละเอียด เว็บไซต์ รหัสประเทศ และลิงก์แหล่งที่มาครบ
           </p>
         </>
       ) : (
-        <p className="mb-3 text-xs text-faint">รายการที่คุณเพิ่มจะเป็นฉบับร่าง จนกว่าเจ้าหน้าที่จะเผยแพร่</p>
+        <p className="mb-3 text-xs text-faint">รายการใหม่จะเป็นฉบับร่างจนกว่าเจ้าหน้าที่จะเผยแพร่</p>
       )}
       <div className="flex justify-end gap-2">
         <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
         <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : partner ? "บันทึกการแก้ไข" : "เพิ่ม"}
+          {action.busy ? "กำลังบันทึก…" : partner ? "บันทึก" : "เพิ่ม"}
         </button>
       </div>
     </form>

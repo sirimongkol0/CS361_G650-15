@@ -76,7 +76,7 @@ export default function DashboardAdmin() {
   const kpis = [
     { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE" },
     { icon: TrendingUp, label: "หน่วยงานที่ยังมีความร่วมมืออยู่", value: shown(data.loaded, engagement.length), color: "#C8961E", bg: "#FEF6E4" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(data.loaded, activeAgreements), warn: adminWatchMOU.length ? `${adminWatchMOU.length} ใกล้หมด` : null, color: "#B45309", bg: "#FEF3C7" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(data.loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, color: "#B45309", bg: "#FEF3C7" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
     { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7" },
     { icon: Star, label: "คะแนนความคิดเห็นเฉลี่ย", value: avgRating == null ? "—" : `${avgRating.toFixed(1)}★`, color: "#7C3AED", bg: "#EDE9FE" },
@@ -93,7 +93,7 @@ export default function DashboardAdmin() {
               ภาพรวมความร่วมมือระดับหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมสำหรับผู้บริหาร — ปี {beYear(year)}</p>
+          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมปี {beYear(year)}</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -131,7 +131,7 @@ export default function DashboardAdmin() {
         {/* Yearly trend */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>จำนวนความร่วมมือรายปี</h2>
-          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>หน่วยงานที่ยังมีความร่วมมืออยู่</p>
+          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>นับจากปีที่ข้อตกลงเริ่มมีผล</p>
           <ResponsiveContainer width="100%" height={170}>
             <AreaChart data={adminYearlyTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <defs>
@@ -190,7 +190,7 @@ export default function DashboardAdmin() {
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
             <Link href="/reports" className="text-xs" style={{ color: "#8B1538" }}>ดูรายงาน →</Link>
           </div>
-          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>จำนวนข้อตกลง + กิจกรรมที่เผยแพร่</p>
+          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับรวมข้อตกลงและกิจกรรมที่เผยแพร่แล้ว</p>
           <div className="space-y-3.5">
             {data.loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
@@ -226,7 +226,7 @@ export default function DashboardAdmin() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>{shown(data.loaded, activeAgreements)} ข้อตกลงปกติ ✓</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(data.loaded, activeAgreements)} ฉบับ ✓</div>
             </div>
           </div>
         </div>
@@ -257,7 +257,7 @@ export default function DashboardAdmin() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-bold" style={{ color: "#111827" }}>การจัดการระบบ</h2>
-            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>สิทธิ์เฉพาะผู้ดูแลระบบ</p>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>เฉพาะผู้ดูแลระบบ</p>
           </div>
           <div className="flex gap-3">
             {systemActions.map((a) => (

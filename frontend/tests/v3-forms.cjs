@@ -118,7 +118,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await dialog.getByLabel('วันที่เริ่ม').fill('2026-11-25');
       await dialog.getByLabel('ประเภทกิจกรรม').selectOption('seminar');
       await dialog.getByLabel('ระดับความร่วมมือ').selectOption('program');
-      await dialog.getByRole('button', { name: 'เพิ่มกิจกรรม' }).click();
+      await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText('เพิ่ม “สัมมนา V3-7” แล้ว').waitFor();
       const sent = activities.calls.find((c) => c.method === 'POST').body;
       assert.equal(sent.name, 'สัมมนา V3-7');
@@ -127,7 +127,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
 
       await own.getByRole('button', { name: 'แก้ไข' }).click();
       await page.getByRole('dialog').getByLabel('สถานที่').fill('ห้อง 301');
-      await page.getByRole('dialog').getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'บันทึก', exact: true }).click();
       await page.getByText('บันทึก “กิจกรรมของฉัน” แล้ว').waitFor();
       assert.equal(activities.items.get(1).location, 'ห้อง 301');
       await page.screenshot({ path: path.join(output, 'coordinator-activities.png'), fullPage: true });
@@ -141,7 +141,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.goto(`${base}/activities/manage?edit=1`, { waitUntil: 'networkidle' });
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('เผยแพร่ในหน้าสาธารณะ').check();
-      await dialog.getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+      await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click();
       await page.getByText('บันทึก “กิจกรรมของฉัน” แล้ว').waitFor();
       assert.equal(activities.calls.at(-1).body.is_published, true);
       await page.getByRole('row', { name: /กิจกรรมของคนอื่น/ }).getByRole('button', { name: 'ลบ' }).click();
@@ -157,16 +157,16 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.getByRole('button', { name: 'เพิ่มนักศึกษา' }).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อ-นามสกุลนักศึกษา *').fill('นักศึกษา ข');
-      await dialog.getByLabel('ไป (สถาบันปลายทาง)').fill('Sakuragaoka Institute');
-      await dialog.getByLabel('รหัสบัญชีนักศึกษา (ถ้ามี)').fill('42');
-      await dialog.getByRole('button', { name: 'เพิ่มข้อมูล' }).click();
+      await dialog.getByLabel('สถาบันปลายทาง').fill('Sakuragaoka Institute');
+      await dialog.getByLabel('เลขบัญชีนักศึกษา').fill('42');
+      await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText('เพิ่ม “นักศึกษา ข” แล้ว').waitFor();
       const sent = exchange.calls.find((c) => c.method === 'POST').body;
       assert.deepEqual([sent.name, sent.to_organization, sent.user_id], ['นักศึกษา ข', 'Sakuragaoka Institute', 42]);
 
       await page.getByRole('button', { name: 'แก้ไข นักศึกษา ก' }).click();
       await page.getByRole('dialog').getByLabel('สถานะ').selectOption('กำลังดำเนินการ');
-      await page.getByRole('dialog').getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+      await page.getByRole('dialog').getByRole('button', { name: 'บันทึก', exact: true }).click();
       await page.getByText('บันทึก “นักศึกษา ก” แล้ว').waitFor();
       assert.equal(exchange.items.get(11).status, 'กำลังดำเนินการ');
 
@@ -191,12 +191,12 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.goto(`${base}/stakeholders`, { waitUntil: 'networkidle' });
       await page.getByRole('link', { name: 'จัดการหน่วยงาน' }).first().click();
       await page.waitForURL(/\/stakeholders\/manage$/);
-      await page.getByRole('button', { name: 'เพิ่มหน่วยงาน / บุคคล' }).click();
+      await page.getByRole('button', { name: 'เพิ่มหน่วยงานหรือผู้ประสานงาน' }).click();
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อ *').fill('อ.ผู้ประสานงาน สมมติ');
       await dialog.getByLabel('ประเภท').selectOption('coordinator');
-      await dialog.getByLabel('สังกัดหน่วยงาน').selectOption({ label: 'มหาวิทยาลัยคู่ความร่วมมือ' });
-      await dialog.getByLabel('อีเมลผู้ติดต่อ').fill('coordinator.demo@example.test');
+      await dialog.getByLabel('หน่วยงานที่สังกัด').selectOption({ label: 'มหาวิทยาลัยคู่ความร่วมมือ' });
+      await dialog.getByLabel('อีเมลผู้ติดต่อ', { exact: true }).fill('coordinator.demo@example.test');
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText('เพิ่ม “อ.ผู้ประสานงาน สมมติ” แล้ว').waitFor();
       const sent = partners.calls.find((c) => c.method === 'POST').body;
@@ -213,7 +213,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       const row = p2.getByRole('row', { name: /มหาวิทยาลัยคู่ความร่วมมือ/ });
       await row.getByRole('button', { name: 'แก้ไข' }).click();
       await p2.getByRole('dialog').getByLabel('เผยแพร่ในหน้าสาธารณะ').uncheck();
-      await p2.getByRole('dialog').getByRole('button', { name: 'บันทึกการแก้ไข' }).click();
+      await p2.getByRole('dialog').getByRole('button', { name: 'บันทึก', exact: true }).click();
       await p2.getByText('บันทึก “มหาวิทยาลัยคู่ความร่วมมือ” แล้ว').waitFor();
       assert.equal(staff.partners.calls.at(-1).method, 'PUT');
       assert.equal(staff.partners.calls.at(-1).body.is_published, false);

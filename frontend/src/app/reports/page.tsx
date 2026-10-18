@@ -88,7 +88,7 @@ export default function ReportsPage() {
             <span className="text-crimson">รายงานและสถิติ</span>
           </nav>
           <h1 className="text-2xl font-bold text-ink font-display">รายงานและสถิติ</h1>
-          <p className="text-sm mt-0.5 text-faint">ภาพรวมข้อมูลเชิงสถิติสำหรับผู้บริหาร</p>
+          <p className="text-sm mt-0.5 text-faint">ภาพรวมเชิงสถิติของความร่วมมือ</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -100,8 +100,8 @@ export default function ReportsPage() {
             <option value="2568">ปีการศึกษา 2568</option>
             <option value="2567">ปีการศึกษา 2567</option>
           </select>
-          <button className="btn btn-outline gap-2 text-sm"><Download className="w-4 h-4" />Export Excel</button>
-          <button className="btn btn-primary gap-2 text-sm"><Download className="w-4 h-4" />Export PDF</button>
+          <button className="btn btn-outline gap-2 text-sm"><Download className="w-4 h-4" />ส่งออก Excel</button>
+          <button className="btn btn-primary gap-2 text-sm"><Download className="w-4 h-4" />ส่งออก PDF</button>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export default function ReportsPage() {
           { label: "MoU / MoA", value: "23", change: "+2", icon: FileText, color: "#d97706", bg: "#fef3c7" },
           { label: "กิจกรรม", value: "156", change: "+8.5%", icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe" },
           { label: "นักศึกษาแลกเปลี่ยน", value: "32", change: "+12%", icon: GraduationCap, color: "#16a34a", bg: "#dcfce7" },
-          { label: "Feedback (avg)", value: "4.5★", change: "+0.3", icon: MessageSquare, color: "#be185d", bg: "#fce7f3" },
+          { label: "คะแนนความคิดเห็นเฉลี่ย", value: "4.5★", change: "+0.3", icon: MessageSquare, color: "#be185d", bg: "#fce7f3" },
         ].map((kpi) => (
           <div
             key={kpi.label}
@@ -168,8 +168,8 @@ export default function ReportsPage() {
       {/* Row 2: Exchange + Feedback */}
       <div className="grid gap-5 mb-5" style={{ gridTemplateColumns: "1fr 1fr" }}>
         <div className="bg-white border border-line rounded-lg shadow-card p-5">
-          <h2 className="font-bold mb-1 text-ink">จำนวน Student Exchange</h2>
-          <p className="text-xs mb-4 text-faint">Outbound vs Inbound</p>
+          <h2 className="font-bold mb-1 text-ink">จำนวนนักศึกษาแลกเปลี่ยน</h2>
+          <p className="text-xs mb-4 text-faint">ขาออกเทียบกับขาเข้า</p>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={exchangeData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -177,14 +177,14 @@ export default function ReportsPage() {
               <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="outbound" name="Outbound" fill="#4f46e5" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="inbound" name="Inbound" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="outbound" name="ขาออก" fill="#4f46e5" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="inbound" name="ขาเข้า" fill="#10b981" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div className="bg-white border border-line rounded-lg shadow-card p-5">
-          <h2 className="font-bold mb-1 text-ink">Feedback Score Trend</h2>
+          <h2 className="font-bold mb-1 text-ink">แนวโน้มคะแนนความคิดเห็น</h2>
           <p className="text-xs mb-4 text-faint">คะแนนเฉลี่ยรายเดือน (จาก 5.0)</p>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={feedbackTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
