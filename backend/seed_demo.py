@@ -7,6 +7,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 import hashlib
 import json
+import os
 
 from sqlalchemy import text
 
@@ -104,7 +105,8 @@ def seed():
         counts = [db.query(m).count() for m in (models.Partner, models.Document, models.Activity)]
         expected = [len(PARTNERS), len(DOCUMENTS), len(ACTIVITIES)]
         if version == demo_expansion.VERSION:
-            print(f"Demo already prepared (v3): {counts}; no records changed")
+            print(f"Demo already prepared (v3): {counts}; no records added")
+            touch_up(db)
             return
         if version:
             if version not in ['cstu-fictional-v1', VERSION] or counts != expected:
@@ -186,6 +188,20 @@ def seed():
         expand(db)
 
 
+def touch_up(db):
+    """Fixes that also apply to a demo seeded earlier; safe to run on every start."""
+    renamed = demo_expansion.fix_agreement_names(db)
+    email = os.environ.get("DEMO_STUDENT_EMAIL", "student@example.test")
+    linked = demo_expansion.link_student_exchanges(db, email)
+    db.commit()
+    if renamed:
+        print(f"Renamed {renamed} demo agreements to the MoU/MoA naming")
+    if linked is None:
+        print(f"{email} has not logged in yet; run the seed again after its first login to link exchange records")
+    elif linked:
+        print(f"Linked {linked} exchange records to {email}")
+
+
 def expand(db):
     """Add the v3 fictional records on top of a complete base demo, then commit."""
     source = db.query(models.Source).filter_by(source_type="demo_fixture").one()
@@ -195,6 +211,7 @@ def expand(db):
     db.execute(text("UPDATE demo_seed_metadata SET version=:version"), {"version": demo_expansion.VERSION})
     db.commit()
     print(f"Expanded fictional demo with partners/documents/activities {added}, 45 feedbacks, 30 exchange students")
+    touch_up(db)
 
 
 if __name__ == "__main__":

@@ -5,11 +5,17 @@ no files (metadata_only / unavailable) so the S3 demo bucket needs no uploads.
 """
 from datetime import date, timedelta
 import random
+import re
+
+from sqlalchemy import or_
 
 import models
 from demo_content import NOTICE
 
 VERSION = "cstu-fictional-v3"
+AGREEMENT_LABEL = {"mou": "MoU", "moa": "MoA"}
+# Fictional records the demo student account sees as its own (GET /exchange/mine).
+STUDENT_EXCHANGES = 2
 
 # name, type, country, country code
 PARTNERS = [
@@ -90,7 +96,7 @@ def expand(db, source, today=date(2026, 10, 2)):
         doc_type = "moa" if partner.type == "private_company" else "mou"
         topic = DOC_TOPICS[i % len(DOC_TOPICS)]
         document = models.Document(
-            name=f"{doc_type.upper()} {topic}กับ{partner.name}", partner=partner,
+            name=f"{AGREEMENT_LABEL[doc_type]} {topic} กับ {partner.name}", partner=partner,
             doc_type=doc_type, document_kind="agreement", status=_status_for(start, end, today),
             effective_date=start, expiry_date=end,
             file_availability="metadata_only" if i % 4 else "unavailable",
@@ -162,3 +168,50 @@ def expand(db, source, today=date(2026, 10, 2)):
         ))
     db.flush()
     return [len(partners), len(documents), len(activities)]
+
+
+_OLD_NAME = re.compile(r"^(MOU|MOA) (.+?)กับ(\S.*)$")
+
+
+def fix_agreement_names(db) -> int:
+    """Rename v3 demo agreements from 'MOU topicกับPartner' to 'MoU topic กับ Partner'.
+
+    Only fictional demo records whose name still ends with their partner's name change.
+    """
+    renamed = 0
+    old = db.query(models.Document).filter(or_(models.Document.name.like("MOU %"), models.Document.name.like("MOA %")))
+    for doc in old.all():
+        match = _OLD_NAME.match(doc.name)
+        demo = doc.sources and all(source.source_type == "demo_fixture" for source in doc.sources)
+        if not (match and demo and doc.partner and match.group(3) == doc.partner.name):
+            continue
+        doc.name = f"{AGREEMENT_LABEL[match.group(1).lower()]} {match.group(2)} กับ {doc.partner.name}"
+        renamed += 1
+    return renamed
+
+
+def link_student_exchanges(db, email: str):
+    """Give the demo student account its own exchange records (exchange_students.user_id).
+
+    The users row exists only after that account's first login, so this returns
+    None until then; 0 when the account already has records. Picks a current or
+    planned record and a finished one, so the student sees both states, and
+    gives them the same student name.
+    """
+    user = db.query(models.User).filter(models.User.email == email, models.User.role == "student").first()
+    if user is None:
+        return None
+    if db.query(models.ExchangeStudent).filter(models.ExchangeStudent.user_id == user.id).count():
+        return 0
+    free = db.query(models.ExchangeStudent).filter(
+        models.ExchangeStudent.user_id.is_(None), models.ExchangeStudent.is_published.is_(True),
+        # A CSTU student goes out on exchange; inbound records are other universities' students.
+        models.ExchangeStudent.type == "outbound",
+    ).order_by(models.ExchangeStudent.id)
+    picks = [free.filter(models.ExchangeStudent.status != "เสร็จสิ้น").first(),
+             free.filter(models.ExchangeStudent.status == "เสร็จสิ้น").first()]
+    picks = [row for row in picks if row is not None][:STUDENT_EXCHANGES]
+    for row in picks:
+        row.user_id = user.id
+        row.name = picks[0].name  # one student who went on two exchanges
+    return len(picks)
