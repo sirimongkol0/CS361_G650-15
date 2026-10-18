@@ -267,12 +267,12 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Staff dashboard ----------
-    await step('staff dashboard: CSV export, "เพิ่มกิจกรรม" opens the add form, "ต่ออายุ" opens the agreement', async () => {
+    await step('staff dashboard: CSV export, "เพิ่มกิจกรรม" opens the add form, "เปิดข้อตกลง" opens the agreement', async () => {
       const page = pages.staff;
       await open(page, '/dashboard/staff');
       const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'ส่งออก CSV' }).click()]);
       assert.match(download.suggestedFilename(), /^pcsms-activities-\d{4}\.csv$/);
-      const renew = page.getByRole('link', { name: 'ต่ออายุ' });
+      const renew = page.getByRole('link', { name: 'เปิดข้อตกลง' });
       const renewCount = await renew.count();
       if (renewCount > 0) {
         const card = renew.first().locator('xpath=../..');
@@ -283,7 +283,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
         await shot(page, '07-renew-opens-agreement');
         await open(page, '/dashboard/staff');
       } else {
-        console.log('  (no agreement expires within 90 days, so "ต่ออายุ" was not shown)');
+        console.log('  (no agreement expires within 90 days, so "เปิดข้อตกลง" was not shown)');
       }
       await page.getByRole('link', { name: 'เพิ่มกิจกรรม' }).click();
       await page.waitForURL(/\/activities\/manage$/);

@@ -138,7 +138,7 @@ export default function DashboardStaff() {
                 </div>
                 <div className="text-xs mt-1" style={{ color: "#B45309" }}>หมดอายุ {d.expire}</div>
                 <div className="flex gap-2 mt-2.5">
-                  <Link href={`/documents/manage?open=${d.id}`} className="btn btn-outline text-xs py-1.5 flex-1">ต่ออายุ</Link>
+                  <Link href={`/documents/manage?open=${d.id}`} className="btn btn-outline text-xs py-1.5 flex-1">เปิดข้อตกลง</Link>
                 </div>
               </div>
             ))}

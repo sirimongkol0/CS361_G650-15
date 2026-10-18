@@ -72,7 +72,7 @@ export default function ManageDocumentsPage() {
   }, [documents.status, documents.data]);
   const selected = rows?.find((d) => d.id === selectedId) ?? null;
 
-  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "ต่ออายุ").
+  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "เปิดข้อตกลง").
   useEffect(() => {
     const id = Number(new URLSearchParams(window.location.search).get("open"));
     if (id && rows) {
