@@ -16,7 +16,7 @@ import {
   Users, Globe, Folder, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
-import { ROLE_NAV, useRole } from '@/lib/role-context';
+import { ACCOUNT_NAV, ROLE_NAV, useRole } from '@/lib/role-context';
 
 /* Map icon string → Lucide component */
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -50,7 +50,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [offline, setOffline] = useState(false);
   const cameBack = useRef(false);
 
-  const navItems = ROLE_NAV[role];
+  const navItems = status === 'authenticated' ? [...ROLE_NAV[role], ACCOUNT_NAV] : ROLE_NAV[role];
 
   const handleLogout = async () => {
     await logout();
@@ -170,7 +170,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
         {navItems.map(({ to, icon, label, end }) => {
           const Icon = ICON_MAP[icon] ?? LayoutDashboard;
-          const active = end ? pathname === to : pathname.startsWith(to);
+          // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.
+          const active = end
+            ? pathname === to
+            : pathname.startsWith(to) && !navItems.some((other) => other.to.length > to.length && pathname.startsWith(other.to));
           return (
             <Link
               key={`${to}-${label}`}
@@ -235,8 +238,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <button
             className="p-1.5 rounded hover:bg-soft"
             onClick={toggleSidebar}
-            title="สลับแถบเมนู"
-            aria-label="สลับแถบเมนู"
+            title="แสดงหรือซ่อนเมนู"
+            aria-label="แสดงหรือซ่อนเมนู"
             aria-expanded={mobileOpen || !collapsed}
           >
             <Menu className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
@@ -313,7 +316,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {offline && (
             <div role="alert" className="flex items-center gap-2 border-b border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-900">
               <WifiOff className="w-4 h-4" />
-              ขาดการเชื่อมต่ออินเทอร์เน็ต ข้อมูลที่แสดงอาจไม่เป็นปัจจุบัน
+              ไม่ได้เชื่อมต่ออินเทอร์เน็ต ข้อมูลที่เห็นอาจไม่ใช่ข้อมูลล่าสุด
             </div>
           )}
           <div key={pathname} className="flex-grow animate-fade-up">{children}</div>

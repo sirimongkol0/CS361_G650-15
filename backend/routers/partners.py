@@ -7,7 +7,7 @@ import auth
 import database
 import models
 import schemas
-from public_visibility import partner_criteria
+from public_visibility import attach_verified_source, partner_criteria
 
 router = APIRouter(prefix="/partners", tags=["partners"])
 
@@ -169,6 +169,8 @@ def create_partner(
     """สร้าง Partner/ผู้ประสานงานใหม่ (สิทธิ์: coordinator, staff, admin)"""
     if user.role == "coordinator" and body.is_published:
         raise HTTPException(status_code=403, detail="Only staff and admin can publish partners")
+    if user.role == "coordinator" and body.source_url:
+        raise HTTPException(status_code=403, detail="Only staff and admin can verify sources")
 
     # ตรวจสอบชื่อซ้ำ (Name uniqueness validation)
     existing = db.query(models.Partner).filter(
@@ -201,7 +203,11 @@ def create_partner(
     db.add(partner)
     db.flush()  # เพื่อสร้าง partner.id
 
-    audit.record(db, user, "create", "partners", partner.id, after=audit.snapshot(partner))
+    after = audit.snapshot(partner)
+    if body.source_url:  # แหล่งที่มาที่เจ้าหน้าที่ตรวจแล้ว (จำเป็นก่อนแสดงสาธารณะ)
+        attach_verified_source(db, partner, body.source_url, partner.name)
+        after["source_url"] = body.source_url
+    audit.record(db, user, "create", "partners", partner.id, after=after)
     db.commit()
     db.refresh(partner)
     return _response(partner, user)
@@ -247,8 +253,11 @@ def update_partner(
             raise HTTPException(status_code=400, detail="Partner name already exists")
 
     update_data = body.model_dump(exclude_unset=True)
+    source_url = update_data.pop("source_url", None)
     if user.role == "coordinator" and "is_published" in update_data:
         raise HTTPException(status_code=403, detail="Only staff and admin can publish partners")
+    if user.role == "coordinator" and source_url:
+        raise HTTPException(status_code=403, detail="Only staff and admin can verify sources")
     if "organization_id" in update_data:
         _validate_organization(db, update_data["organization_id"])
 
@@ -258,7 +267,11 @@ def update_partner(
     for key, value in update_data.items():
         setattr(partner, key, value)
 
-    audit.record(db, user, "update", "partners", partner.id, before=before_snapshot, after=audit.snapshot(partner))
+    after = audit.snapshot(partner)
+    if source_url:  # แหล่งที่มาที่เจ้าหน้าที่ตรวจแล้ว (จำเป็นก่อนแสดงสาธารณะ)
+        attach_verified_source(db, partner, source_url, partner.name)
+        after["source_url"] = source_url
+    audit.record(db, user, "update", "partners", partner.id, before=before_snapshot, after=after)
     db.commit()
     db.refresh(partner)
     return _response(partner, user)

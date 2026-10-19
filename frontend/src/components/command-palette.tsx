@@ -16,7 +16,7 @@ interface Entry {
 
 const KIND_META = {
   stakeholders: { label: "หน่วยงาน", Icon: Building2 },
-  documents: { label: "เอกสาร", Icon: FileText },
+  documents: { label: "ข้อตกลง", Icon: FileText },
   activities: { label: "กิจกรรม", Icon: CalendarDays },
 } as const;
 
@@ -76,7 +76,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           <input
             ref={inputRef}
             className="flex-1 py-3.5 text-sm text-ink outline-none placeholder:text-[#CBD5E1]"
-            placeholder="ค้นหาหน่วยงาน เอกสาร หรือกิจกรรม..."
+            placeholder="ค้นหาหน่วยงาน ข้อตกลง หรือกิจกรรม"
             value={query}
             onChange={(event) => { setQuery(event.target.value); setActive(0); }}
             onKeyDown={(event) => {
@@ -90,8 +90,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           <kbd className="rounded border border-line px-1.5 text-[11px] text-faint">Esc</kbd>
         </div>
         <div className="max-h-[50vh] overflow-y-auto p-2" role="listbox">
-          {!entries && <div className="flex items-center gap-2 px-3 py-6 text-sm text-faint"><LoaderCircle className="w-4 h-4 animate-spin" />กำลังโหลดข้อมูล</div>}
-          {entries && failed && <p className="px-3 py-6 text-sm text-faint">ไม่สามารถโหลดข้อมูลได้ โปรดลองอีกครั้ง</p>}
+          {!entries && <div className="flex items-center gap-2 px-3 py-6 text-sm text-faint"><LoaderCircle className="w-4 h-4 animate-spin" />กำลังโหลด…</div>}
+          {entries && failed && <p className="px-3 py-6 text-sm text-faint">โหลดข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง</p>}
           {entries && !failed && !query.trim() && <p className="px-3 py-6 text-sm text-faint">พิมพ์เพื่อค้นหาจาก {entries.length} รายการ</p>}
           {entries && query.trim() && results.length === 0 && <p className="px-3 py-6 text-sm text-faint">ไม่พบผลลัพธ์</p>}
           {results.map((entry, index) => {
@@ -125,8 +125,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 const SHORTCUTS: [string, string][] = [
   ["Ctrl + K", "ค้นหาทั้งระบบ"],
   ["/", "ไปที่ช่องค้นหาของหน้ารายการ"],
-  ["Esc", "ล้างคำค้นหา / ปิดหน้าต่าง"],
-  ["← / →", "รายการก่อนหน้า / ถัดไป (หน้ารายละเอียด)"],
+  ["Esc", "ล้างคำค้นหาหรือปิดหน้าต่าง"],
+  ["← / →", "ไปรายการก่อนหน้าหรือถัดไป ในหน้ารายละเอียด"],
   ["?", "แสดงคีย์ลัดทั้งหมด"],
 ];
 

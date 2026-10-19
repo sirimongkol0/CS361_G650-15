@@ -52,13 +52,13 @@ class FakeCognito:
         self.challenge = False
 
     def add(self, email, groups):
-        self.users[email] = {"sub": str(uuid.uuid4()), "groups": list(groups)}
+        self.users[email] = {"sub": str(uuid.uuid4()), "groups": list(groups), "password": PASSWORD}
         return self.users[email]
 
     def initiate_auth(self, ClientId, AuthFlow, AuthParameters):
         assert (ClientId, AuthFlow) == (CLIENT_ID, "USER_PASSWORD_AUTH")
         user = self.users.get(AuthParameters["USERNAME"])
-        if user is None or AuthParameters["PASSWORD"] != PASSWORD:
+        if user is None or AuthParameters["PASSWORD"] != user["password"]:
             raise ClientError({"Error": {"Code": "NotAuthorizedException",
                                          "Message": "Incorrect username or password."}},
                               "InitiateAuth")
@@ -71,6 +71,19 @@ class FakeCognito:
             "ExpiresIn": 3600,
             "TokenType": "Bearer",
         }}
+
+    def change_password(self, PreviousPassword, ProposedPassword, AccessToken):
+        sub = jwt.decode(AccessToken, options={"verify_signature": False})["sub"]
+        user = next(u for u in self.users.values() if u["sub"] == sub)
+        if PreviousPassword != user["password"]:
+            raise ClientError({"Error": {"Code": "NotAuthorizedException",
+                                         "Message": "Incorrect username or password."}}, "ChangePassword")
+        if not (len(ProposedPassword) >= 8 and any(c.isupper() for c in ProposedPassword)
+                and any(c.islower() for c in ProposedPassword) and any(c.isdigit() for c in ProposedPassword)):
+            raise ClientError({"Error": {"Code": "InvalidPasswordException",
+                                         "Message": "Password does not conform to policy"}}, "ChangePassword")
+        user["password"] = ProposedPassword
+        return {}
 
 
 @pytest.fixture()

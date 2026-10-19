@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload, selectinload, with_loader_criteria
 from typing import List, Literal
 from sqlalchemy import and_, or_
-from public_visibility import partner_criteria, document_criteria
+from public_visibility import attach_verified_source, document_criteria, has_verified_source, partner_criteria
 
 import audit
 import auth
@@ -255,16 +255,24 @@ def review_cstu_status(
 ):
     """Record whether the document belongs to CSTU (docs/decisions/cstu-program-scope.md).
 
-    A decision other than "review" must cite its evidence so it can be checked later.
+    A decision other than "review" must cite its evidence so it can be checked later,
+    and "keep" needs a verified source (given here as source_url if there is none yet),
+    because public pages only list documents with one.
     """
     evidence = (body.cstu_evidence or "").strip() or None
     if body.cstu_status != "review" and evidence is None:
         raise HTTPException(status_code=422, detail="cstu_evidence is required for keep and out_of_scope")
     doc = _managed_document(db, document_id, user)
+    if body.cstu_status == "keep" and not body.source_url and not has_verified_source(doc):
+        raise HTTPException(status_code=422, detail="source_url is required to keep a document without a verified source")
     before = audit.snapshot(doc)
     doc.cstu_status = body.cstu_status
     doc.cstu_evidence = evidence
-    audit.record(db, user, "cstu_review", "documents", doc.id, before=before, after=audit.snapshot(doc))
+    after = audit.snapshot(doc)
+    if body.source_url:
+        attach_verified_source(db, doc, body.source_url, doc.name)
+        after["source_url"] = body.source_url
+    audit.record(db, user, "cstu_review", "documents", doc.id, before=before, after=after)
     db.commit()
     db.refresh(doc)
     return _manage_response(doc)
@@ -359,8 +367,11 @@ def internal_document_url(
     if url is None:  # local backend: sign our own link
         expires = int(time.time()) + ttl
         signature = storage.sign_local(doc.storage_key, expires)
-        url = str(request.url_for("signed_download", document_id=doc.id).include_query_params(
-            expires=expires, signature=signature))
+        # A path, not an absolute URL: behind a proxy the backend's own host is not
+        # reachable from the browser. The web resolves it against its API base.
+        url = request.url_for("signed_download", document_id=doc.id).include_query_params(
+            expires=expires, signature=signature)
+        url = f"{url.path}?{url.query}"
     return {"url": url, "expiresIn": ttl}
 
 

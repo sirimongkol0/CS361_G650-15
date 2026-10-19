@@ -25,13 +25,13 @@ export default function StakeholderDetailPage() {
   useDocumentTitle(partner.status === "success" ? partner.data.name : "หน่วยงานคู่ความร่วมมือ");
 
   if (partner.status === "loading") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดข้อมูลหน่วยงาน" /></div>;
+    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดหน่วยงาน…" /></div>;
   }
   if (partner.status === "error") {
     return (
       <div className="p-6 max-w-screen-xl mx-auto">
         <ErrorState error={partner.error} onRetry={partner.retry} />
-        <div className="mt-4 text-center"><Link href="/stakeholders" className="text-sm font-semibold text-crimson hover:underline">กลับไปหน้ารายการหน่วยงาน</Link></div>
+        <div className="mt-4 text-center"><Link href="/stakeholders" className="text-sm font-semibold text-crimson hover:underline">กลับไปที่รายการหน่วยงาน</Link></div>
       </div>
     );
   }

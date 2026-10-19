@@ -9,7 +9,7 @@ import { readResults, type ResultKind } from "@/lib/list-tools";
 
 const LIST_LABELS: Record<ResultKind, string> = {
   stakeholders: "หน่วยงาน",
-  documents: "เอกสาร",
+  documents: "ข้อตกลง",
   activities: "กิจกรรม",
 };
 
@@ -54,7 +54,7 @@ export function DetailToolbar({ kind, id, title }: { kind: ResultKind; id: numbe
     <div className="flex flex-wrap items-center gap-2 mb-5">
       <Link href={nav?.listUrl ?? `/${kind}`} className="btn btn-outline gap-2 text-sm">
         <ArrowLeft className="w-4 h-4" />
-        {nav ? "กลับไปยังผลลัพธ์" : `รายการ${LIST_LABELS[kind]}ทั้งหมด`}
+        {nav ? "กลับไปที่ผลการค้นหา" : `รายการ${LIST_LABELS[kind]}ทั้งหมด`}
       </Link>
       {nav && nav.total > 1 && (
         <div className="flex items-center gap-1">

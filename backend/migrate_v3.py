@@ -1,5 +1,5 @@
 
-"""Idempotent V3 (V3-1 to V3-5) migration for SQLite and PostgreSQL.
+"""Idempotent V3 (V3-1 to V3-7) migration for SQLite and PostgreSQL.
 
 Run with the application stopped and after taking a database backup.
 Preserves existing rows and supports repeated migration runs.
@@ -17,6 +17,13 @@ import migrate_v2
 
 
 V3_TABLES = ("users", "revoked_tokens", "audit_logs")
+
+# V3-7: feedback replies. Feedback rows predate V3, so the table may be missing.
+V37_FEEDBACK_COLUMNS = {
+    "reply": "VARCHAR",
+    "replied_at": "TIMESTAMP WITH TIME ZONE",
+    "replied_by_user_id": "INTEGER REFERENCES users (id) ON DELETE SET NULL",
+}
 
 V34_COLUMNS = {
     "activities": {
@@ -159,6 +166,13 @@ def migrate(engine):
 
         # Existing exchange tables may lack this model-defined constraint.
         _ensure_exchange_user_foreign_key(connection)
+
+        # V3-7: add the reply columns, keeping every existing feedback row.
+        Base.metadata.tables["feedbacks"].create(connection, checkfirst=True)
+        existing = {column["name"] for column in inspect(connection).get_columns("feedbacks")}
+        for column, definition in V37_FEEDBACK_COLUMNS.items():
+            if column not in existing:
+                connection.exec_driver_sql(f"ALTER TABLE feedbacks ADD COLUMN {column} {definition}")
 
 
 def main():

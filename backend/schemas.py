@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, EmailStr
-from typing import Optional, List, Literal
+from typing import Annotated, Optional, List, Literal
 from datetime import date, datetime, timezone
 
 # Alias for annotations: pydantic 2.5.3 mis-resolves a field literally named
@@ -34,10 +34,13 @@ class PartnerBase(BaseModel):
         return stripped
 
 class PartnerCreate(PartnerBase):
+    source_url: Optional[str] = Field(default=None, pattern=r"^https://\S+$", max_length=2000)
     is_published: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
 
 
 class PartnerUpdate(BaseModel):
+    # Staff/admin only: a checked https source, needed before a partner can appear publicly.
+    source_url: Optional[str] = Field(default=None, pattern=r"^https://\S+$", max_length=2000)
     name: Optional[str] = None
     description: Optional[str] = None
     logo_url: Optional[str] = Field(default=None, validation_alias=AliasChoices('logo_url', 'logoUrl'), serialization_alias='logoUrl')
@@ -130,6 +133,7 @@ class ActivityBase(BaseModel):
 class ActivityCreate(ActivityBase):
     is_published: bool = False
     partner_id: Optional[int] = None
+    scope_level: Optional[ScopeLevel] = None
 
 
 class ActivityUpdate(BaseModel):
@@ -171,6 +175,13 @@ class ActivityResponse(BaseModel):
     mouDocId: Optional[int] = Field(default=None, validation_alias=AliasChoices('mou_document_id', 'mouDocId'), serialization_alias='mouDocId')
     scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
     sources: List[SourceResponse] = Field(default_factory=list)
+
+class ActivityManageResponse(ActivityResponse):
+    """Internal view for coordinator/staff/admin: adds publication and owner fields."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
+    partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
+
 
 class DocumentBase(BaseModel):
     name: str
@@ -272,9 +283,14 @@ class DocumentTransition(BaseModel):
     status: AgreementStatus
 
 
+HttpsUrl = Annotated[str, Field(pattern=r"^https://\S+$", max_length=2000)]
+
+
 class DocumentCstuReview(BaseModel):
     cstu_status: CstuStatus
     cstu_evidence: Optional[str] = None
+    # Staff-checked source; required to keep a document that has no verified source yet.
+    source_url: Optional[HttpsUrl] = None
 
 
 class DocumentManageResponse(DocumentResponse):
@@ -324,6 +340,26 @@ class FeedbackResponse(BaseModel):
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
 
 
+FeedbackStatus = Literal["รอตรวจสอบ", "ตรวจสอบแล้ว"]
+
+
+class FeedbackManageResponse(FeedbackResponse):
+    """Signed-in view (/feedback/manage and writes): adds publication and the reply."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    reply: Optional[str] = None
+    repliedAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('replied_at', 'repliedAt'), serialization_alias='repliedAt')
+    repliedByUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('replied_by_user_id', 'repliedByUserId'), serialization_alias='repliedByUserId')
+
+
+class FeedbackUpdate(BaseModel):
+    """PATCH /feedback/{id}: record a reply and/or status; publishing is staff/admin only."""
+    model_config = ConfigDict(extra="forbid")
+
+    reply: Optional[str] = Field(default=None, max_length=2000)
+    status: Optional[FeedbackStatus] = None
+    is_published: Optional[bool] = None
+
+
 class ExchangeStudentCreate(BaseModel):
     name: str
     type: Optional[str] = None          # outbound | inbound
@@ -368,25 +404,11 @@ class ExchangeStudentResponse(BaseModel):
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
 
 
-class AdminProfileBase(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    position: Optional[str] = None
-    department: Optional[str] = None
-
-
-class AdminProfileResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    firstName: Optional[str] = Field(default=None, validation_alias=AliasChoices('first_name', 'firstName'), serialization_alias='firstName')
-    lastName: Optional[str] = Field(default=None, validation_alias=AliasChoices('last_name', 'lastName'), serialization_alias='lastName')
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    position: Optional[str] = None
-    department: Optional[str] = None
+class ExchangeStudentManageResponse(ExchangeStudentResponse):
+    """Signed-in view (/exchange/mine and writes): adds publication, owner and student account."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
+    userId: Optional[int] = Field(default=None, validation_alias=AliasChoices('user_id', 'userId'), serialization_alias='userId')
 
 
 # Resolve forward references (scopeItems declared before their models)
@@ -403,6 +425,12 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=256)
+    # Cognito enforces the full policy (8+ chars, upper, lower, number); this is a first check.
+    new_password: str = Field(min_length=8, max_length=256)
+
+
 class LoginResponse(BaseModel):
     """OAuth-style bearer token; send it as ``Authorization: Bearer <access_token>``."""
     access_token: str
@@ -417,6 +445,18 @@ class CurrentUserResponse(BaseModel):
     id: int
     email: str
     role: str
+
+
+class UserResponse(BaseModel):
+    """Account row for the admin user list (GET /users/)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    role: str
+    isActive: bool = Field(validation_alias=AliasChoices('is_active', 'isActive'), serialization_alias='isActive')
+    createdAt: datetime = Field(validation_alias=AliasChoices('created_at', 'createdAt'), serialization_alias='createdAt')
+    lastLoginAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('last_login_at', 'lastLoginAt'), serialization_alias='lastLoginAt')
 
 
 class AuditLogResponse(BaseModel):

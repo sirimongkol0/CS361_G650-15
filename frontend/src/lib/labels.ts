@@ -24,6 +24,15 @@ export const partnerTypeLabels: Record<string, string> = {
   international_organization: "องค์การระหว่างประเทศ",
 };
 
+/* Feedback channel (API field source). */
+export const feedbackSourceLabels: Record<string, string> = {
+  participant: "ผู้เข้าร่วมกิจกรรม",
+  alumni: "ศิษย์เก่า",
+  partner: "หน่วยงานคู่ความร่วมมือ",
+  student: "นักศึกษา",
+  coop_system: "ระบบสหกิจศึกษา",
+};
+
 export const label = (map: Record<string, string>, value: string | null | undefined) =>
   value ? map[value] ?? value : "—";
 
@@ -86,10 +95,25 @@ export function formatFileSize(bytes: number): string {
 }
 
 export const documentStatusLabels: Record<string, string> = {
-  active: "ใช้งาน",
+  active: "มีผล",
   expiring: "ใกล้หมดอายุ",
   expired: "หมดอายุ",
-  draft: "อยู่ระหว่างจัดทำ",
+  draft: "ฉบับร่าง",
+  approved: "อนุมัติแล้ว",
+  cancelled: "ยกเลิกแล้ว",
+};
+
+/* V3-3 CSTU relevance review; only "keep" can appear publicly. */
+export const cstuStatusLabels: Record<string, string> = {
+  keep: "เกี่ยวข้องกับ CSTU",
+  review: "รอตรวจ",
+  out_of_scope: "ไม่เกี่ยวข้องกับ CSTU",
+};
+
+export const cstuStatusColors: Record<string, string> = {
+  keep: "badge-green",
+  review: "badge-gold",
+  out_of_scope: "badge-gray",
 };
 
 // The shared demo banner carries this notice; downloadable PDFs keep theirs.

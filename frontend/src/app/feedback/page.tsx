@@ -1,21 +1,24 @@
 "use client";
 
-import { useState } from "react";
+// Feedback list. Everyone sees published entries (GET /feedback/); coordinators,
+// staff and admin see every entry with its reply (GET /feedback/manage) and can
+// record a reply and status (PATCH /feedback/{id}). Only staff/admin publish.
+
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import {
-  Search,
-  ChevronRight,
-  Star,
-  X,
-  MessageSquare,
-  Send,
-  CheckCircle2,
-} from "lucide-react";
-import { loadFeedbackEntries, useApiData, type FeedbackEntry } from "@/lib/api";
+import { Search, ChevronRight, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
+import { apiPatch, formatThaiDateTime, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
+import { averageRating } from "@/lib/dashboard-data";
+import { canManage, useRole } from "@/lib/role-context";
+import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
+import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
+import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
+
+const FEEDBACK_STATUSES = ["รอตรวจสอบ", "ตรวจสอบแล้ว"] as const;
 
 function StarRow({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5">
+    <div className="flex gap-0.5" aria-label={rating ? `${rating} จาก 5 ดาว` : "ไม่มีคะแนน"}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
@@ -31,36 +34,121 @@ function StarRow({ rating }: { rating: number }) {
 const sourceColors: Record<string, string> = {
   "ผู้เข้าร่วมกิจกรรม": "badge-blue",
   "ศิษย์เก่า": "badge-purple",
-  "คู่ความร่วมมือ": "badge-crimson",
+  "หน่วยงานคู่ความร่วมมือ": "badge-crimson",
   "ระบบสหกิจศึกษา": "badge-gold",
   "นักศึกษา": "badge-green",
 };
 
 const statusColors: Record<string, string> = {
   "ตรวจสอบแล้ว": "badge-green",
-  "รอดำเนินการ": "badge-gold",
-  "รับทราบ": "badge-blue",
+  "รอตรวจสอบ": "badge-gold",
 };
 
+/** Reply, status and publication controls for one entry (managers only). */
+function ReplyForm({ entry, canPublish, onSaved }: {
+  entry: FeedbackEntry; canPublish: boolean; onSaved: (message: string) => void;
+}) {
+  const [reply, setReply] = useState(entry.reply ?? "");
+  const [status, setStatus] = useState<string>(
+    (FEEDBACK_STATUSES as readonly string[]).includes(entry.status) ? entry.status : "รอตรวจสอบ"
+  );
+  const action = useAction();
+
+  const save = async (e: FormEvent) => {
+    e.preventDefault();
+    if (await action.run(() => apiPatch(`/feedback/${entry.id}`, { reply, status }))) onSaved("บันทึกคำตอบแล้ว");
+  };
+  const setPublished = async (published: boolean) => {
+    if (await action.run(() => apiPatch(`/feedback/${entry.id}`, { is_published: published }))) {
+      onSaved(published ? "เผยแพร่ความคิดเห็นแล้ว" : "หยุดเผยแพร่ความคิดเห็นแล้ว");
+    }
+  };
+
+  return (
+    <form onSubmit={save}>
+      <FormError error={action.error} />
+      {entry.repliedAt && (
+        <p className="mb-2 text-xs text-faint">บันทึกคำตอบล่าสุดเมื่อ {formatThaiDateTime(entry.repliedAt)}</p>
+      )}
+      <Field label="คำตอบหรือสิ่งที่ดำเนินการ">
+        <textarea
+          className={`${inputCls} resize-none`}
+          rows={3}
+          maxLength={2000}
+          placeholder="พิมพ์คำตอบหรือสิ่งที่ดำเนินการแล้ว"
+          value={reply}
+          onChange={(e) => setReply(e.target.value)}
+        />
+      </Field>
+      <Field label="สถานะ">
+        <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
+          {FEEDBACK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </Field>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className="btn btn-primary gap-2 flex-1 py-2" disabled={action.busy}>
+          <Save className="w-3.5 h-3.5" />
+          บันทึกคำตอบ
+        </button>
+        {canPublish && (
+          entry.isPublished ? (
+            <button type="button" className="btn btn-outline gap-2 py-2 px-3" disabled={action.busy} onClick={() => setPublished(false)}>
+              <EyeOff className="w-3.5 h-3.5" />
+              หยุดเผยแพร่
+            </button>
+          ) : (
+            <button type="button" className="btn btn-outline gap-2 py-2 px-3" disabled={action.busy} onClick={() => setPublished(true)}>
+              <Eye className="w-3.5 h-3.5" />
+              เผยแพร่
+            </button>
+          )
+        )}
+      </div>
+    </form>
+  );
+}
+
 export default function FeedbackPage() {
+  useDocumentTitle("ความคิดเห็น");
+  const { role, status: session } = useRole();
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [replyText, setReplyText] = useState("");
+  const [reload, setReload] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const feedbackEntries = useApiData<FeedbackEntry[]>(loadFeedbackEntries, []);
+  const isManager = session === "authenticated" && canManage(role);
+  const canPublish = isManager && (role === "staff" || role === "admin");
+  const resource = useApiResource<FeedbackEntry[]>(
+    () => (session === "loading" ? new Promise<never>(() => {}) : loadFeedbackStrict(role)),
+    [session, role, reload]
+  );
+  // Keep the last list on screen while reloading after a change.
+  const [entries, setEntries] = useState<FeedbackEntry[] | null>(null);
+  useEffect(() => {
+    if (resource.status === "success") setEntries(resource.data);
+  }, [resource.status, resource.data]);
 
-  const filtered = feedbackEntries.filter((f: FeedbackEntry) => {
-    const matchSearch = f.title.toLowerCase().includes(search.toLowerCase());
-    const matchSource = sourceFilter === "all" || f.source === sourceFilter;
-    const matchRating =
-      ratingFilter === "all" || f.rating === parseInt(ratingFilter);
-    return matchSearch && matchSource && matchRating;
-  });
+  if (entries === null) {
+    if (resource.status === "error") return <div className="p-6"><ErrorState error={resource.error} onRetry={resource.retry} /></div>;
+    return <div className="p-6"><LoadingState title="กำลังโหลดความคิดเห็น…" /></div>;
+  }
 
-  // Until the user picks an entry, show the first loaded one.
-  const selected = feedbackEntries.find((f: FeedbackEntry) => f.id === (selectedId ?? feedbackEntries[0]?.id));
+  const sources = Array.from(new Set(entries.map((f) => f.source).filter((s) => s !== "—"))).sort();
+  const filtered = entries.filter((f) =>
+    matchesQuery(search, f.title, f.comment, f.org, f.activity)
+    && (sourceFilter === "all" || f.source === sourceFilter)
+    && (ratingFilter === "all" || f.rating === parseInt(ratingFilter)));
+
+  // Until the user picks an entry, show the first one in the list.
+  const selected = entries.find((f) => f.id === (selectedId ?? filtered[0]?.id));
+  const avg = averageRating(entries);
+
+  const saved = (message: string) => {
+    setNotice(message);
+    setReload((n) => n + 1);
+  };
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -70,42 +158,24 @@ export default function FeedbackPage() {
             หน้าหลัก
           </Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-crimson">Feedback</span>
+          <span className="text-crimson">ความคิดเห็น</span>
         </nav>
-        <h1 className="text-2xl font-bold text-ink font-display">Feedback</h1>
-        <p className="text-sm mt-0.5 text-faint">จัดการ Feedback จากทุกแหล่ง</p>
+        <h1 className="text-2xl font-bold text-ink font-display">ความคิดเห็น</h1>
+        <p className="text-sm mt-0.5 text-faint">
+          {isManager ? "ความคิดเห็นจากทุกช่องทาง ทั้งที่เผยแพร่และยังไม่เผยแพร่" : "ความคิดเห็นที่เผยแพร่แล้ว"}
+        </p>
       </div>
+
+      <Notice text={notice} />
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
         {[
-          { label: "ทั้งหมด", value: feedbackEntries.length, color: "text-crimson" },
-          {
-            label: "คะแนนเฉลี่ย",
-            value:
-              (
-                feedbackEntries.reduce(
-                  (sum: number, f: FeedbackEntry) => sum + f.rating,
-                  0
-                ) / (feedbackEntries.length || 1)
-              ).toFixed(1) + "★",
-            color: "text-gold-dark",
-          },
-          {
-            label: "ตรวจสอบแล้ว",
-            value: feedbackEntries.filter((f: FeedbackEntry) => f.status === "ตรวจสอบแล้ว").length,
-            color: "text-green-600",
-          },
-          {
-            label: "รอดำเนินการ",
-            value: feedbackEntries.filter((f: FeedbackEntry) => f.status === "รอดำเนินการ").length,
-            color: "text-gold-dark",
-          },
-          {
-            label: "แหล่ง Feedback",
-            value: new Set(feedbackEntries.map((f: FeedbackEntry) => f.source)).size,
-            color: "text-purple-600",
-          },
+          { label: "ทั้งหมด", value: entries.length, color: "text-crimson" },
+          { label: "คะแนนเฉลี่ย", value: avg == null ? "—" : `${avg.toFixed(1)}★`, color: "text-gold-dark" },
+          { label: "ตรวจสอบแล้ว", value: entries.filter((f) => f.status === "ตรวจสอบแล้ว").length, color: "text-green-600" },
+          { label: "รอตรวจสอบ", value: entries.filter((f) => f.status === "รอตรวจสอบ").length, color: "text-gold-dark" },
+          { label: "ช่องทาง", value: sources.length, color: "text-purple-600" },
         ].map((s) => (
           <div key={s.label} className="rounded-lg bg-white shadow-card p-4">
             <div className={`text-xl font-bold mb-0.5 ${s.color} font-display`}>
@@ -116,6 +186,9 @@ export default function FeedbackPage() {
         ))}
       </div>
 
+      {entries.length === 0 ? (
+        <EmptyState title="ยังไม่มีความคิดเห็น" message={isManager ? "ความคิดเห็นที่ได้รับจะแสดงที่นี่" : undefined} />
+      ) : (
       <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
         {/* List */}
         <div>
@@ -125,7 +198,8 @@ export default function FeedbackPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
                 <input
                   className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
-                  placeholder="ค้นหา Feedback..."
+                  placeholder="ค้นหาความคิดเห็น"
+                  aria-label="ค้นหาความคิดเห็น"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -135,9 +209,10 @@ export default function FeedbackPage() {
                 style={{ width: "auto", minWidth: 180 }}
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
+                aria-label="ช่องทาง"
               >
-                <option value="all">แหล่ง: ทั้งหมด</option>
-                {Object.keys(sourceColors).map((s) => (
+                <option value="all">ช่องทาง: ทั้งหมด</option>
+                {sources.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
@@ -148,6 +223,7 @@ export default function FeedbackPage() {
                 style={{ width: "auto", minWidth: 140 }}
                 value={ratingFilter}
                 onChange={(e) => setRatingFilter(e.target.value)}
+                aria-label="คะแนน"
               >
                 <option value="all">คะแนน: ทั้งหมด</option>
                 {[5, 4, 3, 2, 1].map((r) => (
@@ -160,13 +236,17 @@ export default function FeedbackPage() {
           </div>
 
           <div className="space-y-3">
-            {filtered.map((f: FeedbackEntry) => (
-              <div
+            {filtered.length === 0 && (
+              <p className="rounded-lg bg-white shadow-card p-6 text-center text-sm text-faint">ไม่พบความคิดเห็นที่ตรงกับตัวกรอง</p>
+            )}
+            {filtered.map((f) => (
+              <button
+                type="button"
                 key={f.id}
-                className="rounded-lg bg-white shadow-card p-4 cursor-pointer transition-all hover:shadow-card-hover"
+                className="block w-full text-left rounded-lg bg-white shadow-card p-4 cursor-pointer transition-all hover:shadow-card-hover border"
                 style={{
-                  borderColor: selectedId === f.id ? "#8B1538" : "#E5E7EB",
-                  borderWidth: selectedId === f.id ? 2 : 1,
+                  borderColor: selected?.id === f.id ? "#8B1538" : "#E5E7EB",
+                  borderWidth: selected?.id === f.id ? 2 : 1,
                 }}
                 onClick={() => setSelectedId(f.id)}
               >
@@ -174,20 +254,18 @@ export default function FeedbackPage() {
                   <p className="text-sm font-semibold leading-snug flex-1 text-ink">
                     {f.title}
                   </p>
-                  <span
-                    className={`badge ${statusColors[f.status] ?? "badge-gray"} flex-shrink-0`}
-                  >
-                    {f.status}
-                  </span>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    {isManager && !f.isPublished && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
+                    <span className={`badge ${statusColors[f.status] ?? "badge-gray"}`}>{f.status}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span
-                    className={`badge ${sourceColors[f.source] ?? "badge-gray"} text-xs`}
-                  >
-                    {f.source}
-                  </span>
+                  {f.source !== "—" && (
+                    <span className={`badge ${sourceColors[f.source] ?? "badge-gray"} text-xs`}>{f.source}</span>
+                  )}
                   <StarRow rating={f.rating} />
                   <span className="text-xs text-faint">{f.date}</span>
+                  {isManager && f.reply && <span className="text-xs text-green-700">มีคำตอบแล้ว</span>}
                 </div>
                 {f.org !== "—" && (
                   <div className="text-xs mt-1.5 text-faint">
@@ -195,7 +273,7 @@ export default function FeedbackPage() {
                     {f.activity !== "—" && <> • 📅 {f.activity}</>}
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -209,13 +287,17 @@ export default function FeedbackPage() {
                   <h2 className="font-bold text-base mb-1 text-ink">
                     {selected.title}
                   </h2>
-                  <span
-                    className={`badge ${statusColors[selected.status] ?? "badge-gray"}`}
-                  >
-                    {selected.status}
-                  </span>
+                  <div className="flex gap-1.5">
+                    <span className={`badge ${statusColors[selected.status] ?? "badge-gray"}`}>{selected.status}</span>
+                    {isManager && (
+                      selected.isPublished
+                        ? <span className="badge badge-green">เผยแพร่แล้ว</span>
+                        : <span className="badge badge-gray">ยังไม่เผยแพร่</span>
+                    )}
+                  </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedId(null)}
                   className="btn btn-outline p-1"
                   aria-label="ปิด"
@@ -232,7 +314,7 @@ export default function FeedbackPage() {
                   <div className="flex items-center gap-2">
                     <StarRow rating={selected.rating} />
                     <span className="font-bold text-lg text-ink">
-                      {selected.rating} / 5
+                      {selected.rating ? `${selected.rating} / 5` : "—"}
                     </span>
                   </div>
                   <div className="text-xs text-faint">{selected.date}</div>
@@ -241,7 +323,7 @@ export default function FeedbackPage() {
 
               <div className="space-y-3 mb-5">
                 {[
-                  { label: "แหล่ง", value: selected.source },
+                  { label: "ช่องทาง", value: selected.source },
                   { label: "หน่วยงาน", value: selected.org },
                   { label: "กิจกรรม", value: selected.activity },
                 ]
@@ -267,43 +349,18 @@ export default function FeedbackPage() {
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed text-mute">
-                  {selected.comment}
+                  {selected.comment || "—"}
                 </p>
               </div>
 
-              {/* Reply */}
-              <div>
-                <div className="text-sm font-semibold mb-2 text-ink">
-                  ตอบกลับ / บันทึกการดำเนินการ
-                </div>
-                <textarea
-                  className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink resize-none focus:outline-none focus:ring-1 focus:ring-crimson"
-                  rows={3}
-                  placeholder="พิมพ์คำตอบหรือการดำเนินการ..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                />
-                <div className="flex gap-2 mt-2">
-                  <button
-                    className="btn btn-primary gap-2 flex-1 py-2"
-                    onClick={() => setReplyText("")}
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    ส่งคำตอบ
-                  </button>
-                  <button
-                    className="btn btn-outline gap-2 py-2 px-3"
-                    onClick={() => setSelectedId(null)}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    ปิด
-                  </button>
-                </div>
-              </div>
+              {isManager && (
+                <ReplyForm key={`${selected.id}-${selected.repliedAt}-${selected.status}-${selected.isPublished}`} entry={selected} canPublish={canPublish} onSaved={saved} />
+              )}
             </div>
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

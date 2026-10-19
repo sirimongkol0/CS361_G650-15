@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /*
- * Prototype pages that are not finished yet redirect to the public dashboard.
- * /login, the role dashboards and /exchange are live (V3); pages check the
- * signed-in role themselves, and the backend re-checks every request.
+ * Pages that belong to V4 (stakeholder insight: feedback and reports, FR6/FR9)
+ * are built but not part of the V3 release, so they redirect to the public
+ * dashboard. Remove a path here to release it; the backend still checks roles.
  */
 export function proxy(request: NextRequest) {
   return NextResponse.redirect(new URL('/dashboard/public', request.url));
@@ -13,7 +13,5 @@ export const config = {
   matcher: [
     '/feedback/:path*',
     '/reports/:path*',
-    '/users/:path*',
-    '/settings/:path*',
   ],
 };

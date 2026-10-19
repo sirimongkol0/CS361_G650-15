@@ -65,7 +65,7 @@ const output = path.resolve('.tmp-fictional-demo');
     await page.getByRole('heading', { name: agreement.name, exact: true }).waitFor();
     await page.getByRole('link', { name: event.name, exact: true }).waitFor();
     const downloadWait = page.waitForEvent('download');
-    await page.getByRole('button', { name: `ดาวน์โหลดเอกสาร ${agreement.id}`, exact: true }).click();
+    await page.getByRole('button', { name: `ดาวน์โหลดไฟล์ข้อตกลง ${agreement.id}`, exact: true }).click();
     const download = await downloadWait;
     assert.equal(download.suggestedFilename(), agreement.fileName);
     assert.deepEqual(await fs.readFile(await download.path()), fixture);
@@ -74,16 +74,16 @@ const output = path.resolve('.tmp-fictional-demo');
     for (const row of documents.filter(row => row.fileAvailability !== 'available')) {
       await page.goto(`${base}/documents/${row.id}`);
       await page.getByRole('heading', { name: row.name, exact: true }).waitFor();
-      assert.equal(await page.getByRole('button', { name: `ดาวน์โหลดเอกสาร ${row.id}`, exact: true }).count(), 0);
+      assert.equal(await page.getByRole('button', { name: `ดาวน์โหลดไฟล์ข้อตกลง ${row.id}`, exact: true }).count(), 0);
     }
     await page.goto(`${base}/documents`);
     await page.getByRole('link', { name: agreement.name, exact: true }).waitFor();
-    await page.getByLabel('สถานะเอกสาร').selectOption('expired');
+    await page.getByLabel('สถานะข้อตกลง').selectOption('expired');
     await page.getByRole('link', { name: /Dashboard สะพานข้อมูล/ }).waitFor();
     assert.equal(await page.locator('tbody tr').count(), 11);
     await page.getByRole('button', { name: 'ล้างตัวกรอง', exact: true }).click();
-    await page.getByPlaceholder('ค้นหาชื่อข้อตกลง, หน่วยงาน...').fill('NO_SUCH_DEMO_RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'NO_SUCH_DEMO_RECORD');
-    await page.getByText('ไม่พบเอกสารที่ค้นหา', { exact: true }).waitFor();
+    await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill('NO_SUCH_DEMO_RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'NO_SUCH_DEMO_RECORD');
+    await page.getByText('ไม่พบข้อตกลงที่ค้นหา', { exact: true }).waitFor();
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${base}/dashboard/public`);

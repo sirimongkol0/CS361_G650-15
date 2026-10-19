@@ -20,10 +20,10 @@ export default function DocumentDetailPage() {
   const id = Number(params?.id);
   const documents = useApiResource(() => Number.isInteger(id) && id > 0
     ? loadDocument(id) : Promise.reject(new ApiError("Invalid document id", 404)), [id]);
-  useDocumentTitle(documents.status === "success" ? documents.data.title : "เอกสารข้อตกลง");
+  useDocumentTitle(documents.status === "success" ? documents.data.title : "ข้อตกลง");
 
   if (documents.status === "loading") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดรายละเอียดเอกสาร" /></div>;
+    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดข้อตกลง…" /></div>;
   }
   if (documents.status === "error") {
     return <div className="p-6 max-w-screen-xl mx-auto"><ErrorState error={documents.error} onRetry={documents.retry} /></div>;
@@ -36,7 +36,7 @@ return (
       <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint">
         <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
         <ChevronRight className="w-3 h-3" />
-        <Link href="/documents" className="hover:text-crimson">เอกสารข้อตกลง</Link>
+        <Link href="/documents" className="hover:text-crimson">ข้อตกลง</Link>
         <ChevronRight className="w-3 h-3" />
         <span className="text-crimson">{doc.title}</span>
       </nav>
@@ -64,7 +64,7 @@ return (
             <section className="bg-white rounded-base shadow-card p-5">
               <h2 className="font-bold mb-4 text-ink">ข้อมูลข้อตกลง</h2>
               <dl className="grid grid-cols-2 gap-x-8 gap-y-3">
-                {doc.start && <div><dt className="text-xs font-semibold text-faint">วันที่มีผล</dt><dd className="text-sm font-medium text-ink">{doc.start}{(() => { const days = daysFromToday(doc.effectiveDate); return days !== null && days > 0 ? <span className="ml-1 text-xs text-faint">({relativeDays(days, "อีก", "")})</span> : null; })()}</dd></div>}
+                {doc.start && <div><dt className="text-xs font-semibold text-faint">วันที่เริ่มมีผล</dt><dd className="text-sm font-medium text-ink">{doc.start}{(() => { const days = daysFromToday(doc.effectiveDate); return days !== null && days > 0 ? <span className="ml-1 text-xs text-faint">({relativeDays(days, "อีก", "")})</span> : null; })()}</dd></div>}
                 {doc.expire && <div><dt className="text-xs font-semibold text-faint">วันหมดอายุ</dt><dd className="text-sm font-medium text-ink">{doc.expire}{(() => { const days = daysFromToday(doc.expiryDate); return days !== null ? <span className="ml-1 text-xs text-faint">({relativeDays(days, "เหลืออีก", "สิ้นสุดเมื่อ")})</span> : null; })()}</dd></div>}
                 {doc.responsible && <div><dt className="text-xs font-semibold text-faint">ผู้รับผิดชอบ</dt><dd className="text-sm font-medium text-ink">{doc.responsible}</dd></div>}
                 {doc.signerOur && <div><dt className="text-xs font-semibold text-faint">ผู้ลงนาม (ฝ่ายเรา)</dt><dd className="text-sm font-medium text-ink">{doc.signerOur}</dd></div>}
@@ -89,7 +89,7 @@ return (
 
         <aside className="space-y-5">
           <section className="bg-white rounded-base shadow-card p-5">
-            <h2 className="font-bold mb-3 text-ink">ไฟล์เอกสาร</h2>
+            <h2 className="font-bold mb-3 text-ink">ไฟล์ข้อตกลง</h2>
             <p className="text-sm text-faint mb-3">{doc.fileAvailabilityLabel}</p>
             {doc.fileName && <p className="text-sm text-mute break-words mb-2">{doc.fileName}</p>}
             {(doc.mimeType || doc.sizeBytes !== null) && <p className="text-xs text-faint mb-3">

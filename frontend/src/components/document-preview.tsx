@@ -21,7 +21,7 @@ export function DocumentPreview({ id }: { id: number }) {
         created = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }));
         if (alive) setUrl(created);
       })
-      .catch(() => alive && setError("ไม่สามารถแสดงตัวอย่างเอกสารได้"));
+      .catch(() => alive && setError("แสดงตัวอย่างไฟล์ไม่ได้"));
     return () => {
       alive = false;
     };
@@ -32,7 +32,7 @@ export function DocumentPreview({ id }: { id: number }) {
   return (
     <section className="bg-white rounded-base shadow-card p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-bold text-ink">ตัวอย่างเอกสาร</h2>
+        <h2 className="font-bold text-ink">ตัวอย่างไฟล์</h2>
         <button type="button" className="btn btn-outline gap-2 text-sm" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
           {open ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           {open ? "ซ่อนตัวอย่าง" : "แสดงตัวอย่าง"}
@@ -41,7 +41,7 @@ export function DocumentPreview({ id }: { id: number }) {
       {open && (
         <div className="mt-4">
           {error ? <p role="alert" className="text-sm text-crimson">{error}</p>
-            : url ? <iframe src={url} title="ตัวอย่างเอกสาร PDF" className="h-[70vh] w-full rounded-lg border border-line" />
+            : url ? <iframe src={url} title="ตัวอย่างไฟล์ข้อตกลง" className="h-[70vh] w-full rounded-lg border border-line" />
             : <div className="h-[70vh] w-full animate-pulse rounded-lg bg-soft" role="status" aria-label="กำลังโหลดตัวอย่าง" />}
         </div>
       )}

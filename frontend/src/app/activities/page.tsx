@@ -18,6 +18,7 @@ import {
   CopyLinkButton, DatePresets, ExportCsvButton, FilterChips, Highlight, PlainHeader, Pagination, SortHeader, TableSkeleton,
   useRowLink, yearPresets, type FilterChip,
 } from "@/components/list-ui";
+import { DateInput } from "@/components/form-ui";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
@@ -128,7 +129,7 @@ export default function ActivitiesPage() {
 
   const exportCsv = () => downloadCsv(
     "cstu-activities.csv",
-    ["ID", "ชื่อกิจกรรม", "หน่วยงาน", "ประเภท", "ระดับ", "วันที่", "วันที่ (ISO)", "ผู้เข้าร่วม", "สถานะ"],
+    ["ID", "ชื่อกิจกรรม", "หน่วยงาน", "ประเภท", "ระดับ", "วันที่", "วันที่ (ปี-เดือน-วัน)", "ผู้เข้าร่วม", "สถานะ"],
     filtered.map((item) => [
       item.id, item.name, item.org, label(activityTypeLabels, item.type),
       item.scopeLevel ? scopeLevelLabels[item.scopeLevel] : "", item.date, item.startDate,
@@ -147,11 +148,11 @@ export default function ActivitiesPage() {
           </nav>
           <h1 className="text-2xl font-bold text-ink font-display">กิจกรรม</h1>
           <p className="text-sm mt-0.5 text-faint">
-            {role === "public" ? "กิจกรรมความร่วมมือที่ได้รับอนุญาตให้เผยแพร่" : "กิจกรรมและโครงการความร่วมมือ"}
+            {role === "public" ? "กิจกรรมความร่วมมือของหลักสูตร" : "กิจกรรมและโครงการความร่วมมือ"}
           </p>
         </div>
         {canManage(role) && (
-          <button className="btn btn-primary gap-2" type="button"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</button>
+          <Link href="/activities/manage" className="btn btn-primary gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</Link>
         )}
       </div>
 
@@ -163,7 +164,7 @@ export default function ActivitiesPage() {
         <>
           <div className="bg-white rounded-base shadow-card p-4 mb-5">
             <div className="flex flex-wrap gap-3">
-              <SearchInput className={inputCls} placeholder="ค้นหากิจกรรมหรือหน่วยงาน..." value={search} onChange={setSearch} />
+              <SearchInput className={inputCls} placeholder="ค้นหาชื่อกิจกรรมหรือหน่วยงาน" value={search} onChange={setSearch} />
               <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเภทกิจกรรม" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
                 <option value="all">ประเภท: ทั้งหมด</option>
                 {types.map((type) => <option key={type} value={type}>{label(activityTypeLabels, type)}</option>)}
@@ -182,19 +183,17 @@ export default function ActivitiesPage() {
               <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
-              <input
-                type="date"
+              <DateInput wrapperClassName="inline-block"
                 className={`${inputCls} !w-auto`}
-                aria-label="วันที่เริ่มต้น"
+                aria-label="ตั้งแต่วันที่"
                 value={dateFrom}
                 max={dateTo || undefined}
                 onChange={(event) => setDateFrom(event.target.value)}
               />
 
-              <input
-                type="date"
+              <DateInput wrapperClassName="inline-block"
                 className={`${inputCls} !w-auto`}
-                aria-label="วันที่สิ้นสุด"
+                aria-label="ถึงวันที่"
                 value={dateTo}
                 min={dateFrom || undefined}
                 onChange={(event) => setDateTo(event.target.value)}
@@ -262,8 +261,8 @@ export default function ActivitiesPage() {
                       {showParticipants && <td className="px-4 py-4"><span className="flex items-center gap-1.5 text-sm font-semibold text-ink"><Users className="w-3.5 h-3.5 text-faint" />{item.participants > 0 ? item.participants : "–"}</span></td>}
                       <td className="px-4 py-4"><span className={`badge ${item.statusColor}`}>{item.status}</span></td>
                       <td className="px-4 py-4"><div className="flex gap-1">
-                        <Link href={`/activities/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดูข้อมูล</Link>
-                        {canManage(role) && <button className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" type="button" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></button>}
+                        <Link href={`/activities/${item.id}`} className="btn p-1.5 text-xs text-faint hover:bg-soft hover:text-ink">ดู</Link>
+                        {canManage(role) && <Link href={`/activities/manage?edit=${item.id}`} className="btn p-1.5 text-faint hover:bg-soft hover:text-ink" aria-label={`จัดการ ${item.name}`}><MoreHorizontal className="w-4 h-4" /></Link>}
                       </div></td>
                     </tr>
                     );

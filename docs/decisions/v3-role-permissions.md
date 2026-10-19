@@ -1,6 +1,6 @@
 # สิทธิ์ตามบทบาทของ V3
 
-สถานะ: **ร่าง รอทีมตกลง** (10 ตุลาคม 2026, Asia/Bangkok)
+สถานะ: **ใช้แล้วใน V3** (ร่าง 10 ตุลาคม 2026, ปรับตามที่ deploy 19 ตุลาคม 2026, Asia/Bangkok)
 
 เอกสารนี้กำหนดว่าแต่ละบทบาททำอะไรได้บ้าง เพื่อให้ backend (`require_role(...)`)
 และปุ่มบนหน้าเว็บตรงกันทุก issue ของ V3 อ้างอิงบทบาทจาก
@@ -77,17 +77,17 @@
 4. **ไม่ลบจริง** การลบเป็น soft delete และทุกการเขียนมีบันทึกใน audit log
    (เรียก `audit.record(...)` ใน transaction เดียวกับการเปลี่ยนข้อมูล ดู `backend/audit.py`)
 
-## เรื่องที่ทีมต้องตัดสินใจ
+## ข้อตัดสินใจ
 
-1. **"ที่ตนรับผิดชอบ" ดูจากอะไร** ตอนนี้ไม่มีคอลัมน์ผู้รับผิดชอบที่ผูกกับบัญชีผู้ใช้
-   (`Partner.contact_name` และ `Document.responsible` เป็นข้อความ) เสนอให้เพิ่ม
-   `owner_user_id` อ้างอิงตาราง `users` ในงาน V3-2 ถึง V3-4
-2. **coordinator ควรเผยแพร่เองได้หรือไม่** ร่างนี้ให้เฉพาะ staff/admin
-3. **staff ควรเห็น audit log หรือไม่** ร่างนี้ให้เห็น
-4. **ความคิดเห็น (Feedback)** อยู่ในขอบเขตระบบแต่ยังไม่มี issue ของ V3
-   ใครส่งได้และใครดูได้ต้องกำหนดเมื่อเปิด issue
-5. **การจัดการบัญชีผู้ใช้บนเว็บ** ตอนนี้ทำผ่าน Cognito console / `infra/provision_cognito.py`
-   ถ้าต้องการหน้าจัดการผู้ใช้ ต้องเปิด issue ใหม่
+1. **"ที่ตนรับผิดชอบ" ดูจาก `owner_user_id`** อ้างอิงตาราง `users` เพิ่มใน `partners`, `documents`,
+   `activities` และ `exchange_students` ตั้งเป็นผู้สร้างรายการ นักศึกษาแลกเปลี่ยนใช้ `user_id` ระบุเจ้าของข้อมูล
+2. **coordinator เผยแพร่เองไม่ได้** การตั้งหรือยกเลิก `is_published` ทำได้เฉพาะ staff/admin (backend ตอบ 403)
+3. **staff เห็นประวัติการแก้ไข** (`GET /audit-logs/` ให้ staff และ admin)
+4. **ความคิดเห็นเลื่อนไป V4** ตามขอบเขต FR6/V4 ของโจทย์ API ทำไว้แล้ว: coordinator/staff/admin ดูและตอบได้
+   (`GET /feedback/manage`, `PATCH /feedback/{id}`) เผยแพร่ได้เฉพาะ staff/admin หน้าเว็บ `/feedback` และ `/reports` ซ่อนไว้
+5. **จัดการบัญชีผู้ใช้ผ่าน Cognito** หน้า "ผู้ใช้และสิทธิ์" (admin) แสดงรายชื่อจากตาราง `users` อย่างเดียว
+   เพิ่มบัญชีและเปลี่ยนบทบาทใน Cognito console หรือ `infra/provision_cognito.py`
+   ผู้ใช้ทุกบทบาทเปลี่ยนรหัสผ่านตัวเองได้ที่ `POST /auth/change-password`
 
 ## สถานะปัจจุบันในโค้ด
 
@@ -112,4 +112,5 @@
   หน้าสาธารณะแสดงเฉพาะเอกสารที่ `is_published` และ `cstu_status = keep`
   (`migrate_v3.py` ตั้งเอกสารที่เผยแพร่อยู่แล้วเป็น `keep` ให้ครั้งแรกที่เพิ่มคอลัมน์)
 - frontend: ปุ่มเพิ่ม/แก้ไขแสดงให้ coordinator, staff, admin (`canManage` ใน
-  `frontend/src/lib/role-context.tsx`) ปุ่มยังไม่ทำงานจนกว่า V3-2 ถึง V3-4 เสร็จ
+  `frontend/src/lib/role-context.tsx`) และทำงานจริงทุกหน้า (`/stakeholders/manage`, `/documents/manage`,
+  `/activities/manage`, `/exchange`) ถ้า backend ตอบ 401/403 หน้าเว็บแสดง "กรุณาเข้าสู่ระบบ" / "ไม่มีสิทธิ์เข้าถึง"

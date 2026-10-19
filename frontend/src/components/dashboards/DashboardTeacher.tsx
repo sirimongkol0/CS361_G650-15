@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, MessageSquare, ChevronRight, Star } from "lucide-react";
+import { Building2, FileText, CalendarDays, GraduationCap, ChevronRight } from "lucide-react";
 import { label, partnerTypeLabels } from "@/lib/labels";
 import {
   expiringAgreements, isAgreement, partnersByEngagement, recentActivities, shown, useDashboardData,
@@ -10,16 +10,6 @@ import {
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
 const contentCard = "content-card bg-white rounded-base shadow-card";
-
-function Stars({ n }: { n: number }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className="w-3 h-3" fill={i <= n ? "#F59E0B" : "none"} color={i <= n ? "#F59E0B" : "#E5E7EB"} />
-      ))}
-    </span>
-  );
-}
 
 type Kpi = {
   icon: React.ElementType;
@@ -31,7 +21,7 @@ type Kpi = {
 };
 
 const quickActions = [
-  { label: "ดูนักศึกษา", href: "/exchange", color: "#1D4ED8", bg: "#DBEAFE" },
+  { label: "ดูนักศึกษาแลกเปลี่ยน", href: "/exchange", color: "#1D4ED8", bg: "#DBEAFE" },
 ];
 
 export default function DashboardTeacher() {
@@ -39,7 +29,6 @@ export default function DashboardTeacher() {
   const data = useDashboardData();
   const teacherStakeholders = partnersByEngagement(data).slice(0, 5);
   const teacherActivities = recentActivities(data.activities, 5);
-  const teacherRecentFeedback = data.feedback.slice(0, 3);
 
   const nextExpiring = expiringAgreements(data.documents)[0];
 
@@ -48,7 +37,6 @@ export default function DashboardTeacher() {
     { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, data.documents.filter(isAgreement).length), color: "#B45309", bg: "#FEF3C7", href: "/documents" },
     { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE", href: "/activities" },
     { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: MessageSquare, label: "ความคิดเห็น", value: shown(data.loaded, data.feedback.length), color: "#7C3AED", bg: "#EDE9FE", href: "/feedback" },
   ];
 
   return (
@@ -61,11 +49,11 @@ export default function DashboardTeacher() {
             ภาพรวมความร่วมมือ
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อมูลที่เผยแพร่ทั้งหมด (ยังไม่แยกตามผู้รับผิดชอบ)</p>
+        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อมูลที่เผยแพร่ทั้งหมด</p>
       </div>
 
       {/* KPI */}
-      <div className="grid grid-cols-5 gap-4 mb-6 stagger">
+      <div className="grid grid-cols-4 gap-4 mb-6 stagger">
         {kpis.map((s) => {
           const inner = (
             <>
@@ -84,7 +72,7 @@ export default function DashboardTeacher() {
         })}
       </div>
 
-      {nextExpiring && <div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">{nextExpiring.title} ใกล้หมดอายุใน {nextExpiring.daysLeft} วัน</div>}
+      {nextExpiring && <div className="bg-amber-50 rounded-xl p-4 mb-5 text-sm">{nextExpiring.title} จะหมดอายุในอีก {nextExpiring.daysLeft} วัน</div>}
 
       <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr" }}>
         {/* My stakeholders */}
@@ -142,34 +130,9 @@ export default function DashboardTeacher() {
           </div>
         </div>
 
-        {/* Recent feedback */}
-        <div className={contentCard}>
-          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-bold" style={{ color: "#111827" }}>ความคิดเห็นล่าสุด</h2>
-            <Link href="/feedback" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
-              ดูทั้งหมด <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="p-4 space-y-3">
-            {data.loaded && teacherRecentFeedback.length === 0 && <p className="text-xs text-faint">ยังไม่มีความคิดเห็นที่เผยแพร่</p>}
-            {teacherRecentFeedback.map((f, i) => (
-              <div key={i} className="p-3 rounded-xl bg-paper shadow-lightring">
-                <div className="flex items-start justify-between mb-1.5">
-                  <span className="font-semibold text-sm" style={{ color: "#111827" }}>{f.title}</span>
-                  <Stars n={f.rating} />
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "#9CA3AF" }}>
-                  <span className="badge badge-blue text-xs">{f.source}</span>
-                  <span>{f.date}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Quick actions */}
-        <div className={`${contentCard} p-5`}>
-          <h2 className="font-bold mb-4" style={{ color: "#111827" }}>การดำเนินการด่วน</h2>
+        <div className={`${contentCard} p-5 col-span-2`}>
+          <h2 className="font-bold mb-4" style={{ color: "#111827" }}>ทางลัด</h2>
           <div className="grid grid-cols-2 gap-3">
             {quickActions.map((a) => (
               <Link key={a.label} href={a.href}
