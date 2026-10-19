@@ -106,6 +106,11 @@ API สาธารณะมีเฉพาะการอ่าน (GET) ขอ
 
 ## เอกสาร
 
+**V3 (ระบบสิทธิ์ผู้ใช้และการแก้ไขข้อมูล)**
+
+- [สถาปัตยกรรมระบบ V3](docs/architecture/v3-architecture.md)
+- [สิทธิ์ตามบทบาทของ V3](docs/decisions/v3-role-permissions.md)
+
 **ระบบปัจจุบัน (V2)**
 
 - [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)

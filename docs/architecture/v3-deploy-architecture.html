@@ -40,7 +40,7 @@
     <div class="scroll">
     <svg viewBox="0 0 960 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="v3-deploy-title v3-deploy-desc" font-family="'Helvetica Neue', Arial, 'Noto Sans Thai', sans-serif">
       <title id="v3-deploy-title">สถาปัตยกรรมการ deploy ระบบ V3</title>
-      <desc id="v3-deploy-desc">ผู้ใช้เข้าสู่ระบบกับ Amazon Cognito แล้วเปิดเว็บ Next.js บน AWS Amplify ซึ่งส่งต่อ /api/v1 พร้อม JWT ไปยัง FastAPI บน EC2; FastAPI ตรวจ JWT กับ JWKS ของ Cognito ตรวจสิทธิ์ตามบทบาท อ่านเขียน RDS PostgreSQL พร้อม audit log และอัปโหลด/ดาวน์โหลด PDF บน S3 ผ่าน IAM role</desc>
+      <desc id="v3-deploy-desc">ผู้ใช้เปิดเว็บ Next.js บน AWS Amplify ซึ่งส่งต่อ /api/v1 ไปยัง FastAPI บน EC2; FastAPI ส่งการ sign in ไปตรวจที่ Amazon Cognito และตรวจ token กับ JWKS ของ Cognito ตรวจสิทธิ์ตามบทบาท อ่านเขียน RDS PostgreSQL พร้อม audit log และอัปโหลด/ดาวน์โหลด PDF บน S3 ผ่าน IAM role</desc>
       <defs>
         <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#232f3e"/></marker>
         <marker id="arr-soft" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#545b64"/></marker>
@@ -92,12 +92,10 @@
       <text x="140" y="574" fill="#dd344c" font-size="9" font-weight="700">Security group CS361-app-sg</text>
 
       <!-- ===== Connectors (behind icons) ===== -->
-      <!-- 1 Users -> Cognito (sign in) -->
-      <path d="M506 58 H816 Q824 58 824 66 V194" fill="none" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
-      <!-- 2 Users -> Amplify -->
+      <!-- 1 Users -> Amplify -->
       <line x1="480" y1="68" x2="480" y2="194" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
-      <!-- 4 EC2 -> Cognito JWKS -->
-      <path d="M268 444 H322 Q330 444 330 436 V308 Q330 300 338 300 H752 Q760 300 760 292 V228 H796" fill="none" stroke="#545b64" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
+      <!-- 3 EC2 -> Cognito (sign in + JWKS) -->
+      <path d="M268 444 H322 Q330 444 330 436 V308 Q330 300 338 300 H752 Q760 300 760 292 V228 H796" fill="none" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
       <!-- 5 GitHub -> Amplify (build) -->
       <path d="M200 68 V210 Q200 218 208 218 H454" fill="none" stroke="#545b64" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
       <!-- 2 Amplify -> EC2 -->
@@ -111,11 +109,9 @@
       <rect x="276" y="198" width="120" height="14" fill="#ffffff"/>
       <text x="336" y="209" fill="#545b64" font-size="9" text-anchor="middle">push main → auto-build</text>
       <rect x="292" y="268" width="168" height="14" fill="#f7f8f8"/>
-      <text x="376" y="279" fill="#545b64" font-size="9" text-anchor="middle">rewrite /api/v1 → :8000 + Bearer JWT</text>
-      <rect x="610" y="50" width="120" height="14" fill="#ffffff"/>
-      <text x="670" y="61" fill="#545b64" font-size="9" text-anchor="middle">sign in → ID/access token</text>
-      <rect x="560" y="284" width="136" height="14" fill="#ffffff"/>
-      <text x="628" y="295" fill="#545b64" font-size="9" text-anchor="middle">ตรวจลายเซ็น JWT (JWKS)</text>
+      <text x="376" y="279" fill="#545b64" font-size="9" text-anchor="middle">rewrite /api/v1 → :8000 (+ Bearer token)</text>
+      <rect x="530" y="284" width="196" height="14" fill="#ffffff"/>
+      <text x="628" y="295" fill="#545b64" font-size="9" text-anchor="middle">sign in (InitiateAuth) · ตรวจ JWT (JWKS)</text>
       <rect x="424" y="434" width="104" height="14" fill="#e6f2f8"/>
       <text x="476" y="445" fill="#545b64" font-size="9" text-anchor="middle">SQL · TLS · :5432</text>
       <rect x="560" y="600" width="140" height="14" fill="#e6f2f8"/>
@@ -185,13 +181,12 @@
 
       <!-- ===== Step badges ===== -->
       <g font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">
-        <circle cx="840" cy="130" r="10" fill="#1a73e8"/><text x="840" y="134">1</text>
-        <circle cx="496" cy="130" r="10" fill="#1a73e8"/><text x="496" y="134">2</text>
-        <circle cx="496" cy="266" r="10" fill="#1a73e8"/><text x="496" y="270">3</text>
-        <circle cx="720" cy="300" r="10" fill="#1a73e8"/><text x="720" y="304">4</text>
-        <circle cx="404" cy="472" r="10" fill="#1a73e8"/><text x="404" y="476">5</text>
-        <circle cx="520" cy="640" r="10" fill="#1a73e8"/><text x="520" y="644">6</text>
-        <circle cx="216" cy="172" r="10" fill="#1a73e8"/><text x="216" y="176">7</text>
+        <circle cx="496" cy="130" r="10" fill="#1a73e8"/><text x="496" y="134">1</text>
+        <circle cx="496" cy="266" r="10" fill="#1a73e8"/><text x="496" y="270">2</text>
+        <circle cx="740" cy="300" r="10" fill="#1a73e8"/><text x="740" y="304">3</text>
+        <circle cx="404" cy="472" r="10" fill="#1a73e8"/><text x="404" y="476">4</text>
+        <circle cx="520" cy="640" r="10" fill="#1a73e8"/><text x="520" y="644">5</text>
+        <circle cx="216" cy="172" r="10" fill="#1a73e8"/><text x="216" y="176">6</text>
       </g>
     </svg>
     </div>
@@ -199,13 +194,12 @@
     <table>
       <thead><tr><th>#</th><th>ขั้นตอน</th><th>รายละเอียด</th></tr></thead>
       <tbody>
-        <tr><td><span class="n">1</span></td><td>เข้าสู่ระบบ</td><td>ผู้ใช้ที่มีบัญชี sign in กับ Amazon Cognito ได้ token ที่มีกลุ่มบทบาท (student · coordinator · staff · admin) ผู้ใช้ทั่วไปไม่ต้อง sign in</td></tr>
-        <tr><td><span class="n">2</span></td><td>เปิดเว็บ</td><td>HTTPS ไปยัง Amplify ซึ่งรัน Next.js ทั้งหน้าดูข้อมูลและฟอร์มเพิ่ม/แก้ไข</td></tr>
-        <tr><td><span class="n">3</span></td><td>Proxy API</td><td>Next.js rewrite <code>/api/v1/*</code> ไปยัง FastAPI บน EC2 port 8000 พร้อม <code>Authorization: Bearer &lt;JWT&gt;</code></td></tr>
-        <tr><td><span class="n">4</span></td><td>ตรวจสิทธิ์</td><td><code>auth.py</code> ตรวจลายเซ็น JWT กับ JWKS ของ Cognito แล้ว <code>require_role(...)</code> ตาม<a href="../decisions/v3-role-permissions.md">ตารางสิทธิ์ V3</a> ไม่มี token → 401 บทบาทไม่พอ → 403</td></tr>
-        <tr><td><span class="n">5</span></td><td>อ่าน/เขียนข้อมูล</td><td>FastAPI อ่านเขียน RDS PostgreSQL ผ่าน TLS ทุกการแก้ไขบันทึก <code>audit_logs</code> ใน transaction เดียวกัน ผู้ไม่มีสิทธิ์เห็นเฉพาะข้อมูลที่เผยแพร่</td></tr>
-        <tr><td><span class="n">6</span></td><td>อัปโหลด/ดาวน์โหลดเอกสาร</td><td>backend เขียนและอ่าน PDF บน S3 ด้วย IAM role ของ EC2 ไม่ส่ง credentials ให้ frontend</td></tr>
-        <tr><td><span class="n">7</span></td><td>Build &amp; deploy</td><td>push เข้า <code>main</code> บน GitHub → Amplify build และ deploy frontend อัตโนมัติ</td></tr>
+        <tr><td><span class="n">1</span></td><td>เปิดเว็บ</td><td>HTTPS ไปยัง Amplify ซึ่งรัน Next.js ทั้งหน้าดูข้อมูล หน้า <code>/login</code> และฟอร์มเพิ่ม/แก้ไข</td></tr>
+        <tr><td><span class="n">2</span></td><td>Proxy API</td><td>Next.js rewrite <code>/api/v1/*</code> ไปยัง FastAPI บน EC2 port 8000 หลัง sign in ทุกคำขอแนบ <code>Authorization: Bearer &lt;token&gt;</code></td></tr>
+        <tr><td><span class="n">3</span></td><td>Sign in และตรวจสิทธิ์</td><td><code>POST /auth/login</code> ให้ backend ส่ง email/รหัสผ่านไปตรวจที่ Cognito (เบราว์เซอร์ไม่ได้คุยกับ Cognito ตรง) คำขอถัดไป <code>auth.py</code> ตรวจลายเซ็น token กับ JWKS ของ Cognito แล้ว <code>require_role(...)</code> ตาม<a href="../decisions/v3-role-permissions.md">ตารางสิทธิ์ V3</a> ไม่มี token → 401 บทบาทไม่พอ → 403</td></tr>
+        <tr><td><span class="n">4</span></td><td>อ่าน/เขียนข้อมูล</td><td>FastAPI อ่านเขียน RDS PostgreSQL ผ่าน TLS ทุกการแก้ไขบันทึก <code>audit_logs</code> ใน transaction เดียวกัน ผู้ไม่มีสิทธิ์เห็นเฉพาะข้อมูลที่เผยแพร่</td></tr>
+        <tr><td><span class="n">5</span></td><td>เอกสาร PDF</td><td>backend อัปโหลดและแทนไฟล์ PDF บน S3 ด้วย IAM role ของ EC2 (role ยังไม่มีสิทธิ์ลบ) เอกสารสาธารณะดาวน์โหลดผ่าน backend ส่วนเอกสารภายในได้ presigned URL อายุสั้นไปโหลดจาก S3 ตรง ไม่ส่ง credentials ให้ frontend</td></tr>
+        <tr><td><span class="n">6</span></td><td>Build &amp; deploy</td><td>push เข้า <code>main</code> บน GitHub → Amplify build และ deploy frontend อัตโนมัติ</td></tr>
       </tbody>
     </table>
 
