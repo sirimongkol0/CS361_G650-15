@@ -147,7 +147,7 @@ def expand(db, source, today=date(2026, 10, 2)):
             title=f"ความคิดเห็นสมมติ #{i + 1}: {activity.name}",
             source=rng.choice(FEEDBACK_SOURCES), rating=rating,
             date=activity.date + timedelta(days=rng.randint(1, 10)),
-            status=rng.choice(["ตรวจสอบแล้ว", "ตรวจสอบแล้ว", "รอตรวจสอบ"]),
+            status=rng.choice(["reviewed", "reviewed", "pending"]),
             comment=FEEDBACK_COMMENTS[rating], is_published=rng.random() > 0.2,
             partner=activity.partner, activity=activity,
         ))

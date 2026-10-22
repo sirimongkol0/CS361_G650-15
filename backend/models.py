@@ -234,6 +234,8 @@ class Activity(Base):
     sources = relationship("Source", secondary=activity_sources, back_populates="activities")
 
 
+FEEDBACK_STATUSES = ("pending", "reviewed")
+
 # V4: an Outcome or Feedback refers to at least one partner, agreement, activity or exchange.
 CONTEXT_PRESENT = (
     "partner_id IS NOT NULL OR document_id IS NOT NULL "
@@ -249,6 +251,7 @@ class Feedback(Base):
     id = Column(Integer, primary_key=True, index=True)
     __table_args__ = (
         CheckConstraint("rating IS NULL OR (rating >= 1 AND rating <= 5)", name="ck_feedbacks_rating_range"),
+        CheckConstraint("status IN ('pending', 'reviewed')", name="ck_feedbacks_status"),
         # Rows from before V4 may have no context; they are flagged instead of rejected.
         CheckConstraint(f"is_legacy OR {CONTEXT_PRESENT}", name="ck_feedbacks_context"),
         # Re-importing the same external record from the same source is rejected.
@@ -259,7 +262,8 @@ class Feedback(Base):
     source = Column(String, nullable=True)          # pre-V4 free text; superseded by respondent_type/feedback_source
     rating = Column(Integer, nullable=True)         # 1..5
     date = Column(Date, nullable=True, index=True)
-    status = Column(String, nullable=True)          # Thai status label, e.g. "ตรวจสอบแล้ว"
+    # pending | reviewed (รอตรวจสอบ | ตรวจสอบแล้ว); publication is is_published.
+    status = Column(String, default="pending", server_default="pending", nullable=False)
     comment = Column(String, nullable=True)         # free-text comment
     is_published = Column(Boolean, default=False, nullable=False)
     # --- V4 context: at least one is set (see ck_feedbacks_context) ---

@@ -2,7 +2,8 @@
 
 Adds outcomes, admin-extensible type lists, import batches and the V4
 feedback columns. Runs the V3 migration first. Existing feedback keeps every
-row: the free-text ``source`` is mapped to a respondent type and channel, and
+row: the free-text ``source`` is mapped to a respondent type and channel, Thai
+status labels become ``pending``/``reviewed``, and
 rows without any context are flagged ``is_legacy``.
 
 Run with the application stopped and after taking a database backup.
@@ -12,7 +13,7 @@ import argparse
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import String, create_engine, inspect, text
 
 from database import Base
 import models
@@ -75,6 +76,12 @@ def _backfill_feedback(connection):
     connection.exec_driver_sql(
         f"UPDATE feedbacks SET is_legacy = TRUE WHERE NOT ({models.CONTEXT_PRESENT})"
     )
+    # Thai labels -> codes; anything not yet reviewed (including empty) is pending.
+    connection.exec_driver_sql(
+        "UPDATE feedbacks SET status = CASE WHEN status IN ('reviewed', 'ตรวจสอบแล้ว') "
+        "THEN 'reviewed' ELSE 'pending' END "
+        "WHERE status IS NULL OR status NOT IN ('pending', 'reviewed')"
+    )
 
 
 def _relax_feedback_title(connection):
@@ -99,10 +106,14 @@ def _ensure_feedback_constraints(connection):
     checks = {c["name"] for c in inspector.get_check_constraints("feedbacks")}
     uniques = {c["name"] for c in inspector.get_unique_constraints("feedbacks")}
     missing_check = "ck_feedbacks_context" not in checks
+    missing_status = "ck_feedbacks_status" not in checks
     missing_unique = "uq_feedbacks_source_external_id" not in uniques
-    if not (missing_check or missing_unique):
+    if not (missing_check or missing_status or missing_unique):
         return
     with Operations(MigrationContext.configure(connection)).batch_alter_table("feedbacks") as batch:
+        if missing_status:
+            batch.alter_column("status", existing_type=String(), nullable=False, server_default="pending")
+            batch.create_check_constraint("ck_feedbacks_status", "status IN ('pending', 'reviewed')")
         if missing_check:
             batch.create_check_constraint(
                 "ck_feedbacks_context", f"is_legacy OR {models.CONTEXT_PRESENT}"

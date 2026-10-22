@@ -30,9 +30,10 @@ def _v3_feedback_table(engine):
         c.exec_driver_sql("CREATE UNIQUE INDEX ix_feedbacks_title ON feedbacks (title)")
         c.exec_driver_sql("INSERT INTO partners (id, name) VALUES (1, 'Partner')")
         c.exec_driver_sql("INSERT INTO activities (id, name) VALUES (2, 'Seminar')")
-        c.exec_driver_sql("INSERT INTO feedbacks (id, title, source, is_published, activity_id) "
-                          "VALUES (1, 'A', 'alumni', true, 2), (2, 'B', 'coop_system', false, NULL), "
-                          "(3, 'C', 'ผู้เข้าร่วมกิจกรรม', true, NULL)")
+        c.exec_driver_sql("INSERT INTO feedbacks (id, title, source, status, is_published, activity_id) "
+                          "VALUES (1, 'A', 'alumni', 'ตรวจสอบแล้ว', true, 2), "
+                          "(2, 'B', 'coop_system', 'รอตรวจสอบ', false, NULL), "
+                          "(3, 'C', 'ผู้เข้าร่วมกิจกรรม', NULL, true, NULL)")
         c.exec_driver_sql("UPDATE feedbacks SET partner_id = 1 WHERE id = 3")
 
 
@@ -42,13 +43,13 @@ def test_migration_keeps_feedback_and_maps_legacy_source(engine):
     migrate(engine)  # repeatable
     with engine.begin() as c:
         rows = c.execute(text(
-            "SELECT f.id, r.code, s.code, f.is_legacy FROM feedbacks f "
+            "SELECT f.id, r.code, s.code, f.is_legacy, f.status FROM feedbacks f "
             "LEFT JOIN respondent_types r ON r.id = f.respondent_type_id "
             "JOIN feedback_sources s ON s.id = f.feedback_source_id ORDER BY f.id")).fetchall()
     assert [tuple(r) for r in rows] == [
-        (1, "alumni", "manual_entry", 0),
-        (2, None, "coop_system", 1),       # no context -> legacy, kept
-        (3, "participant", "manual_entry", 0),
+        (1, "alumni", "manual_entry", 0, "reviewed"),
+        (2, None, "coop_system", 1, "pending"),        # no context -> legacy, kept
+        (3, "participant", "manual_entry", 0, "pending"),  # no status -> pending
     ]
 
 
@@ -113,3 +114,11 @@ def test_import_batch_status_is_constrained(db_session):
                                       status="done", created_at=datetime.now(timezone.utc)))
     with pytest.raises(IntegrityError):
         db_session.commit()
+
+
+def test_feedback_status_must_be_a_code(engine):
+    _v3_feedback_table(engine)
+    migrate(engine)
+    with engine.begin() as c, pytest.raises(IntegrityError):
+        c.execute(text("INSERT INTO feedbacks (title, status, is_published, activity_id) "
+                       "VALUES ('x', 'ตรวจสอบแล้ว', false, 2)"))

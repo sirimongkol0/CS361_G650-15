@@ -90,7 +90,7 @@ def add_sample_data(session):
     ]
     feedback = models.Feedback(
         title="ความพึงพอใจสัมมนาความร่วมมือ A", source="ผู้เข้าร่วมกิจกรรม", rating=5,
-        date=date(2025, 6, 11), status="ตรวจสอบแล้ว", comment="Synthetic test comment.",
+        date=date(2025, 6, 11), status="reviewed", comment="Synthetic test comment.",
         is_published=True, partner=partners["a"], activity=activities[0],
     )
     exchange = models.ExchangeStudent(

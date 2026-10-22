@@ -33,6 +33,12 @@ export const feedbackSourceLabels: Record<string, string> = {
   coop_system: "ระบบสหกิจศึกษา",
 };
 
+/* Feedback review status (API field status). Publication is a separate flag. */
+export const feedbackStatusLabels: Record<string, string> = {
+  pending: "รอตรวจสอบ",
+  reviewed: "ตรวจสอบแล้ว",
+};
+
 export const label = (map: Record<string, string>, value: string | null | undefined) =>
   value ? map[value] ?? value : "—";
 
