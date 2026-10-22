@@ -10,6 +10,8 @@ from tests.test_auth import bearer, cognito, token_for  # noqa: F401
 
 
 def _feedback(db_session, **fields):
+    if not fields.get("activity"):
+        fields["activity"] = models.Activity(name="Seminar")  # V4: feedback needs a context
     row = models.Feedback(title=fields.pop("title", "Seminar feedback"), rating=4, date=date(2026, 5, 1),
                           status="รอตรวจสอบ", comment="Useful session.", **fields)
     db_session.add(row)

@@ -168,6 +168,9 @@ def migrate(engine):
         _ensure_exchange_user_foreign_key(connection)
 
         # V3-7: add the reply columns, keeping every existing feedback row.
+        # The current feedbacks model references V4 tables; create those parents first.
+        for parent in ("respondent_types", "feedback_sources", "import_batches"):
+            Base.metadata.tables[parent].create(connection, checkfirst=True)
         Base.metadata.tables["feedbacks"].create(connection, checkfirst=True)
         existing = {column["name"] for column in inspect(connection).get_columns("feedbacks")}
         for column, definition in V37_FEEDBACK_COLUMNS.items():
