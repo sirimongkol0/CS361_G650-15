@@ -13,8 +13,9 @@ import { canManage, useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
+import { feedbackStatusLabels, label } from "@/lib/labels";
 
-const FEEDBACK_STATUSES = ["รอตรวจสอบ", "ตรวจสอบแล้ว"] as const;
+const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
 function StarRow({ rating }: { rating: number }) {
   return (
@@ -40,8 +41,8 @@ const sourceColors: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  "ตรวจสอบแล้ว": "badge-green",
-  "รอตรวจสอบ": "badge-gold",
+  reviewed: "badge-green",
+  pending: "badge-gold",
 };
 
 /** Reply, status and publication controls for one entry (managers only). */
@@ -50,7 +51,7 @@ function ReplyForm({ entry, canPublish, onSaved }: {
 }) {
   const [reply, setReply] = useState(entry.reply ?? "");
   const [status, setStatus] = useState<string>(
-    (FEEDBACK_STATUSES as readonly string[]).includes(entry.status) ? entry.status : "รอตรวจสอบ"
+    (FEEDBACK_STATUSES as readonly string[]).includes(entry.status) ? entry.status : "pending"
   );
   const action = useAction();
 
@@ -82,7 +83,7 @@ function ReplyForm({ entry, canPublish, onSaved }: {
       </Field>
       <Field label="สถานะ">
         <select className={inputCls} value={status} onChange={(e) => setStatus(e.target.value)}>
-          {FEEDBACK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {FEEDBACK_STATUSES.map((s) => <option key={s} value={s}>{label(feedbackStatusLabels, s)}</option>)}
         </select>
       </Field>
       <div className="flex flex-wrap gap-2">
@@ -173,8 +174,8 @@ export default function FeedbackPage() {
         {[
           { label: "ทั้งหมด", value: entries.length, color: "text-crimson" },
           { label: "คะแนนเฉลี่ย", value: avg == null ? "—" : `${avg.toFixed(1)}★`, color: "text-gold-dark" },
-          { label: "ตรวจสอบแล้ว", value: entries.filter((f) => f.status === "ตรวจสอบแล้ว").length, color: "text-green-600" },
-          { label: "รอตรวจสอบ", value: entries.filter((f) => f.status === "รอตรวจสอบ").length, color: "text-gold-dark" },
+          { label: "ตรวจสอบแล้ว", value: entries.filter((f) => f.status === "reviewed").length, color: "text-green-600" },
+          { label: "รอตรวจสอบ", value: entries.filter((f) => f.status === "pending").length, color: "text-gold-dark" },
           { label: "ช่องทาง", value: sources.length, color: "text-purple-600" },
         ].map((s) => (
           <div key={s.label} className="rounded-lg bg-white shadow-card p-4">
@@ -256,7 +257,7 @@ export default function FeedbackPage() {
                   </p>
                   <div className="flex gap-1.5 flex-shrink-0">
                     {isManager && !f.isPublished && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
-                    <span className={`badge ${statusColors[f.status] ?? "badge-gray"}`}>{f.status}</span>
+                    <span className={`badge ${statusColors[f.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, f.status)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -288,7 +289,7 @@ export default function FeedbackPage() {
                     {selected.title}
                   </h2>
                   <div className="flex gap-1.5">
-                    <span className={`badge ${statusColors[selected.status] ?? "badge-gray"}`}>{selected.status}</span>
+                    <span className={`badge ${statusColors[selected.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, selected.status)}</span>
                     {isManager && (
                       selected.isPublished
                         ? <span className="badge badge-green">เผยแพร่แล้ว</span>

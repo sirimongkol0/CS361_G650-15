@@ -340,7 +340,7 @@ class FeedbackResponse(BaseModel):
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
 
 
-FeedbackStatus = Literal["รอตรวจสอบ", "ตรวจสอบแล้ว"]
+FeedbackStatus = Literal["pending", "reviewed"]
 
 
 class FeedbackManageResponse(FeedbackResponse):

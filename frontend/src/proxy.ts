@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /*
- * Pages that belong to V4 (stakeholder insight: feedback and reports, FR6/FR9)
- * are built but not part of the V3 release, so they redirect to the public
- * dashboard. Remove a path here to release it; the backend still checks roles.
+ * V4 pages that are not released yet redirect to the public dashboard.
+ * /feedback was released in V4-1; /reports waits for real summaries (V4-5).
+ * Remove a path here to release it; the backend still checks roles.
  */
 export function proxy(request: NextRequest) {
   return NextResponse.redirect(new URL('/dashboard/public', request.url));
@@ -11,7 +11,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/feedback/:path*',
     '/reports/:path*',
   ],
 };

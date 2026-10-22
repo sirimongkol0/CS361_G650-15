@@ -10,8 +10,10 @@ from tests.test_auth import bearer, cognito, token_for  # noqa: F401
 
 
 def _feedback(db_session, **fields):
+    if not fields.get("activity"):
+        fields["activity"] = models.Activity(name="Seminar")  # V4: feedback needs a context
     row = models.Feedback(title=fields.pop("title", "Seminar feedback"), rating=4, date=date(2026, 5, 1),
-                          status="รอตรวจสอบ", comment="Useful session.", **fields)
+                          status="pending", comment="Useful session.", **fields)
     db_session.add(row)
     db_session.commit()
     return row
@@ -48,20 +50,20 @@ def test_feedback_manage_list_needs_login(client):
 ])
 def test_feedback_reply_by_role(client, db_session, cognito, role, status):
     row = _feedback(db_session)
-    response = client.patch(f"/api/v1/feedback/{row.id}", json={"reply": "  Noted, thank you.  ", "status": "ตรวจสอบแล้ว"},
+    response = client.patch(f"/api/v1/feedback/{row.id}", json={"reply": "  Noted, thank you.  ", "status": "reviewed"},
                             headers=bearer(token_for(client, role)))
     assert response.status_code == status, response.text
     db_session.refresh(row)
     if status == 200:
         user = db_session.query(models.User).filter_by(email=f"{role}@example.test").one()
         body = response.json()
-        assert body["reply"] == "Noted, thank you." and body["status"] == "ตรวจสอบแล้ว"
+        assert body["reply"] == "Noted, thank you." and body["status"] == "reviewed"
         assert body["repliedByUserId"] == user.id and body["repliedAt"]
         log = db_session.query(models.AuditLog).filter_by(entity="feedbacks", entity_id=row.id).one()
         assert log.action == "update" and log.user_id == user.id
         assert log.before["reply"] is None and log.after["reply"] == "Noted, thank you."
     else:
-        assert row.reply is None and row.status == "รอตรวจสอบ"
+        assert row.reply is None and row.status == "pending"
         assert db_session.query(models.AuditLog).filter_by(entity="feedbacks").count() == 0
 
 
