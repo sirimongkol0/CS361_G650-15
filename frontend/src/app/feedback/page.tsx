@@ -7,9 +7,9 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Search, ChevronRight, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
-import { apiPatch, formatThaiDateTime, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
+import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
 import { averageRating } from "@/lib/dashboard-data";
-import { canManage, useRole } from "@/lib/role-context";
+import { useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
@@ -45,6 +45,86 @@ const statusColors: Record<string, string> = {
   pending: "badge-gold",
 };
 
+function FeedbackSubmitForm({ onCreated }: { onCreated: () => void }) {
+  const [types, setTypes] = useState<Array<{ id: number; name_th: string; code: string }>>([]);
+  const [activities, setActivities] = useState<Array<{ id: number; name: string }>>([]);
+  const [exchanges, setExchanges] = useState<Array<{ id: number; name: string }>>([]);
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
+  const [respondentTypeId, setRespondentTypeId] = useState("");
+  const [contextType, setContextType] = useState<"activity" | "exchange">("activity");
+  const [contextId, setContextId] = useState("");
+  const [rating, setRating] = useState("5");
+  const action = useAction();
+
+  useEffect(() => {
+    void Promise.all([
+      apiGetList<{ id: number; name_th: string; code: string }>("/feedback/respondent-types"),
+      apiGetList<{ id: number; name: string }>("/activities/"),
+      apiGetList<{ id: number; name: string }>("/exchange/"),
+    ]).then(([respondents, rows, exchangeRows]) => {
+      setTypes(respondents);
+      setRespondentTypeId(String(respondents[0]?.id ?? ""));
+      setActivities(rows);
+      setExchanges(exchangeRows);
+      const params = new URLSearchParams(window.location.search);
+      const presetActivity = params.get("activityId");
+      const presetExchange = params.get("exchangeId");
+      if (presetExchange && exchangeRows.some((row) => String(row.id) === presetExchange)) {
+        setContextType("exchange");
+        setContextId(presetExchange);
+      } else if (presetActivity && rows.some((row) => String(row.id) === presetActivity)) {
+        setContextType("activity");
+        setContextId(presetActivity);
+      } else {
+        setContextId(String(rows[0]?.id ?? exchangeRows[0]?.id ?? ""));
+      }
+    }).catch(() => undefined);
+  }, []);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!respondentTypeId || !contextId) return;
+    if (await action.run(() => apiPost("/feedback/", {
+      title, comment, rating: Number(rating), respondent_type_id: Number(respondentTypeId),
+      ...(contextType === "activity" ? { activity_id: Number(contextId) } : { exchange_id: Number(contextId) }),
+    }))) {
+      setTitle("");
+      setComment("");
+      onCreated();
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="rounded-lg bg-white shadow-card p-4 mb-5">
+      <h2 className="font-semibold text-ink mb-3">ส่ง Feedback</h2>
+      <FormError error={action.error} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="หัวข้อ"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+        <Field label="ประเภทผู้ส่ง"><select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
+          {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
+        </select></Field>
+        <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
+          const next = e.target.value as "activity" | "exchange";
+          setContextType(next);
+          const rows = next === "activity" ? activities : exchanges;
+          setContextId(String(rows[0]?.id ?? ""));
+        }}>
+          <option value="activity">กิจกรรม</option><option value="exchange">การแลกเปลี่ยน</option>
+        </select></Field>
+        <Field label={contextType === "activity" ? "เลือกกิจกรรม" : "เลือกรายการแลกเปลี่ยน"}><select className={inputCls} required value={contextId} onChange={(e) => setContextId(e.target.value)}>
+          {(contextType === "activity" ? activities : exchanges).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select></Field>
+        <Field label="คะแนน"><select className={inputCls} value={rating} onChange={(e) => setRating(e.target.value)}>
+          {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} / 5</option>)}
+        </select></Field>
+      </div>
+      <Field label="ความคิดเห็น"><textarea className={`${inputCls} resize-y`} rows={3} maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
+      <button className="btn btn-primary" disabled={action.busy || !types.length || !(contextType === "activity" ? activities.length : exchanges.length)}>ส่งความคิดเห็น</button>
+    </form>
+  );
+}
+
 /** Reply, status and publication controls for one entry (managers only). */
 function ReplyForm({ entry, canPublish, onSaved }: {
   entry: FeedbackEntry; canPublish: boolean; onSaved: (message: string) => void;
@@ -60,7 +140,7 @@ function ReplyForm({ entry, canPublish, onSaved }: {
     if (await action.run(() => apiPatch(`/feedback/${entry.id}`, { reply, status }))) onSaved("บันทึกคำตอบแล้ว");
   };
   const setPublished = async (published: boolean) => {
-    if (await action.run(() => apiPatch(`/feedback/${entry.id}`, { is_published: published }))) {
+    if (await action.run(() => apiPost(`/feedback/${entry.id}/${published ? "publish" : "unpublish"}`))) {
       onSaved(published ? "เผยแพร่ความคิดเห็นแล้ว" : "หยุดเผยแพร่ความคิดเห็นแล้ว");
     }
   };
@@ -115,11 +195,16 @@ export default function FeedbackPage() {
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
+  const [respondentFilter, setRespondentFilter] = useState("all");
+  const [contextFilter, setContextFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [reload, setReload] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const isManager = session === "authenticated" && canManage(role);
+  const isManager = session === "authenticated" && (role === "staff" || role === "admin");
   const canPublish = isManager && (role === "staff" || role === "admin");
   const resource = useApiResource<FeedbackEntry[]>(
     () => (session === "loading" ? new Promise<never>(() => {}) : loadFeedbackStrict(role)),
@@ -137,10 +222,29 @@ export default function FeedbackPage() {
   }
 
   const sources = Array.from(new Set(entries.map((f) => f.source).filter((s) => s !== "—"))).sort();
+  const respondentTypes = Array.from(new Map(entries
+    .filter((f) => f.respondentTypeId != null)
+    .map((f) => [f.respondentTypeId as number, f.respondentTypeName || `ประเภท ${f.respondentTypeId}`])).entries());
+  const contexts = Array.from(new Map(entries.flatMap((f) => [
+    ...(f.partnerId != null ? [[`partner:${f.partnerId}`, `หน่วยงาน: ${f.org}`] as const] : []),
+    ...(f.activityId != null ? [[`activity:${f.activityId}`, `กิจกรรม: ${f.activity}`] as const] : []),
+    ...(f.documentId != null ? [[`document:${f.documentId}`, `เอกสาร #${f.documentId}`] as const] : []),
+    ...(f.exchangeId != null ? [[`exchange:${f.exchangeId}`, `แลกเปลี่ยน #${f.exchangeId}`] as const] : []),
+  ])).entries());
   const filtered = entries.filter((f) =>
     matchesQuery(search, f.title, f.comment, f.org, f.activity)
     && (sourceFilter === "all" || f.source === sourceFilter)
-    && (ratingFilter === "all" || f.rating === parseInt(ratingFilter)));
+    && (ratingFilter === "all" || f.rating === parseInt(ratingFilter))
+    && (respondentFilter === "all" || String(f.respondentTypeId) === respondentFilter)
+    && (statusFilter === "all" || f.status === statusFilter)
+    && (!dateFrom || (f.dateIso != null && f.dateIso >= dateFrom))
+    && (!dateTo || (f.dateIso != null && f.dateIso <= dateTo))
+    && (contextFilter === "all" || [
+      f.partnerId != null ? `partner:${f.partnerId}` : "",
+      f.activityId != null ? `activity:${f.activityId}` : "",
+      f.documentId != null ? `document:${f.documentId}` : "",
+      f.exchangeId != null ? `exchange:${f.exchangeId}` : "",
+    ].includes(contextFilter)));
 
   // Until the user picks an entry, show the first one in the list.
   const selected = entries.find((f) => f.id === (selectedId ?? filtered[0]?.id));
@@ -168,6 +272,8 @@ export default function FeedbackPage() {
       </div>
 
       <Notice text={notice} />
+
+      {session === "authenticated" && role !== "public" && <FeedbackSubmitForm onCreated={() => { setNotice("ส่งความคิดเห็นแล้ว"); setReload((n) => n + 1); }} />}
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
@@ -219,6 +325,20 @@ export default function FeedbackPage() {
                   </option>
                 ))}
               </select>
+              {isManager && <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ส่ง">
+                <option value="all">ทุกประเภทผู้ส่ง</option>
+                {respondentTypes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+              </select>}
+              <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={contextFilter} onChange={(e) => setContextFilter(e.target.value)} aria-label="บริบท">
+                <option value="all">ทุกบริบท</option>
+                {contexts.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+              </select>
+              <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="สถานะ">
+                <option value="all">ทุกสถานะ</option>
+                {FEEDBACK_STATUSES.map((s) => <option key={s} value={s}>{label(feedbackStatusLabels, s)}</option>)}
+              </select>
+              <label className="text-xs text-faint flex items-center gap-2">ตั้งแต่ <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
+              <label className="text-xs text-faint flex items-center gap-2">ถึง <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
               <select
                 className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
                 style={{ width: "auto", minWidth: 140 }}

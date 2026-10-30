@@ -297,6 +297,9 @@ export default function StudentExchangePage() {
                     </span>
                   </td>
                   <td className="px-4 py-4">
+                    {session === "authenticated" && role !== "public" && (
+                      <Link href={`/feedback?exchangeId=${s.id}`} className="btn btn-outline p-1.5 text-xs mr-2">ส่ง Feedback</Link>
+                    )}
                     {canEdit(s) && (
                       <button className="btn btn-outline p-1.5 text-xs" type="button" aria-label={`แก้ไข ${s.name}`}
                         onClick={() => { setNotice(null); setEditing(s); }}>

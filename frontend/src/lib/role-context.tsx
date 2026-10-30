@@ -137,6 +137,7 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
     { to: '/feedback', label: 'ความคิดเห็น', icon: 'message' },
     { to: '/users', label: 'ผู้ใช้และสิทธิ์', icon: 'users' },
+    { to: '/feedback/lookups', label: 'ตั้งค่า Feedback', icon: 'settings' },
   ],
 };
 
