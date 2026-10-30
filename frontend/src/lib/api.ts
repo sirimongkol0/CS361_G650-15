@@ -351,6 +351,11 @@ interface RawFeedback {
   source?: string | null;
   partnerId?: number | null;
   activityId?: number | null;
+  documentId?: number | null;
+  exchangeId?: number | null;
+  respondentTypeId?: number | null;
+  feedbackSourceId?: number | null;
+  respondentTypeName?: string | null;
   rating?: number | null;
   date?: string | null; // ISO
   status?: string | null;
@@ -395,8 +400,16 @@ export interface FeedbackEntry {
   id: number;
   title: string;
   source: string;
+  sourceCode: string;
+  respondentTypeId: number | null;
+  respondentTypeName: string;
+  feedbackSourceId: number | null;
   org: string;
   activity: string;
+  partnerId: number | null;
+  activityId: number | null;
+  documentId: number | null;
+  exchangeId: number | null;
   rating: number;
   date: string;
   /** ISO date, for aggregation. */
@@ -681,8 +694,16 @@ function mapFeedback(
     id: raw.id,
     title: raw.title,
     source: label(feedbackSourceLabels, raw.source),
+    sourceCode: raw.source ?? "",
+    respondentTypeId: raw.respondentTypeId ?? null,
+    respondentTypeName: raw.respondentTypeName ?? "",
+    feedbackSourceId: raw.feedbackSourceId ?? null,
     org: (raw.partnerId != null && partnerNames.get(raw.partnerId)) || "—",
     activity: (raw.activityId != null && activityNames.get(raw.activityId)) || "—",
+    partnerId: raw.partnerId ?? null,
+    activityId: raw.activityId ?? null,
+    documentId: raw.documentId ?? null,
+    exchangeId: raw.exchangeId ?? null,
     rating: raw.rating ?? 0,
     date: formatThaiDate(raw.date),
     dateIso: raw.date ?? null,
@@ -812,7 +833,7 @@ async function loadNames(path: string): Promise<Map<number, string>> {
 }
 
 /** Roles that read every feedback entry with its reply (GET /feedback/manage). */
-export const FEEDBACK_MANAGER_ROLES = ["coordinator", "staff", "admin"];
+export const FEEDBACK_MANAGER_ROLES = ["staff", "admin"];
 
 async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
   const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
@@ -821,17 +842,17 @@ async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
 
 /**
  * Feedback entries (+ /activities/ and /partners/ joins for names): coordinators,
- * staff and admin get every entry with replies (GET /feedback/manage); everyone
- * else gets the published list (GET /feedback/). Failures fall back to [].
+ * staff/admin get the inbox (GET /feedback/); signed-in submitters get their own
+ * entries (GET /feedback/mine); everyone else sees published entries.
  */
 export function loadFeedbackEntries(role: string = "public"): Promise<FeedbackEntry[]> {
-  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/manage" : "/feedback/";
+  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/" : role === "public" ? "/feedback/" : "/feedback/mine";
   return safeLoad<FeedbackEntry[]>(path, buildFeedback, []);
 }
 
 /** Like loadFeedbackEntries, but a failed request is thrown so the page can say so. */
 export async function loadFeedbackStrict(role: string = "public"): Promise<FeedbackEntry[]> {
-  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/manage" : "/feedback/";
+  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/" : role === "public" ? "/feedback/" : "/feedback/mine";
   return buildFeedback(await apiGetList<unknown>(path));
 }
 
