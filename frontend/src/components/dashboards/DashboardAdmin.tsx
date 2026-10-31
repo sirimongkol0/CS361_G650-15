@@ -11,11 +11,11 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { label, partnerTypeLabels } from "@/lib/labels";
+import { insightsQuery } from "@/lib/api";
 import {
-  agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
-  partnersByEngagement, shown, useDashboardData, yearsIn,
+  RECENT_YEARS, THIS_YEAR, beYear, countFor, daysUntil, monthlyFromSummary, shown, sumCounts, useYearSummary,
 } from "@/lib/dashboard-data";
-import { downloadCsv } from "@/lib/list-tools";
+import { downloadFile } from "@/lib/download-file";
 import { ExportCsvButton } from "@/components/list-ui";
 
 const statCard = "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover transition-all duration-150";
@@ -27,44 +27,33 @@ const systemActions = [
 ];
 
 export default function DashboardAdmin() {
-  const data = useDashboardData();
-  const years = yearsIn(data.activities.map((a) => a.startDate));
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const year = selectedYear ?? years[0] ?? new Date().getFullYear();
+  const [year, setYear] = useState(THIS_YEAR);
+  const summary = useYearSummary(year);
+  const loaded = summary !== null;
 
-  const agreements = data.documents.filter(isAgreement);
-  const adminWatchMOU = expiringAgreements(data.documents).map((d) => ({ title: d.title, org: d.org, days: d.daysLeft }));
-  const activeAgreements = agreements.filter((d) => agreementState(d) === "active").length;
-  const engagement = partnersByEngagement(data);
-  const topTotal = engagement[0]?.total ?? 0;
-  const adminTopCollaborations = engagement.slice(0, 5).map((row) => ({
-    name: row.partner.name, score: row.total, pct: topTotal ? Math.round((row.total / topTotal) * 100) : 0,
+  const adminWatchMOU = (summary?.agreementsExpiring ?? []).map((d) => ({
+    title: d.name, org: d.partnerName ?? "", days: daysUntil(d.expiryDate),
   }));
-
-  const effectiveYears = yearsIn(agreements.map((d) => d.effectiveDate)).reverse();
-  const adminYearlyTrend = effectiveYears.map((y) => ({ year: beYear(y), ความร่วมมือ: agreements.filter((d) => d.effectiveDate?.startsWith(String(y))).length }));
-  const activityCounts = countByMonth(data.activities.map((a) => a.startDate), year);
-  const adminMonthlyActivities = activityCounts.map((count, i) => ({ month: monthLabel(i), กิจกรรม: count }));
-  const typeCounts = new Map<string, number>();
-  for (const p of data.partners) {
-    const name = p.type ? label(partnerTypeLabels, p.type) : "ไม่ระบุประเภท";
-    typeCounts.set(name, (typeCounts.get(name) ?? 0) + 1);
-  }
-  const adminStakeholderTypes = Array.from(typeCounts, ([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "th"));
+  const activeAgreements = countFor(summary?.agreementsByStatus, "active");
+  const top = summary?.topPartners ?? [];
+  const topTotal = top[0]?.total ?? 0;
+  const adminTopCollaborations = top.map((row) => ({
+    name: row.name, score: row.total, pct: topTotal ? Math.round((row.total / topTotal) * 100) : 0,
+  }));
+  const adminYearlyTrend = (summary?.agreementsByYear ?? []).map((row) => ({ year: beYear(row.year), ความร่วมมือ: row.count }));
+  const adminMonthlyActivities = monthlyFromSummary(summary, year);
+  const partnerTotal = sumCounts(summary?.partnersByType);
+  const adminStakeholderTypes = (summary?.partnersByType ?? [])
+    .map((row) => ({ name: row.key ? label(partnerTypeLabels, row.key) : "ไม่ระบุประเภท", value: row.count }));
   const topTypeCount = adminStakeholderTypes[0]?.value ?? 1;
-  const exportMonthly = () => downloadCsv(
-    `pcsms-activities-${beYear(year)}.csv`,
-    ["เดือน", "กิจกรรม"],
-    adminMonthlyActivities.map((row) => [`${row.month} ${beYear(year)}`, row.กิจกรรม]),
-  );
+  const exportMonthly = () => { downloadFile(`/insights/summary.csv${insightsQuery({ year })}`).catch(() => {}); };
 
   const kpis = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE" },
-    { icon: TrendingUp, label: "หน่วยงานที่ยังมีความร่วมมืออยู่", value: shown(data.loaded, engagement.length), color: "#C8961E", bg: "#FEF6E4" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(data.loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, color: "#B45309", bg: "#FEF3C7" },
-    { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
-    { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, partnerTotal), color: "#8B1538", bg: "#F5D6DE" },
+    { icon: TrendingUp, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), color: "#C8961E", bg: "#FEF6E4" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, color: "#B45309", bg: "#FEF3C7" },
+    { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: GraduationCap, label: `Feedback ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.feedbackByStatus)), color: "#15803D", bg: "#DCFCE7" },
   ];
 
   return (
@@ -85,12 +74,12 @@ export default function DashboardAdmin() {
             className="rounded-lg px-3 py-2 text-sm bg-white cursor-pointer"
             style={{ border: "1.5px solid var(--border)", width: "auto" }}
             value={year}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            onChange={(e) => setYear(Number(e.target.value))}
             aria-label="ปี"
           >
-            {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
+            {RECENT_YEARS.map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <ExportCsvButton onExport={exportMonthly} disabled={!data.loaded} />
+          <ExportCsvButton onExport={exportMonthly} disabled={!loaded} />
         </div>
       </div>
 
@@ -151,8 +140,8 @@ export default function DashboardAdmin() {
         {/* Stakeholder types: one labelled bar per type, largest first */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>หน่วยงานคู่ความร่วมมือ</h2>
-          <p className="text-xs mb-3" style={{ color: "#9CA3AF" }}>ตามประเภท • {shown(data.loaded, data.partners.length)} หน่วยงาน</p>
-          {data.loaded && adminStakeholderTypes.length === 0 && <p className="text-xs text-faint">ยังไม่มีหน่วยงาน</p>}
+          <p className="text-xs mb-3" style={{ color: "#9CA3AF" }}>ตามประเภท • {shown(loaded, partnerTotal)} หน่วยงาน</p>
+          {loaded && adminStakeholderTypes.length === 0 && <p className="text-xs text-faint">ยังไม่มีหน่วยงาน</p>}
           <ul className="space-y-2">
             {adminStakeholderTypes.map((t) => (
               <li key={t.name}>
@@ -178,7 +167,7 @@ export default function DashboardAdmin() {
           </div>
           <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับรวมข้อตกลงและกิจกรรมที่เผยแพร่แล้ว</p>
           <div className="space-y-3.5">
-            {data.loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
+            {loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-sm font-bold w-4 flex-shrink-0" style={{ color: i < 3 ? "#8B1538" : "#9CA3AF" }}>{i + 1}</span>
@@ -212,7 +201,7 @@ export default function DashboardAdmin() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(data.loaded, activeAgreements)} ฉบับ ✓</div>
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(loaded, activeAgreements)} ฉบับ ✓</div>
             </div>
           </div>
         </div>

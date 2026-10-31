@@ -282,7 +282,7 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
       const page = pages.staff;
       await open(page, '/dashboard/staff');
       const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'ส่งออก CSV' }).click()]);
-      assert.match(download.suggestedFilename(), /^pcsms-activities-\d{4}\.csv$/);
+      assert.match(download.suggestedFilename(), /^insights-summary_\d{4}-01-01_\d{4}-12-31\.csv$/);
       const renew = page.getByRole('link', { name: 'เปิดข้อตกลง' });
       const renewCount = await renew.count();
       if (renewCount > 0) {

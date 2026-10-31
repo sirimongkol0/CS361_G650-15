@@ -1,58 +1,22 @@
 "use client";
 
-// Dashboard figures computed from the published API data (no hard-coded numbers).
+// Dashboard helpers. Staff/admin/coordinator/student figures come from GET /insights/*
+// (aggregated in SQL); the list helpers serve the public dashboard and list pages.
 
 import {
   THAI_MONTHS_ABBR,
-  loadDocuments,
-  loadActivities,
-  loadExchangeStudents,
-  loadFeedbackEntries,
-  loadPublicPartners,
+  loadInsightsSummary,
+  loadMyInsights,
   useApiData,
+  type InsightsSummary,
+  type MyInsights,
   type ActivityView,
   type DocumentView,
-  type ExchangeStudent,
   type FeedbackEntry,
-  type PartnerView,
 } from "@/lib/api";
-import { useRole } from "@/lib/role-context";
 
 /** Agreements expiring within this many days need follow-up. */
 export const EXPIRING_WITHIN_DAYS = 90;
-
-export interface DashboardData {
-  loaded: boolean;
-  partners: PartnerView[];
-  documents: DocumentView[];
-  activities: ActivityView[];
-  feedback: FeedbackEntry[];
-  exchange: ExchangeStudent[];
-}
-
-const EMPTY: DashboardData = {
-  loaded: false, partners: [], documents: [], activities: [], feedback: [], exchange: [],
-};
-
-const orEmpty = <T,>(promise: Promise<T[]>) => promise.catch(() => [] as T[]);
-
-/**
- * Load every list the dashboards use; an unavailable list (including one the
- * role may not read) is treated as empty so the rest of the dashboard still shows.
- */
-export function useDashboardData(): DashboardData {
-  const { role } = useRole();
-  return useApiData<DashboardData>(async () => {
-    const [partners, documents, activities, feedback, exchange] = await Promise.all([
-      orEmpty(loadPublicPartners()),
-      orEmpty(loadDocuments()),
-      orEmpty(loadActivities()),
-      orEmpty(loadFeedbackEntries(role)),
-      orEmpty(loadExchangeStudents(role)),
-    ]);
-    return { loaded: true, partners, documents, activities, feedback, exchange };
-  }, EMPTY, [role]);
-}
 
 export type AgreementState = "expired" | "expiring" | "active" | "draft";
 
@@ -72,22 +36,6 @@ export function expiringAgreements(documents: DocumentView[]) {
   return documents
     .filter((doc) => isAgreement(doc) && agreementState(doc) === "expiring")
     .sort((a, b) => (a.daysLeft ?? 0) - (b.daysLeft ?? 0));
-}
-
-const yearOf = (iso: string | null | undefined) => (iso ? Number(iso.slice(0, 4)) : NaN);
-
-/** Distinct Gregorian years present in the dates, newest first. */
-export function yearsIn(isoDates: (string | null | undefined)[]): number[] {
-  return Array.from(new Set(isoDates.map(yearOf).filter((y) => !isNaN(y)))).sort((a, b) => b - a);
-}
-
-/** Count of dates per month of `year` (12 points, Thai month labels). */
-export function countByMonth(isoDates: (string | null | undefined)[], year: number): number[] {
-  const counts = Array(12).fill(0);
-  for (const iso of isoDates) {
-    if (iso && yearOf(iso) === year) counts[Number(iso.slice(5, 7)) - 1] += 1;
-  }
-  return counts;
 }
 
 export const monthLabel = (index: number) => THAI_MONTHS_ABBR[index];
@@ -110,18 +58,6 @@ export function upcomingActivities(activities: ActivityView[]) {
     .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
 }
 
-/** Partners ranked by number of published agreements and activities. */
-export function partnersByEngagement(data: Pick<DashboardData, "partners" | "documents" | "activities">) {
-  return data.partners
-    .map((partner) => {
-      const agreements = data.documents.filter((d) => d.partnerId === partner.id && isAgreement(d)).length;
-      const activities = data.activities.filter((a) => a.partnerId === partner.id).length;
-      return { partner, agreements, activities, total: agreements + activities };
-    })
-    .filter((row) => row.total > 0)
-    .sort((a, b) => b.total - a.total || a.partner.name.localeCompare(b.partner.name));
-}
-
 export function averageRating(feedback: FeedbackEntry[]): number | null {
   const rated = feedback.filter((f) => f.rating > 0);
   return rated.length ? rated.reduce((sum, f) => sum + f.rating, 0) / rated.length : null;
@@ -129,3 +65,40 @@ export function averageRating(feedback: FeedbackEntry[]): number | null {
 
 /** Display a count, or "—" while the data is still loading. */
 export const shown = (loaded: boolean, value: number | string) => (loaded ? String(value) : "—");
+
+// ---- V4-5: figures from the backend (GET /insights/*) ----
+
+export const THIS_YEAR = new Date().getFullYear();
+/** Years offered by the dashboard and report year selectors, newest first. */
+export const RECENT_YEARS = Array.from({ length: 6 }, (_, i) => THIS_YEAR - i);
+
+export const sumCounts = (rows: { count: number }[] = []) => rows.reduce((total, row) => total + row.count, 0);
+export const countFor = (rows: { key: unknown; count: number }[] = [], key: unknown) =>
+  rows.find((row) => row.key === key)?.count ?? 0;
+
+/** Whole days from today until an ISO date (negative once it has passed). */
+export function daysUntil(iso: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((new Date(`${iso}T00:00:00`).getTime() - today.getTime()) / 86_400_000);
+}
+
+/** Activities per month of one year, all 12 months present. */
+export function monthlyFromSummary(summary: InsightsSummary | null, year: number) {
+  const counts = new Map((summary?.activitiesByMonth ?? []).map((row) => [row.month, row.count]));
+  return Array.from({ length: 12 }, (_, i) => ({
+    month: monthLabel(i),
+    กิจกรรม: counts.get(`${year}-${String(i + 1).padStart(2, "0")}`) ?? 0,
+  }));
+}
+
+/** Staff/admin summary for one year; null until it loads (or if it fails). */
+export function useYearSummary(year: number | null): InsightsSummary | null {
+  return useApiData<InsightsSummary | null>(
+    () => loadInsightsSummary({ year }).catch(() => null), null, [year]);
+}
+
+/** Coordinator/student figures for their own records; null until loaded. */
+export function useMyInsights(): MyInsights | null {
+  return useApiData<MyInsights | null>(() => loadMyInsights().catch(() => null), null, []);
+}

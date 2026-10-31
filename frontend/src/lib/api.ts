@@ -999,6 +999,8 @@ export interface InsightsSummary {
   expiringWithinDays: number;
   partnersByType: KeyedCount<string | null>[];
   agreementsByStatus: KeyedCount<string | null>[];
+  agreementsByYear: { year: number; count: number }[];
+  topPartners: { id: number; name: string; agreements: number; activities: number; total: number }[];
   agreementsExpiring: { id: number; name: string; expiryDate: string; partnerId: number | null; partnerName: string | null }[];
   activitiesByMonth: { month: string; count: number }[];
   outcomesByType: (LabelledCount & { totalValue: number })[];
