@@ -106,6 +106,25 @@ def summary(
         models.OutcomeType.code, models.OutcomeType.name_th, models.OutcomeType.sort_order).order_by(
         models.OutcomeType.sort_order)
 
+    agreement_counts = (scope.apply(db.query(Document.partner_id.label("pid"), func.count(Document.id).label("n")),
+                                    Document, Document.effective_date)
+                        .filter(Document.doc_type.in_(AGREEMENT_TYPES), Document.is_deleted.is_(False))
+                        .group_by(Document.partner_id).subquery())
+    activity_counts = (scope.apply(db.query(Activity.partner_id.label("pid"), func.count(Activity.id).label("n")),
+                                   Activity, Activity.date)
+                       .filter(Activity.is_deleted.is_(False)).group_by(Activity.partner_id).subquery())
+    a_count = func.coalesce(agreement_counts.c.n, 0)
+    act_count = func.coalesce(activity_counts.c.n, 0)
+    top = (db.query(Partner.id, Partner.name, a_count, act_count, (a_count + act_count).label("total"))
+           .outerjoin(agreement_counts, agreement_counts.c.pid == Partner.id)
+           .outerjoin(activity_counts, activity_counts.c.pid == Partner.id)
+           .filter(Partner.is_deleted.is_(False), (a_count + act_count) > 0)
+           .order_by((a_count + act_count).desc(), Partner.name).limit(5))
+
+    effective_year = func.extract("year", Document.effective_date)
+    by_year = (agreements.filter(Document.effective_date.isnot(None))
+               .with_entities(effective_year, func.count(Document.id)).group_by(effective_year).order_by(effective_year))
+
     feedback = scope.apply(db.query(Feedback), Feedback, Feedback.date)
     by_rating = (feedback.filter(Feedback.rating.isnot(None))
                  .with_entities(Feedback.rating, func.count(Feedback.id)).group_by(Feedback.rating).order_by(Feedback.rating))
@@ -117,6 +136,11 @@ def summary(
         "expiringWithinDays": EXPIRING_WITHIN_DAYS,
         "partnersByType": _keyed(partners),
         "agreementsByStatus": _keyed(by_status),
+        "agreementsByYear": [{"year": int(y), "count": count} for y, count in by_year],
+        "topPartners": [
+            {"id": pid, "name": name, "agreements": a, "activities": act, "total": total}
+            for pid, name, a, act, total in top
+        ],
         "agreementsExpiring": [
             {"id": doc_id, "name": name, "expiryDate": expiry, "partnerId": partner_id, "partnerName": partner_name}
             for doc_id, name, expiry, partner_id, partner_name in expiring

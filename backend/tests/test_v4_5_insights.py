@@ -306,3 +306,25 @@ def test_summary_csv_escapes_formula_like_values(client, db_session, staff):
 def test_summary_csv_is_for_staff_and_admin_only(client, cognito, role):
     response = client.get("/api/v1/insights/summary.csv", headers=bearer(token_for(client, role)))
     assert response.status_code == 403
+
+
+# --- dashboard extras -------------------------------------------------------------
+
+def test_summary_ranks_top_partners_by_agreements_plus_activities(client, world, staff):
+    rows = client.get(SUMMARY, headers=staff).json()["topPartners"]
+    assert [(r["name"], r["agreements"], r["activities"], r["total"]) for r in rows] == [
+        ("Uni A", 1, 2, 3), ("Company C", 1, 1, 2), ("Uni B", 1, 1, 2),
+    ]
+
+
+def test_top_partners_follow_the_year_filter(client, world, staff):
+    rows = client.get(SUMMARY, params={"year": 2024}, headers=staff).json()["topPartners"]
+    assert [(r["name"], r["activities"]) for r in rows] == [("Uni A", 1)]
+
+
+def test_summary_counts_agreements_per_effective_year(client, world, staff, db_session):
+    for name, year in [("MOU A", 2023), ("MOA B", 2025), ("MOU C", 2025)]:
+        db_session.query(models.Document).filter_by(name=name).one().effective_date = date(year, 1, 1)
+    db_session.commit()
+    body = client.get(SUMMARY, params={"year": 2025}, headers=staff).json()
+    assert body["agreementsByYear"] == [{"year": 2023, "count": 1}, {"year": 2025, "count": 2}]
