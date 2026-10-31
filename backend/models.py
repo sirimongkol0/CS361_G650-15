@@ -301,6 +301,7 @@ class Outcome(Base):
     __table_args__ = (
         CheckConstraint(CONTEXT_PRESENT, name="ck_outcomes_context"),
         CheckConstraint("length(title) > 0", name="ck_outcomes_title_nonempty"),
+        UniqueConstraint("external_id", name="uq_outcomes_external_id"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -318,6 +319,7 @@ class Outcome(Base):
     exchange_id = Column(Integer, ForeignKey("exchange_students.id", ondelete="SET NULL"), nullable=True, index=True)
     owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     import_batch_id = Column(Integer, ForeignKey("import_batches.id", ondelete="SET NULL"), nullable=True, index=True)
+    external_id = Column(String, nullable=True)
     is_published = Column(Boolean, default=False, server_default=false(), nullable=False)
     is_deleted = Column(Boolean, default=False, server_default=false(), nullable=False)
     created_at = Column(DateTime(timezone=True), nullable=True)
@@ -401,7 +403,7 @@ for _model in (OutcomeType, RespondentType, FeedbackSource):
     event.listen(_model.__table__, "after_create", lambda table, connection, **_: seed_lookup(table, connection))
 
 
-IMPORT_BATCH_STATUSES = ("previewed", "committed", "rolled_back", "failed")
+IMPORT_BATCH_STATUSES = ("processing", "previewed", "committed", "rolled_back", "failed")
 
 
 class ImportBatch(Base):
@@ -410,7 +412,7 @@ class ImportBatch(Base):
     __tablename__ = "import_batches"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('previewed', 'committed', 'rolled_back', 'failed')",
+            "status IN ('processing', 'previewed', 'committed', 'rolled_back', 'failed')",
             name="ck_import_batches_status",
         ),
         CheckConstraint("kind IN ('feedback', 'outcome')", name="ck_import_batches_kind"),
@@ -430,6 +432,7 @@ class ImportBatch(Base):
     valid_rows = Column(Integer, default=0, server_default="0", nullable=False)
     invalid_rows = Column(Integer, default=0, server_default="0", nullable=False)
     errors = Column(JSON, nullable=True)            # [{"row": 3, "message": "..."}]
+    preview_data = Column(JSON, nullable=True)  # validated, whitelisted rows only
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), nullable=False)
     committed_at = Column(DateTime(timezone=True), nullable=True)
