@@ -379,3 +379,26 @@ def test_activity_report_rejects_public_and_students(client, cognito, db_session
     activity_id = _activity_with_results(db_session)
     response = client.get(f"/api/v1/insights/activities/{activity_id}.csv", headers=bearer(token_for(client, role)))
     assert response.status_code == 403
+
+
+def test_stakeholder_filter_includes_records_linked_only_through_their_activity(client, db_session, staff):
+    uni = models.Partner(name="U", type="university")
+    company = models.Partner(name="C", type="private_company")
+    db_session.add_all([uni, company])
+    db_session.flush()
+    uni_event = models.Activity(name="U event", date=date(2025, 1, 1), partner_id=uni.id)
+    company_event = models.Activity(name="C event", date=date(2025, 1, 2), partner_id=company.id)
+    db_session.add_all([uni_event, company_event])
+    db_session.flush()
+    participants = _lookup(db_session, models.OutcomeType, "participants")
+    db_session.add_all([
+        models.Outcome(title="via activity", outcome_type_id=participants, activity_id=uni_event.id),
+        models.Outcome(title="other type", outcome_type_id=participants, activity_id=company_event.id),
+        models.Feedback(title="via activity", status="pending", activity_id=uni_event.id),
+        models.Feedback(title="other type", status="pending", activity_id=company_event.id),
+    ])
+    db_session.commit()
+
+    body = client.get(SUMMARY, params={"stakeholder_type": "university"}, headers=staff).json()
+    assert {r["key"]: r["count"] for r in body["outcomesByType"]} == {"participants": 1}
+    assert _counts(body["feedbackByStatus"]) == {"pending": 1}

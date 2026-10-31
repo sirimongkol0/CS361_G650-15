@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 import database
 import models
@@ -46,7 +46,13 @@ class _Scope:
             if self.date_to:
                 query = query.filter(date_column <= self.date_to)
         if self.stakeholder_type:
-            query = query.join(models.Partner, model.partner_id == models.Partner.id).filter(
+            partner_id = model.partner_id
+            if model in (models.Outcome, models.Feedback):
+                # Often linked only to an activity; that activity's partner then counts.
+                via = aliased(models.Activity)
+                query = query.outerjoin(via, model.activity_id == via.id)
+                partner_id = func.coalesce(model.partner_id, via.partner_id)
+            query = query.join(models.Partner, partner_id == models.Partner.id).filter(
                 models.Partner.type == self.stakeholder_type, models.Partner.is_deleted.is_(False))
         return query
 
