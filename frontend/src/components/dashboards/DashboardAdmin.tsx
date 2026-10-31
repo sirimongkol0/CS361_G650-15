@@ -165,7 +165,7 @@ export default function DashboardAdmin() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
           </div>
-          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับรวมข้อตกลงและกิจกรรมที่เผยแพร่แล้ว</p>
+          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับข้อตกลงที่เริ่มมีผลและกิจกรรมในปี {beYear(year)}</p>
           <div className="space-y-3.5">
             {loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
