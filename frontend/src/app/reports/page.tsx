@@ -1,124 +1,302 @@
 "use client";
 
-// Reports for staff/admin, computed from the API data the dashboards load
-// (lib/dashboard-data.ts). The year selector filters every dated figure.
+// Reports for staff/admin. Every figure comes from GET /insights/summary, which
+// aggregates in SQL; the year and stakeholder-type filters re-query the API.
 
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronRight,
-  Printer,
-  FileText,
-  AlertTriangle,
-  Building2,
-  CalendarDays,
-  GraduationCap,
-  MessageSquare,
+  ChevronRight, Printer, FileText, AlertTriangle, Building2, CalendarDays, MessageSquare, Target,
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  LineChart,
-  Line,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import {
-  averageRating, beYear, countByMonth, expiringAgreements, isAgreement, monthLabel,
-  partnersByEngagement, recentActivities, shown, useDashboardData, yearsIn,
-} from "@/lib/dashboard-data";
-import { label, partnerTypeLabels } from "@/lib/labels";
-import { downloadCsv, useDocumentTitle } from "@/lib/list-tools";
+  formatThaiDate, insightsQuery, loadInsightsSummary, useApiData, useApiResource, type InsightsSummary, type LabelledCount,
+} from "@/lib/api";
+import { beYear, monthLabel } from "@/lib/dashboard-data";
+import { documentStatusLabels, feedbackStatusLabels, label, partnerTypeLabels } from "@/lib/labels";
+import { downloadFile } from "@/lib/download-file";
+import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
-import { AccessState, LoadingState } from "@/components/data-states";
+import { AccessState, ErrorState, LoadingState } from "@/components/data-states";
 import { ExportCsvButton } from "@/components/list-ui";
 
 const REPORT_ROLES = ["staff", "admin"];
 const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
 const tooltipStyle = { border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 };
-const card = "bg-white border border-line rounded-lg shadow-card p-5";
+const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
+const selectClass =
+  "cursor-pointer rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+const axis = { tick: { fontSize: 11, fill: "#94a3b8" }, tickLine: false, axisLine: false } as const;
 
-const inYear = (iso: string | null | undefined, year: number) => Boolean(iso) && Number(iso!.slice(0, 4)) === year;
+const THIS_YEAR = new Date().getFullYear();
+const YEARS = Array.from({ length: 6 }, (_, i) => THIS_YEAR - i);
+const sum = (rows: { count: number }[]) => rows.reduce((total, row) => total + row.count, 0);
 
 function EmptyChart() {
-  return <div className="flex h-full items-center justify-center text-sm text-faint">ยังไม่มีข้อมูลในปีนี้</div>;
+  return <div className="flex h-full items-center justify-center text-sm text-faint">ยังไม่มีข้อมูลในช่วงที่เลือก</div>;
+}
+
+/** Activities per month; a selected year always shows all 12 months. */
+function monthlyActivities(summary: InsightsSummary, year: number | null) {
+  if (year === null) {
+    return summary.activitiesByMonth.map(({ month, count }) => ({
+      month: `${monthLabel(Number(month.slice(5, 7)) - 1)} ${beYear(Number(month.slice(0, 4))).slice(2)}`,
+      กิจกรรม: count,
+    }));
+  }
+  const counts = new Map(summary.activitiesByMonth.map((row) => [row.month, row.count]));
+  return Array.from({ length: 12 }, (_, i) => ({
+    month: monthLabel(i),
+    กิจกรรม: counts.get(`${year}-${String(i + 1).padStart(2, "0")}`) ?? 0,
+  }));
+}
+
+function CountList({ title, rows }: { title: string; rows: LabelledCount[] }) {
+  const max = Math.max(1, ...rows.map((row) => row.count));
+  return (
+    <div>
+      <h3 className="text-sm font-semibold text-ink mb-2">{title}</h3>
+      {rows.length === 0 && <p className="text-xs text-faint">ไม่มีข้อมูล</p>}
+      <ul className="space-y-2">
+        {rows.map((row) => (
+          <li key={row.key}>
+            <div className="flex justify-between text-xs mb-1"><span className="text-mute">{row.label}</span><span className="text-ink font-semibold">{row.count}</span></div>
+            <div className="h-1.5 rounded-full bg-line overflow-hidden"><div className="h-full rounded-full bg-crimson" style={{ width: `${(row.count / max) * 100}%` }} /></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** "▲ +2 จากปี 2568" style change against the previous year; null when there is nothing to compare. */
+function change(current: number, previous: number | null) {
+  if (previous === null) return null;
+  const diff = current - previous;
+  if (diff === 0) return { text: "เท่ากับปีก่อน", tone: "text-faint" };
+  const pct = previous ? ` (${diff > 0 ? "+" : ""}${Math.round((diff / previous) * 100)}%)` : "";
+  return diff > 0
+    ? { text: `▲ +${diff}${pct} จากปีก่อน`, tone: "text-[#15803d]" }
+    : { text: `▼ ${diff}${pct} จากปีก่อน`, tone: "text-[#b91c1c]" };
+}
+
+/** Plain-Thai paragraph for the annual report, written from the figures. */
+function annualSummary(summary: InsightsSummary, previous: InsightsSummary | null, year: number) {
+  const activities = sum(summary.activitiesByMonth);
+  const before = previous ? sum(previous.activitiesByMonth) : null;
+  const trend = before === null || before === activities ? "" : activities > before
+    ? ` เพิ่มขึ้นจาก ${before} ครั้งในปี ${beYear(year - 1)}` : ` ลดลงจาก ${before} ครั้งในปี ${beYear(year - 1)}`;
+  const partners = new Set(summary.topPartners.map((p) => p.id)).size;
+  const sentences = [
+    `ปี ${beYear(year)} หลักสูตรมีหน่วยงานคู่ความร่วมมือ ${sum(summary.partnersByType)} แห่ง และจัดกิจกรรมร่วมกัน ${activities} ครั้ง${trend}`,
+  ];
+  if (summary.outcomesByType.length) {
+    sentences.push(`ผลลัพธ์ที่บันทึกได้ ${summary.outcomesByType.map((o) => `${o.label} ${o.totalValue.toLocaleString("th-TH")}`).join(", ")}`);
+  }
+  const feedback = sum(summary.feedbackByStatus);
+  if (feedback) {
+    sentences.push(`ได้รับ Feedback ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
+  }
+  if (partners) sentences.push(`หน่วยงานที่มีความร่วมมือมากที่สุดคือ ${summary.topPartners[0].name}`);
+  if (summary.dormantPartners.length) {
+    sentences.push(`มี ${summary.dormantPartners.length} หน่วยงานที่ข้อตกลงยังมีผลแต่ไม่มีความเคลื่อนไหวเกิน 1 ปี ควรพิจารณาต่อยอดหรือทบทวนข้อตกลง`);
+  }
+  return sentences.join(" ");
+}
+
+function Report({ summary, previous, year }: { summary: InsightsSummary; previous: InsightsSummary | null; year: number | null }) {
+  const monthly = monthlyActivities(summary, year);
+  const partnerTypes = summary.partnersByType.map((row) => ({
+    name: row.key ? label(partnerTypeLabels, row.key) : "ไม่ระบุประเภท", value: row.count,
+  }));
+  const ratings = [5, 4, 3, 2, 1].map((stars) => ({
+    key: String(stars), label: `${stars} ดาว`, count: summary.feedbackByRating.find((r) => r.key === stars)?.count ?? 0,
+  }));
+  const feedbackStatus = summary.feedbackByStatus.map((row) => ({ ...row, label: label(feedbackStatusLabels, row.key) }));
+  const agreementStatus = summary.agreementsByStatus.map((row) => ({
+    key: row.key ?? "none", label: row.key ? label(documentStatusLabels, row.key) : "ไม่ระบุสถานะ", count: row.count,
+  }));
+  const period = year ? `ปี ${beYear(year)}` : "ทุกช่วงเวลา";
+
+  const kpis = [
+    { label: "หน่วยงาน", value: sum(summary.partnersByType), icon: Building2, color: "#7c3aed", bg: "#ede9fe" },
+    { label: "ข้อตกลง MoU/MoA", value: sum(summary.agreementsByStatus), icon: FileText, color: "#d97706", bg: "#fef3c7" },
+    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe",
+      change: change(sum(summary.activitiesByMonth), previous && sum(previous.activitiesByMonth)) },
+    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, color: "#16a34a", bg: "#dcfce7",
+      change: change(sum(summary.outcomesByType), previous && sum(previous.outcomesByType)) },
+    {
+      label: `Feedback (${period})`,
+      value: `${sum(summary.feedbackByStatus)}${summary.feedbackAverageRating == null ? "" : ` • ${summary.feedbackAverageRating.toFixed(1)}★`}`,
+      icon: MessageSquare, color: "#be185d", bg: "#fce7f3",
+      change: change(sum(summary.feedbackByStatus), previous && sum(previous.feedbackByStatus)),
+    },
+  ] as { label: string; value: number | string; icon: typeof Building2; color: string; bg: string; change?: ReturnType<typeof change> }[];
+
+  return (
+    <>
+      {year !== null && (
+        <section className={`${card} mb-6`}>
+          <h2 className="font-bold mb-2 text-ink">สรุปประจำปี {beYear(year)}</h2>
+          <p className="text-sm leading-relaxed text-mute">{annualSummary(summary, previous, year)}</p>
+        </section>
+      )}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className={card}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: kpi.bg }}>
+              <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} aria-hidden />
+            </div>
+            <div className="text-2xl font-bold mb-0.5 text-ink font-display">{kpi.value}</div>
+            <div className="text-xs text-faint">{kpi.label}</div>
+            {kpi.change && <div className={`text-xs mt-1 font-semibold ${kpi.change.tone}`}>{kpi.change.text}</div>}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-5 mb-5 lg:grid-cols-[1fr_340px]">
+        <section className={card}>
+          <h2 className="font-bold mb-1 text-ink">จำนวนกิจกรรมรายเดือน</h2>
+          <p className="text-xs mb-4 text-faint">{period} • ตามวันที่จัดกิจกรรม</p>
+          <div style={{ height: 220 }}>
+            {summary.activitiesByMonth.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" interval={0} {...axis} />
+                  <YAxis allowDecimals={false} {...axis} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Bar dataKey="กิจกรรม" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <EmptyChart />}
+          </div>
+        </section>
+
+        <section className={card}>
+          <h2 className="font-bold mb-1 text-ink">ประเภทหน่วยงาน</h2>
+          <p className="text-xs mb-2 text-faint">หน่วยงานที่ยังไม่ถูกลบ</p>
+          <div style={{ height: 220 }}>
+            {partnerTypes.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={partnerTypes} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
+                    {partnerTypes.map((entry, i) => <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  </Pie>
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : <EmptyChart />}
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-5 mb-5 lg:grid-cols-2">
+        <section className={card}>
+          <h2 className="font-bold mb-4 text-ink">ผลลัพธ์ตามประเภท</h2>
+          {summary.outcomesByType.length === 0 ? <p className="text-sm text-faint">ยังไม่มีผลลัพธ์ในช่วงที่เลือก</p> : (
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-xs text-faint"><th className="pb-2 font-medium">ประเภท</th><th className="pb-2 font-medium text-right">รายการ</th><th className="pb-2 font-medium text-right">มูลค่ารวม</th></tr></thead>
+              <tbody>
+                {summary.outcomesByType.map((row) => (
+                  <tr key={row.key} className="border-t border-line">
+                    <td className="py-2 text-ink">{row.label}</td>
+                    <td className="py-2 text-right">{row.count}</td>
+                    <td className="py-2 text-right">{row.totalValue.toLocaleString("th-TH")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section className={card}>
+          <h2 className="font-bold mb-4 text-ink">Feedback</h2>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <CountList title="ตามแหล่งที่มา" rows={summary.feedbackBySource} />
+            <CountList title="ตามประเภทผู้ส่ง" rows={summary.feedbackByRespondentType} />
+            <CountList title="ตามคะแนน" rows={ratings} />
+            <CountList title="ตามสถานะ" rows={feedbackStatus} />
+          </div>
+        </section>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className={card}>
+          <h2 className="font-bold mb-4 text-ink">ข้อตกลงตามสถานะ</h2>
+          <CountList title="ข้อตกลงทั้งหมด (ปัจจุบัน)" rows={agreementStatus} />
+        </section>
+
+        <section className={card}>
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-4 h-4 text-[#d97706]" aria-hidden />
+            <h2 className="font-bold text-ink">ข้อตกลงที่ใกล้หมดอายุ</h2>
+          </div>
+          <div className="space-y-3">
+            {summary.agreementsExpiring.length === 0 && (
+              <p className="text-sm text-faint">ไม่มีข้อตกลงที่จะหมดอายุภายใน {summary.expiringWithinDays} วัน</p>
+            )}
+            {summary.agreementsExpiring.map((doc) => (
+              <Link key={doc.id} href={`/documents/${doc.id}`} className="block p-3 rounded-xl bg-[#fef3c7] border border-[#fde68a]">
+                <div className="font-semibold text-sm mb-0.5 text-[#92400e]">{doc.name}</div>
+                {doc.partnerName && <div className="text-xs text-[#b45309]">{doc.partnerName}</div>}
+                <div className="text-xs text-[#b45309] mt-1">หมดอายุ {formatThaiDate(doc.expiryDate)}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+      <section className={`${card} mt-5`}>
+        <h2 className="font-bold mb-1 text-ink">หน่วยงานที่ไม่มีความเคลื่อนไหว</h2>
+        <p className="text-xs mb-4 text-faint">
+          ข้อตกลงยังมีผล แต่ไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ใน {summary.dormantWithinDays} วันที่ผ่านมา (ข้อมูล ณ วันนี้)
+        </p>
+        {summary.dormantPartners.length === 0 ? <p className="text-sm text-faint">ทุกหน่วยงานที่มีข้อตกลงมีความเคลื่อนไหวในปีที่ผ่านมา</p> : (
+          <ul className="divide-y divide-line">
+            {summary.dormantPartners.map((partner) => (
+              <li key={partner.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <Link href={`/reports/partners/${partner.id}`} className="text-ink hover:text-crimson">{partner.name}</Link>
+                <span className="text-xs text-faint">
+                  {partner.lastActivityDate ? `ล่าสุด ${formatThaiDate(partner.lastActivityDate)}` : "ยังไม่เคยมีกิจกรรม"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
 }
 
 export default function ReportsPage() {
   useDocumentTitle("รายงานและสถิติ");
   const { role, status: session } = useRole();
-  const data = useDashboardData();
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-
-  const years = yearsIn([
-    ...data.activities.map((a) => a.startDate),
-    ...data.exchange.map((e) => e.raw.startDate),
-    ...data.feedback.map((f) => f.dateIso),
-    ...data.documents.map((d) => d.effectiveDate),
-  ]);
-  const year = selectedYear ?? years[0] ?? new Date().getFullYear();
+  const [year, setYear] = useState<number | null>(THIS_YEAR);
+  const [stakeholderType, setStakeholderType] = useState<string>("");
+  const allowed = session === "authenticated" && REPORT_ROLES.includes(role);
+  const filters = { year, stakeholderType: stakeholderType || null };
+  const summary = useApiResource(
+    () => (allowed ? loadInsightsSummary(filters) : new Promise<InsightsSummary>(() => {})),
+    [allowed, year, stakeholderType],
+  );
+  // Last year's figures, for the change arrows and the annual summary.
+  const previous = useApiData<InsightsSummary | null>(
+    () => (allowed && year ? loadInsightsSummary({ ...filters, year: year - 1 }).catch(() => null) : Promise.resolve(null)),
+    null, [allowed, year, stakeholderType],
+  );
+  const [exportError, setExportError] = useState<string | null>(null);
 
   if (session === "loading") return <div className="p-6"><LoadingState /></div>;
   if (session !== "authenticated") return <div className="p-6"><AccessState status={401} /></div>;
-  if (!REPORT_ROLES.includes(role)) return <div className="p-6"><AccessState status={403} /></div>;
+  if (!allowed) return <div className="p-6"><AccessState status={403} /></div>;
 
-  const yearActivities = data.activities.filter((a) => inYear(a.startDate, year));
-  const yearExchange = data.exchange.filter((e) => inYear(e.raw.startDate, year));
-  const yearFeedback = data.feedback.filter((f) => inYear(f.dateIso, year));
-  const yearAgreements = data.documents.filter((d) => isAgreement(d) && inYear(d.effectiveDate, year));
-  const yearRating = averageRating(yearFeedback);
-
-  const activityCounts = countByMonth(data.activities.map((a) => a.startDate), year);
-  const outbound = countByMonth(data.exchange.filter((e) => e.type === "outbound").map((e) => e.raw.startDate), year);
-  const inbound = countByMonth(data.exchange.filter((e) => e.type === "inbound").map((e) => e.raw.startDate), year);
-  const feedbackCounts = countByMonth(yearFeedback.map((f) => f.dateIso), year);
-  const ratingByMonth = Array.from({ length: 12 }, (_, month) =>
-    averageRating(yearFeedback.filter((f) => Number(f.dateIso?.slice(5, 7)) - 1 === month)));
-
-  const monthly = activityCounts.map((count, i) => ({
-    month: monthLabel(i),
-    กิจกรรม: count,
-    outbound: outbound[i],
-    inbound: inbound[i],
-    score: ratingByMonth[i] == null ? null : Number(ratingByMonth[i]!.toFixed(2)),
-  }));
-
-  const typeCounts = new Map<string, number>();
-  for (const partner of data.partners) {
-    const name = partner.type ? label(partnerTypeLabels, partner.type) : "ไม่ระบุประเภท";
-    typeCounts.set(name, (typeCounts.get(name) ?? 0) + 1);
-  }
-  const partnerTypes = Array.from(typeCounts, ([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-
-  const topPartners = partnersByEngagement({ partners: data.partners, documents: yearAgreements, activities: yearActivities }).slice(0, 5);
-  const topTotal = topPartners[0]?.total ?? 1;
-  const exchangeByPartner = (partnerId: number) => yearExchange.filter((e) => e.raw.partnerId === partnerId).length;
-
-  const expiring = expiringAgreements(data.documents);
-  const recent = recentActivities(yearActivities, 5);
-  const hasExchange = outbound.some(Boolean) || inbound.some(Boolean);
-  const hasRating = ratingByMonth.some((r) => r != null);
-
-  const kpis = [
-    { label: "หน่วยงาน (ทั้งหมด)", value: shown(data.loaded, data.partners.length), icon: Building2, color: "#7c3aed", bg: "#ede9fe" },
-    { label: `ข้อตกลงที่เริ่มมีผลในปี ${beYear(year)}`, value: shown(data.loaded, yearAgreements.length), icon: FileText, color: "#d97706", bg: "#fef3c7" },
-    { label: `กิจกรรมในปี ${beYear(year)}`, value: shown(data.loaded, yearActivities.length), icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe" },
-    { label: `นักศึกษาแลกเปลี่ยนในปี ${beYear(year)}`, value: shown(data.loaded, yearExchange.length), icon: GraduationCap, color: "#16a34a", bg: "#dcfce7" },
-    { label: "คะแนนความคิดเห็นเฉลี่ย", value: data.loaded ? (yearRating == null ? "—" : `${yearRating.toFixed(1)}★`) : "—", icon: MessageSquare, color: "#be185d", bg: "#fce7f3" },
-  ];
-
-  const exportCsv = () => downloadCsv(
-    `pcsms-report-${beYear(year)}.csv`,
-    ["เดือน", "กิจกรรม", "นักศึกษาแลกเปลี่ยนขาออก", "นักศึกษาแลกเปลี่ยนขาเข้า", "ความคิดเห็น", "คะแนนเฉลี่ย"],
-    monthly.map((row, i) => [`${row.month} ${beYear(year)}`, row.กิจกรรม, row.outbound, row.inbound, feedbackCounts[i], row.score]),
-  );
+  const exportCsv = () => {
+    setExportError(null);
+    downloadFile(`/insights/summary.csv${insightsQuery(filters)}`).catch((e: Error) => setExportError(e.message));
+  };
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
@@ -129,191 +307,35 @@ export default function ReportsPage() {
             <ChevronRight className="w-3 h-3" />
             <span className="text-crimson">รายงานและสถิติ</span>
           </nav>
-          <h1 className="text-2xl font-bold text-ink font-display">รายงานและสถิติ ปี {beYear(year)}</h1>
-          <p className="text-sm mt-0.5 text-faint">ภาพรวมเชิงสถิติของความร่วมมือ</p>
+          <h1 className="text-2xl font-bold text-ink font-display">
+            รายงานและสถิติ {year ? `ปี ${beYear(year)}` : "ทุกช่วงเวลา"}
+          </h1>
+          <p className="text-sm mt-0.5 text-faint">
+            ภาพรวมเชิงสถิติของความร่วมมือ{stakeholderType && ` • ${label(partnerTypeLabels, stakeholderType)}`}
+          </p>
         </div>
-        <div className="flex gap-2 print:hidden">
-          <select
-            className="cursor-pointer rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
-            style={{ width: "auto" }}
-            value={year}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            aria-label="ปี"
-          >
-            {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
+        <div className="flex gap-2 flex-wrap print:hidden">
+          <select className={selectClass} value={year ?? ""} aria-label="ปี"
+            onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}>
+            <option value="">ทุกปี</option>
+            {YEARS.map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <ExportCsvButton onExport={exportCsv} disabled={!data.loaded} />
+          <select className={selectClass} value={stakeholderType} aria-label="ประเภทหน่วยงาน"
+            onChange={(e) => setStakeholderType(e.target.value)}>
+            <option value="">ทุกประเภทหน่วยงาน</option>
+            {Object.entries(partnerTypeLabels).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+          </select>
+          <ExportCsvButton onExport={exportCsv} disabled={summary.status !== "success"} />
           <button type="button" className="btn btn-primary gap-2 text-sm" onClick={() => window.print()}>
-            <Printer className="w-4 h-4" />พิมพ์
+            <Printer className="w-4 h-4" aria-hidden />พิมพ์ / PDF
           </button>
         </div>
       </div>
+      {exportError && <p role="alert" className="mb-4 text-sm text-crimson">ส่งออกไม่สำเร็จ: {exportError}</p>}
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        {kpis.map((kpi) => (
-          <div key={kpi.label} className={`${card} transition-shadow hover:shadow-card-hover`}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: kpi.bg }}>
-              <kpi.icon className="w-4.5 h-4.5" style={{ color: kpi.color }} />
-            </div>
-            <div className="text-2xl font-bold mb-0.5 text-ink font-display">{kpi.value}</div>
-            <div className="text-xs text-faint">{kpi.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Row 1: Bar + Pie */}
-      <div className="grid gap-5 mb-5 lg:grid-cols-[1fr_340px]">
-        <div className={card}>
-          <h2 className="font-bold mb-1 text-ink">จำนวนกิจกรรมรายเดือน</h2>
-          <p className="text-xs mb-4 text-faint">ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
-          <div style={{ height: 220 }}>
-            {yearActivities.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" interval={0} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="กิจกรรม" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <EmptyChart />}
-          </div>
-        </div>
-
-        <div className={card}>
-          <h2 className="font-bold mb-1 text-ink">ประเภทหน่วยงาน</h2>
-          <p className="text-xs mb-2 text-faint">หน่วยงานที่เผยแพร่ทั้งหมด</p>
-          <div style={{ height: 220 }}>
-            {partnerTypes.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={partnerTypes} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
-                    {partnerTypes.map((entry, i) => (
-                      <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : <div className="flex h-full items-center justify-center text-sm text-faint">ยังไม่มีหน่วยงาน</div>}
-          </div>
-        </div>
-      </div>
-
-      {/* Row 2: Exchange + Feedback */}
-      <div className="grid gap-5 mb-5 lg:grid-cols-2">
-        <div className={card}>
-          <h2 className="font-bold mb-1 text-ink">จำนวนนักศึกษาแลกเปลี่ยน</h2>
-          <p className="text-xs mb-4 text-faint">ขาออกเทียบกับขาเข้า • ตามวันที่เริ่ม</p>
-          <div style={{ height: 180 }}>
-            {hasExchange ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" interval={0} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="outbound" name="ขาออก" fill="#4f46e5" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="inbound" name="ขาเข้า" fill="#10b981" radius={[3, 3, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : <EmptyChart />}
-          </div>
-        </div>
-
-        <div className={card}>
-          <h2 className="font-bold mb-1 text-ink">แนวโน้มคะแนนความคิดเห็น</h2>
-          <p className="text-xs mb-4 text-faint">คะแนนเฉลี่ยรายเดือน (จาก 5.0) • {yearFeedback.length} ความคิดเห็น</p>
-          <div style={{ height: 180 }}>
-            {hasRating ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" interval={0} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 5]} tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="score" name="คะแนน" stroke="#f59e0b" strokeWidth={2} connectNulls dot={{ fill: "#f59e0b", r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : <EmptyChart />}
-          </div>
-        </div>
-      </div>
-
-      {/* Row 3: Top partners + Expiring */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        <div className={card}>
-          <h2 className="font-bold mb-1 text-ink">หน่วยงานที่มีความร่วมมือสูงสุด</h2>
-          <p className="text-xs mb-4 text-faint">นับข้อตกลงที่เริ่มมีผลและกิจกรรมในปี {beYear(year)}</p>
-          {topPartners.length ? (
-            <div className="space-y-4">
-              {topPartners.map((row, i) => {
-                const students = exchangeByPartner(row.partner.id);
-                const pct = Math.round((row.total / topTotal) * 100);
-                return (
-                  <div key={row.partner.id} className="flex items-center gap-4">
-                    <span className="text-sm font-bold w-5 flex-shrink-0" style={{ color: i < 3 ? "#4f46e5" : "#94a3b8" }}>{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <Link href={`/stakeholders/${row.partner.id}`} className="text-sm font-semibold truncate text-ink hover:text-crimson">{row.partner.name}</Link>
-                        <span className="text-xs ml-2 flex-shrink-0 text-faint">
-                          {row.agreements} ข้อตกลง • {row.activities} กิจกรรม{students > 0 ? ` • ${students} นักศึกษา` : ""}
-                        </span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-line overflow-hidden">
-                        <div className="h-full rounded-full bg-crimson" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : <p className="text-sm text-faint">ยังไม่มีข้อมูลในปีนี้</p>}
-        </div>
-
-        <div className="space-y-5">
-          <div className={card}>
-            <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-4 h-4 text-[#d97706]" />
-              <h2 className="font-bold text-ink">ข้อตกลงที่ใกล้หมดอายุ</h2>
-            </div>
-            <div className="space-y-3">
-              {expiring.length === 0 && <p className="text-sm text-faint">ไม่มีข้อตกลงที่จะหมดอายุภายใน 90 วัน</p>}
-              {expiring.map((doc) => (
-                <Link key={doc.id} href={`/documents/${doc.id}`} className="block p-3 rounded-xl bg-[#fef3c7] border border-[#fde68a]">
-                  <div className="font-semibold text-sm mb-0.5 text-[#92400e]">{doc.title}</div>
-                  {doc.org && <div className="text-xs text-[#b45309]">{doc.org}</div>}
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-[#b45309]">หมดอายุ {doc.expire}</span>
-                    <span className="badge bg-[#FEF3C7] text-[#B45309] border border-[#fde68a]">เหลือ {doc.daysLeft} วัน</span>
-                  </div>
-                </Link>
-              ))}
-              <Link href="/documents" className="inline-block text-xs font-semibold text-crimson print:hidden">ดูข้อตกลงทั้งหมด →</Link>
-            </div>
-          </div>
-
-          <div className={card}>
-            <h2 className="font-bold mb-3 text-ink">กิจกรรมล่าสุดในปี {beYear(year)}</h2>
-            <div className="space-y-2">
-              {recent.length === 0 && <p className="text-sm text-faint">ยังไม่มีกิจกรรมในปีนี้</p>}
-              {recent.map((a) => (
-                <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center justify-between gap-2 py-2 border-b border-[#f1f5f9]">
-                  <span className="text-sm text-mute">{a.name}</span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-xs text-faint">{a.date}</span>
-                    <span className={`badge ${a.statusColor} text-xs`}>{a.status}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {summary.status === "loading" && <LoadingState />}
+      {summary.status === "error" && <ErrorState error={summary.error} onRetry={summary.retry} />}
+      {summary.status === "success" && <Report summary={summary.data} previous={previous} year={year} />}
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, FileText, CalendarDays, GraduationCap,
   MessageSquare, BarChart3, Settings, Menu,
-  Users, Globe, Folder, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
+  Users, Globe, Folder, History, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
 import { ACCOUNT_NAV, ROLE_NAV, useRole } from '@/lib/role-context';
@@ -31,6 +31,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   users: Users,
   globe: Globe,
   folder: Folder,
+  history: History,
 };
 
 const COLLAPSE_KEY = 'pcsms:sidebar-collapsed';
@@ -196,7 +197,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (pathname === '/login') return <>{children}</>;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--background)' }}>
+    <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible" style={{ background: 'var(--background)' }}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-card"
@@ -210,7 +211,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar — desktop */}
       <aside
-        className="hidden md:flex flex-col flex-shrink-0 border-r transition-all duration-200 overflow-hidden"
+        className="hidden md:flex flex-col flex-shrink-0 border-r transition-all duration-200 overflow-hidden print:hidden"
         style={{
           width: collapsed ? 68 : 256,
           borderColor: 'var(--border)',
@@ -222,17 +223,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar — mobile drawer */}
       <aside
-        className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden border-r transition-transform duration-200"
+        className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden border-r transition-transform duration-200 print:hidden"
         style={{ width: 256, borderColor: 'var(--border)', background: '#fff', transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)' }}
       >
         {sidebarContent(false)}
       </aside>
 
       {/* Main */}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 overflow-hidden print:overflow-visible">
         {/* Topbar (replaces the old top Navbar) */}
         <header
-          className="flex items-center gap-3 px-4 md:px-5 border-b bg-white flex-shrink-0"
+          className="flex items-center gap-3 px-4 md:px-5 border-b bg-white flex-shrink-0 print:hidden"
           style={{ height: 60, borderColor: 'var(--border)' }}
         >
           <button
@@ -310,7 +311,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           id="main-content"
           ref={mainRef}
           tabIndex={-1}
-          className="flex-1 overflow-y-auto flex flex-col outline-none"
+          className="flex-1 overflow-y-auto flex flex-col outline-none print:overflow-visible"
           onScroll={onMainScroll}
         >
           {offline && (

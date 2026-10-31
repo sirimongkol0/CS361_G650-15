@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, FileText, CalendarDays, GraduationCap, AlertTriangle, Plus } from "lucide-react";
+import { Building2, FileText, CalendarDays, Target, AlertTriangle, Plus } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { formatThaiDate, insightsQuery, loadActivities, useApiData, type ActivityView } from "@/lib/api";
 import {
-  agreementState, expiringAgreements, isAgreement, beYear, countByMonth, monthLabel,
-  recentActivities, shown, useDashboardData, yearsIn,
+  RECENT_YEARS, THIS_YEAR, beYear, countFor, daysUntil, monthlyFromSummary, recentActivities, shown, sumCounts,
+  useYearSummary,
 } from "@/lib/dashboard-data";
-import { downloadCsv } from "@/lib/list-tools";
+import { downloadFile } from "@/lib/download-file";
 import { ExportCsvButton } from "@/components/list-ui";
 
 const statCard =
@@ -25,29 +26,25 @@ type Kpi = {
 };
 
 export default function DashboardStaff() {
-  const data = useDashboardData();
-  const years = yearsIn(data.activities.map((a) => a.startDate));
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const year = selectedYear ?? years[0] ?? new Date().getFullYear();
+  const [year, setYear] = useState(THIS_YEAR);
+  const summary = useYearSummary(year);
+  const loaded = summary !== null;
+  const activities = useApiData<ActivityView[]>(() => loadActivities().catch(() => []), [], []);
 
-  const agreements = data.documents.filter(isAgreement);
-  const staffExpiringDocs = expiringAgreements(data.documents).map((d) => ({id: d.id, title: d.title, org: d.org, expire: d.expire, days: d.daysLeft}));
-  const activeAgreements = agreements.filter((d) => agreementState(d) === "active").length;
-  const monthly = countByMonth(data.activities.map((a) => a.startDate), year)
-    .map((count, i) => ({ month: monthLabel(i), กิจกรรม: count }));
-  const staffRecentActivities = recentActivities(data.activities, 5);
-  const exportMonthly = () => downloadCsv(
-    `pcsms-activities-${beYear(year)}.csv`,
-    ["เดือน", "กิจกรรม"],
-    monthly.map((row) => [`${row.month} ${beYear(year)}`, row.กิจกรรม]),
-  );
+  const staffExpiringDocs = (summary?.agreementsExpiring ?? []).map((d) => ({
+    id: d.id, title: d.name, org: d.partnerName ?? "", expire: formatThaiDate(d.expiryDate), days: daysUntil(d.expiryDate),
+  }));
+  const activeAgreements = countFor(summary?.agreementsByStatus, "active");
+  const monthly = monthlyFromSummary(summary, year);
+  const staffRecentActivities = recentActivities(activities, 5);
+  const exportMonthly = () => { downloadFile(`/insights/summary.csv${insightsQuery({ year })}`).catch(() => {}); };
 
   const kpis: Kpi[] = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(data.loaded, agreements.length), color: "#B45309", bg: "#FEF3C7" },
-    { icon: CalendarDays, label: "กิจกรรม", value: shown(data.loaded, data.activities.length), color: "#1D4ED8", bg: "#DBEAFE" },
-    { icon: GraduationCap, label: "นักศึกษาแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#15803D", bg: "#DCFCE7", href: "/exchange" },
-    { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(data.loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, sumCounts(summary?.partnersByType)), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(loaded, sumCounts(summary?.agreementsByStatus)), color: "#B45309", bg: "#FEF3C7" },
+    { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: Target, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), color: "#15803D", bg: "#DCFCE7", href: "/reports" },
+    { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
   ];
 
   return (
@@ -68,12 +65,12 @@ export default function DashboardStaff() {
             className="rounded-lg px-3 py-2 text-sm bg-white cursor-pointer"
             style={{ border: "1.5px solid var(--border)", width: "auto" }}
             value={year}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            onChange={(e) => setYear(Number(e.target.value))}
             aria-label="ปี"
           >
-            {(years.length ? years : [year]).map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
+            {RECENT_YEARS.map((y) => <option key={y} value={y}>ปี {beYear(y)}</option>)}
           </select>
-          <ExportCsvButton onExport={exportMonthly} disabled={!data.loaded} />
+          <ExportCsvButton onExport={exportMonthly} disabled={!loaded} />
           <Link href="/activities/manage?new=1" className="btn btn-primary text-sm gap-2"><Plus className="w-4 h-4" />เพิ่มกิจกรรม</Link>
         </div>
       </div>
@@ -142,8 +139,8 @@ export default function DashboardStaff() {
               </div>
             ))}
             <div className="p-3 rounded-xl" style={{ background: "#F0FDF4", border: "1px solid #BBF7D0" }}>
-              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(data.loaded, activeAgreements)} ฉบับ</div>
-              {data.loaded && staffExpiringDocs.length === 0 && (
+              <div className="text-sm font-semibold" style={{ color: "#15803D" }}>ข้อตกลงที่มีผล {shown(loaded, activeAgreements)} ฉบับ</div>
+              {loaded && staffExpiringDocs.length === 0 && (
                 <div className="text-xs" style={{ color: "#16A34A" }}>ยังไม่มีเรื่องที่ต้องดำเนินการ</div>
               )}
             </div>

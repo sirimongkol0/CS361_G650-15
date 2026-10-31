@@ -10,7 +10,7 @@ from routers import health, partners, activities, documents
 from routers import auth as auth_routes
 from routers import audit_logs
 from routers import exchange
-from routers import feedback, users, imports, exports, outcomes
+from routers import feedback, users, imports, exports, outcomes, insights
 import schemas
 
 # Create tables
@@ -26,6 +26,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
+    # Paging total for /audit-logs/ and the filename of CSV downloads.
+    expose_headers=["X-Total-Count", "Content-Disposition"],
 )
 
 
@@ -69,5 +71,6 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(imports.router, prefix="/api/v1")
 app.include_router(exports.router,prefix="/api/v1",)
 app.include_router(outcomes.router, prefix="/api/v1")
+app.include_router(insights.router, prefix="/api/v1")
 # Internal routers are mounted only once their endpoints are protected with
 # auth.require_role(...) (V3).

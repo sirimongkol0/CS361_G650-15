@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, GraduationCap, CheckCircle2, Clock, ChevronRight, Bell, Building2 } from "lucide-react";
-import { shown, upcomingActivities, useDashboardData } from "@/lib/dashboard-data";
+import { CalendarDays, GraduationCap, CheckCircle2, Clock, ChevronRight, Bell, MessageSquare } from "lucide-react";
+import { formatThaiPeriod, loadActivities, useApiData, type ActivityView } from "@/lib/api";
+import { shown, upcomingActivities, useMyInsights } from "@/lib/dashboard-data";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
@@ -16,17 +17,21 @@ const exchangeStatusColors: Record<string, string> = {
 };
 
 export default function DashboardStudent() {
-  // There are no student accounts yet, so the dashboard shows published records for everyone.
-  const data = useDashboardData();
-  const upcoming = upcomingActivities(data.activities);
+  // Upcoming activities are the published list; exchange and feedback are this student's own (GET /insights/me).
+  const activities = useApiData<ActivityView[]>(() => loadActivities().catch(() => []), [], []);
+  const insights = useMyInsights();
+  const mine = insights?.role === "student" ? insights : null;
+  const loaded = mine !== null;
+  const exchange = mine?.exchange ?? [];
+  const upcoming = upcomingActivities(activities);
   const openActivities = upcoming.filter((a) => a.isOpen);
-  const completedExchange = data.exchange.filter((e) => e.status === "เสร็จสิ้น").length;
+  const completedExchange = exchange.filter((e) => e.status === "เสร็จสิ้น").length;
 
   const summaryCards = [
-    { icon: CalendarDays, label: "กิจกรรมที่จะถึง", value: shown(data.loaded, upcoming.length), color: "#B45309", bg: "#FEF3C7" },
-    { icon: CheckCircle2, label: "เปิดรับสมัคร", value: shown(data.loaded, openActivities.length), color: "#15803D", bg: "#DCFCE7" },
-    { icon: GraduationCap, label: "โครงการแลกเปลี่ยน", value: shown(data.loaded, data.exchange.length), color: "#8B1538", bg: "#F5D6DE" },
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(data.loaded, data.partners.length), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: CalendarDays, label: "กิจกรรมที่จะถึง", value: String(upcoming.length), color: "#B45309", bg: "#FEF3C7" },
+    { icon: CheckCircle2, label: "เปิดรับสมัคร", value: String(openActivities.length), color: "#15803D", bg: "#DCFCE7" },
+    { icon: GraduationCap, label: "โครงการแลกเปลี่ยนของฉัน", value: shown(loaded, exchange.length), color: "#8B1538", bg: "#F5D6DE" },
+    { icon: MessageSquare, label: "Feedback ที่ส่งแล้ว", value: shown(loaded, mine?.counts.feedbackSubmitted ?? 0), color: "#1D4ED8", bg: "#DBEAFE" },
   ];
 
   return (
@@ -39,7 +44,7 @@ export default function DashboardStudent() {
             หน้าหลักนักศึกษา
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>กิจกรรมและโครงการแลกเปลี่ยนที่เผยแพร่แล้ว</p>
+        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>กิจกรรมที่จะถึงและโครงการแลกเปลี่ยนของคุณ</p>
       </div>
 
       {/* Welcome card */}
@@ -61,7 +66,7 @@ export default function DashboardStudent() {
         </div>
         <div className="text-right">
           <div className="text-2xl font-extrabold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            {shown(data.loaded, completedExchange)}
+            {shown(loaded, completedExchange)}
           </div>
           <div className="text-xs opacity-70">โครงการที่เสร็จสิ้น</div>
         </div>
@@ -90,19 +95,19 @@ export default function DashboardStudent() {
             </Link>
           </div>
           <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
-            {data.loaded && data.exchange.length === 0 && (
+            {loaded && exchange.length === 0 && (
               <p className="px-5 py-4 text-xs text-faint">ยังไม่มีข้อมูลการแลกเปลี่ยนของบัญชีนี้</p>
             )}
-            {data.exchange.slice(0, 5).map((p) => (
+            {exchange.slice(0, 5).map((p) => (
               <div key={p.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#FAFAFA]">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#F5D6DE" }}>
                   <GraduationCap className="w-5 h-5" style={{ color: "#8B1538" }} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{p.program}</div>
-                  <div className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{p.to} • {p.period}</div>
+                  <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{p.program ?? p.name}</div>
+                  <div className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{p.toOrganization ?? "—"} • {formatThaiPeriod(p.startDate, p.endDate)}</div>
                 </div>
-                <span className={`badge ${exchangeStatusColors[p.status] ?? "badge-gray"}`}>{p.status}</span>
+                {p.status && <span className={`badge ${exchangeStatusColors[p.status] ?? "badge-gray"}`}>{p.status}</span>}
               </div>
             ))}
           </div>
@@ -117,7 +122,7 @@ export default function DashboardStudent() {
               <h3 className="font-bold text-sm" style={{ color: "#111827" }}>กิจกรรมที่จะถึง</h3>
             </div>
             <div className="space-y-2.5">
-              {data.loaded && upcoming.length === 0 && <p className="text-xs text-faint">ยังไม่มีกิจกรรมที่จะถึง</p>}
+              {upcoming.length === 0 && <p className="text-xs text-faint">ยังไม่มีกิจกรรมที่จะถึง</p>}
               {upcoming.slice(0, 5).map((a) => (
                 <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-3 p-2.5 rounded-lg bg-paper">
                   <Clock className="w-4 h-4 flex-shrink-0" style={{ color: "#C8961E" }} />

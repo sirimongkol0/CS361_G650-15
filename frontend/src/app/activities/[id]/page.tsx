@@ -3,7 +3,8 @@
 import { activityTypeColors, activityTypeLabels, label, displayDescription } from "@/lib/labels";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Calendar, FileText, ChevronRight, Clock, MapPin, Users, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { Calendar, Download, FileText, ChevronRight, Clock, MapPin, Users, MessageSquare } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { ApiError, loadActivity, loadDocuments, useApiResource } from "@/lib/api";
 import { canManage, useRole } from "@/lib/role-context";
@@ -12,6 +13,7 @@ import { activityDateLabel } from "@/lib/activity-display";
 import { DetailToolbar } from "@/components/detail-toolbar";
 import { OutcomeSection } from "@/components/outcome-section";
 import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools";
+import { downloadFile } from "@/lib/download-file";
 
 export default function ActivityDetailPage() {
   const params = useParams<{ id: string }>();
@@ -25,6 +27,11 @@ export default function ActivityDetailPage() {
     [id]
   );
   const documents = useApiResource(loadDocuments);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const exportReport = () => {
+    setReportError(null);
+    downloadFile(`/insights/activities/${id}.csv`).catch((e: Error) => setReportError(e.message));
+  };
   useDocumentTitle(activity.status === "success" ? activity.data.name : "กิจกรรม");
 
   if (activity.status === "loading") {
@@ -43,7 +50,7 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint">
+      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint print:hidden">
         <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
         <ChevronRight className="w-3 h-3" />
         <Link href="/activities" className="hover:text-crimson">กิจกรรม</Link>
@@ -70,16 +77,18 @@ export default function ActivityDetailPage() {
             {item.participants > 0 && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />ผู้เข้าร่วม {item.participants} คน</span>}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap print:hidden">
         {session === "authenticated" && role !== "public" && (
           <Link href={`/feedback?activityId=${item.id}`} className="btn btn-primary gap-2"><MessageSquare className="w-4 h-4" />ส่ง Feedback</Link>
         )}
         {canManage(role) && (
           <div className="flex gap-2">
             <Link href={`/activities/manage?edit=${item.id}`} className="btn btn-outline">แก้ไข</Link>
-            <button className="btn btn-primary gap-2" type="button" onClick={() => window.print()}><FileText className="w-4 h-4" />พิมพ์</button>
+            <button className="btn btn-outline gap-2" type="button" onClick={exportReport}><Download className="w-4 h-4" aria-hidden />ออกรายงาน</button>
+            <button className="btn btn-primary gap-2" type="button" onClick={() => window.print()}><FileText className="w-4 h-4" aria-hidden />พิมพ์ / PDF</button>
           </div>
         )}
+        {reportError && <p role="alert" className="w-full text-sm text-crimson">ออกรายงานไม่สำเร็จ: {reportError}</p>}
         </div>
       </div>
 
