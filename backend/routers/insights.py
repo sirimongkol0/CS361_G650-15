@@ -247,14 +247,18 @@ def partner_timeline(
     years: dict[int, dict] = {}
     totals = {}
     for kind, (model, date_column, conditions) in kinds.items():
+        mine = model.partner_id == partner_id
+        if model in (models.Outcome, models.Feedback):
+            # Also count those linked only to one of this partner's activities.
+            mine = mine | model.activity_id.in_(
+                db.query(models.Activity.id).filter(models.Activity.partner_id == partner_id))
         year = func.extract("year", date_column)
         rows = (db.query(year, func.count(model.id))
-                .filter(model.partner_id == partner_id, date_column.isnot(None), *conditions)
+                .filter(mine, date_column.isnot(None), *conditions)
                 .group_by(year).all())
         for row_year, count in rows:
             years.setdefault(int(row_year), dict.fromkeys(kinds, 0))[kind] = count
-        totals[kind] = (db.query(func.count(model.id))
-                        .filter(model.partner_id == partner_id, *conditions).scalar())
+        totals[kind] = db.query(func.count(model.id)).filter(mine, *conditions).scalar()
 
     return {
         "partner": {"id": partner.id, "name": partner.name, "type": partner.type},

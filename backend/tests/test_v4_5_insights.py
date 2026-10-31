@@ -442,3 +442,23 @@ def test_recent_outcome_or_feedback_keeps_a_partner_off_the_dormant_list(client,
     ])
     db_session.commit()
     assert client.get(SUMMARY, headers=staff).json()["dormantPartners"] == []
+
+
+def test_partner_timeline_counts_outcomes_and_feedback_linked_through_its_activities(client, db_session, staff):
+    partner = models.Partner(name="P", type="university")
+    db_session.add(partner)
+    db_session.flush()
+    event = models.Activity(name="E", date=date(2025, 3, 1), partner_id=partner.id)
+    db_session.add(event)
+    db_session.flush()
+    participants = _lookup(db_session, models.OutcomeType, "participants")
+    db_session.add_all([
+        models.Outcome(title="via activity", outcome_type_id=participants, activity_id=event.id,
+                       occurred_on=date(2025, 3, 1)),
+        models.Feedback(title="via activity", status="pending", activity_id=event.id, date=date(2025, 3, 2)),
+    ])
+    db_session.commit()
+
+    body = client.get(f"/api/v1/insights/partners/{partner.id}", headers=staff).json()
+    assert body["timeline"] == [{"year": 2025, "agreements": 0, "activities": 1, "outcomes": 1, "feedback": 1}]
+    assert body["totals"] == {"agreements": 0, "activities": 1, "outcomes": 1, "feedback": 1}
