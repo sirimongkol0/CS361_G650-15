@@ -262,3 +262,31 @@ def my_figures(
             for a in recent
         ],
     }
+
+
+@router.get("/activities/{activity_id}.csv")
+def activity_report_csv(
+    activity_id: int,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(require_role("coordinator", "staff", "admin")),
+):
+    """"ออกรายงาน" for one activity: the activity, its outcomes and its feedback.
+    Coordinators may export only activities they own."""
+    activity = db.query(models.Activity).filter_by(id=activity_id, is_deleted=False).first()
+    if activity is None:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if user.role == "coordinator" and activity.owner_user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not your activity")
+
+    outcomes = (db.query(models.Outcome).join(models.OutcomeType)
+                .filter(models.Outcome.activity_id == activity_id, models.Outcome.is_deleted.is_(False))
+                .order_by(models.Outcome.occurred_on, models.Outcome.id).all())
+    feedback = (db.query(models.Feedback).filter(models.Feedback.activity_id == activity_id)
+                .order_by(models.Feedback.date, models.Feedback.id).all())
+    rows = [("กิจกรรม", activity.name, activity.date, "", "", activity.status, "")]
+    rows += [("ผลลัพธ์", o.title, o.occurred_on, o.value, o.unit or o.outcome_type.unit, "", o.description)
+             for o in outcomes]
+    rows += [("Feedback", f.title, f.date, f.rating, "คะแนน" if f.rating is not None else "", f.status, f.comment)
+             for f in feedback]
+    return _csv_response(f"activity-{activity_id}-report.csv",
+                         ("หมวด", "รายการ", "วันที่", "ค่า", "หน่วย", "สถานะ", "หมายเหตุ"), rows)

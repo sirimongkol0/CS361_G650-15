@@ -328,3 +328,54 @@ def test_summary_counts_agreements_per_effective_year(client, world, staff, db_s
     db_session.commit()
     body = client.get(SUMMARY, params={"year": 2025}, headers=staff).json()
     assert body["agreementsByYear"] == [{"year": 2023, "count": 1}, {"year": 2025, "count": 2}]
+
+
+# --- activity report CSV ------------------------------------------------------------
+
+def _activity_with_results(db_session, owner_id=None):
+    activity = models.Activity(name="Workshop", date=date(2025, 4, 2), status="เสร็จสิ้น", owner_user_id=owner_id)
+    db_session.add(activity)
+    db_session.flush()
+    participants = _lookup(db_session, models.OutcomeType, "participants")
+    db_session.add_all([
+        models.Outcome(title="ผู้เข้าร่วม", outcome_type_id=participants, value=Decimal(40), activity_id=activity.id,
+                       occurred_on=date(2025, 4, 2)),
+        models.Outcome(title="Deleted", outcome_type_id=participants, value=Decimal(1), activity_id=activity.id,
+                       is_deleted=True),
+        models.Feedback(title="ดีมาก", rating=5, status="reviewed", date=date(2025, 4, 3), activity_id=activity.id,
+                        comment="=cmd"),
+    ])
+    db_session.commit()
+    return activity.id
+
+
+def test_activity_report_csv_lists_the_activity_its_outcomes_and_feedback(client, db_session, staff):
+    activity_id = _activity_with_results(db_session)
+    response = client.get(f"/api/v1/insights/activities/{activity_id}.csv", headers=staff)
+    assert response.status_code == 200
+    assert f"activity-{activity_id}-report" in response.headers["content-disposition"]
+    lines = response.content.decode("utf-8-sig").splitlines()
+    assert lines[0] == "หมวด,รายการ,วันที่,ค่า,หน่วย,สถานะ,หมายเหตุ"
+    assert lines[1] == "กิจกรรม,Workshop,2025-04-02,,,เสร็จสิ้น,"
+    assert "ผลลัพธ์,ผู้เข้าร่วม,2025-04-02,40.00,คน,," in lines
+    assert "Feedback,ดีมาก,2025-04-03,5,คะแนน,reviewed,'=cmd" in lines
+    assert not any("Deleted" in line for line in lines)
+
+
+def test_activity_report_404_for_missing_activity(client, staff):
+    assert client.get("/api/v1/insights/activities/99999.csv", headers=staff).status_code == 404
+
+
+def test_coordinator_exports_only_their_own_activity(client, cognito, db_session):
+    headers = bearer(token_for(client, "coordinator"))
+    mine = _activity_with_results(db_session, owner_id=_user_id(db_session, "coordinator"))
+    theirs = _activity_with_results(db_session)
+    assert client.get(f"/api/v1/insights/activities/{mine}.csv", headers=headers).status_code == 200
+    assert client.get(f"/api/v1/insights/activities/{theirs}.csv", headers=headers).status_code == 403
+
+
+@pytest.mark.parametrize("role", ["public", "student"])
+def test_activity_report_rejects_public_and_students(client, cognito, db_session, role):
+    activity_id = _activity_with_results(db_session)
+    response = client.get(f"/api/v1/insights/activities/{activity_id}.csv", headers=bearer(token_for(client, role)))
+    assert response.status_code == 403
