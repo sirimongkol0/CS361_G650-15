@@ -26,6 +26,7 @@ const activities = [
     await page.route('**/api/v1/**', async route => {
       const parts = new URL(route.request().url()).pathname.split('/').filter(Boolean);
       const type = parts[2], id = Number(parts[3]);
+      if (type === 'outcomes') return route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({items: [], total: 0, page: 1, pageSize: 100})});
       const rows = type === 'documents' ? docs : type === 'activities' ? activities : [];
       const body = id ? rows.find(row => row.id === id) : rows;
       await route.fulfill({status: body ? 200 : 404, contentType: 'application/json', body: JSON.stringify(body || {detail: 'Not found'})});
