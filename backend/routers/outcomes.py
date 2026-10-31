@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -160,3 +160,95 @@ def get_outcome(
     if row is None:
         raise HTTPException(status_code=404, detail="Outcome not found")
     return _response(row)
+
+
+_CONTEXT_FIELDS = {column.key: model for column, model, _ in _CONTEXTS}
+
+
+def _check_contexts(db: Session, user: models.User, values: dict) -> None:
+    """At least one linked context, each one real, and each one owned by a coordinator caller."""
+    linked = {field: values[field] for field in _CONTEXT_FIELDS if values.get(field) is not None}
+    if not linked:
+        raise HTTPException(status_code=422, detail="An outcome must link to a partner, agreement, activity or exchange")
+    for field, context_id in linked.items():
+        context = db.get(_CONTEXT_FIELDS[field], context_id)
+        if context is None or getattr(context, "is_deleted", False):
+            raise HTTPException(status_code=422, detail=f"{field} does not exist")
+        if user.role == "coordinator" and context.owner_user_id != user.id:
+            raise HTTPException(status_code=403, detail="You can only add outcomes to records you are responsible for")
+
+
+def _check_type(db: Session, outcome_type_id: int) -> None:
+    outcome_type = db.get(models.OutcomeType, outcome_type_id)
+    if outcome_type is None or not outcome_type.is_active:
+        raise HTTPException(status_code=422, detail="outcome_type_id must be an active outcome type")
+
+
+def _check_publish(user: models.User, data: dict) -> None:
+    if "is_published" in data and user.role not in MANAGER_ROLES:
+        raise HTTPException(status_code=403, detail="Only staff or admin can publish outcomes")
+
+
+@router.post("/", response_model=schemas.OutcomeResponse, status_code=201)
+def create_outcome(
+    body: schemas.OutcomeCreate,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("coordinator", *MANAGER_ROLES)),
+):
+    data = body.model_dump(exclude_unset=True)
+    _check_publish(user, data)
+    _check_type(db, body.outcome_type_id)
+    _check_contexts(db, user, data)
+    row = models.Outcome(**data, owner_user_id=user.id, created_at=datetime.now(timezone.utc))
+    db.add(row)
+    db.flush()
+    audit.record(db, user, "create", "outcomes", row.id, after=audit.snapshot(row))
+    db.commit()
+    db.refresh(row)
+    return _response(row)
+
+
+@router.patch("/{outcome_id}", response_model=schemas.OutcomeResponse)
+def update_outcome(
+    outcome_id: int,
+    body: schemas.OutcomeUpdate,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("coordinator", *MANAGER_ROLES)),
+):
+    query = _visible_query(db, user)
+    if user.role == "coordinator":
+        # Coordinators may read public outcomes but only edit ones on their own records.
+        query = query.filter(_owned_by(user))
+    row = query.filter(models.Outcome.id == outcome_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Outcome not found")
+    data = body.model_dump(exclude_unset=True)
+    _check_publish(user, data)
+    if data.get("outcome_type_id") is not None:
+        _check_type(db, data["outcome_type_id"])
+    if data.keys() & _CONTEXT_FIELDS.keys():
+        # Check the contexts the row will have after the update, not only the current ones.
+        _check_contexts(db, user, {field: data.get(field, getattr(row, field)) for field in _CONTEXT_FIELDS})
+    before = audit.snapshot(row)
+    for field, value in data.items():
+        if value is not None or field not in ("outcome_type_id", "title", "is_published"):
+            setattr(row, field, value)
+    audit.record(db, user, "update", "outcomes", row.id, before=before, after=audit.snapshot(row))
+    db.commit()
+    db.refresh(row)
+    return _response(row)
+
+
+@router.delete("/{outcome_id}", status_code=204)
+def delete_outcome(
+    outcome_id: int,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role(*MANAGER_ROLES)),
+):
+    row = _visible_query(db, user).filter(models.Outcome.id == outcome_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Outcome not found")
+    before = audit.snapshot(row)
+    row.is_deleted = True
+    audit.record(db, user, "delete", "outcomes", row.id, before=before, after=audit.snapshot(row))
+    db.commit()

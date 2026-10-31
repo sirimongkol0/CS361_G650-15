@@ -139,3 +139,110 @@ def test_outcome_list_filters_and_paginates(client, db_session, read_world):
     item = client.get(f"/api/v1/outcomes/{rows['public'].id}").json()
     assert item["outcome_type"]["code"] == "participants" and item["unit"] == "คน"
     assert "owner_user_id" not in item and "external_id" not in item
+
+
+# --- writing outcomes ---------------------------------------------------------
+
+@pytest.fixture
+def write_world(client, db_session, cognito):
+    headers = {role: bearer(token_for(client, role)) for role in ROLES}
+    coordinator = _user(db_session, "coordinator")
+    own = models.Activity(name="Mine", is_published=True, owner_user_id=coordinator.id)
+    other = models.Activity(name="Someone else's", is_published=True)
+    db_session.add_all([own, other])
+    db_session.commit()
+    type_id = db_session.query(models.OutcomeType).filter_by(code="participants").one().id
+    return headers, own, other, type_id
+
+
+def _audit_actions(db_session, outcome_id):
+    return [log.action for log in db_session.query(models.AuditLog)
+            .filter_by(entity="outcomes", entity_id=outcome_id).order_by(models.AuditLog.id)]
+
+
+@pytest.mark.parametrize("role,status", [
+    (None, 401), ("public", 403), ("student", 403), ("coordinator", 201), ("staff", 201), ("admin", 201),
+])
+def test_create_outcome_by_role(client, db_session, write_world, role, status):
+    headers, own, _, type_id = write_world
+    body = {"title": "35 participants", "outcome_type_id": type_id, "value": 35, "activity_id": own.id}
+    response = client.post("/api/v1/outcomes/", json=body, headers=headers[role] if role else None)
+    assert response.status_code == status, response.text
+    if status == 201:
+        created = response.json()
+        assert created["is_published"] is False and created["value"] == 35
+        assert _audit_actions(db_session, created["id"]) == ["create"]
+
+
+def test_create_outcome_validation_and_coordinator_scope(client, db_session, write_world):
+    headers, own, other, type_id = write_world
+    coord, staff = headers["coordinator"], headers["staff"]
+    base = {"title": "Result", "outcome_type_id": type_id}
+
+    assert client.post("/api/v1/outcomes/", json=base, headers=staff).status_code == 422  # no context
+    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": 99999}, headers=staff).status_code == 422
+    inactive = db_session.query(models.OutcomeType).filter_by(code="funding").one()
+    inactive.is_active = False
+    db_session.commit()
+    assert client.post("/api/v1/outcomes/", json={**base, "outcome_type_id": inactive.id,
+                                                  "activity_id": own.id}, headers=staff).status_code == 422
+    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": own.id,
+                                                  "evidence_url": "javascript:alert(1)"},
+                       headers=staff).status_code == 422
+
+    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": other.id}, headers=coord).status_code == 403
+    # Owning one linked context does not open another one.
+    partner = models.Partner(name="Not mine")
+    db_session.add(partner)
+    db_session.commit()
+    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": own.id, "partner_id": partner.id},
+                       headers=coord).status_code == 403
+    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": own.id, "is_published": True},
+                       headers=coord).status_code == 403
+    published = client.post("/api/v1/outcomes/", json={**base, "activity_id": other.id, "is_published": True},
+                            headers=staff)
+    assert published.status_code == 201 and published.json()["is_published"] is True
+
+
+def test_update_outcome_scope_publish_and_audit(client, db_session, write_world):
+    headers, own, other, type_id = write_world
+    coord = headers["coordinator"]
+    mine = _outcome(db_session, "Mine", published=False, activity_id=own.id)
+    theirs = _outcome(db_session, "Theirs", published=False, activity_id=other.id)
+
+    edited = client.patch(f"/api/v1/outcomes/{mine.id}", json={"title": "Mine, edited", "value": 40}, headers=coord)
+    assert edited.status_code == 200, edited.text
+    assert edited.json()["title"] == "Mine, edited"
+    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"activity_id": other.id},
+                        headers=coord).status_code == 403
+    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"is_published": True},
+                        headers=coord).status_code == 403
+    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"activity_id": None},
+                        headers=headers["staff"]).status_code == 422
+    assert client.patch(f"/api/v1/outcomes/{theirs.id}", json={"title": "x"}, headers=coord).status_code == 404
+    for role in ("public", "student"):
+        assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"title": "x"},
+                            headers=headers[role]).status_code == 403
+
+    for role in ("staff", "admin"):
+        response = client.patch(f"/api/v1/outcomes/{theirs.id}", json={"is_published": True}, headers=headers[role])
+        assert response.status_code == 200 and response.json()["is_published"] is True
+    assert _audit_actions(db_session, mine.id) == ["update"]
+    log = db_session.query(models.AuditLog).filter_by(entity="outcomes", entity_id=mine.id).one()
+    assert log.before["title"] == "Mine" and log.after["title"] == "Mine, edited"
+
+
+@pytest.mark.parametrize("role,status", [
+    (None, 401), ("public", 403), ("student", 403), ("coordinator", 403), ("staff", 204), ("admin", 204),
+])
+def test_delete_outcome_by_role(client, db_session, write_world, role, status):
+    headers, own, _, _ = write_world
+    row = _outcome(db_session, "To delete", activity_id=own.id)
+    response = client.delete(f"/api/v1/outcomes/{row.id}", headers=headers[role] if role else None)
+    assert response.status_code == status, response.text
+    if status == 204:
+        db_session.refresh(row)
+        assert row.is_deleted is True
+        assert _audit_actions(db_session, row.id) == ["delete"]
+        assert client.get(f"/api/v1/outcomes/{row.id}", headers=headers["staff"]).status_code == 404
+        assert client.delete(f"/api/v1/outcomes/{row.id}", headers=headers[role]).status_code == 404

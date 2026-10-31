@@ -441,6 +441,36 @@ class OutcomeResponse(BaseModel):
     outcome_type: OutcomeTypeResponse
 
 
+class OutcomeUpdate(BaseModel):
+    """PATCH /outcomes/{id}; publishing is staff/admin only."""
+    model_config = ConfigDict(extra="forbid")
+
+    outcome_type_id: Optional[int] = None
+    title: Optional[str] = Field(default=None, min_length=1, max_length=300)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    value: Optional[float] = None
+    unit: Optional[str] = Field(default=None, max_length=50)
+    occurred_on: Optional[datetime_date] = None
+    evidence_url: Optional[HttpsUrl] = None
+    partner_id: Optional[int] = None
+    activity_id: Optional[int] = None
+    document_id: Optional[int] = None
+    exchange_id: Optional[int] = None
+    is_published: Optional[bool] = None
+
+    @field_validator("title")
+    @classmethod
+    def outcome_title_not_blank(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("title must not be blank")
+        return value.strip() if value is not None else None
+
+
+class OutcomeCreate(OutcomeUpdate):
+    outcome_type_id: int
+    title: str = Field(..., min_length=1, max_length=300)
+
+
 class OutcomePage(BaseModel):
     items: List[OutcomeResponse]
     total: int
