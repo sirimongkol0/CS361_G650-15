@@ -62,6 +62,9 @@ export default function StakeholderDetailPage() {
             <div className="flex items-center gap-3 flex-wrap mb-1">
               <h1 className="text-xl font-bold text-ink font-display">{item.name}</h1>
               {item.type && <span className="badge badge-indigo">{label(partnerTypeLabels, item.type)}</span>}
+              {(role === "staff" || role === "admin") && (
+                <Link href={`/reports/partners/${item.id}`} className="btn btn-outline text-xs py-1 print:hidden">รายงานความร่วมมือ</Link>
+              )}
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-sm text-faint">
               {item.country && <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />{item.country}</span>}

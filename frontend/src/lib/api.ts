@@ -997,6 +997,8 @@ export interface LabelledCount extends KeyedCount { label: string }
 export interface InsightsSummary {
   filters: { dateFrom: string | null; dateTo: string | null; stakeholderType: string | null };
   expiringWithinDays: number;
+  dormantWithinDays: number;
+  dormantPartners: { id: number; name: string; type: string | null; lastActivityDate: string | null }[];
   partnersByType: KeyedCount<string | null>[];
   agreementsByStatus: KeyedCount<string | null>[];
   agreementsByYear: { year: number; count: number }[];
@@ -1083,3 +1085,12 @@ export async function loadAuditLogs(filters: AuditLogFilters): Promise<{ rows: A
 
 /** GET /audit-logs/users: accounts that appear in the log. */
 export const loadAuditUsers = () => apiGetList<{ id: number; email: string }>("/audit-logs/users");
+
+export interface PartnerTimeline {
+  partner: { id: number; name: string; type: string | null };
+  timeline: { year: number; agreements: number; activities: number; outcomes: number; feedback: number }[];
+  totals: { agreements: number; activities: number; outcomes: number; feedback: number };
+}
+
+/** GET /insights/partners/{id} (staff/admin): one partner's collaboration per year. */
+export const loadPartnerTimeline = (id: number) => apiGet<PartnerTimeline>(`/insights/partners/${id}`);

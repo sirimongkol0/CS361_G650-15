@@ -12,7 +12,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import {
-  formatThaiDate, insightsQuery, loadInsightsSummary, useApiResource, type InsightsSummary, type LabelledCount,
+  formatThaiDate, insightsQuery, loadInsightsSummary, useApiData, useApiResource, type InsightsSummary, type LabelledCount,
 } from "@/lib/api";
 import { beYear, monthLabel } from "@/lib/dashboard-data";
 import { documentStatusLabels, feedbackStatusLabels, label, partnerTypeLabels } from "@/lib/labels";
@@ -71,7 +71,42 @@ function CountList({ title, rows }: { title: string; rows: LabelledCount[] }) {
   );
 }
 
-function Report({ summary, year }: { summary: InsightsSummary; year: number | null }) {
+/** "▲ +2 จากปี 2568" style change against the previous year; null when there is nothing to compare. */
+function change(current: number, previous: number | null) {
+  if (previous === null) return null;
+  const diff = current - previous;
+  if (diff === 0) return { text: "เท่ากับปีก่อน", tone: "text-faint" };
+  const pct = previous ? ` (${diff > 0 ? "+" : ""}${Math.round((diff / previous) * 100)}%)` : "";
+  return diff > 0
+    ? { text: `▲ +${diff}${pct} จากปีก่อน`, tone: "text-[#15803d]" }
+    : { text: `▼ ${diff}${pct} จากปีก่อน`, tone: "text-[#b91c1c]" };
+}
+
+/** Plain-Thai paragraph for the annual report, written from the figures. */
+function annualSummary(summary: InsightsSummary, previous: InsightsSummary | null, year: number) {
+  const activities = sum(summary.activitiesByMonth);
+  const before = previous ? sum(previous.activitiesByMonth) : null;
+  const trend = before === null || before === activities ? "" : activities > before
+    ? ` เพิ่มขึ้นจาก ${before} ครั้งในปี ${beYear(year - 1)}` : ` ลดลงจาก ${before} ครั้งในปี ${beYear(year - 1)}`;
+  const partners = new Set(summary.topPartners.map((p) => p.id)).size;
+  const sentences = [
+    `ปี ${beYear(year)} หลักสูตรมีหน่วยงานคู่ความร่วมมือ ${sum(summary.partnersByType)} แห่ง และจัดกิจกรรมร่วมกัน ${activities} ครั้ง${trend}`,
+  ];
+  if (summary.outcomesByType.length) {
+    sentences.push(`ผลลัพธ์ที่บันทึกได้ ${summary.outcomesByType.map((o) => `${o.label} ${o.totalValue.toLocaleString("th-TH")}`).join(", ")}`);
+  }
+  const feedback = sum(summary.feedbackByStatus);
+  if (feedback) {
+    sentences.push(`ได้รับ Feedback ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
+  }
+  if (partners) sentences.push(`หน่วยงานที่มีความร่วมมือมากที่สุดคือ ${summary.topPartners[0].name}`);
+  if (summary.dormantPartners.length) {
+    sentences.push(`มี ${summary.dormantPartners.length} หน่วยงานที่ข้อตกลงยังมีผลแต่ไม่มีความเคลื่อนไหวเกิน 1 ปี ควรพิจารณาต่อยอดหรือทบทวนข้อตกลง`);
+  }
+  return sentences.join(" ");
+}
+
+function Report({ summary, previous, year }: { summary: InsightsSummary; previous: InsightsSummary | null; year: number | null }) {
   const monthly = monthlyActivities(summary, year);
   const partnerTypes = summary.partnersByType.map((row) => ({
     name: row.key ? label(partnerTypeLabels, row.key) : "ไม่ระบุประเภท", value: row.count,
@@ -88,17 +123,26 @@ function Report({ summary, year }: { summary: InsightsSummary; year: number | nu
   const kpis = [
     { label: "หน่วยงาน", value: sum(summary.partnersByType), icon: Building2, color: "#7c3aed", bg: "#ede9fe" },
     { label: "ข้อตกลง MoU/MoA", value: sum(summary.agreementsByStatus), icon: FileText, color: "#d97706", bg: "#fef3c7" },
-    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe" },
-    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, color: "#16a34a", bg: "#dcfce7" },
+    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe",
+      change: change(sum(summary.activitiesByMonth), previous && sum(previous.activitiesByMonth)) },
+    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, color: "#16a34a", bg: "#dcfce7",
+      change: change(sum(summary.outcomesByType), previous && sum(previous.outcomesByType)) },
     {
       label: `Feedback (${period})`,
       value: `${sum(summary.feedbackByStatus)}${summary.feedbackAverageRating == null ? "" : ` • ${summary.feedbackAverageRating.toFixed(1)}★`}`,
       icon: MessageSquare, color: "#be185d", bg: "#fce7f3",
+      change: change(sum(summary.feedbackByStatus), previous && sum(previous.feedbackByStatus)),
     },
-  ];
+  ] as { label: string; value: number | string; icon: typeof Building2; color: string; bg: string; change?: ReturnType<typeof change> }[];
 
   return (
     <>
+      {year !== null && (
+        <section className={`${card} mb-6`}>
+          <h2 className="font-bold mb-2 text-ink">สรุปประจำปี {beYear(year)}</h2>
+          <p className="text-sm leading-relaxed text-mute">{annualSummary(summary, previous, year)}</p>
+        </section>
+      )}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {kpis.map((kpi) => (
           <div key={kpi.label} className={card}>
@@ -107,6 +151,7 @@ function Report({ summary, year }: { summary: InsightsSummary; year: number | nu
             </div>
             <div className="text-2xl font-bold mb-0.5 text-ink font-display">{kpi.value}</div>
             <div className="text-xs text-faint">{kpi.label}</div>
+            {kpi.change && <div className={`text-xs mt-1 font-semibold ${kpi.change.tone}`}>{kpi.change.text}</div>}
           </div>
         ))}
       </div>
@@ -204,6 +249,24 @@ function Report({ summary, year }: { summary: InsightsSummary; year: number | nu
           </div>
         </section>
       </div>
+      <section className={`${card} mt-5`}>
+        <h2 className="font-bold mb-1 text-ink">หน่วยงานที่ไม่มีความเคลื่อนไหว</h2>
+        <p className="text-xs mb-4 text-faint">
+          ข้อตกลงยังมีผล แต่ไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ใน {summary.dormantWithinDays} วันที่ผ่านมา (ข้อมูล ณ วันนี้)
+        </p>
+        {summary.dormantPartners.length === 0 ? <p className="text-sm text-faint">ทุกหน่วยงานที่มีข้อตกลงมีความเคลื่อนไหวในปีที่ผ่านมา</p> : (
+          <ul className="divide-y divide-line">
+            {summary.dormantPartners.map((partner) => (
+              <li key={partner.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <Link href={`/reports/partners/${partner.id}`} className="text-ink hover:text-crimson">{partner.name}</Link>
+                <span className="text-xs text-faint">
+                  {partner.lastActivityDate ? `ล่าสุด ${formatThaiDate(partner.lastActivityDate)}` : "ยังไม่เคยมีกิจกรรม"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }
@@ -218,6 +281,11 @@ export default function ReportsPage() {
   const summary = useApiResource(
     () => (allowed ? loadInsightsSummary(filters) : new Promise<InsightsSummary>(() => {})),
     [allowed, year, stakeholderType],
+  );
+  // Last year's figures, for the change arrows and the annual summary.
+  const previous = useApiData<InsightsSummary | null>(
+    () => (allowed && year ? loadInsightsSummary({ ...filters, year: year - 1 }).catch(() => null) : Promise.resolve(null)),
+    null, [allowed, year, stakeholderType],
   );
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -267,7 +335,7 @@ export default function ReportsPage() {
 
       {summary.status === "loading" && <LoadingState />}
       {summary.status === "error" && <ErrorState error={summary.error} onRetry={summary.retry} />}
-      {summary.status === "success" && <Report summary={summary.data} year={year} />}
+      {summary.status === "success" && <Report summary={summary.data} previous={previous} year={year} />}
     </div>
   );
 }
