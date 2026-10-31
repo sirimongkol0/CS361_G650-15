@@ -951,7 +951,7 @@ export function useApiResource<T>(
   } as ApiResource<T>;
 }
 
-/* ---- V4-2 outcomes (fields are snake_case, as the API returns them) ---- */
+/* ---- V4-2 outcomes (camelCase; the nested type keeps the lookup API's snake_case) ---- */
 export interface OutcomeType {
   id: number;
   code: string;
@@ -961,7 +961,7 @@ export interface OutcomeType {
   sort_order: number;
 }
 
-export type OutcomeContextField = "partner_id" | "activity_id" | "document_id" | "exchange_id";
+export type OutcomeContextField = "partnerId" | "activityId" | "documentId" | "exchangeId";
 
 export interface Outcome {
   id: number;
@@ -969,21 +969,23 @@ export interface Outcome {
   description: string | null;
   value: number | null;
   unit: string | null;
-  occurred_on: string | null;
-  evidence_url: string | null;
-  partner_id: number | null;
-  activity_id: number | null;
-  document_id: number | null;
-  exchange_id: number | null;
-  is_published: boolean;
-  outcome_type: OutcomeType;
+  occurredOn: string | null;
+  evidenceUrl: string | null;
+  partnerId: number | null;
+  activityId: number | null;
+  documentId: number | null;
+  exchangeId: number | null;
+  isPublished: boolean;
+  outcomeType: OutcomeType;
+  /** Whether the signed-in caller may edit this outcome (decided by the server). */
+  canEdit: boolean;
 }
 
 export interface OutcomePage {
   items: Outcome[];
   total: number;
   page: number;
-  page_size: number;
+  pageSize: number;
 }
 
-export type OutcomeInput = Partial<Omit<Outcome, "id" | "outcome_type">> & { outcome_type_id?: number };
+export type OutcomeInput = Partial<Omit<Outcome, "id" | "outcomeType" | "canEdit">> & { outcomeTypeId?: number };

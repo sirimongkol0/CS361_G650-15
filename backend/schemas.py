@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, EmailStr
+from pydantic.alias_generators import to_camel
 from typing import Annotated, Optional, List, Literal
 from datetime import date, datetime, timezone
 
@@ -424,7 +425,8 @@ class OutcomeTypeResponse(FeedbackLookupResponse):
 
 
 class OutcomeResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    """camelCase on the wire; read from the ORM row by field name."""
+    model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
 
     id: int
     title: str
@@ -438,12 +440,13 @@ class OutcomeResponse(BaseModel):
     document_id: Optional[int] = None
     exchange_id: Optional[int] = None
     is_published: bool
-    outcome_type: OutcomeTypeResponse
+    outcome_type: OutcomeTypeResponse  # keeps the lookup API's snake_case shape
+    can_edit: bool = False             # whether the caller may PATCH this outcome
 
 
 class OutcomeUpdate(BaseModel):
-    """PATCH /outcomes/{id}; publishing is staff/admin only."""
-    model_config = ConfigDict(extra="forbid")
+    """PATCH /outcomes/{id}, camelCase keys only; publishing is staff/admin only."""
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
 
     outcome_type_id: Optional[int] = None
     title: Optional[str] = Field(default=None, min_length=1, max_length=300)
@@ -473,6 +476,8 @@ class OutcomeCreate(OutcomeUpdate):
 
 
 class OutcomePage(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     items: List[OutcomeResponse]
     total: int
     page: int

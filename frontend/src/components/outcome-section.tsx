@@ -9,29 +9,37 @@ import {
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { DateInput, Dialog, Field, FormError, Notice, inputCls, orNull, useAction } from "@/components/form-ui";
 
-type Draft = { outcome_type_id: string; title: string; value: string; unit: string; occurred_on: string; evidence_url: string; description: string };
-const emptyDraft: Draft = { outcome_type_id: "", title: "", value: "", unit: "", occurred_on: "", evidence_url: "", description: "" };
+type Draft = { outcomeTypeId: string; title: string; value: string; unit: string; occurredOn: string; evidenceUrl: string; description: string };
+// List filters stay snake_case query parameters, like the other endpoints'.
+const queryParam: Record<OutcomeContextField, string> = {
+  partnerId: "partner_id", activityId: "activity_id", documentId: "document_id", exchangeId: "exchange_id",
+};
+const emptyDraft: Draft = { outcomeTypeId: "", title: "", value: "", unit: "", occurredOn: "", evidenceUrl: "", description: "" };
 
 function toDraft(row: Outcome): Draft {
   return {
-    outcome_type_id: String(row.outcome_type.id), title: row.title,
-    value: row.value === null ? "" : String(row.value), unit: row.unit === row.outcome_type.unit ? "" : row.unit ?? "",
-    occurred_on: row.occurred_on ?? "", evidence_url: row.evidence_url ?? "", description: row.description ?? "",
+    outcomeTypeId: String(row.outcomeType.id), title: row.title,
+    value: row.value === null ? "" : String(row.value), unit: row.unit === row.outcomeType.unit ? "" : row.unit ?? "",
+    occurredOn: row.occurredOn ?? "", evidenceUrl: row.evidenceUrl ?? "", description: row.description ?? "",
   };
 }
 
-/** Outcomes of one partner, agreement, activity or exchange record, with add/edit for people who manage it. */
-export function OutcomeSection({ field, id, canEdit, canPublish }: {
-  field: OutcomeContextField; id: number; canEdit: boolean; canPublish: boolean;
+/**
+ * Outcomes of one partner, agreement, activity or exchange record. Each row's
+ * canEdit comes from the server; canAdd only shows the add button (the server
+ * still refuses records the caller is not responsible for).
+ */
+export function OutcomeSection({ field, id, canAdd, canPublish }: {
+  field: OutcomeContextField; id: number; canAdd: boolean; canPublish: boolean;
 }) {
   const [reload, setReload] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<Outcome | "new" | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const action = useAction();
-  const outcomes = useApiResource(() => apiGetFresh<OutcomePage>(`/outcomes/?${field}=${id}&page_size=100`), [field, id, reload]);
+  const outcomes = useApiResource(() => apiGetFresh<OutcomePage>(`/outcomes/?${queryParam[field]}=${id}&page_size=100`), [field, id, reload]);
   // Loaded on every render so a type an admin just added is offered straight away.
-  const types = useApiResource(() => canEdit ? apiGetFresh<OutcomeType[]>("/outcomes/types") : Promise.resolve([]), [canEdit, editing !== null]);
+  const types = useApiResource(() => editing !== null ? apiGetFresh<OutcomeType[]>("/outcomes/types") : Promise.resolve([]), [editing !== null]);
 
   const done = (message: string) => { setNotice(message); setEditing(null); setReload((n) => n + 1); };
   const open = (row: Outcome | "new") => { action.clear(); setDraft(row === "new" ? emptyDraft : toDraft(row)); setEditing(row); };
@@ -40,9 +48,9 @@ export function OutcomeSection({ field, id, canEdit, canPublish }: {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const body: OutcomeInput = {
-      outcome_type_id: Number(draft.outcome_type_id), title: draft.title.trim(),
+      outcomeTypeId: Number(draft.outcomeTypeId), title: draft.title.trim(),
       value: draft.value.trim() === "" ? null : Number(draft.value), unit: orNull(draft.unit),
-      occurred_on: orNull(draft.occurred_on), evidence_url: orNull(draft.evidence_url), description: orNull(draft.description),
+      occurredOn: orNull(draft.occurredOn), evidenceUrl: orNull(draft.evidenceUrl), description: orNull(draft.description),
     };
     if (editing === "new") {
       if (await action.run(() => apiPost("/outcomes/", { ...body, [field]: id }))) done("เพิ่มผลลัพธ์แล้ว");
@@ -52,8 +60,8 @@ export function OutcomeSection({ field, id, canEdit, canPublish }: {
   };
 
   const togglePublish = async (row: Outcome) => {
-    if (await action.run(() => apiPatch(`/outcomes/${row.id}`, { is_published: !row.is_published }))) {
-      done(row.is_published ? "ยกเลิกการเผยแพร่แล้ว" : "เผยแพร่ผลลัพธ์แล้ว");
+    if (await action.run(() => apiPatch(`/outcomes/${row.id}`, { isPublished: !row.isPublished }))) {
+      done(row.isPublished ? "ยกเลิกการเผยแพร่แล้ว" : "เผยแพร่ผลลัพธ์แล้ว");
     }
   };
 
@@ -66,7 +74,7 @@ export function OutcomeSection({ field, id, canEdit, canPublish }: {
     <section className="bg-white rounded-base shadow-card p-5">
       <div className="flex items-center justify-between mb-3 gap-2">
         <h2 className="font-bold text-ink">ผลลัพธ์</h2>
-        {canEdit && <button type="button" className="btn btn-outline gap-1" onClick={() => open("new")}><Plus className="w-3.5 h-3.5" />เพิ่มผลลัพธ์</button>}
+        {canAdd && <button type="button" className="btn btn-outline gap-1" onClick={() => open("new")}><Plus className="w-3.5 h-3.5" />เพิ่มผลลัพธ์</button>}
       </div>
       <Notice text={notice} />
       {!editing && <FormError error={action.error} />}
@@ -79,19 +87,19 @@ export function OutcomeSection({ field, id, canEdit, canPublish }: {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-sm text-ink">{row.title}</span>
-                  <span className="badge badge-gray">{row.outcome_type.name_th}</span>
-                  {canEdit && !row.is_published && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
+                  <span className="badge badge-gray">{row.outcomeType.name_th}</span>
+                  {row.canEdit && !row.isPublished && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
                 </div>
                 <div className="text-xs text-faint mt-1 flex flex-wrap gap-x-3">
                   {row.value !== null && <span>{row.value.toLocaleString("th-TH")} {row.unit ?? ""}</span>}
-                  {row.occurred_on && <span>{formatThaiDate(row.occurred_on)}</span>}
-                  {row.evidence_url && <a href={row.evidence_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-crimson hover:underline">หลักฐาน<ExternalLink className="w-3 h-3" /></a>}
+                  {row.occurredOn && <span>{formatThaiDate(row.occurredOn)}</span>}
+                  {row.evidenceUrl && <a href={row.evidenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-crimson hover:underline">หลักฐาน<ExternalLink className="w-3 h-3" /></a>}
                 </div>
                 {row.description && <p className="text-sm text-faint mt-1 whitespace-pre-line">{row.description}</p>}
               </div>
-              {canEdit && (
+              {row.canEdit && (
                 <div className="flex gap-1 flex-shrink-0">
-                  {canPublish && <button type="button" className="btn btn-outline text-xs" disabled={action.busy} onClick={() => togglePublish(row)}>{row.is_published ? "ยกเลิกเผยแพร่" : "เผยแพร่"}</button>}
+                  {canPublish && <button type="button" className="btn btn-outline text-xs" disabled={action.busy} onClick={() => togglePublish(row)}>{row.isPublished ? "ยกเลิกเผยแพร่" : "เผยแพร่"}</button>}
                   <button type="button" className="btn p-1.5 text-faint hover:bg-soft" aria-label={`แก้ไข ${row.title}`} onClick={() => open(row)}><Pencil className="w-3.5 h-3.5" /></button>
                   {canPublish && <button type="button" className="btn p-1.5 text-faint hover:bg-soft" aria-label={`ลบ ${row.title}`} disabled={action.busy} onClick={() => remove(row)}><Trash2 className="w-3.5 h-3.5" /></button>}
                 </div>
@@ -104,7 +112,7 @@ export function OutcomeSection({ field, id, canEdit, canPublish }: {
       <Dialog open={editing !== null} title={editing === "new" ? "เพิ่มผลลัพธ์" : "แก้ไขผลลัพธ์"} onClose={() => setEditing(null)}>
         <form onSubmit={submit}>
           <Field label="ประเภทผลลัพธ์">
-            <select className={inputCls} required value={draft.outcome_type_id} onChange={(e) => set("outcome_type_id")(e.target.value)}>
+            <select className={inputCls} required value={draft.outcomeTypeId} onChange={(e) => set("outcomeTypeId")(e.target.value)}>
               <option value="" disabled>เลือกประเภท</option>
               {types.status === "success" && types.data.map((t) => <option key={t.id} value={t.id}>{t.name_th}{t.unit ? ` (${t.unit})` : ""}</option>)}
             </select>
@@ -115,8 +123,8 @@ export function OutcomeSection({ field, id, canEdit, canPublish }: {
             <Field label="จำนวน"><input className={inputCls} type="number" step="any" value={draft.value} onChange={(e) => set("value")(e.target.value)} /></Field>
             <Field label="หน่วย" hint="เว้นว่างเพื่อใช้หน่วยของประเภท"><input className={inputCls} maxLength={50} value={draft.unit} onChange={(e) => set("unit")(e.target.value)} /></Field>
           </div>
-          <Field label="วันที่เกิดผลลัพธ์"><DateInput value={draft.occurred_on} onChange={(e) => set("occurred_on")(e.target.value)} /></Field>
-          <Field label="ลิงก์หลักฐาน" hint="ต้องขึ้นต้นด้วย https://"><input className={inputCls} type="url" pattern="https://.*" value={draft.evidence_url} onChange={(e) => set("evidence_url")(e.target.value)} /></Field>
+          <Field label="วันที่เกิดผลลัพธ์"><DateInput value={draft.occurredOn} onChange={(e) => set("occurredOn")(e.target.value)} /></Field>
+          <Field label="ลิงก์หลักฐาน" hint="ต้องขึ้นต้นด้วย https://"><input className={inputCls} type="url" pattern="https://.*" value={draft.evidenceUrl} onChange={(e) => set("evidenceUrl")(e.target.value)} /></Field>
           <Field label="รายละเอียด"><textarea className={inputCls} rows={3} maxLength={5000} value={draft.description} onChange={(e) => set("description")(e.target.value)} /></Field>
           <FormError error={action.error} />
           <div className="flex justify-end gap-2 mt-2">

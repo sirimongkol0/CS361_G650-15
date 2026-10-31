@@ -87,7 +87,7 @@ return (
 
           {doc.downloadable && (doc.mimeType === "application/pdf" || /\.pdf$/i.test(doc.fileName ?? "")) && <DocumentPreview id={doc.id} />}
           <RelatedRecords kind="activities" documentId={doc.id} />
-          <OutcomeSection field="document_id" id={doc.id} canEdit={canManage(role)} canPublish={role === "staff" || role === "admin"} />
+          <OutcomeSection field="documentId" id={doc.id} canAdd={canManage(role)} canPublish={role === "staff" || role === "admin"} />
           <SourceLinks sources={doc.sources} />
         </div>
 

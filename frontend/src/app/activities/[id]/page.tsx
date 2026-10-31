@@ -94,7 +94,7 @@ export default function ActivityDetailPage() {
           )}
         </section>
 
-        <OutcomeSection field="activity_id" id={item.id} canEdit={canManage(role)} canPublish={role === "staff" || role === "admin"} />
+        <OutcomeSection field="activityId" id={item.id} canAdd={canManage(role)} canPublish={role === "staff" || role === "admin"} />
 
         <SourceLinks sources={item.sources} />
         </div>

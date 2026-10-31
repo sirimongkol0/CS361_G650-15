@@ -111,10 +111,24 @@ def _visible_query(db: Session, user: Optional[models.User]):
     return query.filter(_publicly_visible())
 
 
-def _response(row: models.Outcome) -> schemas.OutcomeResponse:
+def _editable_ids(db: Session, user: Optional[models.User], rows: List[models.Outcome]) -> set:
+    """Ids among ``rows`` the caller may PATCH; mirrors the scope check in update_outcome."""
+    if user is None or not rows:
+        return set()
+    ids = [row.id for row in rows]
+    if user.role in MANAGER_ROLES:
+        return set(ids)
+    if user.role == "coordinator":
+        query = db.query(models.Outcome.id).filter(models.Outcome.id.in_(ids), _owned_by(user))
+        return {outcome_id for (outcome_id,) in query}
+    return set()
+
+
+def _response(row: models.Outcome, can_edit: bool) -> schemas.OutcomeResponse:
     item = schemas.OutcomeResponse.model_validate(row)
     if item.unit is None:
         item.unit = row.outcome_type.unit
+    item.can_edit = can_edit
     return item
 
 
@@ -147,7 +161,9 @@ def list_outcomes(
     total = query.count()
     rows = (query.order_by(models.Outcome.occurred_on.desc(), models.Outcome.id.desc())
             .offset((page - 1) * page_size).limit(page_size).all())
-    return schemas.OutcomePage(items=[_response(row) for row in rows], total=total, page=page, page_size=page_size)
+    editable = _editable_ids(db, user, rows)
+    return schemas.OutcomePage(items=[_response(row, row.id in editable) for row in rows],
+                               total=total, page=page, page_size=page_size)
 
 
 @router.get("/{outcome_id}", response_model=schemas.OutcomeResponse)
@@ -159,7 +175,7 @@ def get_outcome(
     row = _visible_query(db, user).filter(models.Outcome.id == outcome_id).first()
     if row is None:
         raise HTTPException(status_code=404, detail="Outcome not found")
-    return _response(row)
+    return _response(row, row.id in _editable_ids(db, user, [row]))
 
 
 _CONTEXT_FIELDS = {column.key: model for column, model, _ in _CONTEXTS}
@@ -206,7 +222,7 @@ def create_outcome(
     audit.record(db, user, "create", "outcomes", row.id, after=audit.snapshot(row))
     db.commit()
     db.refresh(row)
-    return _response(row)
+    return _response(row, True)
 
 
 @router.patch("/{outcome_id}", response_model=schemas.OutcomeResponse)
@@ -239,7 +255,7 @@ def update_outcome(
     audit.record(db, user, "update", "outcomes", row.id, before=before, after=audit.snapshot(row))
     db.commit()
     db.refresh(row)
-    return _response(row)
+    return _response(row, True)
 
 
 @router.delete("/{outcome_id}", status_code=204)

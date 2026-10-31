@@ -328,7 +328,7 @@ export default function StudentExchangePage() {
       </div>
       )}
       <Dialog open={outcomesFor !== null} title={`ผลลัพธ์: ${outcomesFor?.name ?? ""}`} onClose={() => setOutcomesFor(null)} wide>
-        {outcomesFor && <OutcomeSection field="exchange_id" id={outcomesFor.id} canEdit={canEdit(outcomesFor)} canPublish={role === "staff" || role === "admin"} />}
+        {outcomesFor && <OutcomeSection field="exchangeId" id={outcomesFor.id} canAdd={canEdit(outcomesFor)} canPublish={role === "staff" || role === "admin"} />}
       </Dialog>
     </div>
   );

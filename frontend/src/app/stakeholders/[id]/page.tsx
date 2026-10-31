@@ -98,7 +98,7 @@ export default function StakeholderDetailPage() {
         <RelatedRecords kind="agreements" partnerId={item.id} />
         <RelatedRecords kind="activities" partnerId={item.id} />
       </div>
-      <div className="mt-5"><OutcomeSection field="partner_id" id={item.id} canEdit={canManage(role)} canPublish={role === "staff" || role === "admin"} /></div>
+      <div className="mt-5"><OutcomeSection field="partnerId" id={item.id} canAdd={canManage(role)} canPublish={role === "staff" || role === "admin"} /></div>
       <div className="mt-5"><SourceLinks sources={item.sources} /></div>
     </div>
   );

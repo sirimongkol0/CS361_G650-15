@@ -134,11 +134,11 @@ def test_outcome_list_filters_and_paginates(client, db_session, read_world):
     assert _titles(client.get(f"/api/v1/outcomes/?outcome_type_id={other_type}", headers=staff)) == set()
 
     page = client.get("/api/v1/outcomes/?page=2&page_size=3", headers=staff).json()
-    assert (page["total"], page["page"], page["page_size"], len(page["items"])) == (4, 2, 3, 1)
+    assert (page["total"], page["page"], page["pageSize"], len(page["items"])) == (4, 2, 3, 1)
     assert client.get("/api/v1/outcomes/?page_size=101", headers=staff).status_code == 422
     item = client.get(f"/api/v1/outcomes/{rows['public'].id}").json()
-    assert item["outcome_type"]["code"] == "participants" and item["unit"] == "คน"
-    assert "owner_user_id" not in item and "external_id" not in item
+    assert item["outcomeType"]["code"] == "participants" and item["unit"] == "คน"
+    assert "ownerUserId" not in item and "externalId" not in item
 
 
 # --- writing outcomes ---------------------------------------------------------
@@ -165,43 +165,43 @@ def _audit_actions(db_session, outcome_id):
 ])
 def test_create_outcome_by_role(client, db_session, write_world, role, status):
     headers, own, _, type_id = write_world
-    body = {"title": "35 participants", "outcome_type_id": type_id, "value": 35, "activity_id": own.id}
+    body = {"title": "35 participants", "outcomeTypeId": type_id, "value": 35, "activityId": own.id}
     response = client.post("/api/v1/outcomes/", json=body, headers=headers[role] if role else None)
     assert response.status_code == status, response.text
     if status == 201:
         created = response.json()
-        assert created["is_published"] is False and created["value"] == 35
+        assert created["isPublished"] is False and created["value"] == 35
         assert _audit_actions(db_session, created["id"]) == ["create"]
 
 
 def test_create_outcome_validation_and_coordinator_scope(client, db_session, write_world):
     headers, own, other, type_id = write_world
     coord, staff = headers["coordinator"], headers["staff"]
-    base = {"title": "Result", "outcome_type_id": type_id}
+    base = {"title": "Result", "outcomeTypeId": type_id}
 
     assert client.post("/api/v1/outcomes/", json=base, headers=staff).status_code == 422  # no context
-    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": 99999}, headers=staff).status_code == 422
+    assert client.post("/api/v1/outcomes/", json={**base, "activityId": 99999}, headers=staff).status_code == 422
     inactive = db_session.query(models.OutcomeType).filter_by(code="funding").one()
     inactive.is_active = False
     db_session.commit()
-    assert client.post("/api/v1/outcomes/", json={**base, "outcome_type_id": inactive.id,
-                                                  "activity_id": own.id}, headers=staff).status_code == 422
-    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": own.id,
-                                                  "evidence_url": "javascript:alert(1)"},
+    assert client.post("/api/v1/outcomes/", json={**base, "outcomeTypeId": inactive.id,
+                                                  "activityId": own.id}, headers=staff).status_code == 422
+    assert client.post("/api/v1/outcomes/", json={**base, "activityId": own.id,
+                                                  "evidenceUrl": "javascript:alert(1)"},
                        headers=staff).status_code == 422
 
-    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": other.id}, headers=coord).status_code == 403
+    assert client.post("/api/v1/outcomes/", json={**base, "activityId": other.id}, headers=coord).status_code == 403
     # Owning one linked context does not open another one.
     partner = models.Partner(name="Not mine")
     db_session.add(partner)
     db_session.commit()
-    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": own.id, "partner_id": partner.id},
+    assert client.post("/api/v1/outcomes/", json={**base, "activityId": own.id, "partnerId": partner.id},
                        headers=coord).status_code == 403
-    assert client.post("/api/v1/outcomes/", json={**base, "activity_id": own.id, "is_published": True},
+    assert client.post("/api/v1/outcomes/", json={**base, "activityId": own.id, "isPublished": True},
                        headers=coord).status_code == 403
-    published = client.post("/api/v1/outcomes/", json={**base, "activity_id": other.id, "is_published": True},
+    published = client.post("/api/v1/outcomes/", json={**base, "activityId": other.id, "isPublished": True},
                             headers=staff)
-    assert published.status_code == 201 and published.json()["is_published"] is True
+    assert published.status_code == 201 and published.json()["isPublished"] is True
 
 
 def test_update_outcome_scope_publish_and_audit(client, db_session, write_world):
@@ -213,11 +213,11 @@ def test_update_outcome_scope_publish_and_audit(client, db_session, write_world)
     edited = client.patch(f"/api/v1/outcomes/{mine.id}", json={"title": "Mine, edited", "value": 40}, headers=coord)
     assert edited.status_code == 200, edited.text
     assert edited.json()["title"] == "Mine, edited"
-    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"activity_id": other.id},
+    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"activityId": other.id},
                         headers=coord).status_code == 403
-    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"is_published": True},
+    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"isPublished": True},
                         headers=coord).status_code == 403
-    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"activity_id": None},
+    assert client.patch(f"/api/v1/outcomes/{mine.id}", json={"activityId": None},
                         headers=headers["staff"]).status_code == 422
     assert client.patch(f"/api/v1/outcomes/{theirs.id}", json={"title": "x"}, headers=coord).status_code == 404
     for role in ("public", "student"):
@@ -225,8 +225,8 @@ def test_update_outcome_scope_publish_and_audit(client, db_session, write_world)
                             headers=headers[role]).status_code == 403
 
     for role in ("staff", "admin"):
-        response = client.patch(f"/api/v1/outcomes/{theirs.id}", json={"is_published": True}, headers=headers[role])
-        assert response.status_code == 200 and response.json()["is_published"] is True
+        response = client.patch(f"/api/v1/outcomes/{theirs.id}", json={"isPublished": True}, headers=headers[role])
+        assert response.status_code == 200 and response.json()["isPublished"] is True
     assert _audit_actions(db_session, mine.id) == ["update"]
     log = db_session.query(models.AuditLog).filter_by(entity="outcomes", entity_id=mine.id).one()
     assert log.before["title"] == "Mine" and log.after["title"] == "Mine, edited"
@@ -253,11 +253,11 @@ def test_delete_outcome_by_role(client, db_session, write_world, role, status):
 def test_outcome_rejects_out_of_range_numbers(client, write_world):
     headers, own, _, type_id = write_world
     staff = headers["staff"]
-    base = {"title": "Big", "outcome_type_id": type_id, "activity_id": own.id}
+    base = {"title": "Big", "outcomeTypeId": type_id, "activityId": own.id}
     # Numeric(14, 2) holds at most 12 digits before the point.
     assert client.post("/api/v1/outcomes/", json={**base, "value": 1e12}, headers=staff).status_code == 422
     assert client.post("/api/v1/outcomes/", json={**base, "value": -1e12}, headers=staff).status_code == 422
-    raw = '{"title": "Inf", "outcome_type_id": %d, "activity_id": %d, "value": Infinity}' % (type_id, own.id)
+    raw = '{"title": "Inf", "outcomeTypeId": %d, "activityId": %d, "value": Infinity}' % (type_id, own.id)
     response = client.post("/api/v1/outcomes/", content=raw,
                            headers={**staff, "Content-Type": "application/json"})
     assert response.status_code == 422
@@ -294,7 +294,7 @@ def test_outcome_cannot_link_to_a_deleted_record(client, db_session, write_world
     own.is_deleted = True
     db_session.commit()
     response = client.post("/api/v1/outcomes/", headers=headers["staff"],
-                           json={"title": "On deleted", "outcome_type_id": type_id, "activity_id": own.id})
+                           json={"title": "On deleted", "outcomeTypeId": type_id, "activityId": own.id})
     assert response.status_code == 422
 
 
@@ -305,10 +305,50 @@ def test_outcome_with_deactivated_type_stays_editable(client, db_session, write_
     db_session.commit()
     # The edit form resends the current type; only switching to an inactive type is refused.
     response = client.patch(f"/api/v1/outcomes/{row.id}", headers=headers["staff"],
-                            json={"outcome_type_id": type_id, "title": "Old type, edited"})
+                            json={"outcomeTypeId": type_id, "title": "Old type, edited"})
     assert response.status_code == 200, response.text
     funding = db_session.query(models.OutcomeType).filter_by(code="funding").one()
     funding.is_active = False
     db_session.commit()
     assert client.patch(f"/api/v1/outcomes/{row.id}", headers=headers["staff"],
-                        json={"outcome_type_id": funding.id}).status_code == 422
+                        json={"outcomeTypeId": funding.id}).status_code == 422
+
+
+# --- canEdit: the server tells the page which outcomes the caller may edit ------
+
+@pytest.mark.parametrize("role,expected", [
+    (None, {"mine": False, "theirs": False}),
+    ("public", {"mine": False, "theirs": False}),
+    ("student", {"mine": False, "theirs": False}),
+    ("coordinator", {"mine": True, "theirs": False}),
+    ("staff", {"mine": True, "theirs": True}),
+    ("admin", {"mine": True, "theirs": True}),
+])
+def test_can_edit_matches_who_may_patch(client, db_session, write_world, role, expected):
+    headers, own, other, _ = write_world
+    rows = {"mine": _outcome(db_session, "On coordinator's activity", activity_id=own.id),
+            "theirs": _outcome(db_session, "On someone else's activity", activity_id=other.id)}
+    auth_headers = headers[role] if role else None
+    listed = {row["id"]: row["canEdit"] for row in client.get("/api/v1/outcomes/", headers=auth_headers).json()["items"]}
+    for key, row in rows.items():
+        assert listed[row.id] is expected[key], (key, "list")
+        detail = client.get(f"/api/v1/outcomes/{row.id}", headers=auth_headers).json()
+        assert detail["canEdit"] is expected[key], (key, "detail")
+        if role in ("coordinator", "staff", "admin"):
+            # canEdit must agree with what PATCH actually allows.
+            status = client.patch(f"/api/v1/outcomes/{row.id}", json={"title": "Edited"}, headers=auth_headers).status_code
+            assert (status == 200) is expected[key], (key, status)
+
+
+def test_outcome_api_accepts_and_returns_camel_case(client, db_session, write_world):
+    headers, own, _, type_id = write_world
+    created = client.post("/api/v1/outcomes/", headers=headers["staff"], json={
+        "title": "Camel", "outcomeTypeId": type_id, "activityId": own.id, "occurredOn": "2026-05-01",
+        "evidenceUrl": "https://example.test/report", "isPublished": True,
+    })
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert (body["occurredOn"], body["evidenceUrl"], body["isPublished"], body["canEdit"]) == (
+        "2026-05-01", "https://example.test/report", True, True)
+    assert "occurred_on" not in body and "outcome_type" not in body
+    assert body["outcomeType"]["name_th"]  # nested type keeps the lookup API's shape
