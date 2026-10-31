@@ -262,3 +262,53 @@ def test_outcome_rejects_out_of_range_numbers(client, write_world):
                            headers={**staff, "Content-Type": "application/json"})
     assert response.status_code == 422
     assert client.get("/api/v1/outcomes/?page=1000000000000000000", headers=staff).status_code == 422
+
+
+# --- gaps found by mutation testing in review ---------------------------------
+
+def test_coordinator_cannot_edit_published_outcome_on_someone_elses_record(client, db_session, write_world):
+    headers, _, other, _ = write_world
+    theirs = _outcome(db_session, "Public, not mine", activity_id=other.id)  # published, public context
+    coord = headers["coordinator"]
+    assert client.get(f"/api/v1/outcomes/{theirs.id}", headers=coord).status_code == 200
+    assert client.patch(f"/api/v1/outcomes/{theirs.id}", json={"title": "x"}, headers=coord).status_code == 404
+
+
+def test_public_visibility_follows_each_context_kind(client, db_session, cognito):
+    hidden_exchange = models.ExchangeStudent(name="Hidden", is_published=False)
+    hidden_partner = models.Partner(name="Unverified partner")
+    hidden_document = models.Document(name="Draft MoU")
+    db_session.add_all([hidden_exchange, hidden_partner, hidden_document])
+    db_session.commit()
+    for field, row in (("exchange_id", hidden_exchange), ("partner_id", hidden_partner),
+                       ("document_id", hidden_document)):
+        outcome = _outcome(db_session, f"On hidden {field}", **{field: row.id})
+        assert client.get(f"/api/v1/outcomes/{outcome.id}").status_code == 404, field
+    hidden_exchange.is_published = True
+    db_session.commit()
+    assert _titles(client.get("/api/v1/outcomes/")) == {"On hidden exchange_id"}
+
+
+def test_outcome_cannot_link_to_a_deleted_record(client, db_session, write_world):
+    headers, own, _, type_id = write_world
+    own.is_deleted = True
+    db_session.commit()
+    response = client.post("/api/v1/outcomes/", headers=headers["staff"],
+                           json={"title": "On deleted", "outcome_type_id": type_id, "activity_id": own.id})
+    assert response.status_code == 422
+
+
+def test_outcome_with_deactivated_type_stays_editable(client, db_session, write_world):
+    headers, own, _, type_id = write_world
+    row = _outcome(db_session, "Old type", activity_id=own.id)
+    db_session.get(models.OutcomeType, type_id).is_active = False
+    db_session.commit()
+    # The edit form resends the current type; only switching to an inactive type is refused.
+    response = client.patch(f"/api/v1/outcomes/{row.id}", headers=headers["staff"],
+                            json={"outcome_type_id": type_id, "title": "Old type, edited"})
+    assert response.status_code == 200, response.text
+    funding = db_session.query(models.OutcomeType).filter_by(code="funding").one()
+    funding.is_active = False
+    db_session.commit()
+    assert client.patch(f"/api/v1/outcomes/{row.id}", headers=headers["staff"],
+                        json={"outcome_type_id": funding.id}).status_code == 422

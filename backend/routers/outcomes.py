@@ -163,6 +163,7 @@ def get_outcome(
 
 
 _CONTEXT_FIELDS = {column.key: model for column, model, _ in _CONTEXTS}
+_REQUIRED_FIELDS = ("outcome_type_id", "title", "is_published")
 
 
 def _check_contexts(db: Session, user: models.User, values: dict) -> None:
@@ -224,14 +225,16 @@ def update_outcome(
         raise HTTPException(status_code=404, detail="Outcome not found")
     data = body.model_dump(exclude_unset=True)
     _check_publish(user, data)
-    if data.get("outcome_type_id") is not None:
+    if data.get("outcome_type_id") not in (None, row.outcome_type_id):
+        # A type deactivated later must not lock its existing outcomes.
         _check_type(db, data["outcome_type_id"])
     if data.keys() & _CONTEXT_FIELDS.keys():
         # Check the contexts the row will have after the update, not only the current ones.
         _check_contexts(db, user, {field: data.get(field, getattr(row, field)) for field in _CONTEXT_FIELDS})
     before = audit.snapshot(row)
     for field, value in data.items():
-        if value is not None or field not in ("outcome_type_id", "title", "is_published"):
+        # A null for a required column means "leave as is"; optional columns may be cleared.
+        if value is not None or field not in _REQUIRED_FIELDS:
             setattr(row, field, value)
     audit.record(db, user, "update", "outcomes", row.id, before=before, after=audit.snapshot(row))
     db.commit()
