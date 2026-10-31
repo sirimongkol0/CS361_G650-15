@@ -10,6 +10,8 @@ import { ApiError, loadDocument, useApiResource } from "@/lib/api";
 import { DocumentDownload } from "@/components/document-download";
 import { documentStatusLabels, documentTypeLabels, formatFileSize, label } from "@/lib/labels";
 import { DetailToolbar } from "@/components/detail-toolbar";
+import { canManage, useRole } from "@/lib/role-context";
+import { OutcomeSection } from "@/components/outcome-section";
 import { DocumentPreview } from "@/components/document-preview";
 import { ExpiryBadge } from "@/components/expiry-badge";
 import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools";
@@ -17,6 +19,7 @@ import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools"
 
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
+  const { role } = useRole();
   const id = Number(params?.id);
   const documents = useApiResource(() => Number.isInteger(id) && id > 0
     ? loadDocument(id) : Promise.reject(new ApiError("Invalid document id", 404)), [id]);
@@ -84,6 +87,7 @@ return (
 
           {doc.downloadable && (doc.mimeType === "application/pdf" || /\.pdf$/i.test(doc.fileName ?? "")) && <DocumentPreview id={doc.id} />}
           <RelatedRecords kind="activities" documentId={doc.id} />
+          <OutcomeSection field="document_id" id={doc.id} canEdit={canManage(role)} canPublish={role === "staff" || role === "admin"} />
           <SourceLinks sources={doc.sources} />
         </div>
 

@@ -16,6 +16,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { canManage, useRole } from "@/lib/role-context";
 import { Dialog, Notice } from "@/components/form-ui";
 import { ExchangeForm } from "@/components/exchange-form";
+import { OutcomeSection } from "@/components/outcome-section";
 import { downloadCsv } from "@/lib/list-tools";
 
 const statusColors: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function StudentExchangePage() {
   const { role, user, status: session } = useRole();
   const [reload, setReload] = useState(0);
   const [editing, setEditing] = useState<ExchangeStudent | "new" | null>(null);
+  const [outcomesFor, setOutcomesFor] = useState<ExchangeStudent | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const isStaff = role === "staff" || role === "admin";
   const isStudent = role === "student";
@@ -300,6 +302,8 @@ export default function StudentExchangePage() {
                     {session === "authenticated" && role !== "public" && (
                       <Link href={`/feedback?exchangeId=${s.id}`} className="btn btn-outline p-1.5 text-xs mr-2">ส่ง Feedback</Link>
                     )}
+                    <button className="btn btn-outline p-1.5 text-xs mr-2" type="button" aria-label={`ผลลัพธ์ของ ${s.name}`}
+                      onClick={() => setOutcomesFor(s)}>ผลลัพธ์</button>
                     {canEdit(s) && (
                       <button className="btn btn-outline p-1.5 text-xs" type="button" aria-label={`แก้ไข ${s.name}`}
                         onClick={() => { setNotice(null); setEditing(s); }}>
@@ -323,6 +327,9 @@ export default function StudentExchangePage() {
         </div>
       </div>
       )}
+      <Dialog open={outcomesFor !== null} title={`ผลลัพธ์: ${outcomesFor?.name ?? ""}`} onClose={() => setOutcomesFor(null)} wide>
+        {outcomesFor && <OutcomeSection field="exchange_id" id={outcomesFor.id} canEdit={canEdit(outcomesFor)} canPublish={role === "staff" || role === "admin"} />}
+      </Dialog>
     </div>
   );
 }
