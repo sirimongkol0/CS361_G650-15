@@ -950,3 +950,40 @@ export function useApiResource<T>(
     },
   } as ApiResource<T>;
 }
+
+/* ---- V4-2 outcomes (fields are snake_case, as the API returns them) ---- */
+export interface OutcomeType {
+  id: number;
+  code: string;
+  name_th: string;
+  unit: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export type OutcomeContextField = "partner_id" | "activity_id" | "document_id" | "exchange_id";
+
+export interface Outcome {
+  id: number;
+  title: string;
+  description: string | null;
+  value: number | null;
+  unit: string | null;
+  occurred_on: string | null;
+  evidence_url: string | null;
+  partner_id: number | null;
+  activity_id: number | null;
+  document_id: number | null;
+  exchange_id: number | null;
+  is_published: boolean;
+  outcome_type: OutcomeType;
+}
+
+export interface OutcomePage {
+  items: Outcome[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export type OutcomeInput = Partial<Omit<Outcome, "id" | "outcome_type">> & { outcome_type_id?: number };
