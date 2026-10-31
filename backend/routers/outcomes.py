@@ -127,7 +127,7 @@ def list_outcomes(
     outcome_type_id: Optional[int] = None,
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
-    page: int = Query(1, ge=1),
+    page: int = Query(1, ge=1, le=100_000),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(database.get_db),
     user: Optional[models.User] = Depends(_optional_user),

@@ -448,7 +448,8 @@ class OutcomeUpdate(BaseModel):
     outcome_type_id: Optional[int] = None
     title: Optional[str] = Field(default=None, min_length=1, max_length=300)
     description: Optional[str] = Field(default=None, max_length=5000)
-    value: Optional[float] = None
+    # outcomes.value is Numeric(14, 2): keep within range so Postgres never overflows.
+    value: Optional[float] = Field(default=None, gt=-1e12, lt=1e12, allow_inf_nan=False)
     unit: Optional[str] = Field(default=None, max_length=50)
     occurred_on: Optional[datetime_date] = None
     evidence_url: Optional[HttpsUrl] = None

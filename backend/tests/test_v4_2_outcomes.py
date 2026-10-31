@@ -246,3 +246,19 @@ def test_delete_outcome_by_role(client, db_session, write_world, role, status):
         assert _audit_actions(db_session, row.id) == ["delete"]
         assert client.get(f"/api/v1/outcomes/{row.id}", headers=headers["staff"]).status_code == 404
         assert client.delete(f"/api/v1/outcomes/{row.id}", headers=headers[role]).status_code == 404
+
+
+# --- abuse cases: inputs that would overflow Postgres must be 422, not 500 ----
+
+def test_outcome_rejects_out_of_range_numbers(client, write_world):
+    headers, own, _, type_id = write_world
+    staff = headers["staff"]
+    base = {"title": "Big", "outcome_type_id": type_id, "activity_id": own.id}
+    # Numeric(14, 2) holds at most 12 digits before the point.
+    assert client.post("/api/v1/outcomes/", json={**base, "value": 1e12}, headers=staff).status_code == 422
+    assert client.post("/api/v1/outcomes/", json={**base, "value": -1e12}, headers=staff).status_code == 422
+    raw = '{"title": "Inf", "outcome_type_id": %d, "activity_id": %d, "value": Infinity}' % (type_id, own.id)
+    response = client.post("/api/v1/outcomes/", content=raw,
+                           headers={**staff, "Content-Type": "application/json"})
+    assert response.status_code == 422
+    assert client.get("/api/v1/outcomes/?page=1000000000000000000", headers=staff).status_code == 422
