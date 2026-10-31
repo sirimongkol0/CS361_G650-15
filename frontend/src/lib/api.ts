@@ -989,3 +989,52 @@ export interface OutcomePage {
 }
 
 export type OutcomeInput = Partial<Omit<Outcome, "id" | "outcomeType" | "canEdit">> & { outcomeTypeId?: number };
+
+/* ---- V4-5 insights: figures aggregated by the backend ---- */
+export interface KeyedCount<K = string> { key: K; count: number }
+export interface LabelledCount extends KeyedCount { label: string }
+
+export interface InsightsSummary {
+  filters: { dateFrom: string | null; dateTo: string | null; stakeholderType: string | null };
+  expiringWithinDays: number;
+  partnersByType: KeyedCount<string | null>[];
+  agreementsByStatus: KeyedCount<string | null>[];
+  agreementsExpiring: { id: number; name: string; expiryDate: string; partnerId: number | null; partnerName: string | null }[];
+  activitiesByMonth: { month: string; count: number }[];
+  outcomesByType: (LabelledCount & { totalValue: number })[];
+  feedbackBySource: LabelledCount[];
+  feedbackByRespondentType: LabelledCount[];
+  feedbackByRating: KeyedCount<number>[];
+  feedbackByStatus: KeyedCount[];
+  feedbackAverageRating: number | null;
+}
+
+export interface InsightsFilters { year?: number | null; stakeholderType?: string | null }
+
+/** Query string shared by the summary JSON and CSV endpoints. */
+export function insightsQuery(filters: InsightsFilters): string {
+  const params = new URLSearchParams();
+  if (filters.year) params.set("year", String(filters.year));
+  if (filters.stakeholderType) params.set("stakeholder_type", filters.stakeholderType);
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
+/** GET /insights/summary (staff/admin). */
+export const loadInsightsSummary = (filters: InsightsFilters = {}) =>
+  apiGet<InsightsSummary>(`/insights/summary${insightsQuery(filters)}`);
+
+export type MyInsights =
+  | {
+      role: "coordinator";
+      counts: { partners: number; activities: number; outcomes: number; feedback: number; feedbackPending: number };
+      recentActivities: { id: number; name: string; date: string | null; status: string | null; partnerId: number | null }[];
+    }
+  | {
+      role: "student";
+      counts: { feedbackSubmitted: number };
+      exchange: { id: number; name: string; program: string | null; status: string | null; toOrganization: string | null; startDate: string | null; endDate: string | null }[];
+    };
+
+/** GET /insights/me (coordinator/student): figures for the viewer's own records. */
+export const loadMyInsights = () => apiGet<MyInsights>("/insights/me");

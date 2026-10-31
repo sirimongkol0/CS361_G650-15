@@ -8,8 +8,8 @@
 //
 // The credentials file is tab-separated "role<TAB>email<TAB>password" (lines
 // starting with # are ignored). Passwords are never printed or written out.
-// /feedback and /reports are V4 pages (FR6/FR9) that the V3 release redirects
-// away; set RUN_V4_PAGES=1 (after removing them from src/proxy.ts) to test them.
+// /feedback and /reports are V4 pages (FR6/FR9); /reports was released in V4-5.
+// Set RUN_V4_PAGES=1 to run the steps that need V4 data.
 // The feedback entry it replies to is restored at the end (reply, status and
 // publication); the audit rows of those changes stay, as for any write.
 const assert = require('node:assert/strict');
@@ -106,22 +106,12 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
       const context = await browser.newContext();
       const page = await context.newPage();
       watch(page, 'anonymous');
-      for (const route of v4 ? ['/reports', '/users', '/settings'] : ['/users', '/settings']) {
+      for (const route of ['/reports', '/users', '/settings']) {
         await open(page, route);
         assert.match(page.url(), new RegExp(`${route}$`), `${route} must not redirect`);
         await page.getByText('กรุณาเข้าสู่ระบบ').first().waitFor();
       }
       await context.close();
-    });
-
-    await step('V3 release: /feedback and /reports redirect to the public dashboard for every role', async () => {
-      if (v4) return;
-      for (const role of ['public', 'staff', 'admin']) {
-        for (const route of ['/feedback', '/reports']) {
-          await open(pages[role], route);
-          assert.match(pages[role].url(), /\/dashboard\/public$/, `${role} ${route} was not redirected`);
-        }
-      }
     });
 
     await v4step('logged out: /feedback shows published entries read-only', async () => {
@@ -163,26 +153,25 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
     });
 
     // ---------- Reports ----------
-    await v4step('/reports: staff sees figures, the year selector changes them, CSV downloads', async () => {
+    await v4step('/reports: staff sees figures, the year filter re-queries them, CSV downloads', async () => {
       const page = pages.staff;
       await open(page, '/reports');
       const heading = page.getByRole('heading', { level: 1 });
-      await heading.filter({ hasText: 'รายงานและสถิติ ปี' }).waitFor();
-      await page.waitForTimeout(1500); // dashboard lists load after the page
+      await heading.filter({ hasText: 'รายงานและสถิติ' }).waitFor();
+      await page.getByText('จำนวนกิจกรรมรายเดือน').waitFor();
       const select = page.getByLabel('ปี');
-      const years = await select.locator('option').evaluateAll((o) => o.map((x) => x.value));
-      assert.ok(years.length >= 2, `need at least two years of data, got ${years}`);
       const before = await page.locator('main').innerText();
       await shot(page, '02-reports-staff');
-      await select.selectOption(years[1]);
-      await heading.filter({ hasText: String(Number(years[1]) + 543) }).waitFor();
+      await select.selectOption('');
+      await heading.filter({ hasText: 'ทุกช่วงเวลา' }).waitFor();
+      await page.getByText('จำนวนกิจกรรมรายเดือน').waitFor();
       const after = await page.locator('main').innerText();
       assert.notEqual(before, after, 'figures did not change with the year');
       const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'ส่งออก CSV' }).click()]);
-      assert.equal(download.suggestedFilename(), `pcsms-report-${Number(years[1]) + 543}.csv`);
+      assert.equal(download.suggestedFilename(), 'insights-summary_all_all.csv');
       const csv = fs.readFileSync(await download.path(), 'utf8');
-      assert.equal(csv.split('\r\n').length, 13, 'header + 12 months');
-      await shot(page, '03-reports-other-year');
+      assert.ok(csv.replace(/^\uFEFF/, '').startsWith('หมวด,รหัส,รายการ,จำนวน,มูลค่ารวม'), 'CSV header');
+      await shot(page, '03-reports-all-years');
     });
 
     await v4step('/reports: coordinator and student see no permission', async () => {
