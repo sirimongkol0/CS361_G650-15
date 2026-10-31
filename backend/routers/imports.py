@@ -194,7 +194,7 @@ def commit_import_batch(
 ):
     batch = db.query(models.ImportBatch).options(joinedload(models.ImportBatch.feedback_source)).filter_by(
         id=batch_id
-    ).with_for_update().first()
+    ).with_for_update(of=models.ImportBatch).first()
     if batch is None:
         raise HTTPException(status_code=404, detail="ไม่พบชุดนำเข้า")
     if batch.status != "previewed":
