@@ -23,6 +23,16 @@ DOCUMENT_WRITE_PATHS = {
     "/api/v1/documents/{document_id}/internal-url": {"get"},
 }
 
+IMPORT_PROTECTED_PATHS = {
+    "/api/v1/imports/templates/{kind}": {"get"},
+    "/api/v1/imports/": {"get", "post"},
+    "/api/v1/imports/{batch_id}": {"get"},
+    "/api/v1/imports/{batch_id}/commit": {"post"},
+    "/api/v1/imports/{batch_id}/rollback": {"post"},
+    "/api/v1/imports/export/feedback.csv": {"get"},
+    "/api/v1/imports/export/outcomes.csv": {"get"},
+}
+
 
 def test_openapi_exposes_expected_routes_and_auth(client):
     paths = client.get("/openapi.json").json()["paths"]
@@ -59,6 +69,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
         and not path.startswith(("/api/v1/feedback", "/api/v1/users"))
+        and path not in IMPORT_PROTECTED_PATHS
         and path not in DOCUMENT_WRITE_PATHS
     }
     assert all(set(methods) == {"get"} for methods in repository.values())
@@ -69,6 +80,11 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         ))
         for path in repository
     )
+
+    # V4-4 import and export routes are staff/admin-only.
+    for path, methods in IMPORT_PROTECTED_PATHS.items():
+        assert set(paths[path]) == methods, path
+        assert all(paths[path][method].get("security") for method in methods), path
 
     # V3-4 adds role-protected activity and exchange writes.
     assert set(paths["/api/v1/activities/"]) >= {"get", "post"}
