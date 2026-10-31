@@ -214,3 +214,68 @@ def test_partner_timeline_is_for_staff_and_admin_only(client, world, cognito, db
     uni_a = _partner_id(db_session, "Uni A")
     response = client.get(f"/api/v1/insights/partners/{uni_a}", headers=bearer(token_for(client, role)))
     assert response.status_code == status
+
+
+# --- role-scoped dashboard figures ----------------------------------------------
+
+ME = "/api/v1/insights/me"
+
+
+def _user_id(db_session, role):
+    return db_session.query(models.User).filter_by(email=f"{role}@example.test").one().id
+
+
+def test_coordinator_sees_only_their_own_records(client, cognito, db_session):
+    headers = bearer(token_for(client, "coordinator"))
+    me = _user_id(db_session, "coordinator")
+    mine = models.Partner(name="Mine", type="university", owner_user_id=me)
+    theirs = models.Partner(name="Theirs", type="university", owner_user_id=None)
+    db_session.add_all([mine, theirs])
+    db_session.flush()
+    my_activity = models.Activity(name="My event", date=date(2025, 5, 1), owner_user_id=me, partner_id=mine.id)
+    db_session.add_all([
+        my_activity,
+        models.Activity(name="Old event", date=date(2024, 5, 1), owner_user_id=me),
+        models.Activity(name="Their event", date=date(2025, 5, 2), partner_id=theirs.id),
+        models.Activity(name="My deleted", date=date(2025, 5, 3), owner_user_id=me, is_deleted=True),
+    ])
+    db_session.flush()
+    db_session.add_all([
+        models.Feedback(title="on mine", status="pending", partner_id=mine.id),
+        models.Feedback(title="on my activity", status="reviewed", activity_id=my_activity.id),
+        models.Feedback(title="on theirs", status="pending", partner_id=theirs.id),
+    ])
+    db_session.commit()
+
+    body = client.get(ME, headers=headers).json()
+    assert body["role"] == "coordinator"
+    assert body["counts"] == {"partners": 1, "activities": 2, "outcomes": 0, "feedback": 2, "feedbackPending": 1}
+    assert [a["name"] for a in body["recentActivities"]] == ["My event", "Old event"]
+
+
+def test_student_sees_their_feedback_and_exchange(client, cognito, db_session):
+    headers = bearer(token_for(client, "student"))
+    me = _user_id(db_session, "student")
+    partner = models.Partner(name="P", type="university")
+    db_session.add(partner)
+    db_session.flush()
+    db_session.add_all([
+        models.Feedback(title="mine", status="pending", partner_id=partner.id, submitted_by_user_id=me),
+        models.Feedback(title="other", status="pending", partner_id=partner.id),
+        models.ExchangeStudent(name="Me abroad", program="แลกเปลี่ยน", status="กำลังดำเนินการ", user_id=me),
+        models.ExchangeStudent(name="Someone else", program="แลกเปลี่ยน"),
+    ])
+    db_session.commit()
+
+    body = client.get(ME, headers=headers).json()
+    assert body["role"] == "student"
+    assert body["counts"] == {"feedbackSubmitted": 1}
+    assert [e["name"] for e in body["exchange"]] == ["Me abroad"]
+
+
+@pytest.mark.parametrize("role,status", [
+    ("public", 403), ("student", 200), ("coordinator", 200), ("staff", 403), ("admin", 403),
+])
+def test_me_figures_are_for_coordinators_and_students(client, cognito, role, status):
+    assert client.get(ME, headers=bearer(token_for(client, role))).status_code == status
+    assert client.get(ME).status_code == 401

@@ -168,3 +168,48 @@ def partner_timeline(
         "timeline": [{"year": y, **years[y]} for y in sorted(years)],
         "totals": totals,
     }
+
+
+@router.get("/me")
+def my_figures(
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(require_role("coordinator", "student")),
+):
+    """Dashboard figures limited to the signed-in coordinator's or student's own records."""
+    if user.role == "student":
+        exchange = (db.query(models.ExchangeStudent).filter(models.ExchangeStudent.user_id == user.id)
+                    .order_by(models.ExchangeStudent.start_date.desc(), models.ExchangeStudent.id.desc()).all())
+        submitted = db.query(func.count(models.Feedback.id)).filter(
+            models.Feedback.submitted_by_user_id == user.id).scalar()
+        return {
+            "role": "student",
+            "counts": {"feedbackSubmitted": submitted},
+            "exchange": [
+                {"id": e.id, "name": e.name, "program": e.program, "status": e.status,
+                 "toOrganization": e.to_organization, "startDate": e.start_date, "endDate": e.end_date}
+                for e in exchange
+            ],
+        }
+
+    Partner, Activity, Feedback = models.Partner, models.Activity, models.Feedback
+    my_partners = db.query(Partner.id).filter(Partner.owner_user_id == user.id, Partner.is_deleted.is_(False))
+    my_activities = db.query(Activity.id).filter(Activity.owner_user_id == user.id, Activity.is_deleted.is_(False))
+    feedback = db.query(Feedback).filter(
+        (Feedback.partner_id.in_(my_partners)) | (Feedback.activity_id.in_(my_activities)))
+    recent = (db.query(Activity).filter(Activity.owner_user_id == user.id, Activity.is_deleted.is_(False))
+              .order_by(Activity.date.desc().nullslast(), Activity.id.desc()).limit(5).all())
+    return {
+        "role": "coordinator",
+        "counts": {
+            "partners": my_partners.count(),
+            "activities": my_activities.count(),
+            "outcomes": db.query(func.count(models.Outcome.id)).filter(
+                models.Outcome.owner_user_id == user.id, models.Outcome.is_deleted.is_(False)).scalar(),
+            "feedback": feedback.count(),
+            "feedbackPending": feedback.filter(Feedback.status == "pending").count(),
+        },
+        "recentActivities": [
+            {"id": a.id, "name": a.name, "date": a.date, "status": a.status, "partnerId": a.partner_id}
+            for a in recent
+        ],
+    }
