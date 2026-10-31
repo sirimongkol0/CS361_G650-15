@@ -51,7 +51,7 @@ export function DetailToolbar({ kind, id, title }: { kind: ResultKind; id: numbe
   const stepCls = "btn btn-outline p-2 disabled:opacity-40 disabled:cursor-not-allowed";
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-5">
+    <div className="flex flex-wrap items-center gap-2 mb-5 print:hidden">
       <Link href={nav?.listUrl ?? `/${kind}`} className="btn btn-outline gap-2 text-sm">
         <ArrowLeft className="w-4 h-4" />
         {nav ? "กลับไปที่ผลการค้นหา" : `รายการ${LIST_LABELS[kind]}ทั้งหมด`}

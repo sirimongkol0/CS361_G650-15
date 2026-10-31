@@ -50,7 +50,7 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint">
+      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint print:hidden">
         <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
         <ChevronRight className="w-3 h-3" />
         <Link href="/activities" className="hover:text-crimson">กิจกรรม</Link>

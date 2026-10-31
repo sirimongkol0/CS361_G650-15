@@ -25,7 +25,7 @@ import { ExportCsvButton } from "@/components/list-ui";
 const REPORT_ROLES = ["staff", "admin"];
 const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
 const tooltipStyle = { border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 };
-const card = "bg-white border border-line rounded-lg shadow-card p-5";
+const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
 const selectClass =
   "cursor-pointer rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 const axis = { tick: { fontSize: 11, fill: "#94a3b8" }, tickLine: false, axisLine: false } as const;
