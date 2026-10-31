@@ -126,6 +126,8 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
     { to: '/imports', label: 'นำเข้า/ส่งออกข้อมูล', icon: 'folder' },
     { to: '/feedback', label: 'ความคิดเห็น', icon: 'message' },
+    { to: '/reports', label: 'รายงานและสถิติ', icon: 'chart' },
+    { to: '/audit-logs', label: 'ประวัติการแก้ไข', icon: 'history' },
   ],
   admin: [
     { to: '/dashboard/admin', label: 'หน้าหลัก', icon: 'home', end: true },
@@ -137,6 +139,8 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
     { to: '/feedback', label: 'ความคิดเห็น', icon: 'message' },
+    { to: '/reports', label: 'รายงานและสถิติ', icon: 'chart' },
+    { to: '/audit-logs', label: 'ประวัติการแก้ไข', icon: 'history' },
     { to: '/users', label: 'ผู้ใช้และสิทธิ์', icon: 'users' },
     { to: '/imports', label: 'นำเข้า/ส่งออกข้อมูล', icon: 'folder' },
     { to: '/feedback/lookups', label: 'ตั้งค่า Feedback', icon: 'settings' },

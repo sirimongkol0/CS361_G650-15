@@ -13,7 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, FileText, CalendarDays, GraduationCap,
   MessageSquare, BarChart3, Settings, Menu,
-  Users, Globe, Folder, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
+  Users, Globe, Folder, History, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
 import { ACCOUNT_NAV, ROLE_NAV, useRole } from '@/lib/role-context';
@@ -31,6 +31,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   users: Users,
   globe: Globe,
   folder: Folder,
+  history: History,
 };
 
 const COLLAPSE_KEY = 'pcsms:sidebar-collapsed';

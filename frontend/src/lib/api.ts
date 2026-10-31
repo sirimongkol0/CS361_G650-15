@@ -1040,3 +1040,46 @@ export type MyInsights =
 
 /** GET /insights/me (coordinator/student): figures for the viewer's own records. */
 export const loadMyInsights = () => apiGet<MyInsights>("/insights/me");
+
+/* ---- Audit log (ประวัติการแก้ไข), staff/admin ---- */
+export interface AuditLogRow {
+  id: number;
+  user_id: number | null;
+  user_email: string | null;
+  action: string;
+  entity: string;
+  entity_id: number | null;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface AuditLogFilters {
+  entity?: string; userId?: number | null; dateFrom?: string; dateTo?: string; limit: number; offset: number;
+}
+
+/** GET /audit-logs/ with the matching total from X-Total-Count. */
+export async function loadAuditLogs(filters: AuditLogFilters): Promise<{ rows: AuditLogRow[]; total: number }> {
+  const params = new URLSearchParams({ limit: String(filters.limit), offset: String(filters.offset) });
+  if (filters.entity) params.set("entity", filters.entity);
+  if (filters.userId) params.set("user_id", String(filters.userId));
+  if (filters.dateFrom) params.set("date_from", filters.dateFrom);
+  if (filters.dateTo) params.set("date_to", filters.dateTo);
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase()}/audit-logs/?${params}`, {
+      headers: { Accept: "application/json", ...authHeaders() }, cache: "no-store",
+    });
+  } catch {
+    throw new ApiError("Unable to connect to the API");
+  }
+  if (!res.ok) {
+    checkUnauthorized(res.status);
+    throw new ApiError(await errorDetail(res), res.status);
+  }
+  const rows = (await res.json()) as AuditLogRow[];
+  return { rows, total: Number(res.headers.get("X-Total-Count") ?? rows.length) };
+}
+
+/** GET /audit-logs/users: accounts that appear in the log. */
+export const loadAuditUsers = () => apiGetList<{ id: number; email: string }>("/audit-logs/users");
