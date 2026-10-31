@@ -279,3 +279,30 @@ def test_student_sees_their_feedback_and_exchange(client, cognito, db_session):
 def test_me_figures_are_for_coordinators_and_students(client, cognito, role, status):
     assert client.get(ME, headers=bearer(token_for(client, role))).status_code == status
     assert client.get(ME).status_code == 401
+
+
+# --- report CSV -----------------------------------------------------------------
+
+def test_summary_csv_has_one_row_per_figure_and_follows_filters(client, world, staff):
+    response = client.get("/api/v1/insights/summary.csv", params={"year": 2025}, headers=staff)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert "insights-summary" in response.headers["content-disposition"]
+    lines = response.content.decode("utf-8-sig").splitlines()
+    assert lines[0] == "หมวด,รหัส,รายการ,จำนวน,มูลค่ารวม"
+    assert "กิจกรรมรายเดือน,2025-01,2025-01,2," in lines
+    assert "กิจกรรมรายเดือน,2024-06,2024-06,1," not in lines
+    assert "ผลลัพธ์ตามประเภท,funding,ทุนหรืองบประมาณ,1,50000.0" in lines
+
+
+def test_summary_csv_escapes_formula_like_values(client, db_session, staff):
+    db_session.add(models.Partner(name="X", type="=HYPERLINK(1)"))
+    db_session.commit()
+    body = client.get("/api/v1/insights/summary.csv", headers=staff).content.decode("utf-8-sig")
+    assert "'=HYPERLINK(1)" in body
+
+
+@pytest.mark.parametrize("role", ["public", "student", "coordinator"])
+def test_summary_csv_is_for_staff_and_admin_only(client, cognito, role):
+    response = client.get("/api/v1/insights/summary.csv", headers=bearer(token_for(client, role)))
+    assert response.status_code == 403

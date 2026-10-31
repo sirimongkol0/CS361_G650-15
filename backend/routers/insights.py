@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 import database
 import models
 from auth import require_role
+from routers.exports import _csv_response
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
@@ -131,6 +132,30 @@ def summary(
         "feedbackByStatus": _keyed(by_feedback_status),
         "feedbackAverageRating": round(float(average), 2) if average is not None else None,
     }
+
+
+@router.get("/summary.csv")
+def summary_csv(
+    year: int | None = Query(None, ge=1900, le=2999),
+    date_from: date | None = None,
+    date_to: date | None = None,
+    stakeholder_type: str | None = None,
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(require_role("staff", "admin")),
+):
+    """The summary as one CSV row per figure, with the same filters."""
+    data = summary(year, date_from, date_to, stakeholder_type, db, user)
+    rows = [("หน่วยงานตามประเภท", r["key"], r["key"], r["count"], "") for r in data["partnersByType"]]
+    rows += [("ข้อตกลงตามสถานะ", r["key"], r["key"], r["count"], "") for r in data["agreementsByStatus"]]
+    rows += [("ข้อตกลงใกล้หมดอายุ", r["id"], r["name"], 1, r["expiryDate"]) for r in data["agreementsExpiring"]]
+    rows += [("กิจกรรมรายเดือน", r["month"], r["month"], r["count"], "") for r in data["activitiesByMonth"]]
+    rows += [("ผลลัพธ์ตามประเภท", r["key"], r["label"], r["count"], r["totalValue"]) for r in data["outcomesByType"]]
+    rows += [("Feedback ตามแหล่ง", r["key"], r["label"], r["count"], "") for r in data["feedbackBySource"]]
+    rows += [("Feedback ตามประเภทผู้ส่ง", r["key"], r["label"], r["count"], "") for r in data["feedbackByRespondentType"]]
+    rows += [("Feedback ตามคะแนน", r["key"], r["key"], r["count"], "") for r in data["feedbackByRating"]]
+    rows += [("Feedback ตามสถานะ", r["key"], r["key"], r["count"], "") for r in data["feedbackByStatus"]]
+    period = f"{data['filters']['dateFrom'] or 'all'}_{data['filters']['dateTo'] or 'all'}"
+    return _csv_response(f"insights-summary_{period}.csv", ("หมวด", "รหัส", "รายการ", "จำนวน", "มูลค่ารวม"), rows)
 
 
 @router.get("/partners/{partner_id}")
