@@ -411,6 +411,18 @@ class FeedbackLookupResponse(BaseModel):
     sort_order: int
 
 
+class OutcomeTypeCreate(FeedbackLookupCreate):
+    unit: Optional[str] = Field(default=None, max_length=50)
+
+
+class OutcomeTypeUpdate(FeedbackLookupUpdate):
+    unit: Optional[str] = Field(default=None, max_length=50)
+
+
+class OutcomeTypeResponse(FeedbackLookupResponse):
+    unit: Optional[str] = None
+
+
 class FeedbackUpdate(BaseModel):
     """PATCH /feedback/{id}: record a reply and/or status; publishing is staff/admin only."""
     model_config = ConfigDict(extra="forbid")
