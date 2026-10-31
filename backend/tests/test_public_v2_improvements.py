@@ -68,7 +68,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         and path not in {"/api/v1/partners/", "/api/v1/partners/{partner_id}"}
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
-        and not path.startswith(("/api/v1/feedback", "/api/v1/users"))
+        and not path.startswith(("/api/v1/feedback", "/api/v1/users", "/api/v1/outcomes"))
         and path not in IMPORT_PROTECTED_PATHS
         and path not in DOCUMENT_WRITE_PATHS
     }

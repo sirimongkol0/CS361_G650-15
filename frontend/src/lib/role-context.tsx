@@ -140,6 +140,7 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
     { to: '/users', label: 'ผู้ใช้และสิทธิ์', icon: 'users' },
     { to: '/imports', label: 'นำเข้า/ส่งออกข้อมูล', icon: 'folder' },
     { to: '/feedback/lookups', label: 'ตั้งค่า Feedback', icon: 'settings' },
+    { to: '/outcomes/types', label: 'ตั้งค่าประเภทผลลัพธ์', icon: 'settings' },
   ],
 };
 

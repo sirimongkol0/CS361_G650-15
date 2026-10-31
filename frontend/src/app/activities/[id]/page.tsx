@@ -10,6 +10,7 @@ import { canManage, useRole } from "@/lib/role-context";
 import { SourceLinks } from "@/components/source-links";
 import { activityDateLabel } from "@/lib/activity-display";
 import { DetailToolbar } from "@/components/detail-toolbar";
+import { OutcomeSection } from "@/components/outcome-section";
 import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools";
 
 export default function ActivityDetailPage() {
@@ -92,6 +93,8 @@ export default function ActivityDetailPage() {
             <p className="text-sm text-faint">ยังไม่มีรายละเอียดเพิ่มเติมสำหรับกิจกรรมนี้</p>
           )}
         </section>
+
+        <OutcomeSection field="activityId" id={item.id} canAdd={canManage(role)} canPublish={role === "staff" || role === "admin"} />
 
         <SourceLinks sources={item.sources} />
         </div>

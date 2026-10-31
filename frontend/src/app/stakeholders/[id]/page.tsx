@@ -10,10 +10,13 @@ import { RelatedRecords } from "@/components/related-records";
 import { SourceLinks } from "@/components/source-links";
 import { ApiError, loadPublicPartner, useApiResource } from "@/lib/api";
 import { DetailToolbar } from "@/components/detail-toolbar";
+import { canManage, useRole } from "@/lib/role-context";
+import { OutcomeSection } from "@/components/outcome-section";
 import { useDocumentTitle } from "@/lib/list-tools";
 
 export default function StakeholderDetailPage() {
   const params = useParams<{ id: string }>();
+  const { role } = useRole();
   const id = Number(params?.id);
   const partner = useApiResource(
     () =>
@@ -95,6 +98,7 @@ export default function StakeholderDetailPage() {
         <RelatedRecords kind="agreements" partnerId={item.id} />
         <RelatedRecords kind="activities" partnerId={item.id} />
       </div>
+      <div className="mt-5"><OutcomeSection field="partnerId" id={item.id} canAdd={canManage(role)} canPublish={role === "staff" || role === "admin"} /></div>
       <div className="mt-5"><SourceLinks sources={item.sources} /></div>
     </div>
   );

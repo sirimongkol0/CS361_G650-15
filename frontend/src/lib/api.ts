@@ -950,3 +950,42 @@ export function useApiResource<T>(
     },
   } as ApiResource<T>;
 }
+
+/* ---- V4-2 outcomes (camelCase; the nested type keeps the lookup API's snake_case) ---- */
+export interface OutcomeType {
+  id: number;
+  code: string;
+  name_th: string;
+  unit: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export type OutcomeContextField = "partnerId" | "activityId" | "documentId" | "exchangeId";
+
+export interface Outcome {
+  id: number;
+  title: string;
+  description: string | null;
+  value: number | null;
+  unit: string | null;
+  occurredOn: string | null;
+  evidenceUrl: string | null;
+  partnerId: number | null;
+  activityId: number | null;
+  documentId: number | null;
+  exchangeId: number | null;
+  isPublished: boolean;
+  outcomeType: OutcomeType;
+  /** Whether the signed-in caller may edit this outcome (decided by the server). */
+  canEdit: boolean;
+}
+
+export interface OutcomePage {
+  items: Outcome[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type OutcomeInput = Partial<Omit<Outcome, "id" | "outcomeType" | "canEdit">> & { outcomeTypeId?: number };

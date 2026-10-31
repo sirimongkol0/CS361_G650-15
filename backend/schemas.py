@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, EmailStr
+from pydantic.alias_generators import to_camel
 from typing import Annotated, Optional, List, Literal
 from datetime import date, datetime, timezone
 
@@ -409,6 +410,78 @@ class FeedbackLookupResponse(BaseModel):
     name_th: str
     is_active: bool
     sort_order: int
+
+
+class OutcomeTypeCreate(FeedbackLookupCreate):
+    unit: Optional[str] = Field(default=None, max_length=50)
+
+
+class OutcomeTypeUpdate(FeedbackLookupUpdate):
+    unit: Optional[str] = Field(default=None, max_length=50)
+
+
+class OutcomeTypeResponse(FeedbackLookupResponse):
+    unit: Optional[str] = None
+
+
+class OutcomeResponse(BaseModel):
+    """camelCase on the wire; read from the ORM row by field name."""
+    model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
+
+    id: int
+    title: str
+    description: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    occurred_on: Optional[datetime_date] = None
+    evidence_url: Optional[str] = None
+    partner_id: Optional[int] = None
+    activity_id: Optional[int] = None
+    document_id: Optional[int] = None
+    exchange_id: Optional[int] = None
+    is_published: bool
+    outcome_type: OutcomeTypeResponse  # keeps the lookup API's snake_case shape
+    can_edit: bool = False             # whether the caller may PATCH this outcome
+
+
+class OutcomeUpdate(BaseModel):
+    """PATCH /outcomes/{id}, camelCase keys only; publishing is staff/admin only."""
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
+
+    outcome_type_id: Optional[int] = None
+    title: Optional[str] = Field(default=None, min_length=1, max_length=300)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    # outcomes.value is Numeric(14, 2): keep within range so Postgres never overflows.
+    value: Optional[float] = Field(default=None, gt=-1e12, lt=1e12, allow_inf_nan=False)
+    unit: Optional[str] = Field(default=None, max_length=50)
+    occurred_on: Optional[datetime_date] = None
+    evidence_url: Optional[HttpsUrl] = None
+    partner_id: Optional[int] = None
+    activity_id: Optional[int] = None
+    document_id: Optional[int] = None
+    exchange_id: Optional[int] = None
+    is_published: Optional[bool] = None
+
+    @field_validator("title")
+    @classmethod
+    def outcome_title_not_blank(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("title must not be blank")
+        return value.strip() if value is not None else None
+
+
+class OutcomeCreate(OutcomeUpdate):
+    outcome_type_id: int
+    title: str = Field(..., min_length=1, max_length=300)
+
+
+class OutcomePage(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    items: List[OutcomeResponse]
+    total: int
+    page: int
+    page_size: int
 
 
 class FeedbackUpdate(BaseModel):
