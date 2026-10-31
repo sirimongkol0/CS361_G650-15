@@ -1,13 +1,17 @@
-from typing import List
+from datetime import date
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, or_, select
+from sqlalchemy.orm import Session, joinedload
 
 import audit
 import auth
 import database
 import models
 import schemas
+from public_visibility import document_criteria, partner_criteria
+from routers.feedback import _optional_user
 
 router = APIRouter(prefix="/outcomes", tags=["outcomes"])
 
@@ -67,3 +71,92 @@ def update_outcome_lookup(
     db.commit()
     db.refresh(row)
     return row
+
+
+MANAGER_ROLES = ("staff", "admin")
+
+# Each context an outcome can hang off: (outcome column, context model, public criteria).
+_CONTEXTS = (
+    (models.Outcome.partner_id, models.Partner, partner_criteria),
+    (models.Outcome.document_id, models.Document, document_criteria),
+    (models.Outcome.activity_id, models.Activity,
+     lambda: (models.Activity.is_published.is_(True), models.Activity.is_deleted.is_(False))),
+    (models.Outcome.exchange_id, models.ExchangeStudent,
+     lambda: (models.ExchangeStudent.is_published.is_(True),)),
+)
+
+
+def _publicly_visible():
+    """Published, and every context it is linked to is itself public."""
+    return and_(
+        models.Outcome.is_published.is_(True),
+        *(or_(column.is_(None), column.in_(select(model.id).where(*criteria())))
+          for column, model, criteria in _CONTEXTS),
+    )
+
+
+def _owned_by(user: models.User):
+    """Linked to at least one context the coordinator owns."""
+    return or_(*(column.in_(select(model.id).where(model.owner_user_id == user.id))
+                 for column, model, _ in _CONTEXTS))
+
+
+def _visible_query(db: Session, user: Optional[models.User]):
+    query = db.query(models.Outcome).options(joinedload(models.Outcome.outcome_type)).filter(
+        models.Outcome.is_deleted.is_(False))
+    if user is not None and user.role in MANAGER_ROLES:
+        return query
+    if user is not None and user.role == "coordinator":
+        return query.filter(or_(_publicly_visible(), _owned_by(user)))
+    return query.filter(_publicly_visible())
+
+
+def _response(row: models.Outcome) -> schemas.OutcomeResponse:
+    item = schemas.OutcomeResponse.model_validate(row)
+    if item.unit is None:
+        item.unit = row.outcome_type.unit
+    return item
+
+
+@router.get("/", response_model=schemas.OutcomePage)
+def list_outcomes(
+    partner_id: Optional[int] = None,
+    activity_id: Optional[int] = None,
+    document_id: Optional[int] = None,
+    exchange_id: Optional[int] = None,
+    outcome_type_id: Optional[int] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(database.get_db),
+    user: Optional[models.User] = Depends(_optional_user),
+):
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must be on or before date_to")
+    query = _visible_query(db, user)
+    for column, value in ((models.Outcome.partner_id, partner_id), (models.Outcome.activity_id, activity_id),
+                          (models.Outcome.document_id, document_id), (models.Outcome.exchange_id, exchange_id),
+                          (models.Outcome.outcome_type_id, outcome_type_id)):
+        if value is not None:
+            query = query.filter(column == value)
+    if date_from is not None:
+        query = query.filter(models.Outcome.occurred_on >= date_from)
+    if date_to is not None:
+        query = query.filter(models.Outcome.occurred_on <= date_to)
+    total = query.count()
+    rows = (query.order_by(models.Outcome.occurred_on.desc(), models.Outcome.id.desc())
+            .offset((page - 1) * page_size).limit(page_size).all())
+    return schemas.OutcomePage(items=[_response(row) for row in rows], total=total, page=page, page_size=page_size)
+
+
+@router.get("/{outcome_id}", response_model=schemas.OutcomeResponse)
+def get_outcome(
+    outcome_id: int,
+    db: Session = Depends(database.get_db),
+    user: Optional[models.User] = Depends(_optional_user),
+):
+    row = _visible_query(db, user).filter(models.Outcome.id == outcome_id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Outcome not found")
+    return _response(row)

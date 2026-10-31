@@ -423,6 +423,31 @@ class OutcomeTypeResponse(FeedbackLookupResponse):
     unit: Optional[str] = None
 
 
+class OutcomeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    description: Optional[str] = None
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    occurred_on: Optional[datetime_date] = None
+    evidence_url: Optional[str] = None
+    partner_id: Optional[int] = None
+    activity_id: Optional[int] = None
+    document_id: Optional[int] = None
+    exchange_id: Optional[int] = None
+    is_published: bool
+    outcome_type: OutcomeTypeResponse
+
+
+class OutcomePage(BaseModel):
+    items: List[OutcomeResponse]
+    total: int
+    page: int
+    page_size: int
+
+
 class FeedbackUpdate(BaseModel):
     """PATCH /feedback/{id}: record a reply and/or status; publishing is staff/admin only."""
     model_config = ConfigDict(extra="forbid")
