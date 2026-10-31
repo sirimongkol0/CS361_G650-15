@@ -402,3 +402,43 @@ def test_stakeholder_filter_includes_records_linked_only_through_their_activity(
     body = client.get(SUMMARY, params={"stakeholder_type": "university"}, headers=staff).json()
     assert {r["key"]: r["count"] for r in body["outcomesByType"]} == {"participants": 1}
     assert _counts(body["feedbackByStatus"]) == {"pending": 1}
+
+
+# --- dormant partners ------------------------------------------------------------
+
+def test_summary_lists_partners_with_a_live_agreement_but_no_recent_activity(client, db_session, staff):
+    today = date.today()
+    quiet = models.Partner(name="Quiet", type="university")
+    busy = models.Partner(name="Busy", type="university")
+    expired_only = models.Partner(name="Expired only", type="university")
+    db_session.add_all([quiet, busy, expired_only])
+    db_session.flush()
+    db_session.add_all([
+        models.Document(name="Q", doc_type="mou", status="active", partner_id=quiet.id,
+                        expiry_date=today + timedelta(days=300)),
+        models.Document(name="B", doc_type="moa", status="active", partner_id=busy.id, expiry_date=None),
+        models.Document(name="E", doc_type="mou", status="expired", partner_id=expired_only.id,
+                        expiry_date=today - timedelta(days=1)),
+        models.Activity(name="old", date=today - timedelta(days=500), partner_id=quiet.id),
+        models.Activity(name="recent", date=today - timedelta(days=30), partner_id=busy.id),
+    ])
+    db_session.commit()
+
+    body = client.get(SUMMARY, headers=staff).json()
+    assert body["dormantWithinDays"] == 365
+    assert [(p["name"], p["lastActivityDate"]) for p in body["dormantPartners"]] == [
+        ("Quiet", (today - timedelta(days=500)).isoformat()),
+    ]
+
+
+def test_recent_outcome_or_feedback_keeps_a_partner_off_the_dormant_list(client, db_session, staff):
+    today = date.today()
+    partner = models.Partner(name="Has feedback", type="university")
+    db_session.add(partner)
+    db_session.flush()
+    db_session.add_all([
+        models.Document(name="D", doc_type="mou", status="active", partner_id=partner.id),
+        models.Feedback(title="f", status="pending", partner_id=partner.id, date=today - timedelta(days=10)),
+    ])
+    db_session.commit()
+    assert client.get(SUMMARY, headers=staff).json()["dormantPartners"] == []

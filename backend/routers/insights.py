@@ -13,6 +13,8 @@ from routers.exports import _csv_response
 router = APIRouter(prefix="/insights", tags=["insights"])
 
 EXPIRING_WITHIN_DAYS = 90
+# A partner with a live agreement but nothing recorded for this long is flagged for follow-up.
+DORMANT_WITHIN_DAYS = 365
 AGREEMENT_TYPES = ("mou", "moa")
 
 
@@ -66,6 +68,40 @@ def _lookup_counts(db, scope, lookup, fk_column):
              .select_from(models.Feedback).join(lookup, fk_column == lookup.id))
     rows = scope.apply(query, models.Feedback, models.Feedback.date).group_by(lookup.code, lookup.name_th)
     return [{"key": code, "label": label, "count": count} for code, label, count in rows]
+
+
+def _dormant_partners(db: Session, stakeholder_type: str | None):
+    """Partners with a live agreement and no activity, outcome or feedback in DORMANT_WITHIN_DAYS."""
+    Partner, Document, Activity = models.Partner, models.Document, models.Activity
+    today = date.today()
+    live = (db.query(Document.partner_id).filter(
+        Document.doc_type.in_(AGREEMENT_TYPES), Document.is_deleted.is_(False),
+        Document.status.notin_(("expired", "cancelled", "draft")),
+        (Document.expiry_date.is_(None)) | (Document.expiry_date >= today)))
+
+    via = aliased(Activity)
+    dated = [
+        db.query(Activity.partner_id.label("pid"), Activity.date.label("on"))
+          .filter(Activity.is_deleted.is_(False)),
+        db.query(func.coalesce(models.Outcome.partner_id, via.partner_id).label("pid"),
+                 models.Outcome.occurred_on.label("on"))
+          .outerjoin(via, models.Outcome.activity_id == via.id).filter(models.Outcome.is_deleted.is_(False)),
+        db.query(func.coalesce(models.Feedback.partner_id, via.partner_id).label("pid"),
+                 models.Feedback.date.label("on"))
+          .outerjoin(via, models.Feedback.activity_id == via.id),
+    ]
+    events = dated[0].union_all(*dated[1:]).subquery()
+    last = (db.query(events.c.pid, func.max(events.c.on).label("last_on"))
+            .group_by(events.c.pid).subquery())
+
+    query = (db.query(Partner.id, Partner.name, Partner.type, last.c.last_on)
+             .outerjoin(last, last.c.pid == Partner.id)
+             .filter(Partner.is_deleted.is_(False), Partner.id.in_(live),
+                     (last.c.last_on.is_(None)) | (last.c.last_on < today - timedelta(days=DORMANT_WITHIN_DAYS))))
+    if stakeholder_type:
+        query = query.filter(Partner.type == stakeholder_type)
+    return [{"id": pid, "name": name, "type": ptype, "lastActivityDate": last_on}
+            for pid, name, ptype, last_on in query.order_by(last.c.last_on.is_(None).desc(), last.c.last_on, Partner.name)]
 
 
 @router.get("/summary")
@@ -140,6 +176,8 @@ def summary(
     return {
         "filters": {"dateFrom": date_from, "dateTo": date_to, "stakeholderType": stakeholder_type},
         "expiringWithinDays": EXPIRING_WITHIN_DAYS,
+        "dormantWithinDays": DORMANT_WITHIN_DAYS,
+        "dormantPartners": _dormant_partners(db, stakeholder_type),
         "partnersByType": _keyed(partners),
         "agreementsByStatus": _keyed(by_status),
         "agreementsByYear": [{"year": int(y), "count": count} for y, count in by_year],
