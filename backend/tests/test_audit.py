@@ -143,6 +143,34 @@ def test_list_is_newest_first_with_user_email_and_filters(client, cognito, db_se
     assert actions(limit=1, offset=1) == ["update"]
 
 
+def test_list_reports_the_filtered_total_for_paging(client, cognito, db_session):
+    headers = bearer(token_for(client, "staff"))
+    now = datetime.now(timezone.utc)
+    db_session.add_all([models.AuditLog(action="update", entity="partners", entity_id=i, created_at=now) for i in range(7)]
+                       + [models.AuditLog(action="create", entity="documents", entity_id=1, created_at=now)])
+    db_session.commit()
+
+    response = client.get(URL, params={"entity": "partners", "limit": 3, "offset": 3}, headers=headers)
+    assert len(response.json()) == 3
+    assert response.headers["X-Total-Count"] == "7"
+
+
+def test_users_in_the_log_are_listed_for_the_user_filter(client, cognito, db_session):
+    headers = bearer(token_for(client, "staff"))
+    staff = db_session.query(models.User).filter_by(email="staff@example.test").one()
+    other = make_user(db_session, "silent", "staff")
+    now = datetime.now(timezone.utc)
+    db_session.add_all([models.AuditLog(user_id=staff.id, action="update", entity="partners", created_at=now),
+                        models.AuditLog(user_id=staff.id, action="create", entity="partners", created_at=now),
+                        models.AuditLog(user_id=None, action="create", entity="partners", created_at=now)])
+    db_session.commit()
+
+    body = client.get(URL + "users", headers=headers).json()
+    assert body == [{"id": staff.id, "email": "staff@example.test"}]
+    assert other.id not in [row["id"] for row in body]
+    assert client.get(URL + "users", headers=bearer(token_for(client, "coordinator"))).status_code == 403
+
+
 @pytest.mark.parametrize("params", [{"date_from": "2026-10-10", "date_to": "2026-10-01"}, {"limit": 0}, {"limit": 501}])
 def test_invalid_filters_are_422(client, cognito, params):
     response = client.get(URL, params=params, headers=bearer(token_for(client, "admin")))

@@ -26,6 +26,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
+    # Paging total for /audit-logs/ and the filename of CSV downloads.
+    expose_headers=["X-Total-Count", "Content-Disposition"],
 )
 
 

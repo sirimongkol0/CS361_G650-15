@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session, joinedload
 
 import database
@@ -22,10 +22,12 @@ def list_audit_logs(
     date_to: Optional[date] = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    response: Response = None,
     db: Session = Depends(database.get_db),
     _user: models.User = Depends(require_role("staff", "admin")),
 ):
-    """Newest-first change history. Read-only: there is no endpoint to edit or delete it."""
+    """Newest-first change history. Read-only: there is no endpoint to edit or delete it.
+    X-Total-Count carries the number of rows matching the filters, for paging."""
     if date_from and date_to and date_from > date_to:
         raise HTTPException(status_code=422, detail="date_from must not be after date_to")
     query = db.query(models.AuditLog).options(joinedload(models.AuditLog.user))
@@ -42,6 +44,7 @@ def list_audit_logs(
     if date_to:
         end = datetime.combine(date_to + timedelta(days=1), time.min, timezone.utc)
         query = query.filter(models.AuditLog.created_at < end)
+    response.headers["X-Total-Count"] = str(query.order_by(None).count())
     rows = query.order_by(models.AuditLog.created_at.desc(), models.AuditLog.id.desc()).offset(offset).limit(limit).all()
     return [
         schemas.AuditLogResponse(
@@ -51,3 +54,15 @@ def list_audit_logs(
         )
         for row in rows
     ]
+
+
+@router.get("/users")
+def list_audit_users(
+    db: Session = Depends(database.get_db),
+    _user: models.User = Depends(require_role("staff", "admin")),
+):
+    """Accounts that appear in the log, for the history page's user filter."""
+    rows = (db.query(models.User.id, models.User.email)
+            .filter(models.User.id.in_(db.query(models.AuditLog.user_id).filter(models.AuditLog.user_id.isnot(None))))
+            .order_by(models.User.email).all())
+    return [{"id": user_id, "email": email} for user_id, email in rows]

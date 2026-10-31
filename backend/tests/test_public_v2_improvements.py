@@ -54,7 +54,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         for path, methods in paths.items()
         if path.startswith("/api/v1/audit-logs")
     }
-    assert protected == {"/api/v1/audit-logs/": {"get"}}
+    assert protected == {"/api/v1/audit-logs/": {"get"}, "/api/v1/audit-logs/users": {"get"}}
 
     # Partner mutations remain available only to authenticated roles.
     assert set(paths["/api/v1/partners/"]) == {"get", "post"}
