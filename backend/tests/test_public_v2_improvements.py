@@ -68,7 +68,7 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         and path not in {"/api/v1/partners/", "/api/v1/partners/{partner_id}"}
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
-        and not path.startswith(("/api/v1/feedback", "/api/v1/users", "/api/v1/outcomes"))
+        and not path.startswith(("/api/v1/feedback", "/api/v1/users", "/api/v1/outcomes", "/api/v1/insights"))
         and path not in IMPORT_PROTECTED_PATHS
         and path not in DOCUMENT_WRITE_PATHS
     }
@@ -85,6 +85,10 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     for path, methods in IMPORT_PROTECTED_PATHS.items():
         assert set(paths[path]) == methods, path
         assert all(paths[path][method].get("security") for method in methods), path
+
+    # V4-5 insights are staff/admin-only reads.
+    assert set(paths["/api/v1/insights/summary"]) == {"get"}
+    assert paths["/api/v1/insights/summary"]["get"].get("security")
 
     # V3-4 adds role-protected activity and exchange writes.
     assert set(paths["/api/v1/activities/"]) >= {"get", "post"}
