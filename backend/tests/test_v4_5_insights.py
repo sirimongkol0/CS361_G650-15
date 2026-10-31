@@ -179,3 +179,38 @@ def test_summary_requires_sign_in(client):
 ])
 def test_summary_is_for_staff_and_admin_only(client, cognito, role, status):
     assert client.get(SUMMARY, headers=bearer(token_for(client, role))).status_code == status
+
+
+# --- partner continuity -------------------------------------------------------
+
+def _partner_id(db_session, name):
+    return db_session.query(models.Partner).filter_by(name=name).one().id
+
+
+def test_partner_timeline_counts_each_kind_per_year(client, world, staff, db_session):
+    uni_a = _partner_id(db_session, "Uni A")
+    db_session.query(models.Document).filter_by(name="MOU A").one().effective_date = date(2024, 3, 1)
+    db_session.commit()
+
+    body = client.get(f"/api/v1/insights/partners/{uni_a}", headers=staff).json()
+    assert body["partner"] == {"id": uni_a, "name": "Uni A", "type": "university"}
+    assert body["timeline"] == [
+        {"year": 2024, "agreements": 1, "activities": 1, "outcomes": 1, "feedback": 1},
+        {"year": 2025, "agreements": 0, "activities": 1, "outcomes": 1, "feedback": 1},
+    ]
+    assert body["totals"] == {"agreements": 1, "activities": 2, "outcomes": 2, "feedback": 2}
+
+
+def test_partner_timeline_404_for_missing_or_deleted_partner(client, world, staff, db_session):
+    assert client.get("/api/v1/insights/partners/99999", headers=staff).status_code == 404
+    gone = _partner_id(db_session, "Deleted D")
+    assert client.get(f"/api/v1/insights/partners/{gone}", headers=staff).status_code == 404
+
+
+@pytest.mark.parametrize("role,status", [
+    ("public", 403), ("student", 403), ("coordinator", 403), ("staff", 200), ("admin", 200),
+])
+def test_partner_timeline_is_for_staff_and_admin_only(client, world, cognito, db_session, role, status):
+    uni_a = _partner_id(db_session, "Uni A")
+    response = client.get(f"/api/v1/insights/partners/{uni_a}", headers=bearer(token_for(client, role)))
+    assert response.status_code == status

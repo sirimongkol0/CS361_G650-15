@@ -131,3 +131,40 @@ def summary(
         "feedbackByStatus": _keyed(by_feedback_status),
         "feedbackAverageRating": round(float(average), 2) if average is not None else None,
     }
+
+
+@router.get("/partners/{partner_id}")
+def partner_timeline(
+    partner_id: int,
+    db: Session = Depends(database.get_db),
+    _user: models.User = Depends(require_role("staff", "admin")),
+):
+    """Continuity of one partner: agreements, activities, outcomes and feedback per year."""
+    partner = db.query(models.Partner).filter_by(id=partner_id, is_deleted=False).first()
+    if partner is None:
+        raise HTTPException(status_code=404, detail="Partner not found")
+
+    kinds = {
+        "agreements": (models.Document, models.Document.effective_date,
+                       [models.Document.doc_type.in_(AGREEMENT_TYPES), models.Document.is_deleted.is_(False)]),
+        "activities": (models.Activity, models.Activity.date, [models.Activity.is_deleted.is_(False)]),
+        "outcomes": (models.Outcome, models.Outcome.occurred_on, [models.Outcome.is_deleted.is_(False)]),
+        "feedback": (models.Feedback, models.Feedback.date, []),
+    }
+    years: dict[int, dict] = {}
+    totals = {}
+    for kind, (model, date_column, conditions) in kinds.items():
+        year = func.extract("year", date_column)
+        rows = (db.query(year, func.count(model.id))
+                .filter(model.partner_id == partner_id, date_column.isnot(None), *conditions)
+                .group_by(year).all())
+        for row_year, count in rows:
+            years.setdefault(int(row_year), dict.fromkeys(kinds, 0))[kind] = count
+        totals[kind] = (db.query(func.count(model.id))
+                        .filter(model.partner_id == partner_id, *conditions).scalar())
+
+    return {
+        "partner": {"id": partner.id, "name": partner.name, "type": partner.type},
+        "timeline": [{"year": y, **years[y]} for y in sorted(years)],
+        "totals": totals,
+    }
