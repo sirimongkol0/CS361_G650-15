@@ -315,15 +315,24 @@ class DocumentScopeItemResponse(BaseModel):
 
 
 class FeedbackCreate(BaseModel):
-    title: str
-    source: Optional[str] = None
-    rating: Optional[int] = None
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(..., min_length=1, max_length=255)
+    respondent_type_id: int
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
     date: Optional[datetime_date] = None
-    status: Optional[str] = None
-    comment: Optional[str] = None
-    is_published: bool = False
+    comment: Optional[str] = Field(default=None, max_length=4000)
     partner_id: Optional[int] = None
     activity_id: Optional[int] = None
+    document_id: Optional[int] = None
+    exchange_id: Optional[int] = None
+
+    @field_validator('title')
+    @classmethod
+    def feedback_title_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError('title must not be blank')
+        return value.strip()
 
 
 class FeedbackResponse(BaseModel):
@@ -331,13 +340,17 @@ class FeedbackResponse(BaseModel):
 
     id: int
     title: str
-    source: Optional[str] = None
     rating: Optional[int] = None
     date: Optional[datetime_date] = None
     status: Optional[str] = None
     comment: Optional[str] = None
     partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
+
+
+class FeedbackMineResponse(FeedbackResponse):
+    """Private submitter view; still excludes account identity and manager replies."""
+    isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
 
 
 FeedbackStatus = Literal["pending", "reviewed"]
@@ -349,6 +362,53 @@ class FeedbackManageResponse(FeedbackResponse):
     reply: Optional[str] = None
     repliedAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('replied_at', 'repliedAt'), serialization_alias='repliedAt')
     repliedByUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('replied_by_user_id', 'repliedByUserId'), serialization_alias='repliedByUserId')
+
+
+class FeedbackManagerResponse(FeedbackManageResponse):
+    respondentTypeId: Optional[int] = Field(default=None, validation_alias=AliasChoices('respondent_type_id', 'respondentTypeId'), serialization_alias='respondentTypeId')
+    feedbackSourceId: Optional[int] = Field(default=None, validation_alias=AliasChoices('feedback_source_id', 'feedbackSourceId'), serialization_alias='feedbackSourceId')
+    documentId: Optional[int] = Field(default=None, validation_alias=AliasChoices('document_id', 'documentId'), serialization_alias='documentId')
+    exchangeId: Optional[int] = Field(default=None, validation_alias=AliasChoices('exchange_id', 'exchangeId'), serialization_alias='exchangeId')
+
+
+class FeedbackLookupCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(..., min_length=2, max_length=80, pattern=r"^[a-z][a-z0-9_]*$")
+    name_th: str = Field(..., min_length=1, max_length=200)
+    sort_order: int = 0
+
+    @field_validator("name_th")
+    @classmethod
+    def lookup_name_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("name_th must not be blank")
+        return value.strip()
+
+
+class FeedbackLookupUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name_th: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    is_active: Optional[bool] = None
+    sort_order: Optional[int] = None
+
+    @field_validator("name_th")
+    @classmethod
+    def lookup_update_name_not_blank(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("name_th must not be blank")
+        return value.strip() if value is not None else None
+
+
+class FeedbackLookupResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    code: str
+    name_th: str
+    is_active: bool
+    sort_order: int
 
 
 class FeedbackUpdate(BaseModel):

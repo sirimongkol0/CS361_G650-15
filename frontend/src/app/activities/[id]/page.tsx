@@ -3,7 +3,7 @@
 import { activityTypeColors, activityTypeLabels, label, displayDescription } from "@/lib/labels";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Calendar, FileText, ChevronRight, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, FileText, ChevronRight, Clock, MapPin, Users, MessageSquare } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { ApiError, loadActivity, loadDocuments, useApiResource } from "@/lib/api";
 import { canManage, useRole } from "@/lib/role-context";
@@ -15,7 +15,7 @@ import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools"
 export default function ActivityDetailPage() {
   const params = useParams<{ id: string }>();
   const id = Number(params?.id);
-  const { role } = useRole();
+  const { role, status: session } = useRole();
   const activity = useApiResource(
     () =>
       Number.isInteger(id) && id > 0
@@ -69,12 +69,17 @@ export default function ActivityDetailPage() {
             {item.participants > 0 && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" />ผู้เข้าร่วม {item.participants} คน</span>}
           </div>
         </div>
+        <div className="flex gap-2 flex-wrap">
+        {session === "authenticated" && role !== "public" && (
+          <Link href={`/feedback?activityId=${item.id}`} className="btn btn-primary gap-2"><MessageSquare className="w-4 h-4" />ส่ง Feedback</Link>
+        )}
         {canManage(role) && (
           <div className="flex gap-2">
             <Link href={`/activities/manage?edit=${item.id}`} className="btn btn-outline">แก้ไข</Link>
             <button className="btn btn-primary gap-2" type="button" onClick={() => window.print()}><FileText className="w-4 h-4" />พิมพ์</button>
           </div>
         )}
+        </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_320px]">

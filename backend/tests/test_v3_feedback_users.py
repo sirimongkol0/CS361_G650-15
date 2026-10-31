@@ -30,7 +30,7 @@ def test_public_feedback_hides_unpublished_rows_and_replies(client, db_session):
 
 
 @pytest.mark.parametrize(("role", "status"), [
-    ("public", 403), ("student", 403), ("coordinator", 200), ("staff", 200), ("admin", 200),
+    ("public", 403), ("student", 403), ("coordinator", 403), ("staff", 200), ("admin", 200),
 ])
 def test_feedback_manage_list_by_role(client, db_session, cognito, role, status):
     _feedback(db_session, title="Hidden", is_published=False)
@@ -46,7 +46,7 @@ def test_feedback_manage_list_needs_login(client):
 
 
 @pytest.mark.parametrize(("role", "status"), [
-    ("public", 403), ("student", 403), ("coordinator", 200), ("staff", 200), ("admin", 200),
+    ("public", 403), ("student", 403), ("coordinator", 403), ("staff", 200), ("admin", 200),
 ])
 def test_feedback_reply_by_role(client, db_session, cognito, role, status):
     row = _feedback(db_session)
@@ -79,11 +79,16 @@ def test_coordinator_cannot_publish_feedback(client, db_session, cognito):
 def test_staff_publishes_and_clears_reply(client, db_session, cognito):
     row = _feedback(db_session, reply="Old reply")
     headers = bearer(token_for(client, "staff"))
-    response = client.patch(f"/api/v1/feedback/{row.id}", json={"is_published": True, "reply": ""}, headers=headers)
+    response = client.patch(f"/api/v1/feedback/{row.id}", json={"reply": ""}, headers=headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["reply"] is None and response.json()["repliedAt"] is None
+    response = client.post(f"/api/v1/feedback/{row.id}/publish", headers=headers)
     assert response.status_code == 200, response.text
     assert response.json()["isPublished"] is True
-    assert response.json()["reply"] is None and response.json()["repliedAt"] is None
     assert [f["id"] for f in client.get("/api/v1/feedback/").json()] == [row.id]
+    response = client.post(f"/api/v1/feedback/{row.id}/unpublish", headers=headers)
+    assert response.status_code == 200 and response.json()["isPublished"] is False
+    assert client.get("/api/v1/feedback/").json() == []
 
 
 @pytest.mark.parametrize("body", [{"status": "unknown"}, {"reply": "x" * 2001}, {"title": "Renamed"}])
