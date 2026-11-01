@@ -332,6 +332,38 @@ class Outcome(Base):
     import_batch = relationship("ImportBatch")
 
 
+IMPROVEMENT_STATUSES = ("planned", "in_progress", "done")  # วางแผน | ดำเนินการ | เสร็จ
+
+# V4-6: one improvement can answer several feedback items and vice versa.
+feedback_improvements = Table(
+    "feedback_improvements", Base.metadata,
+    Column("feedback_id", Integer, ForeignKey("feedbacks.id", ondelete="CASCADE"), primary_key=True),
+    Column("improvement_id", Integer, ForeignKey("improvements.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class Improvement(Base):
+    """What was changed because of feedback: the "Act" step of PDCA for AUN-QA."""
+
+    __tablename__ = "improvements"
+    __table_args__ = (
+        CheckConstraint("status IN ('planned', 'in_progress', 'done')", name="ck_improvements_status"),
+        CheckConstraint("length(title) > 0", name="ck_improvements_title_nonempty"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    action_date = Column(Date, nullable=True, index=True)
+    responsible = Column(String, nullable=True)  # free text: a person, committee or unit
+    status = Column(String, default="planned", server_default="planned", nullable=False)
+    created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=True)
+
+    feedbacks = relationship("Feedback", secondary=feedback_improvements, order_by="Feedback.id")
+
+
 class _LookupMixin:
     """Admin-extensible type list: rows are data, so new types need no code change."""
 

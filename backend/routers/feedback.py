@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 import audit
@@ -166,9 +167,15 @@ def list_feedback(
         # Public callers cannot use filters to infer anything about hidden submissions.
         return [schemas.FeedbackResponse.model_validate(row).model_dump(by_alias=True)
                 for row in query.filter(models.Feedback.is_published.is_(True)).all()]
+    rows = query.all()
+    link = models.feedback_improvements
+    improvement_counts = dict(db.query(link.c.feedback_id, func.count(link.c.improvement_id))
+                              .filter(link.c.feedback_id.in_([row.id for row in rows]))
+                              .group_by(link.c.feedback_id).all()) if rows else {}
     payload = []
-    for row in query.all():
+    for row in rows:
         item = schemas.FeedbackManagerResponse.model_validate(row).model_dump(by_alias=True)
+        item["improvementCount"] = improvement_counts.get(row.id, 0)
         # The legacy free-text `source` may identify the submitter. Only expose the
         # normalized channel code in the manager view.
         item["source"] = row.feedback_source.code if row.feedback_source else None
