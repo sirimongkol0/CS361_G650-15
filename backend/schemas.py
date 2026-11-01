@@ -619,3 +619,53 @@ class AuditLogResponse(BaseModel):
     before: Optional[dict] = None
     after: Optional[dict] = None
     created_at: datetime
+
+
+ImprovementStatus = Literal["planned", "in_progress", "done"]
+
+
+class ImprovementUpdate(BaseModel):
+    """PATCH /improvements/{id}, camelCase keys only."""
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
+
+    title: Optional[str] = Field(default=None, min_length=1, max_length=300)
+    description: Optional[str] = Field(default=None, max_length=5000)
+    action_date: Optional[datetime_date] = None
+    responsible: Optional[str] = Field(default=None, max_length=200)
+    status: Optional[ImprovementStatus] = None
+    feedback_ids: Optional[List[int]] = Field(default=None, min_length=1, max_length=200)
+
+    @field_validator("title")
+    @classmethod
+    def improvement_title_not_blank(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and not value.strip():
+            raise ValueError("title must not be blank")
+        return value.strip() if value is not None else None
+
+
+class ImprovementCreate(ImprovementUpdate):
+    title: str = Field(..., min_length=1, max_length=300)
+    status: ImprovementStatus = "planned"
+    feedback_ids: List[int] = Field(..., min_length=1, max_length=200)
+
+
+class ImprovementFeedback(BaseModel):
+    model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
+
+    id: int
+    title: str
+    date: Optional[datetime_date] = None
+
+
+class ImprovementResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, alias_generator=to_camel, populate_by_name=True)
+
+    id: int
+    title: str
+    description: Optional[str] = None
+    action_date: Optional[datetime_date] = None
+    responsible: Optional[str] = None
+    status: ImprovementStatus
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    feedbacks: List[ImprovementFeedback]

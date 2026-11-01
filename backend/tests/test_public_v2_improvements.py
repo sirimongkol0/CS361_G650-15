@@ -69,7 +69,8 @@ def test_openapi_exposes_expected_routes_and_auth(client):
         and not path.startswith("/api/v1/exchange")
         and not path.startswith("/api/v1/activities")
         and not path.startswith(("/api/v1/feedback", "/api/v1/users", "/api/v1/outcomes", "/api/v1/insights",
-                                 "/api/v1/renewals"))
+                                 "/api/v1/renewals",
+                                 "/api/v1/improvements"))
         and path not in IMPORT_PROTECTED_PATHS
         and path not in DOCUMENT_WRITE_PATHS
     }
@@ -96,6 +97,13 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     assert set(paths["/api/v1/renewals/partners/{partner_id}"]) == {"get"}
     assert all(op.get("security") for p, ops in paths.items() if p.startswith("/api/v1/renewals")
                for op in ops.values())
+
+    # V4-6 improvements are signed-in only (coordinator/staff/admin).
+    assert set(paths["/api/v1/improvements/"]) == {"get", "post"}
+    assert set(paths["/api/v1/improvements/{improvement_id}"]) == {"get", "patch", "delete"}
+    for path, methods in paths.items():
+        if path.startswith("/api/v1/improvements"):
+            assert all(methods[method].get("security") for method in methods), path
 
     # V3-4 adds role-protected activity and exchange writes.
     assert set(paths["/api/v1/activities/"]) >= {"get", "post"}

@@ -34,6 +34,12 @@ export const feedbackSourceLabels: Record<string, string> = {
 };
 
 /* Feedback review status (API field status). Publication is a separate flag. */
+export const improvementStatusLabels: Record<string, string> = {
+  planned: "วางแผน",
+  in_progress: "กำลังดำเนินการ",
+  done: "เสร็จแล้ว",
+};
+
 export const feedbackStatusLabels: Record<string, string> = {
   pending: "รอตรวจสอบ",
   reviewed: "ตรวจสอบแล้ว",

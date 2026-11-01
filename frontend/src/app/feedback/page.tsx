@@ -3,6 +3,8 @@
 // Feedback list. Everyone sees published entries (GET /feedback/); coordinators,
 // staff and admin see every entry with its reply (GET /feedback/manage) and can
 // record a reply and status (PATCH /feedback/{id}). Only staff/admin publish.
+// V4-6: staff/admin record improvements per entry; coordinators record them for
+// feedback about their own partners/activities.
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -14,6 +16,7 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 import { feedbackStatusLabels, label } from "@/lib/labels";
+import { ImprovementSection } from "@/components/improvement-section";
 
 const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
@@ -275,6 +278,13 @@ export default function FeedbackPage() {
 
       {session === "authenticated" && role !== "public" && <FeedbackSubmitForm onCreated={() => { setNotice("ส่งความคิดเห็นแล้ว"); setReload((n) => n + 1); }} />}
 
+      {session === "authenticated" && role === "coordinator" && (
+        <div className="rounded-lg bg-white shadow-card p-5 mb-5">
+          <p className="text-xs text-faint">ความคิดเห็นเกี่ยวกับหน่วยงานหรือกิจกรรมที่คุณดูแล และสิ่งที่ปรับปรุงจากความคิดเห็นนั้น</p>
+          <ImprovementSection canDelete={false} />
+        </div>
+      )}
+
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
         {[
@@ -387,6 +397,7 @@ export default function FeedbackPage() {
                   <StarRow rating={f.rating} />
                   <span className="text-xs text-faint">{f.date}</span>
                   {isManager && f.reply && <span className="text-xs text-green-700">มีคำตอบแล้ว</span>}
+                  {isManager && f.improvementCount > 0 && <span className="text-xs text-green-700">ปรับปรุง {f.improvementCount} รายการ</span>}
                 </div>
                 {f.org !== "—" && (
                   <div className="text-xs mt-1.5 text-faint">
@@ -476,6 +487,9 @@ export default function FeedbackPage() {
 
               {isManager && (
                 <ReplyForm key={`${selected.id}-${selected.repliedAt}-${selected.status}-${selected.isPublished}`} entry={selected} canPublish={canPublish} onSaved={saved} />
+              )}
+              {isManager && (
+                <ImprovementSection key={selected.id} feedbackId={selected.id} canDelete onChanged={() => setReload((n) => n + 1)} />
               )}
             </div>
           </div>

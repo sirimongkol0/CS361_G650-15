@@ -15,7 +15,8 @@ import {
   formatThaiDate, insightsQuery, loadInsightsSummary, useApiData, useApiResource, type InsightsSummary, type LabelledCount,
 } from "@/lib/api";
 import { beYear, monthLabel } from "@/lib/dashboard-data";
-import { documentStatusLabels, feedbackStatusLabels, label, partnerTypeLabels } from "@/lib/labels";
+import { documentStatusLabels, feedbackStatusLabels, improvementStatusLabels, label, partnerTypeLabels } from "@/lib/labels";
+import { improvementStatusColors } from "@/components/improvement-section";
 import { downloadFile } from "@/lib/download-file";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
@@ -101,12 +102,58 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
   if (feedback) {
     sentences.push(`ได้รับ Feedback ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
   }
+  const improvements = summary.improvements;
+  const doneCount = improvements.byStatus.find((r) => r.key === "done")?.count ?? 0;
+  const ongoing = improvements.items.length - doneCount;
+  if (improvements.items.length) {
+    sentences.push(`หลักสูตรนำ Feedback ไปปรับปรุงแล้วเสร็จ ${doneCount} เรื่อง${ongoing ? ` และอยู่ระหว่างวางแผนหรือดำเนินการอีก ${ongoing} เรื่อง` : ""}`
+      + (feedback ? ` โดย Feedback ${improvements.feedbackWithImprovement} จาก ${improvements.feedbackTotal} รายการในปีนี้นำไปสู่การปรับปรุงที่เสร็จแล้ว` : ""));
+  }
   if (partners) sentences.push(`หน่วยงานที่มีความร่วมมือมากที่สุดคือ ${summary.topPartners[0].name}`);
   if (summary.dormantPartners.length) {
     sentences.push(`มี ${summary.dormantPartners.length} หน่วยงานที่ข้อตกลงยังมีผลแต่ไม่มีความเคลื่อนไหวเกิน 1 ปี ควรพิจารณาต่อยอดหรือทบทวนข้อตกลง`);
   }
   return sentences.join(" ");
 }
+
+/** V4-6: Feedback → improvement table, the PDCA evidence AUN-QA asks for. */
+function ImprovementsReport({ improvements, period }: { improvements: InsightsSummary["improvements"]; period: string }) {
+  return (
+    <section className={`${card} mt-5`}>
+      <h2 className="font-bold mb-1 text-ink">การปรับปรุงจาก Feedback</h2>
+      <p className="text-xs mb-4 text-faint">
+        {period} • Feedback ที่นำไปสู่การปรับปรุงที่เสร็จแล้ว {improvements.feedbackWithImprovement} จาก {improvements.feedbackTotal} รายการ
+      </p>
+      {improvements.items.length === 0 ? <p className="text-sm text-faint">ยังไม่มีการบันทึกการปรับปรุงในช่วงที่เลือก</p> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-faint">
+                <th className="pb-2 font-medium">Feedback</th>
+                <th className="pb-2 font-medium">การปรับปรุง</th>
+                <th className="pb-2 font-medium">สถานะ</th>
+                <th className="pb-2 font-medium">วันที่</th>
+                <th className="pb-2 font-medium">ผู้รับผิดชอบ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {improvements.items.map((row) => (
+                <tr key={row.id} className="border-t border-line align-top break-inside-avoid">
+                  <td className="py-2 pr-3 text-mute">{row.feedbacks.map((f) => f.title).join(", ") || "—"}</td>
+                  <td className="py-2 pr-3 text-ink">{row.title}</td>
+                  <td className="py-2 pr-3"><span className={`badge ${improvementStatusColors[row.status]}`}>{label(improvementStatusLabels, row.status)}</span></td>
+                  <td className="py-2 pr-3 whitespace-nowrap">{row.actionDate ? formatThaiDate(row.actionDate) : "—"}</td>
+                  <td className="py-2 text-mute">{row.responsible || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 
 type ExpiringAgreement = InsightsSummary["agreementsExpiring"][number];
 
@@ -264,6 +311,7 @@ function Report({ summary, previous, year, onChanged }: {
           </div>
         </section>
       </div>
+      <ImprovementsReport improvements={summary.improvements} period={period} />
       <section className={`${card} mt-5`}>
         <h2 className="font-bold mb-1 text-ink">หน่วยงานที่ไม่มีความเคลื่อนไหว</h2>
         <p className="text-xs mb-4 text-faint">

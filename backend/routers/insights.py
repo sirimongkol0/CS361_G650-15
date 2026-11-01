@@ -3,7 +3,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, selectinload
 
 import database
 import models
@@ -138,6 +138,41 @@ def _dormant_partners(db: Session, stakeholder_type: str | None):
             for pid, name, ptype, last_on in query.order_by(last.c.last_on.is_(None).desc(), last.c.last_on, Partner.name)]
 
 
+def _improvement_figures(db: Session, scope: _Scope, feedback):
+    """V4-6 PDCA: which feedback led to which improvement in the period.
+
+    Improvements are dated by action_date (created_at when empty). ``feedback`` is the
+    already-scoped feedback query, so "feedback with an improvement" uses the same period."""
+    Improvement, Feedback, link = models.Improvement, models.Feedback, models.feedback_improvements
+    on = func.coalesce(Improvement.action_date, func.date(Improvement.created_at))
+    improvements = db.query(Improvement)
+    if scope.date_from:
+        improvements = improvements.filter(on >= scope.date_from)
+    if scope.date_to:
+        improvements = improvements.filter(on <= scope.date_to)
+    if scope.stakeholder_type:
+        in_type = scope.apply(db.query(Feedback.id), Feedback)
+        improvements = improvements.filter(Improvement.id.in_(
+            db.query(link.c.improvement_id).filter(link.c.feedback_id.in_(in_type))))
+    by_status = (improvements.with_entities(Improvement.status, func.count(Improvement.id))
+                 .group_by(Improvement.status))
+    done = db.query(link.c.feedback_id).join(Improvement, Improvement.id == link.c.improvement_id).filter(
+        Improvement.status == "done")
+    items = improvements.options(selectinload(Improvement.feedbacks)).order_by(on.desc(), Improvement.id.desc())
+    return {
+        "byStatus": _keyed(by_status),
+        "feedbackTotal": feedback.with_entities(func.count(Feedback.id)).scalar(),
+        "feedbackWithImprovement": feedback.filter(Feedback.id.in_(done)).with_entities(
+            func.count(Feedback.id)).scalar(),
+        "items": [
+            {"id": row.id, "title": row.title, "status": row.status, "actionDate": row.action_date,
+             "responsible": row.responsible,
+             "feedbacks": [{"id": f.id, "title": f.title, "date": f.date} for f in row.feedbacks]}
+            for row in items
+        ],
+    }
+
+
 @router.get("/summary")
 def summary(
     year: int | None = Query(None, ge=1900, le=2999),
@@ -234,6 +269,7 @@ def summary(
         "feedbackByStatus": _keyed(by_feedback_status),
         "feedbackAverageRating": round(float(average), 2) if average is not None else None,
         **_renewal_figures(db, scope),
+        "improvements": _improvement_figures(db, scope, feedback),
     }
 
 
@@ -257,6 +293,14 @@ def summary_csv(
     rows += [("Feedback ตามประเภทผู้ส่ง", r["key"], r["label"], r["count"], "") for r in data["feedbackByRespondentType"]]
     rows += [("Feedback ตามคะแนน", r["key"], r["key"], r["count"], "") for r in data["feedbackByRating"]]
     rows += [("Feedback ตามสถานะ", r["key"], r["key"], r["count"], "") for r in data["feedbackByStatus"]]
+    improvements = data["improvements"]
+    rows += [("การปรับปรุงตามสถานะ", r["key"], r["key"], r["count"], "") for r in improvements["byStatus"]]
+    rows.append(("Feedback ที่นำไปสู่การปรับปรุง", "feedback_total", "Feedback ทั้งหมดในช่วงเวลา",
+                 improvements["feedbackTotal"], ""))
+    rows.append(("Feedback ที่นำไปสู่การปรับปรุง", "feedback_with_improvement", "มีการปรับปรุงที่เสร็จแล้ว",
+                 improvements["feedbackWithImprovement"], ""))
+    rows += [("การปรับปรุง", r["id"], r["title"], len(r["feedbacks"]), r["actionDate"] or "")
+             for r in improvements["items"]]
     period = f"{data['filters']['dateFrom'] or 'all'}_{data['filters']['dateTo'] or 'all'}"
     return _csv_response(f"insights-summary_{period}.csv", ("หมวด", "รหัส", "รายการ", "จำนวน", "มูลค่ารวม"), rows)
 
