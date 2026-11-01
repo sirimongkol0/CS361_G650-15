@@ -284,6 +284,21 @@ class DocumentTransition(BaseModel):
     status: AgreementStatus
 
 
+class RenewalDecisionCreate(BaseModel):
+    """V4-7: what to do with an agreement that is coming up for renewal."""
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal['renew', 'revise', 'terminate']
+    reason: str = Field(..., min_length=1, max_length=4000)
+
+    @field_validator('reason')
+    @classmethod
+    def reason_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError('reason must not be blank')
+        return value.strip()
+
+
 HttpsUrl = Annotated[str, Field(pattern=r"^https://\S+$", max_length=2000)]
 
 
