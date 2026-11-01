@@ -5,6 +5,7 @@ import io
 import os
 import uuid
 from datetime import date
+from typing import Literal
 from urllib.parse import quote
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
@@ -119,6 +120,7 @@ def list_import_batches(
 def upload_import_file(
     background_tasks: BackgroundTasks,
     kind: str = Query(..., pattern="^(feedback|outcome)$"),
+    source: Literal["coop_system", "file_import"] = Query("coop_system"),
     file: UploadFile = File(...),
     db: Session = Depends(database.get_db),
     user: models.User = Depends(auth.require_role(*MANAGER_ROLES)),
@@ -134,9 +136,10 @@ def upload_import_file(
     if len(data) > max_bytes:
         raise HTTPException(status_code=413, detail=f"ไฟล์มีขนาดเกิน {max_bytes} ไบต์")
 
-    source = db.query(models.FeedbackSource).filter_by(code="coop_system", is_active=True).first()
+    source_code = source
+    source = db.query(models.FeedbackSource).filter_by(code=source_code, is_active=True).first()
     if source is None:
-        raise HTTPException(status_code=503, detail="ยังไม่ได้ตั้งค่าแหล่งข้อมูลระบบสหกิจศึกษา")
+        raise HTTPException(status_code=503, detail=f"ยังไม่ได้เปิดใช้แหล่งข้อมูล {source_code}")
 
     safe_name = filename.replace("\\", "_").replace("/", "_")[:180] or f"import{extension}"
     key = f"imports/{uuid.uuid4().hex}/{safe_name}"
