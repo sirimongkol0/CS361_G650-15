@@ -42,6 +42,9 @@ SCOPE_LEVELS = ("program", "faculty", "university")
 SCOPE_LEVEL_CHECK = "scope_level IS NULL OR scope_level IN ('program', 'faculty', 'university')"
 # V3-3: relevance to the CSTU program; only "keep" rows can appear publicly.
 CSTU_STATUSES = ("keep", "review", "out_of_scope")  # คงไว้ | รอทบทวน | นอกขอบเขต
+# V4-7: what was decided when an agreement came up for renewal (ต่ออายุ | ปรับปรุง | ยุติ).
+RENEWAL_DECISIONS = ("renew", "revise", "terminate")
+RENEWAL_DECISION_CHECK = "renewal_decision IS NULL OR renewal_decision IN ('renew', 'revise', 'terminate')"
 
 
 class Source(Base):
@@ -137,6 +140,7 @@ class Document(Base):
         ),
         CheckConstraint(SCOPE_LEVEL_CHECK, name="ck_documents_scope_level"),
         CheckConstraint("cstu_status IN ('keep', 'review', 'out_of_scope')", name="ck_documents_cstu_status"),
+        CheckConstraint(RENEWAL_DECISION_CHECK, name="ck_documents_renewal_decision"),
     )
 
     name = Column(String, index=True, nullable=False)
@@ -166,8 +170,15 @@ class Document(Base):
     cstu_evidence = Column(Text, nullable=True)     # evidence / source for the relevance decision
     owner_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     is_deleted = Column(Boolean, default=False, server_default=false(), nullable=False)
+    # --- [V4-7] renewal chain: this agreement renews an earlier one; the decision sits on the earlier one ---
+    renews_document_id = Column(Integer, ForeignKey("documents.id", ondelete="SET NULL"), nullable=True, index=True)
+    renewal_decision = Column(String, nullable=True)  # renew | revise | terminate (NULL = not decided yet)
+    renewal_reason = Column(Text, nullable=True)
+    renewal_decided_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    renewal_decided_at = Column(DateTime, nullable=True)
 
     partner = relationship("Partner", back_populates="documents")
+    renews = relationship("Document", remote_side=[id], foreign_keys=[renews_document_id])
     sources = relationship("Source", secondary=document_sources, back_populates="documents")
     # Document detail children
     scope_items = relationship(
