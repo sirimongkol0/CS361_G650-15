@@ -1015,6 +1015,16 @@ export interface InsightsSummary {
   feedbackByRating: KeyedCount<number>[];
   feedbackByStatus: KeyedCount[];
   feedbackAverageRating: number | null;
+  /** V4-6 PDCA: which feedback in the period led to which improvement. */
+  improvements: {
+    byStatus: KeyedCount<ImprovementStatus>[];
+    feedbackTotal: number;
+    feedbackWithImprovement: number;
+    items: {
+      id: number; title: string; status: ImprovementStatus; actionDate: string | null; responsible: string | null;
+      feedbacks: ImprovementFeedback[];
+    }[];
+  };
 }
 
 export interface InsightsFilters { year?: number | null; stakeholderType?: string | null }
