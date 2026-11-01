@@ -845,6 +845,8 @@ async function loadNames(path: string): Promise<Map<number, string>> {
 
 /** Roles that read every feedback entry with its reply (GET /feedback/manage). */
 export const FEEDBACK_MANAGER_ROLES = ["staff", "admin"];
+/** Roles that get the reviewer view of GET /feedback/ (coordinators: their own records only). */
+export const FEEDBACK_REVIEWER_ROLES = ["coordinator", ...FEEDBACK_MANAGER_ROLES];
 
 async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
   const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
@@ -857,13 +859,13 @@ async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
  * entries (GET /feedback/mine); everyone else sees published entries.
  */
 export function loadFeedbackEntries(role: string = "public"): Promise<FeedbackEntry[]> {
-  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/" : role === "public" ? "/feedback/" : "/feedback/mine";
+  const path = FEEDBACK_REVIEWER_ROLES.includes(role) || role === "public" ? "/feedback/" : "/feedback/mine";
   return safeLoad<FeedbackEntry[]>(path, buildFeedback, []);
 }
 
 /** Like loadFeedbackEntries, but a failed request is thrown so the page can say so. */
 export async function loadFeedbackStrict(role: string = "public"): Promise<FeedbackEntry[]> {
-  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/" : role === "public" ? "/feedback/" : "/feedback/mine";
+  const path = FEEDBACK_REVIEWER_ROLES.includes(role) || role === "public" ? "/feedback/" : "/feedback/mine";
   return buildFeedback(await apiGetList<unknown>(path));
 }
 
@@ -1019,7 +1021,7 @@ export interface InsightsSummary {
   topPartners: { id: number; name: string; agreements: number; activities: number; total: number }[];
   agreementsExpiring: { id: number; name: string; expiryDate: string; partnerId: number | null; partnerName: string | null }[];
   activitiesByMonth: { month: string; count: number }[];
-  outcomesByType: (LabelledCount & { totalValue: number })[];
+  outcomesByType: (LabelledCount & { totalValue: number; unit: string | null })[];
   feedbackBySource: LabelledCount[];
   feedbackByRespondentType: LabelledCount[];
   feedbackByRating: KeyedCount<number>[];

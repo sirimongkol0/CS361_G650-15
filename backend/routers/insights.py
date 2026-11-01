@@ -209,12 +209,13 @@ def summary(
     activities = scope.apply(db.query(month, func.count(Activity.id)), Activity, Activity.date)
     activities = activities.filter(Activity.is_deleted.is_(False), Activity.date.isnot(None)).group_by(month).order_by(month)
 
-    outcomes = (db.query(models.OutcomeType.code, models.OutcomeType.name_th, func.count(Outcome.id),
-                         func.coalesce(func.sum(Outcome.value), 0))
+    outcomes = (db.query(models.OutcomeType.code, models.OutcomeType.name_th, models.OutcomeType.unit,
+                         func.count(Outcome.id), func.coalesce(func.sum(Outcome.value), 0))
                 .select_from(Outcome).join(models.OutcomeType, Outcome.outcome_type_id == models.OutcomeType.id)
                 .filter(Outcome.is_deleted.is_(False)))
     outcomes = scope.apply(outcomes, Outcome, Outcome.occurred_on).group_by(
-        models.OutcomeType.code, models.OutcomeType.name_th, models.OutcomeType.sort_order).order_by(
+        models.OutcomeType.code, models.OutcomeType.name_th, models.OutcomeType.unit,
+        models.OutcomeType.sort_order).order_by(
         models.OutcomeType.sort_order)
 
     agreement_counts = (scope.apply(db.query(Document.partner_id.label("pid"), func.count(Document.id).label("n")),
@@ -260,8 +261,8 @@ def summary(
         ],
         "activitiesByMonth": [{"month": m, "count": count} for m, count in activities],
         "outcomesByType": [
-            {"key": code, "label": label, "count": count, "totalValue": float(total)}
-            for code, label, count, total in outcomes
+            {"key": code, "label": label, "unit": unit, "count": count, "totalValue": float(total)}
+            for code, label, unit, count, total in outcomes
         ],
         "feedbackBySource": _lookup_counts(db, scope, models.FeedbackSource, Feedback.feedback_source_id),
         "feedbackByRespondentType": _lookup_counts(db, scope, models.RespondentType, Feedback.respondent_type_id),

@@ -355,10 +355,11 @@ class FeedbackCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(..., min_length=1, max_length=255)
-    respondent_type_id: int
-    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    # Set from the sender's role; only staff/admin choose it (e.g. entering a partner's feedback).
+    respondent_type_id: Optional[int] = None
+    rating: Optional[int] = Field(default=None, ge=1, le=5)  # None = no star rating
     date: Optional[datetime_date] = None
-    comment: Optional[str] = Field(default=None, max_length=4000)
+    comment: str = Field(..., min_length=1, max_length=4000)
     partner_id: Optional[int] = None
     activity_id: Optional[int] = None
     document_id: Optional[int] = None
@@ -369,6 +370,13 @@ class FeedbackCreate(BaseModel):
     def feedback_title_not_blank(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("หัวข้อห้ามเป็นช่องว่างเปล่า")
+        return value.strip()
+
+    @field_validator('comment')
+    @classmethod
+    def feedback_comment_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError('กรุณากรอกความคิดเห็น')
         return value.strip()
 
 
@@ -383,10 +391,12 @@ class FeedbackResponse(BaseModel):
     comment: Optional[str] = None
     partnerId: Optional[int] = Field(default=None, validation_alias=AliasChoices('partner_id', 'partnerId'), serialization_alias='partnerId')
     activityId: Optional[int] = Field(default=None, validation_alias=AliasChoices('activity_id', 'activityId'), serialization_alias='activityId')
+    reply: Optional[str] = None
+    repliedAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('replied_at', 'repliedAt'), serialization_alias='repliedAt')
 
 
 class FeedbackMineResponse(FeedbackResponse):
-    """Private submitter view; still excludes account identity and manager replies."""
+    """Private submitter view: adds publication; still excludes account identities."""
     isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
 
 
@@ -396,8 +406,6 @@ FeedbackStatus = Literal["pending", "reviewed"]
 class FeedbackManageResponse(FeedbackResponse):
     """Signed-in view (/feedback/manage and writes): adds publication and the reply."""
     isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
-    reply: Optional[str] = None
-    repliedAt: Optional[datetime] = Field(default=None, validation_alias=AliasChoices('replied_at', 'repliedAt'), serialization_alias='repliedAt')
     repliedByUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('replied_by_user_id', 'repliedByUserId'), serialization_alias='repliedByUserId')
 
 

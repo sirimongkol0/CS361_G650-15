@@ -21,7 +21,7 @@ def test_end_date_before_start_date_is_rejected_in_thai(client, cognito):
 
 def test_rating_out_of_range_names_the_field(client, cognito):
     headers = bearer(token_for(client, "student"))
-    body = {"title": "t", "respondent_type_id": 1, "rating": 6, "activity_id": 1}
+    body = {"title": "t", "comment": "c", "rating": 6, "activity_id": 1}
     assert _errors(client.post("/api/v1/feedback/", json=body, headers=headers)) == {
         ("body", "rating"): "ต้องมีค่าไม่เกิน 5",
     }

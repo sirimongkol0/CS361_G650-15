@@ -31,6 +31,9 @@ export const feedbackSourceLabels: Record<string, string> = {
   partner: "หน่วยงานคู่ความร่วมมือ",
   student: "นักศึกษา",
   coop_system: "ระบบสหกิจศึกษา",
+  web_form: "ฟอร์มบนเว็บ",
+  file_import: "ไฟล์นำเข้า",
+  manual_entry: "บันทึกโดยเจ้าหน้าที่",
 };
 
 /* Feedback review status (API field status). Publication is a separate flag. */
