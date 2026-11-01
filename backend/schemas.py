@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, AliasChoices, field_validator, model_validator, EmailStr
 from pydantic.alias_generators import to_camel
 from typing import Annotated, Optional, List, Literal
 from datetime import date, datetime, timezone
@@ -9,6 +9,11 @@ datetime_date = date
 
 # Cooperation level of a record (docs/api/v2-field-contract.md); None = not yet classified.
 ScopeLevel = Literal['program', 'faculty', 'university']
+
+
+def _end_not_before_start(start, end) -> None:
+    if start is not None and end is not None and end < start:
+        raise ValueError("วันที่สิ้นสุดต้องไม่อยู่ก่อนวันที่เริ่มต้น")
 
 
 class PartnerBase(BaseModel):
@@ -130,6 +135,12 @@ class ActivityBase(BaseModel):
     is_open: Optional[bool] = None
     mou_document_id: Optional[int] = None
 
+    @model_validator(mode="after")
+    def end_date_not_before_date(self):
+        _end_not_before_start(self.date, self.end_date)
+        return self
+
+
 
 class ActivityCreate(ActivityBase):
     is_published: bool = False
@@ -154,6 +165,12 @@ class ActivityUpdate(BaseModel):
     is_open: Optional[bool] = None
     mou_document_id: Optional[int] = None
     scope_level: Optional[ScopeLevel] = None
+
+    @model_validator(mode="after")
+    def end_date_not_before_date(self):
+        _end_not_before_start(self.date, self.end_date)
+        return self
+
 
 
 class ActivityResponse(BaseModel):
@@ -255,7 +272,7 @@ class DocumentCreate(BaseModel):
     @classmethod
     def name_not_blank(cls, value: str) -> str:
         if not value.strip():
-            raise ValueError('name must not be blank')
+            raise ValueError("ชื่อห้ามเป็นช่องว่างเปล่า")
         return value.strip()
 
 
@@ -276,7 +293,7 @@ class DocumentUpdate(BaseModel):
     @classmethod
     def name_not_blank(cls, value: Optional[str]) -> Optional[str]:
         if value is not None and not value.strip():
-            raise ValueError('name must not be blank')
+            raise ValueError("ชื่อห้ามเป็นช่องว่างเปล่า")
         return value.strip() if value is not None else None
 
 
@@ -295,7 +312,7 @@ class RenewalDecisionCreate(BaseModel):
     @classmethod
     def reason_not_blank(cls, value: str) -> str:
         if not value.strip():
-            raise ValueError('reason must not be blank')
+            raise ValueError("เหตุผลห้ามเป็นช่องว่างเปล่า")
         return value.strip()
 
 
@@ -347,7 +364,7 @@ class FeedbackCreate(BaseModel):
     @classmethod
     def feedback_title_not_blank(cls, value: str) -> str:
         if not value.strip():
-            raise ValueError('title must not be blank')
+            raise ValueError("หัวข้อห้ามเป็นช่องว่างเปล่า")
         return value.strip()
 
 
@@ -398,7 +415,7 @@ class FeedbackLookupCreate(BaseModel):
     @classmethod
     def lookup_name_not_blank(cls, value: str) -> str:
         if not value.strip():
-            raise ValueError("name_th must not be blank")
+            raise ValueError("ชื่อภาษาไทยห้ามเป็นช่องว่างเปล่า")
         return value.strip()
 
 
@@ -413,7 +430,7 @@ class FeedbackLookupUpdate(BaseModel):
     @classmethod
     def lookup_update_name_not_blank(cls, value: Optional[str]) -> Optional[str]:
         if value is not None and not value.strip():
-            raise ValueError("name_th must not be blank")
+            raise ValueError("ชื่อภาษาไทยห้ามเป็นช่องว่างเปล่า")
         return value.strip() if value is not None else None
 
 
@@ -481,7 +498,7 @@ class OutcomeUpdate(BaseModel):
     @classmethod
     def outcome_title_not_blank(cls, value: Optional[str]) -> Optional[str]:
         if value is not None and not value.strip():
-            raise ValueError("title must not be blank")
+            raise ValueError("หัวข้อห้ามเป็นช่องว่างเปล่า")
         return value.strip() if value is not None else None
 
 
@@ -522,6 +539,13 @@ class ExchangeStudentCreate(BaseModel):
     activity_id: Optional[int] = None
     user_id: Optional[int] = None
 
+    @model_validator(mode="after")
+    def end_date_not_before_start_date(self):
+        _end_not_before_start(self.start_date, self.end_date)
+        return self
+
+
+
 class ExchangeStudentUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
@@ -534,6 +558,12 @@ class ExchangeStudentUpdate(BaseModel):
     is_published: Optional[bool] = None
     partner_id: Optional[int] = None
     activity_id: Optional[int] = None
+
+    @model_validator(mode="after")
+    def end_date_not_before_start_date(self):
+        _end_not_before_start(self.start_date, self.end_date)
+        return self
+
 
 
 class ExchangeStudentResponse(BaseModel):
@@ -639,7 +669,7 @@ class ImprovementUpdate(BaseModel):
     @classmethod
     def improvement_title_not_blank(cls, value: Optional[str]) -> Optional[str]:
         if value is not None and not value.strip():
-            raise ValueError("title must not be blank")
+            raise ValueError("หัวข้อห้ามเป็นช่องว่างเปล่า")
         return value.strip() if value is not None else None
 
 
