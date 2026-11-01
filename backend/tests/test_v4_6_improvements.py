@@ -170,3 +170,61 @@ def test_feedback_inbox_shows_improvement_count(client, tokens, scope):
     rows = {row["id"]: row for row in client.get("/api/v1/feedback/", headers=tokens["staff"]).json()}
     assert rows[scope["mine"]]["improvementCount"] == 2
     assert rows[scope["other"]]["improvementCount"] == 1
+
+
+# --- insights figures --------------------------------------------------------
+
+SUMMARY = "/api/v1/insights/summary"
+
+
+@pytest.fixture
+def pdca(db_session):
+    """5 feedback in 2025 (+1 in 2024); 2 of the 2025 ones have a done improvement.
+
+    done-1 links f1+f2 (one improvement, two feedback), planned links f3, in-progress links f1,
+    and old-done (2024) links the 2024 feedback only."""
+    uni = models.Partner(name="Uni", type="university")
+    company = models.Partner(name="Co", type="company")
+    db_session.add_all([uni, company])
+    db_session.flush()
+    fb = {name: models.Feedback(title=name, partner_id=(company if name == "f5" else uni).id, date=on)
+          for name, on in [("f1", date(2025, 1, 5)), ("f2", date(2025, 2, 5)), ("f3", date(2025, 3, 5)),
+                           ("f4", date(2025, 4, 5)), ("f5", date(2025, 5, 5)), ("old", date(2024, 5, 5))]}
+    db_session.add_all(fb.values())
+    now = datetime(2025, 6, 1, tzinfo=timezone.utc)
+    db_session.add_all([
+        models.Improvement(title="done-1", status="done", action_date=date(2025, 6, 1), created_at=now,
+                           responsible="กรรมการหลักสูตร", feedbacks=[fb["f1"], fb["f2"]]),
+        models.Improvement(title="planned", status="planned", action_date=date(2025, 7, 1), created_at=now,
+                           feedbacks=[fb["f3"]]),
+        models.Improvement(title="in-progress", status="in_progress", created_at=now, feedbacks=[fb["f1"]]),
+        models.Improvement(title="old-done", status="done", action_date=date(2024, 6, 1), created_at=now,
+                           feedbacks=[fb["old"]]),
+    ])
+    db_session.commit()
+
+
+def test_summary_counts_feedback_that_led_to_improvements(client, tokens, pdca):
+    body = client.get(SUMMARY, params={"year": 2025}, headers=tokens["staff"]).json()["improvements"]
+    assert {r["key"]: r["count"] for r in body["byStatus"]} == {"done": 1, "planned": 1, "in_progress": 1}
+    assert body["feedbackTotal"] == 5
+    assert body["feedbackWithImprovement"] == 2
+    assert [item["title"] for item in body["items"]] == ["planned", "in-progress", "done-1"]
+    done = next(item for item in body["items"] if item["title"] == "done-1")
+    assert [f["title"] for f in done["feedbacks"]] == ["f1", "f2"]
+    assert done["responsible"] == "กรรมการหลักสูตร"
+
+
+def test_summary_improvements_follow_year_and_stakeholder_filters(client, tokens, pdca):
+    old = client.get(SUMMARY, params={"year": 2024}, headers=tokens["staff"]).json()["improvements"]
+    assert [item["title"] for item in old["items"]] == ["old-done"]
+    assert (old["feedbackTotal"], old["feedbackWithImprovement"]) == (1, 1)
+    company = client.get(SUMMARY, params={"year": 2025, "stakeholder_type": "company"},
+                         headers=tokens["staff"]).json()["improvements"]
+    assert company["items"] == []
+    assert (company["feedbackTotal"], company["feedbackWithImprovement"]) == (1, 0)
+
+
+def test_summary_csv_lists_improvements(client, tokens, pdca):
+    text = client.get(f"{SUMMARY}.csv", params={"year": 2025}, headers=tokens["staff"]).text
+    assert "การปรับปรุง" in text and "done-1" in text and "มีการปรับปรุงที่เสร็จแล้ว" in text
