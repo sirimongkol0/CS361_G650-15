@@ -101,6 +101,19 @@ def list_partners(
     return [_response(p, current_user) for p in partners]
 
 
+@router.get("/manage", response_model=List[schemas.PartnerResponse])
+def list_partners_for_linking(
+    db: Session = Depends(database.get_db),
+    user: models.User = Depends(auth.require_role("coordinator", "staff", "admin")),
+):
+    """Every live partner, drafts included, so a new partner can get its first
+    agreement or activity before it meets the public criteria."""
+    partners = db.query(models.Partner).options(selectinload(models.Partner.sources)).filter(
+        models.Partner.is_deleted == False
+    ).order_by(models.Partner.name.asc(), models.Partner.id.asc()).all()
+    return [_response(p, user) for p in partners]
+
+
 @router.get(
     "/{partner_id}",
     response_model=schemas.PartnerResponse,

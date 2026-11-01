@@ -741,6 +741,12 @@ export async function loadPublicPartners(): Promise<PartnerView[]> {
   return raw.map(mapPartner);
 }
 
+/** GET /partners/manage -> every partner incl. drafts, for pickers on manage pages. */
+export async function loadManagePartners(): Promise<PartnerView[]> {
+  const raw = await apiGetList<RawPartner>("/partners/manage");
+  return raw.map(mapPartner);
+}
+
 /** GET /partners/{id} -> one published partner. Draft/missing records are 404. */
 export async function loadPublicPartner(id: number): Promise<PartnerView> {
   const raw = await apiGet<RawPartner>(`/partners/${id}`);

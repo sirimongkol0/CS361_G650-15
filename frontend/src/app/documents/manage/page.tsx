@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ChevronRight, Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
 import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
-  loadPublicPartners, useApiResource, type ManagedDocument, type PartnerView,
+  loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
 import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
@@ -61,7 +61,7 @@ export default function ManageDocumentsPage() {
     [allowed, reload]
   );
   const partners = useApiResource<PartnerView[]>(
-    () => (allowed ? loadPublicPartners() : new Promise<never>(() => {})),
+    () => (allowed ? loadManagePartners() : new Promise<never>(() => {})),
     [allowed]
   );
   const partnerList = partners.status === "success" ? partners.data : [];
