@@ -250,6 +250,8 @@ class DocumentCreate(BaseModel):
     signer_our: Optional[str] = None
     signer_partner: Optional[str] = None
     scope_level: Optional[ScopeLevel] = None
+    # Cooperation-scope bullets, in display order; on update the list replaces the old one.
+    scope_items: Optional[List[Annotated[str, Field(min_length=1, max_length=2000)]]] = None
 
     @field_validator('name')
     @classmethod
@@ -271,6 +273,8 @@ class DocumentUpdate(BaseModel):
     signer_our: Optional[str] = None
     signer_partner: Optional[str] = None
     scope_level: Optional[ScopeLevel] = None
+    # Cooperation-scope bullets, in display order; on update the list replaces the old one.
+    scope_items: Optional[List[Annotated[str, Field(min_length=1, max_length=2000)]]] = None
 
     @field_validator('name')
     @classmethod

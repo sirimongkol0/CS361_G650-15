@@ -74,3 +74,17 @@ def test_partner_picker_lists_drafts_for_managers_only(client, db_session, cogni
         names = [p["name"] for p in client.get("/api/v1/partners/manage",
                                                 headers=bearer(token_for(client, role))).json()]
         assert "Brand-new draft" in names
+
+
+def test_scope_items_are_saved_on_create_and_replaced_on_update(client, cognito):
+    from tests.test_auth import bearer, token_for
+
+    headers = bearer(token_for(client, "staff"))
+    created = client.post("/api/v1/documents/", headers=headers,
+                          json={"name": "MoU", "scope_items": ["Exchange", "  ", "Research"]})
+    assert created.status_code == 201, created.text
+    assert [i["text"] for i in created.json()["scopeItems"]] == ["Exchange", "Research"]
+    updated = client.patch(f"/api/v1/documents/{created.json()['id']}", headers=headers,
+                         json={"scope_items": ["Internship"]})
+    assert updated.status_code == 200, updated.text
+    assert [i["text"] for i in updated.json()["scopeItems"]] == ["Internship"]

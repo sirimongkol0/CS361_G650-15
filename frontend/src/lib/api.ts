@@ -780,6 +780,7 @@ export async function loadDocument(id: number): Promise<DocumentView> {
 export interface ManagedDocument {
   id: number;
   name: string;
+  scopeItems?: Array<{ id?: number; text: string; position?: number | null }> | null;
   docType: string | null;
   documentKind: string | null;
   fileAvailability: string | null;
