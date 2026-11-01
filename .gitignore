@@ -24,8 +24,7 @@ logs/
 /.opencode-skills/
 
 # Backend runtime artifacts (local dev only)
-backend/local.db
-backend/app.db
+*.db
 backend/venv/
 backend/.venv/
 backend/__pycache__/

@@ -1,7 +1,7 @@
 'use client';
 
 /*
- * AppShell — Next.js port of legacy/figma-mock/src/layouts/MainLayout.tsx
+ * AppShell — Next.js port of the former Figma mock prototype (removed in V4)
  * Sidebar (per current role's ROLE_NAV) + topbar + children.
  * Uses the TU theme tokens (crimson/gold, shadow-card, badge-*) from globals.css.
  * Footer is rendered at the bottom of the main column.

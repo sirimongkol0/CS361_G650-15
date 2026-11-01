@@ -62,7 +62,7 @@ Local artifacts are under `.tmp-v2-improvements/`: `manifest.json`,
 CI stores the analogous artifacts under `.tmp-v2-6/`, including `ui/`.
 These paths are ignored runtime artifacts; recreate them using the demo guide.
 Historical V1/V2 evidence retains its original run dates and counts. Markdown
-guides are current; PDFs under `docs/pdf` remain historical exports.
+guides are current (the old PDF exports were removed in V4).
 
 Scope stays at a public V2 repository: no login, role workflow, editing UI or
 feedback/exchange integration is introduced.

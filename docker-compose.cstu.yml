@@ -27,6 +27,9 @@ services:
       DATABASE_URL: postgresql+psycopg2://cstu_app:${CSTU_DATABASE_PASSWORD:?Set CSTU_DATABASE_PASSWORD in .env.cstu}@database:5432/cstu_collaboration
       STORAGE_BACKEND: local
       LOCAL_STORAGE_DIR: /app/storage
+      COGNITO_REGION: ${COGNITO_REGION:-ap-southeast-1}
+      COGNITO_USER_POOL_ID: ${COGNITO_USER_POOL_ID:-}
+      COGNITO_APP_CLIENT_ID: ${COGNITO_APP_CLIENT_ID:-}
     depends_on:
       database:
         condition: service_healthy

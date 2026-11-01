@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-// Theme ported from legacy/figma-mock/src/index.css — Thammasat University color system
+// Theme ported from the former Figma mock prototype (removed in V4) — Thammasat University color system
 // Primary: Crimson Red #8B1538 · Accent: Gold #C8961E · Base: White + Gray
 module.exports = {
   content: [

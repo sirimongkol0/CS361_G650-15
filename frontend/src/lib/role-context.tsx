@@ -1,7 +1,7 @@
 'use client';
 
 /*
- * Role context for PCSMS — ported from legacy/figma-mock/src/context/RoleContext.tsx
+ * Role context for PCSMS — ported from the former Figma mock prototype (removed in V4)
  * to Next.js (Link from next/link, localStorage handled SSR-safely).
  *
  * The role comes from the signed-in session (V3 login: backend + Amazon Cognito).
