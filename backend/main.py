@@ -44,10 +44,41 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Field-level errors (``[{"loc", "msg", "type"}]``) with Thai messages for the web form."""
     return JSONResponse(
         status_code=422,
-        content=schemas.ErrorResponse(detail="Request validation failed").model_dump(),
+        content={"detail": [
+            {"loc": list(error["loc"]), "msg": _thai_message(error), "type": error["type"]}
+            for error in exc.errors()
+        ]},
     )
+
+
+def _thai_message(error: dict) -> str:
+    """Pydantic's English text -> Thai; a ``ValueError`` from schemas.py is already Thai."""
+    kind, ctx = error["type"], error.get("ctx") or {}
+    if kind == "value_error":
+        return str(ctx.get("error", error["msg"]))
+    messages = {
+        "missing": "ต้องระบุข้อมูลนี้",
+        "extra_forbidden": "ไม่รองรับฟิลด์นี้",
+        "greater_than_equal": f"ต้องมีค่าอย่างน้อย {ctx.get('ge')}",
+        "less_than_equal": f"ต้องมีค่าไม่เกิน {ctx.get('le')}",
+        "greater_than": f"ต้องมีค่ามากกว่า {ctx.get('gt')}",
+        "less_than": f"ต้องมีค่าน้อยกว่า {ctx.get('lt')}",
+        "string_too_short": f"ต้องมีความยาวอย่างน้อย {ctx.get('min_length')} ตัวอักษร",
+        "string_too_long": f"ต้องมีความยาวไม่เกิน {ctx.get('max_length')} ตัวอักษร",
+        "string_pattern_mismatch": "รูปแบบข้อมูลไม่ถูกต้อง",
+        "literal_error": f"ต้องเป็นค่าใดค่าหนึ่งต่อไปนี้: {ctx.get('expected')}",
+        "int_parsing": "ต้องเป็นจำนวนเต็ม",
+        "int_type": "ต้องเป็นจำนวนเต็ม",
+        "date_from_datetime_parsing": "ต้องเป็นวันที่ในรูปแบบ YYYY-MM-DD",
+        "date_parsing": "ต้องเป็นวันที่ในรูปแบบ YYYY-MM-DD",
+        "date_type": "ต้องเป็นวันที่ในรูปแบบ YYYY-MM-DD",
+        "bool_parsing": "ต้องเป็นค่าจริงหรือเท็จ",
+        "json_invalid": "ข้อมูล JSON ไม่ถูกต้อง",
+    }
+    return messages.get(kind, "ข้อมูลไม่ถูกต้อง")
 
 
 @app.exception_handler(Exception)

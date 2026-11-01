@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ChevronRight, Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
 import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
-  loadPublicPartners, useApiResource, type ManagedDocument, type PartnerView,
+  loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
 import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
@@ -61,7 +61,7 @@ export default function ManageDocumentsPage() {
     [allowed, reload]
   );
   const partners = useApiResource<PartnerView[]>(
-    () => (allowed ? loadPublicPartners() : new Promise<never>(() => {})),
+    () => (allowed ? loadManagePartners() : new Promise<never>(() => {})),
     [allowed]
   );
   const partnerList = partners.status === "success" ? partners.data : [];
@@ -223,6 +223,7 @@ function DocumentForm({
     signer_our: doc?.signerOur ?? "",
     signer_partner: doc?.signerPartner ?? "",
     scope_level: doc?.scopeLevel ?? "",
+    scope_items: (doc?.scopeItems ?? []).map((item) => item.text).join("\n"),
   });
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
@@ -239,6 +240,7 @@ function DocumentForm({
       signer_our: orNull(form.signer_our),
       signer_partner: orNull(form.signer_partner),
       scope_level: orNull(form.scope_level),
+      scope_items: form.scope_items.split("\n").map((line) => line.trim()).filter(Boolean),
     };
     let saved: ManagedDocument | null = null;
     const ok = await action.run(async () => {
@@ -290,6 +292,9 @@ function DocumentForm({
           <input className={inputCls} value={form.signer_partner} onChange={set("signer_partner")} />
         </Field>
       </div>
+      <Field label="ขอบเขตความร่วมมือ" hint="หนึ่งรายการต่อบรรทัด จำเป็นสำหรับข้อตกลง MoU ที่จะแสดงในหน้าสาธารณะ">
+        <textarea className={inputCls} rows={4} value={form.scope_items} onChange={set("scope_items")} />
+      </Field>
       <div className="mt-2 flex justify-end gap-2">
         <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
         <button className="btn btn-primary" type="submit" disabled={action.busy}>

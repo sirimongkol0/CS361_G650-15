@@ -4,7 +4,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload, selectinload, with_loader_criteria
-from typing import List, Literal
+from typing import List, Literal, Optional
 from sqlalchemy import and_, or_
 from public_visibility import attach_verified_source, document_criteria, has_verified_source, partner_criteria
 
@@ -85,6 +85,12 @@ def _can_manage(doc: models.Document, user: models.User) -> bool:
     return user.role == "coordinator" and doc.owner_user_id == user.id
 
 
+def _scope_items(texts) -> list:
+    """Non-blank bullets -> ordered ``DocumentScopeItem`` rows."""
+    texts = [text.strip() for text in texts or () if text.strip()]
+    return [models.DocumentScopeItem(position=i, text=text) for i, text in enumerate(texts)]
+
+
 def _managed_document(db, document_id: int, user: models.User) -> models.Document:
     doc = db.query(models.Document).filter(
         models.Document.id == document_id, models.Document.is_deleted.is_(False),
@@ -117,8 +123,18 @@ def list_managed_documents(
 
 @router.get("/{document_id}", response_model=schemas.DocumentResponse,
             responses={404: {"model": schemas.ErrorResponse}})
-def get_document(document_id: int, db: Session = Depends(database.get_db)):
+def get_document(
+    document_id: int, db: Session = Depends(database.get_db),
+    user: Optional[models.User] = Depends(auth.optional_user),
+):
+    """Published documents for everyone; drafts too for staff/admin and the owner."""
     doc = _public_documents(db).filter(models.Document.id == document_id).first()
+    if doc is None and user is not None:
+        doc = db.query(models.Document).filter(
+            models.Document.id == document_id, models.Document.is_deleted.is_(False),
+        ).first()
+        if doc is not None and not _can_manage(doc, user):
+            doc = None
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return _response(doc)
@@ -183,7 +199,9 @@ def create_document(
     db: Session = Depends(database.get_db),
     user: models.User = Depends(auth.require_role("coordinator", "staff", "admin")),
 ):
-    doc = models.Document(**body.model_dump(), status="draft", is_published=False,
+    data = body.model_dump()
+    scope_items = data.pop("scope_items")
+    doc = models.Document(**data, scope_items=_scope_items(scope_items), status="draft", is_published=False,
                           cstu_status="review", owner_user_id=user.id)
     _validate_fields(db, doc)
     db.add(doc)
@@ -204,7 +222,10 @@ def update_document(
     if user.role == "coordinator" and _current_status(doc) != "draft":
         raise HTTPException(status_code=409, detail="Only draft documents can be edited")
     before = audit.snapshot(doc)
-    for key, value in body.model_dump(exclude_unset=True).items():
+    data = body.model_dump(exclude_unset=True)
+    if "scope_items" in data:
+        doc.scope_items = _scope_items(data.pop("scope_items"))
+    for key, value in data.items():
         setattr(doc, key, value)
     _validate_fields(db, doc)
     audit.record(db, user, "update", "documents", doc.id, before=before, after=audit.snapshot(doc))

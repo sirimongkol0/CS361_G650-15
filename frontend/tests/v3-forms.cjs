@@ -88,7 +88,9 @@ async function session(browser, role, userId = 7) {
     return route(activities)(r);
   });
   await context.route(/\/api\/v1\/exchange\/(mine|\d+)?$/, route(exchange));
-  await context.route(/\/api\/v1\/partners\/(\d+)?$/, route(partners));
+  await context.route(/\/api\/v1\/partners\/(manage|\d+)?$/, route(partners));
+  // Student accounts the exchange form offers to link (#104).
+  await context.route(/\/api\/v1\/users\/students$/, (r) => reply(r, 200, [{ id: 42, email: 'student42@example.test' }]));
   // Agreements the activity form offers to link (activities.mou_document_id).
   await context.route(/\/api\/v1\/documents\/(manage)?$/, (r) => reply(r, 200, [
     { id: 501, name: 'MoU ทดสอบ', documentKind: 'agreement', docType: 'mou', partnerId: null },
@@ -162,7 +164,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       const dialog = page.getByRole('dialog');
       await dialog.getByLabel('ชื่อ-นามสกุลนักศึกษา *').fill('นักศึกษา ข');
       await dialog.getByLabel('สถาบันปลายทาง').fill('Sakuragaoka Institute');
-      await dialog.getByLabel('เลขบัญชีนักศึกษา').fill('42');
+      await dialog.getByLabel('บัญชีนักศึกษา').selectOption('42');
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText('เพิ่ม “นักศึกษา ข” แล้ว').waitFor();
       const sent = exchange.calls.find((c) => c.method === 'POST').body;

@@ -4,7 +4,7 @@
 // staff/admin all; only staff/admin may change publication.
 
 import { useState, type FormEvent } from "react";
-import { apiPatch, apiPost, type RawExchange } from "@/lib/api";
+import { apiPatch, apiPost, loadStudentOptions, useApiResource, type RawExchange } from "@/lib/api";
 import { Field, FormError, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 
 const STATUSES = ["วางแผน", "กำลังสมัคร", "กำลังดำเนินการ", "เสร็จสิ้น"];
@@ -29,6 +29,7 @@ export function ExchangeForm({
     user_id: record?.userId != null ? String(record.userId) : "",
     is_published: record?.isPublished ?? false,
   });
+  const students = useApiResource(loadStudentOptions);
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
 
@@ -44,8 +45,7 @@ export function ExchangeForm({
       program: orNull(form.program),
       status: orNull(form.status),
     };
-    // The student account can be linked when the record is created.
-    if (!record) body.user_id = form.user_id ? Number(form.user_id) : null;
+    body.user_id = form.user_id ? Number(form.user_id) : null;
     if (isStaff) body.is_published = form.is_published;
     let saved: RawExchange | null = null;
     const ok = await action.run(async () => {
@@ -89,11 +89,14 @@ export function ExchangeForm({
         <Field label="โครงการ">
           <input className={inputCls} value={form.program} onChange={set("program")} placeholder="แลกเปลี่ยนนักศึกษา" />
         </Field>
-        {!record && (
-          <Field label="เลขบัญชีนักศึกษา" hint="ถ้ามี เชื่อมกับบัญชีนักศึกษา เพื่อให้นักศึกษาเห็นข้อมูลของตัวเอง">
-            <input className={inputCls} type="number" min={1} value={form.user_id} onChange={set("user_id")} />
-          </Field>
-        )}
+        <Field label="บัญชีนักศึกษา" hint="ถ้ามี เชื่อมกับบัญชีนักศึกษา เพื่อให้นักศึกษาเห็นข้อมูลของตัวเอง">
+          <select className={inputCls} value={form.user_id} onChange={set("user_id")}>
+            <option value="">— ไม่เชื่อมบัญชี —</option>
+            {(students.status === "success" ? students.data : []).map((s) => (
+              <option key={s.id} value={s.id}>{s.email}</option>
+            ))}
+          </select>
+        </Field>
       </div>
       {isStaff ? (
         <label className="mb-3 flex items-center gap-2 text-sm">

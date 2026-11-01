@@ -2,7 +2,6 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -21,29 +20,6 @@ MANAGER_ROLES = ("staff", "admin")
 REVIEWER_ROLES = ("coordinator", *MANAGER_ROLES)
 # The sender type follows the role; staff/admin may pick one when entering someone else's feedback.
 ROLE_RESPONDENT = {"student": "student", "coordinator": "coordinator", "staff": "staff", "admin": "staff"}
-_optional_bearer = HTTPBearer(auto_error=False)
-
-
-def _optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_optional_bearer),
-    db: Session = Depends(database.get_db),
-) -> Optional[models.User]:
-    """Public reads work without a token; a supplied token must be valid."""
-    if credentials is None:
-        return None
-    claims = auth.decode_token(credentials.credentials, "access")
-    if db.get(models.RevokedToken, claims["jti"]) is not None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    user = db.query(models.User).filter_by(cognito_sub=claims["sub"]).first()
-    if user is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is disabled")
-    token_role = auth.role_from_groups(claims.get("cognito:groups"))
-    if user.role != token_role:
-        user.role = token_role
-        db.commit()
-    return user
 
 
 def _feedback_query(db: Session, source_id=None, respondent_type_id=None, partner_id=None,
@@ -72,6 +48,14 @@ def list_respondent_types(db: Session = Depends(database.get_db)):
     """Active respondent categories available to the signed-in web form."""
     return db.query(models.RespondentType).filter(models.RespondentType.is_active.is_(True)).order_by(
         models.RespondentType.sort_order, models.RespondentType.id
+    ).all()
+
+
+@router.get("/sources", response_model=List[schemas.FeedbackLookupResponse])
+def list_feedback_sources(db: Session = Depends(database.get_db)):
+    """Active feedback sources, e.g. for the export filters."""
+    return db.query(models.FeedbackSource).filter(models.FeedbackSource.is_active.is_(True)).order_by(
+        models.FeedbackSource.sort_order, models.FeedbackSource.id
     ).all()
 
 
@@ -158,7 +142,7 @@ def list_feedback(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: Session = Depends(database.get_db),
-    user: Optional[models.User] = Depends(_optional_user),
+    user: Optional[models.User] = Depends(auth.optional_user),
 ):
     """Public sees published rows; staff/admin get the full inbox, coordinators the
     feedback about records they own."""

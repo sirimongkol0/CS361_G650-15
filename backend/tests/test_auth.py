@@ -156,7 +156,9 @@ def test_login_with_wrong_credentials_is_401(client, cognito, email, password):
     {"email": "student@example.test", "password": ""},
 ])
 def test_login_validation_uses_error_format(client, cognito, payload):
-    assert_error(client.post("/api/v1/auth/login", json=payload), 422, "Request validation failed")
+    response = client.post("/api/v1/auth/login", json=payload)
+    assert response.status_code == 422
+    assert all({"loc", "msg", "type"} <= set(error) for error in response.json()["detail"])
 
 
 def test_login_requiring_new_password_is_401(client, cognito):
@@ -283,7 +285,12 @@ def test_require_role_rejects_unknown_roles_at_declaration(roles):
 
 # --- public API unchanged -------------------------------------------------------
 
-@pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer not-a-jwt"}])
-def test_public_get_endpoints_need_no_token(client, cognito, headers):
+def test_public_get_endpoints_need_no_token(client, cognito):
     for path in ("/api/v1/health", "/api/v1/partners", "/api/v1/activities", "/api/v1/documents"):
-        assert client.get(path, headers=headers).status_code == 200, path
+        assert client.get(path).status_code == 200, path
+
+
+def test_public_reads_reject_a_bad_token_instead_of_ignoring_it(client, cognito):
+    """A supplied token means the caller meant to sign in (issue #95)."""
+    assert_error(client.get("/api/v1/partners", headers={"Authorization": "Bearer not-a-jwt"}),
+                 401, "Invalid or expired token")

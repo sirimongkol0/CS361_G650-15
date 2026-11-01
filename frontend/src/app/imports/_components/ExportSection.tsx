@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 
+import { apiGetList } from "@/lib/api";
 import { downloadFile } from "@/lib/download-file";
 
 const card =
@@ -26,15 +27,46 @@ const initialFilters = {
 
 type ExportFilters = typeof initialFilters;
 
-const numericFilterLabels: Partial<Record<keyof ExportFilters, string>> = {
-  source_id: "แหล่งข้อมูล ID",
-  respondent_type_id: "ประเภทผู้ตอบ ID",
-  partner_id: "Partner ID",
-  activity_id: "Activity ID",
-  document_id: "Document ID",
-  exchange_id: "Exchange ID",
-  outcome_type_id: "ประเภทผลลัพธ์ ID",
+type IdFilterKey =
+  | "source_id"
+  | "respondent_type_id"
+  | "partner_id"
+  | "activity_id"
+  | "document_id"
+  | "exchange_id"
+  | "outcome_type_id";
+
+type Option = { id: number; label: string };
+
+const idFilterLabels: Record<IdFilterKey, string> = {
+  source_id: "แหล่งข้อมูล",
+  respondent_type_id: "ประเภทผู้ตอบ",
+  partner_id: "หน่วยงานคู่ความร่วมมือ",
+  activity_id: "กิจกรรม",
+  document_id: "ข้อตกลง",
+  exchange_id: "การแลกเปลี่ยน",
+  outcome_type_id: "ประเภทผลลัพธ์",
 };
+
+// Where each picker gets its choices and which field names the row.
+const optionSources: Record<IdFilterKey, { path: string; labelKey: string }> = {
+  source_id: { path: "/feedback/sources", labelKey: "name_th" },
+  respondent_type_id: { path: "/feedback/respondent-types", labelKey: "name_th" },
+  partner_id: { path: "/partners/manage", labelKey: "name" },
+  activity_id: { path: "/activities/manage", labelKey: "name" },
+  document_id: { path: "/documents/manage", labelKey: "name" },
+  exchange_id: { path: "/exchange/mine", labelKey: "name" },
+  outcome_type_id: { path: "/outcomes/types", labelKey: "nameTh" },
+};
+
+async function loadOptions(key: IdFilterKey): Promise<Option[]> {
+  const { path, labelKey } = optionSources[key];
+  const rows = await apiGetList<Record<string, unknown>>(path);
+  return rows.map((row) => ({
+    id: Number(row.id),
+    label: String(row[labelKey] ?? row.name_th ?? row.name ?? row.id),
+  }));
+}
 
 const contextFilterKeys = [
   "partner_id",
@@ -58,6 +90,19 @@ export default function ExportSection() {
   const [filters, setFilters] = useState<ExportFilters>(initialFilters);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [options, setOptions] = useState<Partial<Record<IdFilterKey, Option[]>>>({});
+
+  useEffect(() => {
+    let alive = true;
+    for (const key of Object.keys(optionSources) as IdFilterKey[]) {
+      loadOptions(key)
+        .then((rows) => alive && setOptions((current) => ({ ...current, [key]: rows })))
+        .catch(() => alive && setOptions((current) => ({ ...current, [key]: [] })));
+    }
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const setFilter = (key: keyof ExportFilters, value: string) => {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -113,17 +158,21 @@ export default function ExportSection() {
     }
   };
 
-  const renderIdFilter = (key: keyof ExportFilters) => (
+  const renderIdFilter = (key: IdFilterKey) => (
     <label key={key} className="grid gap-1 text-xs text-faint">
-      {numericFilterLabels[key]}
-      <input
+      {idFilterLabels[key]}
+      <select
         className={control}
-        type="number"
-        min="1"
-        step="1"
         value={filters[key]}
         onChange={(event) => setFilter(key, event.target.value)}
-      />
+      >
+        <option value="">{options[key] ? "— ทั้งหมด —" : "กำลังโหลด…"}</option>
+        {(options[key] ?? []).map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 
