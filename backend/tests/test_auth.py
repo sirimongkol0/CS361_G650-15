@@ -156,7 +156,9 @@ def test_login_with_wrong_credentials_is_401(client, cognito, email, password):
     {"email": "student@example.test", "password": ""},
 ])
 def test_login_validation_uses_error_format(client, cognito, payload):
-    assert_error(client.post("/api/v1/auth/login", json=payload), 422, "Request validation failed")
+    response = client.post("/api/v1/auth/login", json=payload)
+    assert response.status_code == 422
+    assert all({"loc", "msg", "type"} <= set(error) for error in response.json()["detail"])
 
 
 def test_login_requiring_new_password_is_401(client, cognito):
