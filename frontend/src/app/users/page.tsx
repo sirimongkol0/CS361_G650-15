@@ -1,12 +1,12 @@
 "use client";
 
 // Admin-only account list (GET /users/). Accounts and roles live in Amazon Cognito;
-// a row appears here after the account's first login, so this page only reads.
+// a row appears here after the account's first login. Admins can switch an account off or on.
 
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Search, Shield } from "lucide-react";
-import { formatThaiDateTime, loadUsers, useApiResource, type UserAccount } from "@/lib/api";
+import { apiErrorMessage, apiPatch, formatThaiDateTime, loadUsers, useApiResource, type UserAccount } from "@/lib/api";
 import { ROLES, getRoleConfig, useRole, type UserRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
@@ -59,6 +59,24 @@ export default function UserManagementPage() {
     () => (allowed ? loadUsers() : new Promise<never>(() => {})),
     [allowed]
   );
+
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
+  async function toggleActive(user: UserAccount) {
+    const verb = user.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน";
+    if (!window.confirm(`ยืนยัน${verb}บัญชี ${user.email}?`)) return;
+    setBusyId(user.id);
+    setToggleError(null);
+    try {
+      await apiPatch<UserAccount>(`/users/${user.id}`, { isActive: !user.isActive });
+      users.retry();
+    } catch (error) {
+      setToggleError(apiErrorMessage(error));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (session === "loading") return <div className="p-6"><LoadingState /></div>;
   if (session !== "authenticated") return <div className="p-6"><AccessState status={401} /></div>;
@@ -121,6 +139,7 @@ export default function UserManagementPage() {
         rows.length === 0 ? <EmptyState title="ยังไม่มีผู้ใช้" message="บัญชีจะแสดงที่นี่หลังเข้าสู่ระบบครั้งแรก" /> : (
         <div className="bg-white border border-line rounded-lg shadow-card overflow-hidden">
           <div className="p-4 border-b border-line">
+            {toggleError && <p role="alert" className="mb-3 text-sm text-red-700">{toggleError}</p>}
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
               <input
@@ -136,7 +155,7 @@ export default function UserManagementPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-line bg-[#F8FAFC]">
-                  {["อีเมล", "บทบาท", "เข้าสู่ระบบล่าสุด", "เข้าสู่ระบบครั้งแรก", "สถานะ"].map((h) => (
+                  {["อีเมล", "บทบาท", "เข้าสู่ระบบล่าสุด", "เข้าสู่ระบบครั้งแรก", "สถานะ", ""].map((h) => (
                     <th key={h} className="text-left px-4 py-3.5 text-xs font-semibold text-faint whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -153,10 +172,20 @@ export default function UserManagementPage() {
                         ? <span className="badge badge-green">ใช้งานได้</span>
                         : <span className="badge badge-gray">ปิดใช้งาน</span>}
                     </td>
+                    <td className="px-4 py-4 text-right">
+                      <button
+                        type="button"
+                        className="btn btn-outline text-xs"
+                        disabled={busyId === u.id}
+                        onClick={() => void toggleActive(u)}
+                      >
+                        {u.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-faint">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-faint">ไม่พบผู้ใช้ที่ตรงกับคำค้นหา</td></tr>
                 )}
               </tbody>
             </table>

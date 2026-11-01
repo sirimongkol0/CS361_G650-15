@@ -571,7 +571,9 @@ class TestPublicContractErrorsAndCors:
         response = client.get("/api/v1/activities/not-an-integer")
 
         assert response.status_code == 422
-        assert response.json() == {"detail": "Request validation failed"}
+        assert response.json() == {"detail": [
+            {"loc": ["path", "activity_id"], "msg": "ต้องเป็นจำนวนเต็ม", "type": "int_parsing"},
+        ]}
 
     def test_configured_frontend_origin_is_allowed(self):
         response = client.options(

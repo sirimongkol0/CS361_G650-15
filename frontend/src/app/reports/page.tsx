@@ -96,7 +96,7 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
     `ปี ${beYear(year)} หลักสูตรมีหน่วยงานคู่ความร่วมมือ ${sum(summary.partnersByType)} แห่ง และจัดกิจกรรมร่วมกัน ${activities} ครั้ง${trend}`,
   ];
   if (summary.outcomesByType.length) {
-    sentences.push(`ผลลัพธ์ที่บันทึกได้ ${summary.outcomesByType.map((o) => `${o.label} ${o.totalValue.toLocaleString("th-TH")}`).join(", ")}`);
+    sentences.push(`ผลลัพธ์ที่บันทึกได้ ${summary.outcomesByType.map((o) => `${o.label} ${o.totalValue.toLocaleString("th-TH")}${o.unit ? ` ${o.unit}` : ""}`).join(", ")}`);
   }
   const feedback = sum(summary.feedbackByStatus);
   if (feedback) {
@@ -273,7 +273,7 @@ function Report({ summary, previous, year, onChanged }: {
                   <tr key={row.key} className="border-t border-line">
                     <td className="py-2 text-ink">{row.label}</td>
                     <td className="py-2 text-right">{row.count}</td>
-                    <td className="py-2 text-right">{row.totalValue.toLocaleString("th-TH")}</td>
+                    <td className="py-2 text-right">{row.totalValue.toLocaleString("th-TH")}{row.unit ? ` ${row.unit}` : ""}</td>
                   </tr>
                 ))}
               </tbody>
