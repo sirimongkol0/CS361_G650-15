@@ -131,22 +131,38 @@ def _parse_date(value: str, field: str, errors: list[str]) -> str | None:
         return None
 
 
-def _parse_context(raw: dict[str, str], db, errors: list[str]) -> dict[str, int | None]:
-    context: dict[str, int | None] = {}
+def _load_lookups(db, kind: str, source_id: int) -> dict:
+    """Everything a row is checked against, read once per file instead of once per row."""
+    live_ids = {}
     for field, model in CONTEXT_MODELS.items():
+        query = db.query(model.id)
+        if hasattr(model, "is_deleted"):
+            query = query.filter(model.is_deleted.is_(False))
+        live_ids[field] = {row_id for (row_id,) in query}
+    if kind == "feedback":
+        codes = {row.code: row for row in db.query(models.RespondentType).filter_by(is_active=True)}
+        existing = {external_id for (external_id,) in db.query(models.Feedback.external_id).filter(
+            models.Feedback.feedback_source_id == source_id, models.Feedback.external_id.isnot(None))}
+    else:
+        codes = {row.code: row for row in db.query(models.OutcomeType).filter_by(is_active=True)}
+        existing = {external_id for (external_id,) in db.query(models.Outcome.external_id).filter(
+            models.Outcome.external_id.isnot(None))}
+    return {"live_ids": live_ids, "codes": codes, "existing": existing}
+
+
+def _parse_context(raw: dict[str, str], lookups: dict, errors: list[str]) -> dict[str, int | None]:
+    context: dict[str, int | None] = {}
+    for field in CONTEXT_MODELS:
         value = _parse_int(raw.get(field, ""), field, errors, minimum=1)
         context[field] = value
-        if value is None:
-            continue
-        row = db.get(model, value)
-        if row is None or getattr(row, "is_deleted", False):
+        if value is not None and value not in lookups["live_ids"][field]:
             errors.append(f"ไม่พบข้อมูล {field} หรือรายการถูกลบแล้ว")
     if not any(context.values()):
         errors.append("ต้องระบุบริบทอย่างน้อย 1 รายการ: partner_id, activity_id, document_id หรือ exchange_id")
     return context
 
 
-def _validate_feedback(raw: dict[str, str], db, source_id: int, seen_ids: set[str]) -> tuple[dict | None, list[str]]:
+def _validate_feedback(raw: dict[str, str], lookups: dict, seen_ids: set[str]) -> tuple[dict | None, list[str]]:
     errors: list[str] = []
     external_id = raw.get("external_id", "").strip()
     title = raw.get("title", "").strip()
@@ -160,17 +176,17 @@ def _validate_feedback(raw: dict[str, str], db, source_id: int, seen_ids: set[st
     else:
         # Count every occurrence, even when another field on this row is invalid.
         seen_ids.add(external_id)
-        if db.query(models.Feedback.id).filter_by(feedback_source_id=source_id, external_id=external_id).first():
+        if external_id in lookups["existing"]:
             errors.append("external_id นี้มีอยู่ในระบบแล้ว")
     if not title:
         errors.append("ต้องระบุ title")
     elif len(title) > 255:
         errors.append("title ต้องมีความยาวไม่เกิน 255 ตัวอักษร")
-    respondent = db.query(models.RespondentType).filter_by(code=respondent_code, is_active=True).first()
+    respondent = lookups["codes"].get(respondent_code)
     if not respondent:
         errors.append("ไม่พบ respondent_type_code ที่เปิดใช้งาน")
 
-    context = _parse_context(raw, db, errors)
+    context = _parse_context(raw, lookups, errors)
     rating = _parse_int(raw.get("rating", ""), "rating", errors, minimum=1, maximum=5)
     feedback_date = _parse_date(raw.get("date", ""), "date", errors)
     comment = raw.get("comment", "").strip() or None
@@ -190,7 +206,7 @@ def _validate_feedback(raw: dict[str, str], db, source_id: int, seen_ids: set[st
     }, []
 
 
-def _validate_outcome(raw: dict[str, str], db, seen_ids: set[str]) -> tuple[dict | None, list[str]]:
+def _validate_outcome(raw: dict[str, str], lookups: dict, seen_ids: set[str]) -> tuple[dict | None, list[str]]:
     errors: list[str] = []
     external_id = raw.get("external_id", "").strip()
     title = raw.get("title", "").strip()
@@ -204,16 +220,16 @@ def _validate_outcome(raw: dict[str, str], db, seen_ids: set[str]) -> tuple[dict
     else:
         # Count every occurrence, even when another field on this row is invalid.
         seen_ids.add(external_id)
-        if db.query(models.Outcome.id).filter_by(external_id=external_id).first():
+        if external_id in lookups["existing"]:
             errors.append("external_id นี้มีอยู่ในระบบแล้ว")
     if not title:
         errors.append("ต้องระบุ title")
     elif len(title) > 255:
         errors.append("title ต้องมีความยาวไม่เกิน 255 ตัวอักษร")
-    outcome_type = db.query(models.OutcomeType).filter_by(code=type_code, is_active=True).first()
+    outcome_type = lookups["codes"].get(type_code)
     if not outcome_type:
         errors.append("ไม่พบ outcome_type_code ที่เปิดใช้งาน")
-    context = _parse_context(raw, db, errors)
+    context = _parse_context(raw, lookups, errors)
     occurred_on = _parse_date(raw.get("occurred_on", ""), "occurred_on", errors)
     value_text = raw.get("value", "").strip()
     value = None
@@ -274,12 +290,10 @@ def validate_import(file_bytes: bytes, filename: str, kind: str, db,
     valid_rows: list[dict] = []
     row_errors: list[dict] = []
     validator = _validate_feedback if kind == "feedback" else _validate_outcome
+    lookups = _load_lookups(db, kind, source_id)
     for row_number, raw in rows:
         try:
-            if kind == "feedback":
-                value, errors = validator(raw, db, source_id, seen_ids)
-            else:
-                value, errors = validator(raw, db, seen_ids)
+            value, errors = validator(raw, lookups, seen_ids)
         except Exception:
             value, errors = None, ["เกิดข้อผิดพลาดระหว่างตรวจสอบแถวนี้"]
         if errors:
