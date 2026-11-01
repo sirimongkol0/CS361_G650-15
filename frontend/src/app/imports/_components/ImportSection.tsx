@@ -22,6 +22,8 @@ import { downloadFile } from "@/lib/download-file";
 
 type ImportKind = "feedback" | "outcome";
 
+type ImportSource = "coop_system" | "file_import";
+
 type ImportStatus =
   | "processing"
   | "previewed"
@@ -63,6 +65,11 @@ const kindLabels: Record<ImportKind, string> = {
   outcome: "ผลลัพธ์",
 };
 
+const sourceLabels: Record<ImportSource, string> = {
+  coop_system: "ระบบสหกิจศึกษา",
+  file_import: "ไฟล์นำเข้า",
+};
+
 const card =
   "rounded-lg border border-line bg-white p-5 shadow-card";
 
@@ -91,6 +98,7 @@ function thaiDate(value: string | null): string {
 
 export default function ImportSection() {
   const [kind, setKind] = useState<ImportKind>("feedback");
+  const [source, setSource] = useState<ImportSource>("coop_system");
   const [file, setFile] = useState<File | null>(null);
 
   const [batches, setBatches] = useState<ImportBatch[]>([]);
@@ -155,7 +163,7 @@ export default function ImportSection() {
 
     try {
       const created = await apiUpload<ImportBatch>(
-        `/imports/?kind=${kind}`,
+        `/imports/?kind=${kind}&source=${source}`,
         file,
         "file",
         "POST"
@@ -277,7 +285,7 @@ export default function ImportSection() {
           </h2>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
+        <div className="grid gap-3 md:grid-cols-[180px_180px_1fr_auto] md:items-end">
 
           <label className="grid gap-1 text-sm text-mute">
             ประเภทข้อมูล
@@ -296,6 +304,24 @@ export default function ImportSection() {
               <option value="outcome">
                 ผลลัพธ์ (Outcomes)
               </option>
+            </select>
+          </label>
+
+          <label className="grid gap-1 text-sm text-mute">
+            แหล่งที่มา
+
+            <select
+              className={control}
+              value={source}
+              onChange={(event) =>
+                setSource(event.target.value as ImportSource)
+              }
+            >
+              {(Object.keys(sourceLabels) as ImportSource[]).map((code) => (
+                <option key={code} value={code}>
+                  {sourceLabels[code]}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -436,7 +462,9 @@ export default function ImportSection() {
                 </p>
 
                 <p className="mt-1 text-[11px] text-faint">
-                  {thaiDate(item.createdAt)} · ผ่าน {item.validRows} / {item.totalRows} แถว
+                  {thaiDate(item.createdAt)}
+                  {item.sourceCode && ` · ${sourceLabels[item.sourceCode as ImportSource] ?? item.sourceCode}`}
+                  {" · "}ผ่าน {item.validRows} / {item.totalRows} แถว
                 </p>
               </button>
             ))}

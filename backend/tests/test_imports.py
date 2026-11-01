@@ -478,3 +478,61 @@ def test_import_batch_accepts_processing_state_and_stores_preview_data(db_sessio
     db_session.add(batch)
     db_session.commit()
     assert db_session.query(models.ImportBatch).filter_by(id=batch.id, status="processing").one()
+
+
+@pytest.mark.parametrize("source", ["coop_system", "file_import"])
+def test_import_upload_records_the_chosen_source(client, db_session, cognito, source):
+    activity = models.Activity(name="Synthetic workshop", is_published=True)
+    db_session.add(activity)
+    db_session.commit()
+    headers = bearer(token_for(client, "staff"))
+    csv_text = (
+        "external_id,title,respondent_type_code,date,rating,comment,partner_id,activity_id,document_id,exchange_id\n"
+        f"SRC-1,Synthetic feedback,student,2026-01-15,5,,,{activity.id},,\n"
+    )
+    response = client.post(
+        f"/api/v1/imports/?kind=feedback&source={source}", headers=headers,
+        files={"file": ("synthetic.csv", csv_text.encode("utf-8-sig"), "text/csv")},
+    )
+    assert response.status_code == 202, response.text
+    batch = client.get(f"/api/v1/imports/{response.json()['id']}", headers=headers).json()
+    assert batch["sourceCode"] == source
+    committed = client.post(f"/api/v1/imports/{batch['id']}/commit", headers=headers)
+    assert committed.status_code == 200, committed.text
+    feedback = db_session.query(models.Feedback).filter_by(external_id="SRC-1").one()
+    assert feedback.feedback_source.code == source
+
+
+def test_import_upload_rejects_an_unknown_source(client, cognito):
+    response = client.post(
+        "/api/v1/imports/?kind=feedback&source=manual_entry", headers=bearer(token_for(client, "staff")),
+        files={"file": ("synthetic.csv", b"external_id\n1\n", "text/csv")},
+    )
+    assert response.status_code == 422
+
+
+def test_import_validation_query_count_does_not_grow_with_rows(db_session):
+    from sqlalchemy import event
+
+    from imports_service import validate_import
+
+    activity = models.Activity(name="Synthetic workshop", is_published=True)
+    db_session.add(activity)
+    db_session.commit()
+    source_id = db_session.query(models.FeedbackSource).filter_by(code="file_import").one().id
+    header = "external_id,title,respondent_type_code,date,rating,comment,partner_id,activity_id,document_id,exchange_id\n"
+
+    def count_queries(rows):
+        body = "".join(f"N1-{i},t,student,2026-01-15,5,,,{activity.id},,\n" for i in range(rows))
+        statements = []
+        listener = lambda *args: statements.append(args[2])  # noqa: E731
+        event.listen(db_session.bind, "before_cursor_execute", listener)
+        try:
+            valid, errors, total = validate_import((header + body).encode(), "x.csv", "feedback",
+                                                   db_session, source_id)
+        finally:
+            event.remove(db_session.bind, "before_cursor_execute", listener)
+        assert (len(valid), errors, total) == (rows, [], rows)
+        return len(statements)
+
+    assert count_queries(300) == count_queries(3)

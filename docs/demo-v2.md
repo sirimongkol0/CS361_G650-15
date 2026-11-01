@@ -63,7 +63,7 @@ npm --prefix frontend run test:display
 
 ทดสอบ error ด้วย HTTP 503 ที่ browser intercept เฉพาะ request ที่กำหนด ส่วนข้อมูลปกติ, list ว่าง, Not Found และไฟล์หายมาจาก API/DB/ที่เก็บไฟล์จริง ไม่แทนข้อมูลด้วย frontend mock การกด Retry หลังคืนการเชื่อมต่อหรือเตรียมไฟล์กลับต้องสำเร็จ
 
-สำหรับ Linux ใช้ `python -m venv .tmp-v2-6-venv`, `.tmp-v2-6-venv/bin/python` และ `export NAME=value` แทนคำสั่ง PowerShell; ติดตั้ง Chromium ด้วย `node .tmp-v2-tools/node_modules/playwright/cli.js install --with-deps chromium` ส่วน workflow `v2-integration` ทำขั้นเหล่านี้อัตโนมัติด้วย PostgreSQL 16 และเก็บ artifact ทุกครั้ง
+สำหรับ Linux ใช้ `python -m venv .tmp-v2-6-venv`, `.tmp-v2-6-venv/bin/python` และ `export NAME=value` แทนคำสั่ง PowerShell; ติดตั้ง Chromium ด้วย `node .tmp-v2-tools/node_modules/playwright/cli.js install --with-deps chromium` ส่วน job `e2e` ใน CI ทำขั้นเหล่านี้อัตโนมัติด้วย PostgreSQL 16 และเก็บ artifact ทุกครั้ง
 
 ## Demo ผ่านหน้าเว็บ
 
@@ -93,4 +93,4 @@ docker rm --force cs361-v2-6-demo
 ชุดนี้ใช้ fixture interception แยกจากชุด integration ที่เรียก API/DB จริง
 เก็บผลและภาพใน `.tmp-v2-6/ui/` ดูหลักฐานล่าสุดที่ [V2 improvements](evidence/v2-improvements.md)
 
-CI รัน backend tests บน PostgreSQL/SQLite, frontend build, Compose smoke และ `v2-integration` แยกฐานข้อมูลของแต่ละงาน ไม่รัน pytest ซึ่งล้างตารางบนฐานข้อมูลที่ใช้ demo ระหว่างเปิด API ให้สร้างอีกฐานข้อมูลลงท้าย `_test` สำหรับ pytest โดยเฉพาะหากรันในเครื่อง
+CI รัน backend tests บน PostgreSQL/SQLite, frontend build, Compose smoke และ `e2e` แยกฐานข้อมูลของแต่ละงาน ไม่รัน pytest ซึ่งล้างตารางบนฐานข้อมูลที่ใช้ demo ระหว่างเปิด API ให้สร้างอีกฐานข้อมูลลงท้าย `_test` สำหรับ pytest โดยเฉพาะหากรันในเครื่อง

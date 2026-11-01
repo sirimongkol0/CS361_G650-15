@@ -741,6 +741,12 @@ export async function loadPublicPartners(): Promise<PartnerView[]> {
   return raw.map(mapPartner);
 }
 
+/** GET /partners/manage -> every partner incl. drafts, for pickers on manage pages. */
+export async function loadManagePartners(): Promise<PartnerView[]> {
+  const raw = await apiGetList<RawPartner>("/partners/manage");
+  return raw.map(mapPartner);
+}
+
 /** GET /partners/{id} -> one published partner. Draft/missing records are 404. */
 export async function loadPublicPartner(id: number): Promise<PartnerView> {
   const raw = await apiGet<RawPartner>(`/partners/${id}`);
@@ -774,6 +780,7 @@ export async function loadDocument(id: number): Promise<DocumentView> {
 export interface ManagedDocument {
   id: number;
   name: string;
+  scopeItems?: Array<{ id?: number; text: string; position?: number | null }> | null;
   docType: string | null;
   documentKind: string | null;
   fileAvailability: string | null;
@@ -838,6 +845,8 @@ async function loadNames(path: string): Promise<Map<number, string>> {
 
 /** Roles that read every feedback entry with its reply (GET /feedback/manage). */
 export const FEEDBACK_MANAGER_ROLES = ["staff", "admin"];
+/** Roles that get the reviewer view of GET /feedback/ (coordinators: their own records only). */
+export const FEEDBACK_REVIEWER_ROLES = ["coordinator", ...FEEDBACK_MANAGER_ROLES];
 
 async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
   const [activityNames, partnerNames] = await Promise.all([loadNames("/activities/"), loadNames("/partners/")]);
@@ -850,13 +859,13 @@ async function buildFeedback(raw: unknown[]): Promise<FeedbackEntry[]> {
  * entries (GET /feedback/mine); everyone else sees published entries.
  */
 export function loadFeedbackEntries(role: string = "public"): Promise<FeedbackEntry[]> {
-  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/" : role === "public" ? "/feedback/" : "/feedback/mine";
+  const path = FEEDBACK_REVIEWER_ROLES.includes(role) || role === "public" ? "/feedback/" : "/feedback/mine";
   return safeLoad<FeedbackEntry[]>(path, buildFeedback, []);
 }
 
 /** Like loadFeedbackEntries, but a failed request is thrown so the page can say so. */
 export async function loadFeedbackStrict(role: string = "public"): Promise<FeedbackEntry[]> {
-  const path = FEEDBACK_MANAGER_ROLES.includes(role) ? "/feedback/" : role === "public" ? "/feedback/" : "/feedback/mine";
+  const path = FEEDBACK_REVIEWER_ROLES.includes(role) || role === "public" ? "/feedback/" : "/feedback/mine";
   return buildFeedback(await apiGetList<unknown>(path));
 }
 
@@ -869,6 +878,9 @@ export function loadExchangeStudents(role: string = "public"): Promise<ExchangeS
   const path = role === "public" ? "/exchange/" : "/exchange/mine";
   return safeLoad<ExchangeStudent[]>(path, (raw) => (raw as RawExchange[]).map(mapExchange), []);
 }
+
+/** GET /users/students (coordinator/staff/admin) -> active student accounts to link. */
+export const loadStudentOptions = () => apiGetList<{ id: number; email: string }>("/users/students");
 
 /** GET /users/ (admin only) -> every account that has signed in. */
 export const loadUsers = () => apiGetList<UserAccount>("/users/");
@@ -1009,7 +1021,7 @@ export interface InsightsSummary {
   topPartners: { id: number; name: string; agreements: number; activities: number; total: number }[];
   agreementsExpiring: { id: number; name: string; expiryDate: string; partnerId: number | null; partnerName: string | null }[];
   activitiesByMonth: { month: string; count: number }[];
-  outcomesByType: (LabelledCount & { totalValue: number })[];
+  outcomesByType: (LabelledCount & { totalValue: number; unit: string | null })[];
   feedbackBySource: LabelledCount[];
   feedbackByRespondentType: LabelledCount[];
   feedbackByRating: KeyedCount<number>[];

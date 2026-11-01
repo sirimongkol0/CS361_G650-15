@@ -2,7 +2,6 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -11,34 +10,16 @@ import auth
 import database
 import models
 import schemas
+from routers.improvements import coordinator_feedback_scope
 
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
 SUBMITTER_ROLES = ("student", "coordinator", "staff", "admin")
 MANAGER_ROLES = ("staff", "admin")
-_optional_bearer = HTTPBearer(auto_error=False)
-
-
-def _optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_optional_bearer),
-    db: Session = Depends(database.get_db),
-) -> Optional[models.User]:
-    """Public reads work without a token; a supplied token must be valid."""
-    if credentials is None:
-        return None
-    claims = auth.decode_token(credentials.credentials, "access")
-    if db.get(models.RevokedToken, claims["jti"]) is not None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    user = db.query(models.User).filter_by(cognito_sub=claims["sub"]).first()
-    if user is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is disabled")
-    token_role = auth.role_from_groups(claims.get("cognito:groups"))
-    if user.role != token_role:
-        user.role = token_role
-        db.commit()
-    return user
+# Reviewers read, reply to and review feedback; coordinators only within their own records.
+REVIEWER_ROLES = ("coordinator", *MANAGER_ROLES)
+# The sender type follows the role; staff/admin may pick one when entering someone else's feedback.
+ROLE_RESPONDENT = {"student": "student", "coordinator": "coordinator", "staff": "staff", "admin": "staff"}
 
 
 def _feedback_query(db: Session, source_id=None, respondent_type_id=None, partner_id=None,
@@ -67,6 +48,14 @@ def list_respondent_types(db: Session = Depends(database.get_db)):
     """Active respondent categories available to the signed-in web form."""
     return db.query(models.RespondentType).filter(models.RespondentType.is_active.is_(True)).order_by(
         models.RespondentType.sort_order, models.RespondentType.id
+    ).all()
+
+
+@router.get("/sources", response_model=List[schemas.FeedbackLookupResponse])
+def list_feedback_sources(db: Session = Depends(database.get_db)):
+    """Active feedback sources, e.g. for the export filters."""
+    return db.query(models.FeedbackSource).filter(models.FeedbackSource.is_active.is_(True)).order_by(
+        models.FeedbackSource.sort_order, models.FeedbackSource.id
     ).all()
 
 
@@ -153,9 +142,10 @@ def list_feedback(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: Session = Depends(database.get_db),
-    user: Optional[models.User] = Depends(_optional_user),
+    user: Optional[models.User] = Depends(auth.optional_user),
 ):
-    """Public sees published rows; only staff/admin can filter the full inbox."""
+    """Public sees published rows; staff/admin get the full inbox, coordinators the
+    feedback about records they own."""
     if date_from and date_to and date_from > date_to:
         raise HTTPException(status_code=422, detail="date_from must be on or before date_to")
     if source_id is not None and feedback_source_id is not None and source_id != feedback_source_id:
@@ -163,7 +153,9 @@ def list_feedback(
     query = _feedback_query(db, feedback_source_id if feedback_source_id is not None else source_id,
                             respondent_type_id, partner_id, activity_id,
                             document_id, exchange_id, status, date_from, date_to)
-    if user is None or user.role not in MANAGER_ROLES:
+    if user is not None and user.role == "coordinator":
+        query = query.filter(coordinator_feedback_scope(user))
+    elif user is None or user.role not in MANAGER_ROLES:
         # Public callers cannot use filters to infer anything about hidden submissions.
         return [schemas.FeedbackResponse.model_validate(row).model_dump(by_alias=True)
                 for row in query.filter(models.Feedback.is_published.is_(True)).all()]
@@ -215,6 +207,16 @@ def get_feedback(feedback_id: int, db: Session = Depends(database.get_db)):
     return row
 
 
+def _respondent_for(db: Session, user: models.User, requested_id: Optional[int]) -> models.RespondentType:
+    if user.role in MANAGER_ROLES and requested_id is not None:
+        respondent = db.get(models.RespondentType, requested_id)
+    else:
+        respondent = db.query(models.RespondentType).filter_by(code=ROLE_RESPONDENT[user.role]).first()
+    if respondent is None or not respondent.is_active:
+        raise HTTPException(status_code=422, detail="respondent_type_id must reference an active respondent type")
+    return respondent
+
+
 @router.post("/", response_model=schemas.FeedbackMineResponse, status_code=201)
 def create_feedback(
     body: schemas.FeedbackCreate,
@@ -225,12 +227,12 @@ def create_feedback(
     context = (body.partner_id, body.activity_id, body.document_id, body.exchange_id)
     if not any(value is not None for value in context):
         raise HTTPException(status_code=422, detail="At least one feedback context is required")
-    respondent = db.get(models.RespondentType, body.respondent_type_id)
-    source = db.query(models.FeedbackSource).filter_by(code="web_form", is_active=True).first()
-    if respondent is None or not respondent.is_active:
-        raise HTTPException(status_code=422, detail="respondent_type_id must reference an active respondent type")
+    respondent = _respondent_for(db, user, body.respondent_type_id)
+    # Staff entering feedback on behalf of someone else (a partner, an alumnus...) is a manual entry.
+    source_code = "manual_entry" if respondent.code != ROLE_RESPONDENT[user.role] else "web_form"
+    source = db.query(models.FeedbackSource).filter_by(code=source_code, is_active=True).first()
     if source is None:
-        raise HTTPException(status_code=503, detail="Feedback web form source is not configured")
+        raise HTTPException(status_code=503, detail=f"Feedback source {source_code} is not configured")
     for model, value, name in (
         (models.Partner, body.partner_id, "partner_id"),
         (models.Activity, body.activity_id, "activity_id"),
@@ -239,6 +241,10 @@ def create_feedback(
     ):
         if value is not None and db.get(model, value) is None:
             raise HTTPException(status_code=422, detail=f"{name} must reference an existing record")
+    if body.exchange_id is not None and user.role == "student":
+        exchange = db.get(models.ExchangeStudent, body.exchange_id)
+        if user.id not in (exchange.user_id, exchange.owner_user_id):
+            raise HTTPException(status_code=403, detail="Students can only give feedback on their own exchange")
     row = models.Feedback(
         title=body.title,
         rating=body.rating,
@@ -267,12 +273,16 @@ def update_feedback(
     feedback_id: int,
     body: schemas.FeedbackUpdate,
     db: Session = Depends(database.get_db),
-    user: models.User = Depends(auth.require_role(*MANAGER_ROLES)),
+    user: models.User = Depends(auth.require_role(*REVIEWER_ROLES)),
 ):
-    """Record a reply and/or review status. Publication has dedicated routes."""
+    """Record a reply and/or review status. Publication has dedicated routes.
+    Coordinators may do this only for feedback about records they own."""
     row = db.get(models.Feedback, feedback_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Feedback not found")
+    if user.role == "coordinator" and db.query(models.Feedback.id).filter(
+            models.Feedback.id == row.id, coordinator_feedback_scope(user)).first() is None:
+        raise HTTPException(status_code=403, detail="Feedback is outside your scope")
     data = body.model_dump(exclude_unset=True)
     if "is_published" in data:
         raise HTTPException(status_code=422, detail="Use the publish or unpublish endpoint")

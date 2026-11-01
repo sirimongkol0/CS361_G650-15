@@ -1,8 +1,9 @@
 """V4-6 (#99): improvements made because of feedback (the "Act" step of PDCA).
 
 Staff/admin manage every improvement. A coordinator manages only improvements whose
-linked feedback is all about partners or activities they own (the same scope as
-``/insights/me``). Improvements are not public.
+linked feedback is all about partners, agreements, activities or exchange records
+they own. Improvements are not public. Feedback linked to an improvement is marked
+``reviewed``.
 """
 from datetime import date
 from typing import List, Optional
@@ -26,12 +27,16 @@ Feedback, Improvement, link = models.Feedback, models.Improvement, models.feedba
 
 
 def coordinator_feedback_scope(user: models.User):
-    """Feedback about a partner or activity the coordinator owns."""
+    """Feedback about a partner, agreement, activity or exchange record the coordinator owns."""
     return or_(
         Feedback.partner_id.in_(select(models.Partner.id).where(
             models.Partner.owner_user_id == user.id, models.Partner.is_deleted.is_(False))),
+        Feedback.document_id.in_(select(models.Document.id).where(
+            models.Document.owner_user_id == user.id, models.Document.is_deleted.is_(False))),
         Feedback.activity_id.in_(select(models.Activity.id).where(
             models.Activity.owner_user_id == user.id, models.Activity.is_deleted.is_(False))),
+        Feedback.exchange_id.in_(select(models.ExchangeStudent.id).where(
+            models.ExchangeStudent.owner_user_id == user.id)),
     )
 
 
@@ -66,6 +71,9 @@ def _load_feedbacks(db: Session, user: models.User, ids: List[int]) -> List[mode
             Feedback.id.in_(ids), coordinator_feedback_scope(user)).scalar()
         if owned != len(ids):
             raise HTTPException(status_code=403, detail="Feedback is outside your scope")
+    for row in rows:
+        if row.status == "pending":
+            row.status = "reviewed"
     return rows
 
 

@@ -21,12 +21,14 @@ def _feedback(db_session, **fields):
 
 # --- feedback ----------------------------------------------------------------
 
-def test_public_feedback_hides_unpublished_rows_and_replies(client, db_session):
+def test_public_feedback_hides_unpublished_rows_but_shows_replies(client, db_session):
     _feedback(db_session, title="Published", is_published=True, reply="Thanks")
     _feedback(db_session, title="Hidden", is_published=False)
     rows = client.get("/api/v1/feedback/").json()
     assert [row["title"] for row in rows] == ["Published"]
-    assert "reply" not in rows[0] and "isPublished" not in rows[0]
+    # Issue #101: the staff reply is part of the published conversation.
+    assert rows[0]["reply"] == "Thanks"
+    assert "isPublished" not in rows[0] and "repliedByUserId" not in rows[0]
 
 
 @pytest.mark.parametrize(("role", "status"), [

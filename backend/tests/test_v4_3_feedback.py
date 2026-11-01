@@ -41,7 +41,7 @@ def test_student_submission_is_private_and_only_visible_in_mine(client, db_sessi
     assert response.status_code == 201, response.text
     submitted = response.json()
     assert submitted["status"] == "pending" and submitted["isPublished"] is False
-    assert not {"submitted_by_user_id", "submittedByUserId", "email", "reply", "repliedByUserId"} & submitted.keys()
+    assert not {"submitted_by_user_id", "submittedByUserId", "email", "repliedByUserId"} & submitted.keys()
 
     mine = client.get("/api/v1/feedback/mine", headers=headers)
     assert mine.status_code == 200

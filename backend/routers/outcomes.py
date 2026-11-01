@@ -11,7 +11,6 @@ import database
 import models
 import schemas
 from public_visibility import document_criteria, partner_criteria
-from routers.feedback import _optional_user
 
 router = APIRouter(prefix="/outcomes", tags=["outcomes"])
 
@@ -144,7 +143,7 @@ def list_outcomes(
     page: int = Query(1, ge=1, le=100_000),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(database.get_db),
-    user: Optional[models.User] = Depends(_optional_user),
+    user: Optional[models.User] = Depends(auth.optional_user),
 ):
     if date_from and date_to and date_from > date_to:
         raise HTTPException(status_code=422, detail="date_from must be on or before date_to")
@@ -170,7 +169,7 @@ def list_outcomes(
 def get_outcome(
     outcome_id: int,
     db: Session = Depends(database.get_db),
-    user: Optional[models.User] = Depends(_optional_user),
+    user: Optional[models.User] = Depends(auth.optional_user),
 ):
     row = _visible_query(db, user).filter(models.Outcome.id == outcome_id).first()
     if row is None:

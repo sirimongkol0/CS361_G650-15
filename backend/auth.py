@@ -15,6 +15,7 @@ No/invalid token -> 401, valid token without an allowed role -> 403.
 
 from datetime import datetime, timezone
 from functools import lru_cache
+from typing import Optional
 
 import boto3
 import jwt
@@ -150,24 +151,15 @@ def change_password(access_token: str, current_password: str, new_password: str)
         raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
 
 
-def get_token_claims(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
-    db: Session = Depends(database.get_db),
-) -> dict:
-    """Verified access-token claims of the caller; 401 if missing, invalid or logged out."""
-    if credentials is None:
-        raise _unauthorized("Not authenticated")
-    claims = decode_token(credentials.credentials, "access")
+def _claims_for(token: str, db: Session) -> dict:
+    claims = decode_token(token, "access")
     if db.get(models.RevokedToken, claims["jti"]) is not None:
         raise _unauthorized("Invalid or expired token")
     return claims
 
 
-def get_current_user(
-    claims: dict = Depends(get_token_claims),
-    db: Session = Depends(database.get_db),
-) -> models.User:
-    """The signed-in, active user; the stored role follows the token's Cognito group."""
+def _user_for(claims: dict, db: Session) -> models.User:
+    """The active user behind verified claims; the stored role follows the token's Cognito group."""
     user = db.query(models.User).filter(models.User.cognito_sub == claims["sub"]).first()
     if user is None:
         # Rows are created by POST /auth/login, the only way this API issues tokens.
@@ -179,6 +171,35 @@ def get_current_user(
         user.role = role
         db.commit()
     return user
+
+
+def get_token_claims(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+    db: Session = Depends(database.get_db),
+) -> dict:
+    """Verified access-token claims of the caller; 401 if missing, invalid or logged out."""
+    if credentials is None:
+        raise _unauthorized("Not authenticated")
+    return _claims_for(credentials.credentials, db)
+
+
+def get_current_user(
+    claims: dict = Depends(get_token_claims),
+    db: Session = Depends(database.get_db),
+) -> models.User:
+    """The signed-in, active user; the stored role follows the token's Cognito group."""
+    return _user_for(claims, db)
+
+
+def optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer_scheme),
+    db: Session = Depends(database.get_db),
+) -> Optional[models.User]:
+    """For public reads: ``None`` without a token, otherwise the same checks as
+    ``get_current_user`` (a supplied token that fails is 401/403, never public)."""
+    if credentials is None:
+        return None
+    return _user_for(_claims_for(credentials.credentials, db), db)
 
 
 def require_role(*roles: str):
