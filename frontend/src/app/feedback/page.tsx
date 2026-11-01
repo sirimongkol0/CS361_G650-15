@@ -1,15 +1,15 @@
 "use client";
 
-// Feedback list. Everyone sees published entries (GET /feedback/); coordinators,
-// staff and admin see every entry with its reply (GET /feedback/manage) and can
-// record a reply and status (PATCH /feedback/{id}). Only staff/admin publish.
-// V4-6: staff/admin record improvements per entry; coordinators record them for
-// feedback about their own partners/activities.
+// Feedback list. Everyone sees published entries with the staff reply (GET /feedback/);
+// students see their own submissions (GET /feedback/mine). Staff/admin see every entry,
+// coordinators the entries about records they own, and both can reply, review
+// (PATCH /feedback/{id}) and record improvements. Only staff/admin publish.
+// The sender type follows the role; only staff/admin pick it (#101).
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Search, ChevronRight, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
-import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
+import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadExchangeStudents, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
 import { averageRating } from "@/lib/dashboard-data";
 import { useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
@@ -48,49 +48,61 @@ const statusColors: Record<string, string> = {
   pending: "badge-gold",
 };
 
-function FeedbackSubmitForm({ onCreated }: { onCreated: () => void }) {
+type ContextType = "partner" | "document" | "activity" | "exchange";
+type Choice = { id: number; name: string };
+
+const CONTEXTS: { type: ContextType; label: string; pick: string; param: string }[] = [
+  { type: "activity", label: "กิจกรรม", pick: "เลือกกิจกรรม", param: "activityId" },
+  { type: "exchange", label: "การแลกเปลี่ยน", pick: "เลือกรายการแลกเปลี่ยน", param: "exchangeId" },
+  { type: "partner", label: "หน่วยงาน", pick: "เลือกหน่วยงาน", param: "partnerId" },
+  { type: "document", label: "ข้อตกลง", pick: "เลือกข้อตกลง", param: "documentId" },
+];
+
+const NO_RATING = "";
+
+function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () => void }) {
+  const canPickSender = role === "staff" || role === "admin";
   const [types, setTypes] = useState<Array<{ id: number; name_th: string; code: string }>>([]);
-  const [activities, setActivities] = useState<Array<{ id: number; name: string }>>([]);
-  const [exchanges, setExchanges] = useState<Array<{ id: number; name: string }>>([]);
+  const [choices, setChoices] = useState<Record<ContextType, Choice[]>>({ partner: [], document: [], activity: [], exchange: [] });
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
   const [respondentTypeId, setRespondentTypeId] = useState("");
-  const [contextType, setContextType] = useState<"activity" | "exchange">("activity");
+  const [contextType, setContextType] = useState<ContextType>("activity");
   const [contextId, setContextId] = useState("");
   const [rating, setRating] = useState("5");
   const action = useAction();
 
   useEffect(() => {
+    const names = (rows: Array<{ id: number; name: string }>) => rows.map(({ id, name }) => ({ id, name }));
     void Promise.all([
-      apiGetList<{ id: number; name_th: string; code: string }>("/feedback/respondent-types"),
-      apiGetList<{ id: number; name: string }>("/activities/"),
-      apiGetList<{ id: number; name: string }>("/exchange/"),
-    ]).then(([respondents, rows, exchangeRows]) => {
+      canPickSender ? apiGetList<{ id: number; name_th: string; code: string }>("/feedback/respondent-types") : Promise.resolve([]),
+      apiGetList<Choice>("/partners/").then(names),
+      apiGetList<Choice>("/documents/").then(names),
+      apiGetList<Choice>("/activities/").then(names),
+      // Own records, published or not: GET /exchange/ lists only published ones.
+      loadExchangeStudents(role).then((rows) => rows.map(({ id, name }) => ({ id, name }))),
+    ]).then(([respondents, partner, document, activity, exchange]) => {
       setTypes(respondents);
-      setRespondentTypeId(String(respondents[0]?.id ?? ""));
-      setActivities(rows);
-      setExchanges(exchangeRows);
+      setRespondentTypeId(String(respondents.find((type) => type.code === "staff")?.id ?? respondents[0]?.id ?? ""));
+      const loaded = { partner, document, activity, exchange };
+      setChoices(loaded);
       const params = new URLSearchParams(window.location.search);
-      const presetActivity = params.get("activityId");
-      const presetExchange = params.get("exchangeId");
-      if (presetExchange && exchangeRows.some((row) => String(row.id) === presetExchange)) {
-        setContextType("exchange");
-        setContextId(presetExchange);
-      } else if (presetActivity && rows.some((row) => String(row.id) === presetActivity)) {
-        setContextType("activity");
-        setContextId(presetActivity);
-      } else {
-        setContextId(String(rows[0]?.id ?? exchangeRows[0]?.id ?? ""));
-      }
+      const preset = CONTEXTS.find(({ type, param }) =>
+        loaded[type].some((row) => String(row.id) === params.get(param)));
+      const initial = preset?.type ?? CONTEXTS.find(({ type }) => loaded[type].length)?.type ?? "activity";
+      setContextType(initial);
+      setContextId(preset ? String(params.get(preset.param)) : String(loaded[initial][0]?.id ?? ""));
     }).catch(() => undefined);
-  }, []);
+  }, [role, canPickSender]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!respondentTypeId || !contextId) return;
+    if (!contextId || !comment.trim()) return;
     if (await action.run(() => apiPost("/feedback/", {
-      title, comment, rating: Number(rating), respondent_type_id: Number(respondentTypeId),
-      ...(contextType === "activity" ? { activity_id: Number(contextId) } : { exchange_id: Number(contextId) }),
+      title, comment,
+      rating: rating === NO_RATING ? null : Number(rating),
+      ...(canPickSender && respondentTypeId ? { respondent_type_id: Number(respondentTypeId) } : {}),
+      [`${contextType}_id`]: Number(contextId),
     }))) {
       setTitle("");
       setComment("");
@@ -98,32 +110,37 @@ function FeedbackSubmitForm({ onCreated }: { onCreated: () => void }) {
     }
   };
 
+  const current = CONTEXTS.find((c) => c.type === contextType)!;
   return (
     <form onSubmit={submit} className="rounded-lg bg-white shadow-card p-4 mb-5">
       <h2 className="font-semibold text-ink mb-3">ส่ง Feedback</h2>
       <FormError error={action.error} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="หัวข้อ"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-        <Field label="ประเภทผู้ส่ง"><select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
-          {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
-        </select></Field>
+        <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+        {canPickSender && (
+          <Field label="ประเภทผู้ส่ง" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
+            <select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
+              {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
+            </select>
+          </Field>
+        )}
         <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
-          const next = e.target.value as "activity" | "exchange";
+          const next = e.target.value as ContextType;
           setContextType(next);
-          const rows = next === "activity" ? activities : exchanges;
-          setContextId(String(rows[0]?.id ?? ""));
+          setContextId(String(choices[next][0]?.id ?? ""));
         }}>
-          <option value="activity">กิจกรรม</option><option value="exchange">การแลกเปลี่ยน</option>
+          {CONTEXTS.map((c) => <option key={c.type} value={c.type}>{c.label}</option>)}
         </select></Field>
-        <Field label={contextType === "activity" ? "เลือกกิจกรรม" : "เลือกรายการแลกเปลี่ยน"}><select className={inputCls} required value={contextId} onChange={(e) => setContextId(e.target.value)}>
-          {(contextType === "activity" ? activities : exchanges).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        <Field label={current.pick}><select className={inputCls} required value={contextId} onChange={(e) => setContextId(e.target.value)}>
+          {choices[contextType].map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </select></Field>
         <Field label="คะแนน"><select className={inputCls} value={rating} onChange={(e) => setRating(e.target.value)}>
           {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} / 5</option>)}
+          <option value={NO_RATING}>ไม่ระบุคะแนน</option>
         </select></Field>
       </div>
-      <Field label="ความคิดเห็น"><textarea className={`${inputCls} resize-y`} rows={3} maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
-      <button className="btn btn-primary" disabled={action.busy || !types.length || !(contextType === "activity" ? activities.length : exchanges.length)}>ส่งความคิดเห็น</button>
+      <Field label="ความคิดเห็น *"><textarea className={`${inputCls} resize-y`} rows={3} required maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
+      <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length}>ส่งความคิดเห็น</button>
     </form>
   );
 }
@@ -207,7 +224,8 @@ export default function FeedbackPage() {
   const [reload, setReload] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const isManager = session === "authenticated" && (role === "staff" || role === "admin");
+  // Reviewers reply and mark entries reviewed; coordinators only for records they own.
+  const isManager = session === "authenticated" && (role === "coordinator" || role === "staff" || role === "admin");
   const canPublish = isManager && (role === "staff" || role === "admin");
   const resource = useApiResource<FeedbackEntry[]>(
     () => (session === "loading" ? new Promise<never>(() => {}) : loadFeedbackStrict(role)),
@@ -270,17 +288,20 @@ export default function FeedbackPage() {
         </nav>
         <h1 className="text-2xl font-bold text-ink font-display">ความคิดเห็น</h1>
         <p className="text-sm mt-0.5 text-faint">
-          {isManager ? "ความคิดเห็นจากทุกช่องทาง ทั้งที่เผยแพร่และยังไม่เผยแพร่" : "ความคิดเห็นที่เผยแพร่แล้ว"}
+          {role === "coordinator" && isManager
+            ? "ความคิดเห็นเกี่ยวกับหน่วยงาน ข้อตกลง กิจกรรม และการแลกเปลี่ยนที่คุณดูแล"
+            : isManager ? "ความคิดเห็นจากทุกช่องทาง ทั้งที่เผยแพร่และยังไม่เผยแพร่"
+            : role === "student" ? "ความคิดเห็นที่คุณส่งและคำตอบจากเจ้าหน้าที่" : "ความคิดเห็นที่เผยแพร่แล้ว"}
         </p>
       </div>
 
       <Notice text={notice} />
 
-      {session === "authenticated" && role !== "public" && <FeedbackSubmitForm onCreated={() => { setNotice("ส่งความคิดเห็นแล้ว"); setReload((n) => n + 1); }} />}
+      {session === "authenticated" && role !== "public" && <FeedbackSubmitForm role={role} onCreated={() => { setNotice("ส่งความคิดเห็นแล้ว"); setReload((n) => n + 1); }} />}
 
       {session === "authenticated" && role === "coordinator" && (
         <div className="rounded-lg bg-white shadow-card p-5 mb-5">
-          <p className="text-xs text-faint">ความคิดเห็นเกี่ยวกับหน่วยงานหรือกิจกรรมที่คุณดูแล และสิ่งที่ปรับปรุงจากความคิดเห็นนั้น</p>
+          <p className="text-xs text-faint">สิ่งที่ปรับปรุงจากความคิดเห็นเกี่ยวกับรายการที่คุณดูแล</p>
           <ImprovementSection canDelete={false} />
         </div>
       )}
@@ -396,7 +417,7 @@ export default function FeedbackPage() {
                   )}
                   <StarRow rating={f.rating} />
                   <span className="text-xs text-faint">{f.date}</span>
-                  {isManager && f.reply && <span className="text-xs text-green-700">มีคำตอบแล้ว</span>}
+                  {f.reply && <span className="text-xs text-green-700">มีคำตอบแล้ว</span>}
                   {isManager && f.improvementCount > 0 && <span className="text-xs text-green-700">ปรับปรุง {f.improvementCount} รายการ</span>}
                 </div>
                 {f.org !== "—" && (
@@ -485,11 +506,18 @@ export default function FeedbackPage() {
                 </p>
               </div>
 
+              {!isManager && selected.reply && (
+                <div className="p-4 rounded-lg mb-5 border border-green-200 bg-green-50">
+                  <div className="text-sm font-semibold text-ink mb-1">คำตอบจากเจ้าหน้าที่</div>
+                  <p className="text-sm leading-relaxed text-mute">{selected.reply}</p>
+                  {selected.repliedAt && <div className="text-xs text-faint mt-1">{formatThaiDateTime(selected.repliedAt)}</div>}
+                </div>
+              )}
               {isManager && (
                 <ReplyForm key={`${selected.id}-${selected.repliedAt}-${selected.status}-${selected.isPublished}`} entry={selected} canPublish={canPublish} onSaved={saved} />
               )}
               {isManager && (
-                <ImprovementSection key={selected.id} feedbackId={selected.id} canDelete onChanged={() => setReload((n) => n + 1)} />
+                <ImprovementSection key={selected.id} feedbackId={selected.id} canDelete={canPublish} onChanged={() => setReload((n) => n + 1)} />
               )}
             </div>
           </div>
