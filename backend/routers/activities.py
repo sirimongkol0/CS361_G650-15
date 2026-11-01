@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload, selectinload, with_loader_criteria
 from datetime import date
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from public_visibility import partner_criteria, document_criteria
 
@@ -153,19 +153,22 @@ def list_managed_activities(
     response_model=schemas.ActivityResponse,
     responses={404: {"model": schemas.ErrorResponse}},
 )
-def get_activity(activity_id: int, db: Session = Depends(database.get_db)):
-    """Get a specific published activity by ID. Returns 404 if not found or draft."""
-    activity = db.query(models.Activity).options(
+def get_activity(
+    activity_id: int, db: Session = Depends(database.get_db),
+    user: Optional[models.User] = Depends(auth.optional_user),
+):
+    """Get an activity by ID: published for everyone, drafts too for staff/admin
+    and the owning coordinator. Otherwise 404."""
+    query = db.query(models.Activity).options(
         joinedload(models.Activity.partner), joinedload(models.Activity.mou_document),
         selectinload(models.Activity.sources),
         with_loader_criteria(models.Partner, and_(*partner_criteria())),
         with_loader_criteria(models.Document, and_(*document_criteria())),
-    ).filter(
-        models.Activity.id == activity_id,
-        models.Activity.is_published.is_(True),
-        models.Activity.is_deleted.is_(False),
-    ).first()
-    
+    ).filter(models.Activity.id == activity_id, models.Activity.is_deleted.is_(False))
+    activity = query.first()
+    if activity is not None and not activity.is_published and (
+            user is None or not _can_manage_activity(activity, user)):
+        activity = None
     if activity is None:
         raise HTTPException(status_code=404, detail="Activity not found")
     

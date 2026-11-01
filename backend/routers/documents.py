@@ -4,7 +4,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload, selectinload, with_loader_criteria
-from typing import List, Literal
+from typing import List, Literal, Optional
 from sqlalchemy import and_, or_
 from public_visibility import attach_verified_source, document_criteria, has_verified_source, partner_criteria
 
@@ -117,8 +117,18 @@ def list_managed_documents(
 
 @router.get("/{document_id}", response_model=schemas.DocumentResponse,
             responses={404: {"model": schemas.ErrorResponse}})
-def get_document(document_id: int, db: Session = Depends(database.get_db)):
+def get_document(
+    document_id: int, db: Session = Depends(database.get_db),
+    user: Optional[models.User] = Depends(auth.optional_user),
+):
+    """Published documents for everyone; drafts too for staff/admin and the owner."""
     doc = _public_documents(db).filter(models.Document.id == document_id).first()
+    if doc is None and user is not None:
+        doc = db.query(models.Document).filter(
+            models.Document.id == document_id, models.Document.is_deleted.is_(False),
+        ).first()
+        if doc is not None and not _can_manage(doc, user):
+            doc = None
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return _response(doc)

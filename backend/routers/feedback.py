@@ -2,7 +2,6 @@ from datetime import date
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -16,30 +15,6 @@ router = APIRouter(prefix="/feedback", tags=["feedback"])
 
 SUBMITTER_ROLES = ("student", "coordinator", "staff", "admin")
 MANAGER_ROLES = ("staff", "admin")
-_optional_bearer = HTTPBearer(auto_error=False)
-
-
-def _optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_optional_bearer),
-    db: Session = Depends(database.get_db),
-) -> Optional[models.User]:
-    """Public reads work without a token; a supplied token must be valid."""
-    if credentials is None:
-        return None
-    claims = auth.decode_token(credentials.credentials, "access")
-    if db.get(models.RevokedToken, claims["jti"]) is not None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    user = db.query(models.User).filter_by(cognito_sub=claims["sub"]).first()
-    if user is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is disabled")
-    token_role = auth.role_from_groups(claims.get("cognito:groups"))
-    if user.role != token_role:
-        user.role = token_role
-        db.commit()
-    return user
-
 
 def _feedback_query(db: Session, source_id=None, respondent_type_id=None, partner_id=None,
                     activity_id=None, document_id=None, exchange_id=None, status=None,
@@ -153,7 +128,7 @@ def list_feedback(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: Session = Depends(database.get_db),
-    user: Optional[models.User] = Depends(_optional_user),
+    user: Optional[models.User] = Depends(auth.optional_user),
 ):
     """Public sees published rows; only staff/admin can filter the full inbox."""
     if date_from and date_to and date_from > date_to:

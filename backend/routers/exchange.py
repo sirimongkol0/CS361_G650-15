@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 import database
 import models
@@ -59,12 +59,16 @@ def get_my_exchange_student(
 
 
 @router.get("/{student_id}", response_model=schemas.ExchangeStudentResponse)
-def get_exchange_student(student_id: int, db: Session = Depends(database.get_db)):
-    """Public endpoint: retrieve a single published record only."""
-    row = db.query(models.ExchangeStudent).filter(
-        models.ExchangeStudent.id == student_id,
-        models.ExchangeStudent.is_published.is_(True),
-    ).first()
+def get_exchange_student(
+    student_id: int, db: Session = Depends(database.get_db),
+    user: Optional[models.User] = Depends(auth.optional_user),
+):
+    """Published records for everyone; unpublished ones too for staff/admin and the owner."""
+    row = db.get(models.ExchangeStudent, student_id)
+    if row is not None and not row.is_published and not (
+            user is not None and (user.role in ("staff", "admin") or (
+                user.role in ("student", "coordinator") and row.owner_user_id == user.id))):
+        row = None
     if row is None:
         raise HTTPException(status_code=404, detail="Exchange student not found")
     return row

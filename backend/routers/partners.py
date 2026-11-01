@@ -12,25 +12,6 @@ from public_visibility import attach_verified_source, partner_criteria
 router = APIRouter(prefix="/partners", tags=["partners"])
 
 
-def _optional_user(
-    credentials=Depends(auth._bearer_scheme),
-    db: Session = Depends(database.get_db),
-) -> Optional[models.User]:
-    """ดึงข้อมูลผู้ใช้งานถ้ามี Token หากไม่มีจะส่งคืน None (สำหรับ Public)"""
-    if not credentials:
-        return None
-    try:
-        claims = auth.decode_token(credentials.credentials, "access")
-        if db.get(models.RevokedToken, claims["jti"]) is not None:
-            return None
-        user = db.query(models.User).filter(models.User.cognito_sub == claims["sub"]).first()
-        if user and user.is_active:
-            return user
-    except Exception:
-        pass
-    return None
-
-
 def _response(partner: models.Partner, current_user: Optional[models.User] = None):
     result = schemas.PartnerResponse.model_validate(partner)
     # หากไม่ได้ระบุให้เปิดเผย และไม่ใช่ Staff/Admin/Owner ให้ปิดซ่อนข้อมูลผู้ติดต่อ
@@ -68,7 +49,7 @@ def list_partners(
     country: Optional[str] = None,
     scope_level: Optional[Literal["program", "faculty", "university"]] = None,
     db: Session = Depends(database.get_db),
-    current_user: Optional[models.User] = Depends(_optional_user),
+    current_user: Optional[models.User] = Depends(auth.optional_user),
 ):
     """รายการ Partner ตามสิทธิ์:
     - public/student: เห็นเฉพาะที่ is_published=True และผ่าน partner_criteria()
@@ -109,7 +90,7 @@ def list_partners(
 def get_partner(
     partner_id: int,
     db: Session = Depends(database.get_db),
-    current_user: Optional[models.User] = Depends(_optional_user),
+    current_user: Optional[models.User] = Depends(auth.optional_user),
 ):
     """ดึงข้อมูล Partner ตาม ID"""
     query = db.query(models.Partner).options(
