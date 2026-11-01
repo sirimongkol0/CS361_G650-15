@@ -1,6 +1,6 @@
 "use client";
 
-// Ported from legacy/figma-mock/src/pages/Documents.tsx (Next.js App Router + TU theme tokens).
+// Ported from the former Figma mock prototype (removed in V4) (Next.js App Router + TU theme tokens).
 
 import { useMemo, useRef } from "react";
 import { useUrlState } from "@/lib/url-state";

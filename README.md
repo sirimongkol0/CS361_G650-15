@@ -1,140 +1,166 @@
 # PCSMS – ระบบจัดการความร่วมมือและผู้มีส่วนได้ส่วนเสียของหลักสูตร CSTU
 
 ระบบติดตามความร่วมมือของ **หลักสูตรวิทยาการคอมพิวเตอร์ ระดับปริญญาตรี มหาวิทยาลัยธรรมศาสตร์ ศูนย์รังสิต**
-มีส่วนข้อมูลสาธารณะที่ได้รับอนุญาตให้เผยแพร่ และ (ในเวอร์ชันถัดไป) พื้นที่ทำงานภายในสำหรับผู้ที่ได้รับสิทธิ์
+มีหน้าสาธารณะสำหรับข้อมูลที่เผยแพร่แล้ว และพื้นที่ทำงานภายในสำหรับอาจารย์ เจ้าหน้าที่ และผู้ดูแลระบบ
+ตามสิทธิ์ของแต่ละบทบาท
 
-เกณฑ์ว่าข้อมูลแบบไหนนับเป็นของหลักสูตร แผนพัฒนา V1–V7 และรายการข้อมูลเดิมที่รอตรวจ
+เกณฑ์ว่าข้อมูลแบบไหนนับเป็นของหลักสูตร และแผนพัฒนา V1–V7
 ดูที่ [ขอบเขตหลักสูตร CSTU](docs/decisions/cstu-program-scope.md)
-(เอกสารนี้ไม่ได้รับรองว่าข้อมูลที่มีอยู่เดิมเป็นของ CSTU)
 
-## เวอร์ชันปัจจุบัน: V2 – Collaboration Repository
+## เวอร์ชันปัจจุบัน: V4 – วงจรความร่วมมือและการปรับปรุง
 
-คลังข้อมูลสาธารณะแบบอ่านอย่างเดียว ของหน่วยงานคู่ความร่วมมือ ข้อตกลง MoU/MoA เอกสาร และกิจกรรมที่เผยแพร่แล้ว
-สร้างด้วย **Next.js + FastAPI + PostgreSQL**
+สร้างด้วย **Next.js + FastAPI + PostgreSQL** ล็อกอินผ่าน **Amazon Cognito** และเก็บไฟล์บน **S3** (หรือดิสก์ในเครื่องตอนพัฒนา)
 
-## เว็บที่ deploy แล้ว
+| เรื่อง | ทำอะไรได้ |
+|---|---|
+| หน่วยงานคู่ความร่วมมือและผู้ประสานงาน | เพิ่ม แก้ไข และเผยแพร่ หน่วยงานจะแสดงในหน้าสาธารณะเมื่อผ่านเงื่อนไขความสมบูรณ์ครบ |
+| ข้อตกลง (MoU/MoA) | ฉบับร่าง → อนุมัติ → มีผล → หมดอายุ/ยกเลิก แนบไฟล์ PDF บันทึกขอบเขตความร่วมมือ และตรวจความเกี่ยวข้องกับ CSTU |
+| การต่ออายุ | บันทึกการตัดสินใจ (ต่ออายุ ปรับแก้ หรือยุติ) สำหรับข้อตกลงใกล้หมดอายุ และเชื่อมฉบับใหม่กับฉบับเดิม |
+| กิจกรรม | บันทึกกิจกรรมพร้อมหน่วยงาน ข้อตกลงที่เกี่ยวข้อง วันที่ และแหล่งอ้างอิง |
+| นักศึกษาแลกเปลี่ยน | บันทึกการแลกเปลี่ยนขาเข้าและขาออก และเชื่อมกับบัญชีนักศึกษา |
+| ผลลัพธ์ | บันทึกผลลัพธ์ เช่น จำนวนผู้เข้าร่วม ผลงานวิชาการ ทุน พร้อมหน่วยนับ |
+| ความคิดเห็นจากหลายแหล่ง | ส่งความคิดเห็นถึงหน่วยงาน ข้อตกลง กิจกรรม หรือการแลกเปลี่ยน ประเภทผู้ส่งตามบทบาท เจ้าหน้าที่ตอบกลับ ตรวจสอบ และเผยแพร่ |
+| นำเข้าและส่งออกข้อมูล | นำเข้าความคิดเห็นและผลลัพธ์จาก CSV/XLSX (ตรวจก่อนยืนยัน และยกเลิกทั้งชุดได้) และส่งออก CSV ตามตัวกรอง |
+| การปรับปรุง (PDCA) | บันทึกสิ่งที่ปรับปรุงจากความคิดเห็น ความคิดเห็นที่ผูกไว้จะเปลี่ยนเป็น "ตรวจสอบแล้ว" |
+| สรุปข้อมูลและรายงาน | แดชบอร์ดตามบทบาท รายงานรายปี บทสรุปประจำปี และส่งออกสรุปเป็น CSV |
+| ประวัติการแก้ไข | บันทึกทุกการเพิ่ม แก้ไข ลบ และเผยแพร่ พร้อมค่าก่อนและหลัง |
 
-**https://main.d5kr2senr2j9o.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต)
+## สถาปัตยกรรม
 
-- หน้าเว็บ Next.js อยู่บน AWS Amplify ส่วน API อยู่บน EC2 ข้อมูลอยู่บน RDS และไฟล์อยู่บน S3
-- push เข้า `main` แล้วหน้าเว็บอัปเดตเอง ส่วน backend ต้อง deploy เอง
-- ดูภาพรวมที่ [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)
-  และวิธี deploy ที่ [การ deploy V2](docs/decisions/v2-deployment-amplify-ec2.md)
-
-## รันบนเครื่องตัวเอง
-
-ทุกแบบใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
-รายละเอียดของแต่ละแบบดูที่ [คู่มือ infrastructure](infra/README.md)
-
-### 1. เดโมข้อมูลสมมติ (แนะนำสำหรับนำเสนอ)
-
-```powershell
-docker compose -f docker-compose.demo.yml up --build -d --wait
+```
+เบราว์เซอร์ ── Next.js (frontend/) ── /api/v1 ── FastAPI (backend/) ── PostgreSQL
+                                                    │
+                                                    ├── Amazon Cognito (ตรวจ token และกลุ่มบทบาท)
+                                                    └── S3 หรือดิสก์ในเครื่อง (ไฟล์ข้อตกลงและไฟล์นำเข้า)
 ```
 
-เปิด http://localhost:3100/dashboard/public
+- `frontend/` Next.js App Router หน้าเว็บทุกหน้าอ่านข้อมูลจาก API ไม่มีข้อมูลตัวอย่างสำรองในตัว
+- `backend/` FastAPI + SQLAlchemy ตรวจสิทธิ์ที่ server ทุก endpoint (`auth.require_role`, `auth.optional_user`)
+- `database/` สคริปต์ฐานข้อมูล ส่วน `backend/migrate_v*.py` ปรับ schema ของฐานข้อมูลเดิมทีละเวอร์ชัน
+- `infra/` สคริปต์ตั้งค่า Cognito และฐานเดโมบน RDS
+- `scripts/` smoke test และสคริปต์เตรียมข้อมูลทดสอบ
 
-- ใช้ฐานข้อมูล PostgreSQL `cstu_demo` และพื้นที่เก็บไฟล์ที่แยกออกมา
-- ทุกหน้ามีป้ายบอกว่าเป็นข้อมูลสมมติ
-- ข้อมูลทุกอย่างมาจาก API และฐานข้อมูลจริง หน้าเว็บไม่มีข้อมูลตัวอย่างสำรองในตัว
-- ไม่กระทบฐานข้อมูล CSTU จริงที่ port 3000
+เว็บที่ deploy แล้ว: **https://main.d5kr2senr2j9o.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต)
+หน้าเว็บอยู่บน AWS Amplify (push เข้า `main` แล้วอัปเดตเอง) ส่วน API อยู่บน EC2 ฐานข้อมูลอยู่บน RDS และไฟล์อยู่บน S3
+ดูรายละเอียดที่ [สถาปัตยกรรมระบบ V3](docs/architecture/v3-architecture.md)
+และ [การ deploy](docs/decisions/v2-deployment-amplify-ec2.md)
 
-ดูข้อมูลที่ครอบคลุมและวิธีเตรียม/ตรวจซ้ำที่ [คู่มือเดโมข้อมูลสมมติ](docs/demo-fictional.md)
+## สิทธิ์ตามบทบาท
 
-**ถ้าต้องการให้เดโมอ่านไฟล์ PDF จาก S3** (แบบที่เครื่องหลักใช้อยู่) ให้รัน Compose สองไฟล์ร่วมกัน:
+บทบาทมาจากกลุ่มใน Cognito ทุกครั้งที่เรียก API (ถ้าเปลี่ยนกลุ่ม สิทธิ์จะเปลี่ยนตามทันที)
 
-```powershell
-docker compose -f docker-compose.demo.yml -f docker-compose.demo-s3.yml up -d --wait
+| การกระทำ | public | student | coordinator | staff | admin |
+|---|:-:|:-:|:-:|:-:|:-:|
+| ดูหน่วยงาน ข้อตกลง กิจกรรม และความคิดเห็นที่เผยแพร่แล้ว | ✅ | ✅ | ✅ | ✅ | ✅ |
+| ดูรายการฉบับร่าง | — | — | 🔸 | ✅ | ✅ |
+| เพิ่มและแก้ไขหน่วยงาน ข้อตกลงฉบับร่าง กิจกรรม และการแลกเปลี่ยน | — | — | 🔸 | ✅ | ✅ |
+| อนุมัติ เปลี่ยนสถานะ และเผยแพร่ | — | — | — | ✅ | ✅ |
+| ลบหน่วยงาน กิจกรรม และข้อตกลง | — | — | — | ✅ | ✅ |
+| ดูข้อมูลการแลกเปลี่ยนของตนเอง | — | 🔸 | 🔸 | ✅ | ✅ |
+| ส่งความคิดเห็น | — | ✅ | ✅ | ✅ | ✅ |
+| ตอบกลับและตรวจสอบความคิดเห็น บันทึกการปรับปรุง | — | — | 🔸 | ✅ | ✅ |
+| นำเข้าและส่งออกข้อมูล ดูรายงานสรุป | — | — | — | ✅ | ✅ |
+| ดูประวัติการแก้ไข | — | — | — | ✅ | ✅ |
+| ดูรายชื่อผู้ใช้ และเปิดหรือปิดบัญชี | — | — | — | — | ✅ |
+
+✅ ทำได้ · 🔸 เฉพาะรายการที่ตนเป็นเจ้าของหรือรับผิดชอบ · — ทำไม่ได้
+รายละเอียดราย endpoint ดูที่ [สิทธิ์ตามบทบาท](docs/decisions/v3-role-permissions.md)
+
+## ตั้งค่า `.env`
+
+| ไฟล์ | ใช้กับ | วิธีสร้าง |
+|---|---|---|
+| `.env` | `docker-compose.yml` (ไม่บังคับ) | `cp .env.example .env` แล้วแก้เฉพาะค่าที่ต้องการ |
+| `.env.cstu` | `docker-compose.cstu.yml` | `cp .env.cstu.example .env.cstu` แล้วตั้ง `CSTU_DATABASE_PASSWORD` |
+| `.env.demo-s3` | `docker-compose.demo-s3.yml` | ดู [เดโมบน S3](docs/demo-s3.md) |
+
+ค่าที่ต้องตั้งเพื่อให้ล็อกอินได้ (ไม่ใช่ความลับ สร้างได้ด้วย `infra/provision_cognito.py`):
+
+```bash
+COGNITO_REGION=ap-southeast-1
+COGNITO_USER_POOL_ID=ap-southeast-1_xxxxxxxxx
+COGNITO_APP_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-ก่อนเปิดใช้ S3 บนเครื่องใหม่ ดู [เอกสารเดโมบน S3](docs/demo-s3.md)
+ถ้าไม่ตั้งค่า Cognito หน้าสาธารณะยังใช้ได้ แต่การล็อกอินจะได้ 503
+ค่าอื่นของ backend (เช่น `DATABASE_URL`, `STORAGE_BACKEND`, `S3_BUCKET`, `CORS_ORIGINS`) อยู่ใน `backend/config.py`
 
-### 2. ฐานข้อมูล CSTU จริง
+## รันระบบ
 
-```powershell
-docker compose --env-file .env.cstu -f docker-compose.cstu.yml up --build -d --wait
-python scripts/smoke_test.py --api http://localhost:3000/api/v1
-```
+ทุกแบบใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน รายละเอียดเพิ่มเติมดูที่ [คู่มือ infrastructure](infra/README.md)
 
-- ต้องสร้างไฟล์ `.env.cstu` ก่อน
-- ฐานข้อมูลเริ่มต้นว่าง และใช้พื้นที่เก็บเอกสารแยก
-
-วิธีตั้งรหัสผ่านบนเครื่องใหม่ การเก็บข้อมูลถาวร และการสลับกลับไปใช้ RDS เดิม
-ดูที่ [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
-
-### 3. สำหรับพัฒนาทั่วไป
+### Docker: สำหรับพัฒนา
 
 ```bash
 docker compose up --build -d --wait
 python scripts/smoke_test.py
 ```
 
-เปิด http://localhost:3000/dashboard/public
+เปิด http://localhost:3000/dashboard/public ฐานข้อมูลเริ่มต้นว่าง และไม่ต้องใช้ AWS ยกเว้นการล็อกอิน
 
-- ไม่ต้องมีไฟล์ `.env` และไม่ต้องใช้ AWS
-- ฐานข้อมูลเริ่มต้นว่าง
+### Docker: เดโมข้อมูลสมมติ
 
-## V2 ทำอะไรได้บ้าง
+```bash
+docker compose -f docker-compose.demo.yml up --build -d --wait
+```
 
-- ดูรายการและรายละเอียดของหน่วยงาน ข้อตกลง และกิจกรรม
-- ค้นหาและกรองหลายเงื่อนไขพร้อมกัน เรียงลำดับ และแบ่งหน้า
-- ส่งออก CSV
-- ค้นหาทั้งระบบด้วย **Ctrl+K**
-- ดูตัวอย่าง PDF และดาวน์โหลดเอกสาร
-- ดูความสัมพันธ์ระหว่างข้อมูลที่เผยแพร่แล้ว และแหล่งอ้างอิงของข้อมูล
+เปิด http://localhost:3100/dashboard/public ทุกหน้ามีป้ายบอกว่าเป็นข้อมูลสมมติ
+ดู [คู่มือเดโมข้อมูลสมมติ](docs/demo-fictional.md) และถ้าต้องการอ่านไฟล์จาก S3 ให้เพิ่ม `-f docker-compose.demo-s3.yml`
 
-API สาธารณะมีเฉพาะการอ่าน (GET) ของ health, partners, documents และ activities
+### Docker: ฐานข้อมูล CSTU จริง
 
-**ยังไม่มีใน V2:** การอัปโหลดหรือลบเอกสาร, API ของ users, feedback และ exchange,
-การเข้าสู่ระบบ และการแก้ไขข้อมูลโดยผู้มีสิทธิ์ (อยู่ใน V3 เป็นต้นไป)
+```bash
+docker compose --env-file .env.cstu -f docker-compose.cstu.yml up --build -d --wait
+python scripts/smoke_test.py --api http://localhost:3000/api/v1
+```
 
-### การแสดงผลข้อมูล
+ดูการตั้งรหัสผ่าน การเก็บข้อมูลถาวร และการสลับไปใช้ RDS ที่ [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
 
-- กิจกรรมที่ไม่รู้สถานะหรือจำนวนผู้เข้าร่วม จะแสดงว่า "ไม่ทราบ"
-- วันที่คงความหมายเดิมไว้ เช่น วันประกาศ หรือวันปิดรับสมัคร
-  และแสดงตามความละเอียดที่มี (เดือน, ปี หรือโดยประมาณ)
-- หน้า dashboard เรียงกิจกรรมจากใหม่ไปเก่า
-  และจำนวนข้อตกลงไม่นับแบบฟอร์มและประกาศ
+### Local: ไม่ใช้ Docker
 
-## ข้อมูลทดสอบ
+Backend (Python 3.11):
 
-- หน้าเว็บไม่เคยแสดงข้อมูลทดสอบแทนข้อมูลจาก API ฐานข้อมูลใหม่จึงเริ่มต้นว่าง
+```bash
+cd backend
+python -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m uvicorn main:app --reload --port 8000
+```
+
+ค่าเริ่มต้นใช้ SQLite ที่ `backend/app.db` ถ้าต้องการ PostgreSQL ให้ตั้ง `DATABASE_URL`
+
+Frontend (Node 22):
+
+```bash
+cd frontend
+npm ci
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1 npm run dev
+```
+
+## ทดสอบ
+
+```bash
+cd backend && TEST_DATABASE_URL=sqlite:// python -m pytest tests -q
+cd frontend && npm run lint && npm run test:display && npm run build
+```
+
 - tests ใช้ข้อมูลสังเคราะห์ใน `backend/tests/sample_data.py`
-- `scripts/prepare_v2_validation.py` เตรียมเฉพาะฐานข้อมูลชั่วคราวชื่อ `*_test` หรือไฟล์ `*_test.db`
-  ข้อมูลเหล่านี้ไม่ใช่ข้อตกลงจริงของมหาวิทยาลัย
-- ถ้าต้องการสภาพแวดล้อมทดสอบแยก ทำตาม [คู่มือเดโมและการตรวจ V2](docs/demo-v2.md)
+- CI (`.github/workflows/ci.yml`) รัน backend บน PostgreSQL และ SQLite, build frontend, Compose smoke test
+  และ job `e2e` ที่รันเทสต์เบราว์เซอร์กับ API และหน้าเว็บจริง
+- วิธีรันเทสต์เบราว์เซอร์ในเครื่องดูที่ [คู่มือเดโมและการตรวจ](docs/demo-v2.md)
 
 ## เอกสาร
 
-**V3 (ระบบสิทธิ์ผู้ใช้และการแก้ไขข้อมูล)**
-
-- [สถาปัตยกรรมระบบ V3](docs/architecture/v3-architecture.md)
-- [สิทธิ์ตามบทบาทของ V3](docs/decisions/v3-role-permissions.md)
-
-**ระบบปัจจุบัน (V2)**
-
-- [สถาปัตยกรรมระบบ V2](docs/architecture/v2-architecture.md)
-- [การ deploy V2: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md)
-- [คู่มือ infrastructure](infra/README.md)
-- [คู่มือติดตั้ง](docs/setup/README-th.md)
+- [สถาปัตยกรรมระบบ V3](docs/architecture/v3-architecture.md) · [V2](docs/architecture/v2-architecture.md)
+- [สิทธิ์ตามบทบาท](docs/decisions/v3-role-permissions.md)
 - [ขอบเขตหลักสูตร CSTU และแผนพัฒนา](docs/decisions/cstu-program-scope.md)
-- [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
-- [สัญญา field ของ V2](docs/api/v2-field-contract.md)
-- [คู่มือเดโมและการตรวจ API/เบราว์เซอร์ของ V2](docs/demo-v2.md)
+- [คู่มือคำศัพท์และน้ำเสียงหน้าเว็บ](docs/ui-writing-guide-th.md)
+- [การ deploy: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
+- [คู่มือติดตั้ง](docs/setup/README-th.md) · [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
+- [สัญญา field ของ API](docs/api/v2-field-contract.md)
 - [เดโมข้อมูลสมมติ](docs/demo-fictional.md) · [เดโมบน S3](docs/demo-s3.md) · [ฐานเดโมบน RDS](docs/demo-rds.md)
-- [การปรับปรุงและผลตรวจ V2 ล่าสุด](docs/evidence/v2-improvements.md)
 
-**ประวัติ V1**
-
-- [สถาปัตยกรรม V1](docs/architecture/v1-architecture-th.md)
-- [สัญญา API V1](docs/api/v1-api-contract-th.md)
-- [การตัดสินใจด้านเทคโนโลยี V1](docs/decisions/v1-tech-stack-th.md)
-- [การ deploy V1](docs/decisions/v1-deployment-ec2.md)
-- [หลักฐานความพร้อม V1](docs/evidence/v1-readiness.md)
-
-เอกสารภาษาอังกฤษ: [Setup guide](docs/setup/README.md) ·
-[Architecture V1](docs/architecture/v1-architecture.md) ·
-[API contract V1](docs/api/v1-api-contract.md) ·
-[Technology decisions V1](docs/decisions/v1-tech-stack.md)
-
-ไฟล์ PDF ใน `docs/pdf` เป็นเวอร์ชันเก่าที่ export ไว้ ให้ใช้ไฟล์ Markdown ที่ลิงก์ไว้ด้านบนเป็นหลัก
+**ประวัติ V1:** [สถาปัตยกรรม](docs/architecture/v1-architecture-th.md) ·
+[สัญญา API](docs/api/v1-api-contract-th.md) ·
+[การตัดสินใจด้านเทคโนโลยี](docs/decisions/v1-tech-stack-th.md) ·
+[การ deploy](docs/decisions/v1-deployment-ec2.md)
