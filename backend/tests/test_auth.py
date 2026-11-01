@@ -283,7 +283,12 @@ def test_require_role_rejects_unknown_roles_at_declaration(roles):
 
 # --- public API unchanged -------------------------------------------------------
 
-@pytest.mark.parametrize("headers", [{}, {"Authorization": "Bearer not-a-jwt"}])
-def test_public_get_endpoints_need_no_token(client, cognito, headers):
+def test_public_get_endpoints_need_no_token(client, cognito):
     for path in ("/api/v1/health", "/api/v1/partners", "/api/v1/activities", "/api/v1/documents"):
-        assert client.get(path, headers=headers).status_code == 200, path
+        assert client.get(path).status_code == 200, path
+
+
+def test_public_reads_reject_a_bad_token_instead_of_ignoring_it(client, cognito):
+    """A supplied token means the caller meant to sign in (issue #95)."""
+    assert_error(client.get("/api/v1/partners", headers={"Authorization": "Bearer not-a-jwt"}),
+                 401, "Invalid or expired token")
