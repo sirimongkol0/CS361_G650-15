@@ -741,6 +741,12 @@ export async function loadPublicPartners(): Promise<PartnerView[]> {
   return raw.map(mapPartner);
 }
 
+/** GET /partners/manage -> every partner incl. drafts, for pickers on manage pages. */
+export async function loadManagePartners(): Promise<PartnerView[]> {
+  const raw = await apiGetList<RawPartner>("/partners/manage");
+  return raw.map(mapPartner);
+}
+
 /** GET /partners/{id} -> one published partner. Draft/missing records are 404. */
 export async function loadPublicPartner(id: number): Promise<PartnerView> {
   const raw = await apiGet<RawPartner>(`/partners/${id}`);
@@ -774,6 +780,7 @@ export async function loadDocument(id: number): Promise<DocumentView> {
 export interface ManagedDocument {
   id: number;
   name: string;
+  scopeItems?: Array<{ id?: number; text: string; position?: number | null }> | null;
   docType: string | null;
   documentKind: string | null;
   fileAvailability: string | null;
@@ -869,6 +876,9 @@ export function loadExchangeStudents(role: string = "public"): Promise<ExchangeS
   const path = role === "public" ? "/exchange/" : "/exchange/mine";
   return safeLoad<ExchangeStudent[]>(path, (raw) => (raw as RawExchange[]).map(mapExchange), []);
 }
+
+/** GET /users/students (coordinator/staff/admin) -> active student accounts to link. */
+export const loadStudentOptions = () => apiGetList<{ id: number; email: string }>("/users/students");
 
 /** GET /users/ (admin only) -> every account that has signed in. */
 export const loadUsers = () => apiGetList<UserAccount>("/users/");

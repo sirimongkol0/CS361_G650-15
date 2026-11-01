@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 import models
 import storage
+from tests.test_auth import cognito  # noqa: F401
 
 PDF_BYTES = b"%PDF-1.4 fake pdf content for testing"
 
@@ -60,3 +61,30 @@ def test_list_documents_only_published(client, db_session):
 
 def test_download_missing_returns_404(client):
     assert client.get("/api/v1/documents/9999/download").status_code == 404
+
+
+def test_partner_picker_lists_drafts_for_managers_only(client, db_session, cognito):
+    from tests.test_auth import bearer, token_for
+
+    db_session.add(models.Partner(name="Brand-new draft", is_published=False))
+    db_session.commit()
+    assert client.get("/api/v1/partners/manage").status_code == 401
+    assert client.get("/api/v1/partners/manage", headers=bearer(token_for(client, "student"))).status_code == 403
+    for role in ("coordinator", "staff"):
+        names = [p["name"] for p in client.get("/api/v1/partners/manage",
+                                                headers=bearer(token_for(client, role))).json()]
+        assert "Brand-new draft" in names
+
+
+def test_scope_items_are_saved_on_create_and_replaced_on_update(client, cognito):
+    from tests.test_auth import bearer, token_for
+
+    headers = bearer(token_for(client, "staff"))
+    created = client.post("/api/v1/documents/", headers=headers,
+                          json={"name": "MoU", "scope_items": ["Exchange", "  ", "Research"]})
+    assert created.status_code == 201, created.text
+    assert [i["text"] for i in created.json()["scopeItems"]] == ["Exchange", "Research"]
+    updated = client.patch(f"/api/v1/documents/{created.json()['id']}", headers=headers,
+                         json={"scope_items": ["Internship"]})
+    assert updated.status_code == 200, updated.text
+    assert [i["text"] for i in updated.json()["scopeItems"]] == ["Internship"]

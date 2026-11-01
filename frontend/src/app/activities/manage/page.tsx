@@ -7,7 +7,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { CalendarPlus, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import {
-  apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadPublicPartners, useApiResource,
+  apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadManagePartners, useApiResource,
   type AgreementOption, type PartnerView,
 } from "@/lib/api";
 import { activityTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
@@ -53,7 +53,7 @@ export default function ManageActivitiesPage() {
     [allowed, reload]
   );
   const partners = useApiResource<PartnerView[]>(
-    () => (allowed ? loadPublicPartners() : new Promise<never>(() => {})),
+    () => (allowed ? loadManagePartners() : new Promise<never>(() => {})),
     [allowed]
   );
   const agreements = useApiResource<AgreementOption[]>(

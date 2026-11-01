@@ -267,6 +267,8 @@ class DocumentCreate(BaseModel):
     signer_our: Optional[str] = None
     signer_partner: Optional[str] = None
     scope_level: Optional[ScopeLevel] = None
+    # Cooperation-scope bullets, in display order; on update the list replaces the old one.
+    scope_items: Optional[List[Annotated[str, Field(min_length=1, max_length=2000)]]] = None
 
     @field_validator('name')
     @classmethod
@@ -288,6 +290,8 @@ class DocumentUpdate(BaseModel):
     signer_our: Optional[str] = None
     signer_partner: Optional[str] = None
     scope_level: Optional[ScopeLevel] = None
+    # Cooperation-scope bullets, in display order; on update the list replaces the old one.
+    scope_items: Optional[List[Annotated[str, Field(min_length=1, max_length=2000)]]] = None
 
     @field_validator('name')
     @classmethod
@@ -556,6 +560,7 @@ class ExchangeStudentUpdate(BaseModel):
     program: Optional[str] = None
     status: Optional[str] = None
     is_published: Optional[bool] = None
+    user_id: Optional[int] = None
     partner_id: Optional[int] = None
     activity_id: Optional[int] = None
 
@@ -623,6 +628,19 @@ class CurrentUserResponse(BaseModel):
     id: int
     email: str
     role: str
+
+
+class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool = Field(validation_alias=AliasChoices('is_active', 'isActive'))
+
+
+class StudentOption(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
 
 
 class UserResponse(BaseModel):

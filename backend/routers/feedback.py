@@ -45,6 +45,14 @@ def list_respondent_types(db: Session = Depends(database.get_db)):
     ).all()
 
 
+@router.get("/sources", response_model=List[schemas.FeedbackLookupResponse])
+def list_feedback_sources(db: Session = Depends(database.get_db)):
+    """Active feedback sources, e.g. for the export filters."""
+    return db.query(models.FeedbackSource).filter(models.FeedbackSource.is_active.is_(True)).order_by(
+        models.FeedbackSource.sort_order, models.FeedbackSource.id
+    ).all()
+
+
 def _lookup_model(kind: str):
     lookup_models = {
         "respondent-types": models.RespondentType,
