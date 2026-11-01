@@ -70,6 +70,14 @@ def get_exchange_student(student_id: int, db: Session = Depends(database.get_db)
     return row
 
 
+def _check_student(db: Session, user_id) -> None:
+    if user_id is None:
+        return
+    student_user = db.get(models.User, user_id)
+    if student_user is None or student_user.role != "student":
+        raise HTTPException(status_code=422, detail="user_id must reference an existing student account")
+
+
 @router.post("/", response_model=schemas.ExchangeStudentManageResponse, status_code=201)
 def create_exchange_student(
     body: schemas.ExchangeStudentCreate, db: Session = Depends(database.get_db),
@@ -77,10 +85,7 @@ def create_exchange_student(
 ):
     data = body.model_dump()
     student_user_id = data.pop("user_id", None)
-    if student_user_id is not None:
-        student_user = db.get(models.User, student_user_id)
-        if student_user is None or student_user.role != "student":
-            raise HTTPException(status_code=422, detail="user_id must reference an existing student account")
+    _check_student(db, student_user_id)
     if user.role == "coordinator":
         data["is_published"] = False
     row = models.ExchangeStudent(**data, user_id=student_user_id, owner_user_id=user.id)
@@ -103,6 +108,7 @@ def update_exchange_student(
     if user.role not in ("staff", "admin") and row.owner_user_id != user.id:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     data = body.model_dump(exclude_unset=True)
+    _check_student(db, data.get("user_id"))
     if user.role == "coordinator" and data.get("is_published") is True:
         raise HTTPException(status_code=403, detail="Only staff/admin can publish exchange records")
     before = audit.snapshot(row)

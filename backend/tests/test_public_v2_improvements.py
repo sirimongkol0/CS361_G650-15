@@ -115,7 +115,8 @@ def test_openapi_exposes_expected_routes_and_auth(client):
     assert set(paths["/api/v1/feedback/{feedback_id}"]) == {"get", "patch"}
     assert set(paths["/api/v1/feedback/manage"]) == {"get"}
     assert set(paths["/api/v1/users/"]) == {"get"}
-    assert set(paths["/api/v1/users/{user_id}"]) == {"get"}
+    assert set(paths["/api/v1/users/{user_id}"]) == {"get", "patch"}
+    assert set(paths["/api/v1/users/students"]) == {"get"}
 
     # V3-3 adds role-protected document writes.
     for path, methods in DOCUMENT_WRITE_PATHS.items():

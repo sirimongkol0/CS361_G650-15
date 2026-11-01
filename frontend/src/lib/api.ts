@@ -877,6 +877,9 @@ export function loadExchangeStudents(role: string = "public"): Promise<ExchangeS
   return safeLoad<ExchangeStudent[]>(path, (raw) => (raw as RawExchange[]).map(mapExchange), []);
 }
 
+/** GET /users/students (coordinator/staff/admin) -> active student accounts to link. */
+export const loadStudentOptions = () => apiGetList<{ id: number; email: string }>("/users/students");
+
 /** GET /users/ (admin only) -> every account that has signed in. */
 export const loadUsers = () => apiGetList<UserAccount>("/users/");
 
