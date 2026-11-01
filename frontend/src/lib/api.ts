@@ -1015,6 +1015,7 @@ export interface InsightsSummary {
   feedbackByRating: KeyedCount<number>[];
   feedbackByStatus: KeyedCount[];
   feedbackAverageRating: number | null;
+  renewals: RenewalFigures;
   /** V4-6 PDCA: which feedback in the period led to which improvement. */
   improvements: {
     byStatus: KeyedCount<ImprovementStatus>[];
@@ -1108,6 +1109,29 @@ export interface PartnerTimeline {
 
 /** GET /insights/partners/{id} (staff/admin): one partner's collaboration per year. */
 export const loadPartnerTimeline = (id: number) => apiGet<PartnerTimeline>(`/insights/partners/${id}`);
+
+/* ---- V4-7 renewals: an agreement can renew the one before it ---- */
+export type RenewalDecision = "renew" | "revise" | "terminate";
+
+export interface RenewalFigures {
+  due: number; renewed: number; renewalRate: number | null;
+  agreements: number; activated: number; activationRate: number | null;
+}
+
+export interface AgreementVersion {
+  id: number; name: string; docType: string | null; status: string | null;
+  effectiveDate: string | null; expiryDate: string | null; renewsDocumentId: number | null;
+  decision: RenewalDecision | null; reason: string | null; decidedAt: string | null; decidedByUserId: number | null;
+}
+
+/** POST /renewals/documents/{id}/decision (staff/admin); renew/revise also return the new draft. */
+export const recordRenewalDecision = (id: number, decision: RenewalDecision, reason: string) =>
+  apiPost<{ document: AgreementVersion; renewal: AgreementVersion | null }>(
+    `/renewals/documents/${id}/decision`, { decision, reason });
+
+/** GET /renewals/partners/{id} (staff/admin): each chain from the first version to the current one. */
+export const loadRenewalChains = (partnerId: number) =>
+  apiGet<{ partnerId: number; chains: AgreementVersion[][] }>(`/renewals/partners/${partnerId}`);
 
 // --- V4-6: improvements recorded from feedback (PDCA) ---
 

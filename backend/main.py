@@ -10,7 +10,7 @@ from routers import health, partners, activities, documents
 from routers import auth as auth_routes
 from routers import audit_logs
 from routers import exchange
-from routers import feedback, users, imports, exports, outcomes, insights, improvements
+from routers import feedback, users, imports, exports, outcomes, insights, renewals, improvements
 import schemas
 
 # Create tables
@@ -72,6 +72,7 @@ app.include_router(imports.router, prefix="/api/v1")
 app.include_router(exports.router,prefix="/api/v1",)
 app.include_router(outcomes.router, prefix="/api/v1")
 app.include_router(insights.router, prefix="/api/v1")
+app.include_router(renewals.router, prefix="/api/v1")
 app.include_router(improvements.router, prefix="/api/v1")
 # Internal routers are mounted only once their endpoints are protected with
 # auth.require_role(...) (V3).

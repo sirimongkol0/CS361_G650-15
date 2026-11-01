@@ -277,6 +277,34 @@ const sidebarLinks = (page) => page.locator('aside a, nav a').allInnerTexts();
       assert.equal(await pages.student.getByRole('button', { name: 'บันทึกคำตอบ' }).count(), 0);
     });
 
+    await v4step('/reports: renewal figures, "ต่ออายุ" opens the decision form, partner report shows the renewal chain', async () => {
+      const page = pages.staff;
+      const summary = await callApi(page, 'GET', '/insights/summary');
+      assert.equal(summary.status, 200);
+      for (const key of ['due', 'renewed', 'renewalRate', 'agreements', 'activated', 'activationRate']) {
+        assert.ok(key in summary.data.renewals, `summary.renewals.${key}`);
+      }
+      await open(page, '/reports');
+      await page.getByRole('heading', { name: 'การต่ออายุและการเปิดใช้ข้อตกลง' }).waitFor();
+      const renew = page.getByRole('button', { name: 'ต่ออายุ', exact: true });
+      if (await renew.count()) {
+        await renew.first().click();
+        const dialog = page.getByRole('dialog', { name: /^ตัดสินใจต่อข้อตกลง/ });
+        await dialog.waitFor();
+        assert.ok(await dialog.getByRole('button', { name: 'บันทึกการตัดสินใจ' }).isDisabled(), 'a reason is required');
+        await shot(page, '06b-renewal-decision');
+        await dialog.getByRole('button', { name: 'ยกเลิก' }).click();
+      } else {
+        console.log('  (no agreement expires within 90 days, so "ต่ออายุ" was not shown)');
+      }
+      const partner = summary.data.topPartners[0] || summary.data.dormantPartners[0];
+      if (partner) {
+        await open(page, `/reports/partners/${partner.id}`);
+        await page.getByRole('heading', { name: 'ประวัติการต่ออายุข้อตกลง' }).waitFor();
+      }
+      assert.equal((await callApi(pages.coordinator, 'GET', '/renewals/partners/1')).status, 403);
+    });
+
     // ---------- Staff dashboard ----------
     await step('staff dashboard: CSV export, "เพิ่มกิจกรรม" opens the add form, "เปิดข้อตกลง" opens the agreement', async () => {
       const page = pages.staff;

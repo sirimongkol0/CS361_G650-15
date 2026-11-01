@@ -22,6 +22,8 @@ import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
 import { AccessState, ErrorState, LoadingState } from "@/components/data-states";
 import { ExportCsvButton } from "@/components/list-ui";
+import { Notice } from "@/components/form-ui";
+import { RenewalDecisionDialog, RenewalSummary } from "@/components/renewals";
 
 const REPORT_ROLES = ["staff", "admin"];
 const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
@@ -152,7 +154,27 @@ function ImprovementsReport({ improvements, period }: { improvements: InsightsSu
   );
 }
 
-function Report({ summary, previous, year }: { summary: InsightsSummary; previous: InsightsSummary | null; year: number | null }) {
+
+type ExpiringAgreement = InsightsSummary["agreementsExpiring"][number];
+
+/** V4-7: an expiring agreement with its "ต่ออายุ" button. */
+function ExpiringAgreementCard({ doc, onRenew }: { doc: ExpiringAgreement; onRenew: (doc: ExpiringAgreement) => void }) {
+  return (
+    <div className="flex items-start justify-between gap-2 p-3 rounded-xl bg-[#fef3c7] border border-[#fde68a]">
+      <Link href={`/documents/${doc.id}`} className="block min-w-0">
+        <div className="font-semibold text-sm mb-0.5 text-[#92400e]">{doc.name}</div>
+        {doc.partnerName && <div className="text-xs text-[#b45309]">{doc.partnerName}</div>}
+        <div className="text-xs text-[#b45309] mt-1">หมดอายุ {formatThaiDate(doc.expiryDate)}</div>
+      </Link>
+      <button type="button" className="btn btn-outline text-xs shrink-0 print:hidden" onClick={() => onRenew(doc)}>ต่ออายุ</button>
+    </div>
+  );
+}
+
+function Report({ summary, previous, year, onChanged }: {
+  summary: InsightsSummary; previous: InsightsSummary | null; year: number | null; onChanged: (message: string) => void;
+}) {
+  const [renewing, setRenewing] = useState<ExpiringAgreement | null>(null);
   const monthly = monthlyActivities(summary, year);
   const partnerTypes = summary.partnersByType.map((row) => ({
     name: row.key ? label(partnerTypeLabels, row.key) : "ไม่ระบุประเภท", value: row.count,
@@ -285,13 +307,7 @@ function Report({ summary, previous, year }: { summary: InsightsSummary; previou
             {summary.agreementsExpiring.length === 0 && (
               <p className="text-sm text-faint">ไม่มีข้อตกลงที่จะหมดอายุภายใน {summary.expiringWithinDays} วัน</p>
             )}
-            {summary.agreementsExpiring.map((doc) => (
-              <Link key={doc.id} href={`/documents/${doc.id}`} className="block p-3 rounded-xl bg-[#fef3c7] border border-[#fde68a]">
-                <div className="font-semibold text-sm mb-0.5 text-[#92400e]">{doc.name}</div>
-                {doc.partnerName && <div className="text-xs text-[#b45309]">{doc.partnerName}</div>}
-                <div className="text-xs text-[#b45309] mt-1">หมดอายุ {formatThaiDate(doc.expiryDate)}</div>
-              </Link>
-            ))}
+            {summary.agreementsExpiring.map((doc) => <ExpiringAgreementCard key={doc.id} doc={doc} onRenew={setRenewing} />)}
           </div>
         </section>
       </div>
@@ -314,6 +330,9 @@ function Report({ summary, previous, year }: { summary: InsightsSummary; previou
           </ul>
         )}
       </section>
+      <RenewalSummary figures={summary.renewals} />
+      <RenewalDecisionDialog agreement={renewing} onClose={() => setRenewing(null)}
+        onDone={onChanged} />
     </>
   );
 }
@@ -335,6 +354,7 @@ export default function ReportsPage() {
     null, [allowed, year, stakeholderType],
   );
   const [exportError, setExportError] = useState<string | null>(null);
+  const [renewalNotice, setRenewalNotice] = useState<string | null>(null);
 
   if (session === "loading") return <div className="p-6"><LoadingState /></div>;
   if (session !== "authenticated") return <div className="p-6"><AccessState status={401} /></div>;
@@ -380,9 +400,10 @@ export default function ReportsPage() {
       </div>
       {exportError && <p role="alert" className="mb-4 text-sm text-crimson">ส่งออกไม่สำเร็จ: {exportError}</p>}
 
+      <Notice text={renewalNotice} />
       {summary.status === "loading" && <LoadingState />}
       {summary.status === "error" && <ErrorState error={summary.error} onRetry={summary.retry} />}
-      {summary.status === "success" && <Report summary={summary.data} previous={previous} year={year} />}
+      {summary.status === "success" && <Report summary={summary.data} previous={previous} year={year} onChanged={(message) => { setRenewalNotice(message); summary.retry(); }} />}
     </div>
   );
 }

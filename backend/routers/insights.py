@@ -2,7 +2,7 @@
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, aliased, selectinload
 
 import database
@@ -70,6 +70,39 @@ def _lookup_counts(db, scope, lookup, fk_column):
     return [{"key": code, "label": label, "count": count} for code, label, count in rows]
 
 
+def _has_successor():
+    successor = aliased(models.Document)
+    return models.Document.id.in_(
+        select(successor.renews_document_id).where(
+            successor.is_deleted.is_(False), successor.renews_document_id.isnot(None)))
+
+
+def _renewal_decided():
+    """V4-7: a renewal decision was recorded, or a later agreement already renews this one."""
+    return models.Document.renewal_decision.isnot(None) | _has_successor()
+
+
+def _rate(part, whole):
+    return round(part / whole, 4) if whole else None
+
+
+def _renewal_figures(db: Session, scope: "_Scope"):
+    """V4-7: renewal rate among agreements that came up for renewal, and activation rate
+    (agreements with at least one real activity recorded under them). Current state."""
+    Document = models.Document
+    agreements = scope.apply(db.query(Document.id), Document).filter(
+        Document.doc_type.in_(AGREEMENT_TYPES), Document.is_deleted.is_(False),
+        Document.status.notin_(("draft", "cancelled")))
+    due = agreements.filter(_renewal_decided() | (Document.expiry_date < date.today()))
+    renewed = due.filter(Document.renewal_decision.in_(("renew", "revise")) | _has_successor())
+    activated = agreements.filter(Document.id.in_(db.query(models.Activity.mou_document_id).filter(
+        models.Activity.is_deleted.is_(False), models.Activity.mou_document_id.isnot(None))))
+    counts = {"due": due.count(), "renewed": renewed.count(),
+              "agreements": agreements.count(), "activated": activated.count()}
+    return {"renewals": {**counts, "renewalRate": _rate(counts["renewed"], counts["due"]),
+                         "activationRate": _rate(counts["activated"], counts["agreements"])}}
+
+
 def _dormant_partners(db: Session, stakeholder_type: str | None):
     """Partners with a live agreement and no activity, outcome or feedback in DORMANT_WITHIN_DAYS."""
     Partner, Document, Activity = models.Partner, models.Document, models.Activity
@@ -77,6 +110,7 @@ def _dormant_partners(db: Session, stakeholder_type: str | None):
     live = (db.query(Document.partner_id).filter(
         Document.doc_type.in_(AGREEMENT_TYPES), Document.is_deleted.is_(False),
         Document.status.notin_(("expired", "cancelled", "draft")),
+        Document.renewal_decision.is_distinct_from("terminate"),
         (Document.expiry_date.is_(None)) | (Document.expiry_date >= today)))
 
     via = aliased(Activity)
@@ -166,7 +200,7 @@ def summary(
 
     today = date.today()
     expiring = (agreements.outerjoin(Partner, Document.partner_id == Partner.id) if not stakeholder_type else agreements)
-    expiring = (expiring.filter(Document.expiry_date >= today,
+    expiring = (expiring.filter(Document.expiry_date >= today, ~_renewal_decided(),
                                 Document.expiry_date <= today + timedelta(days=EXPIRING_WITHIN_DAYS))
                 .with_entities(Document.id, Document.name, Document.expiry_date, Partner.id, Partner.name)
                 .order_by(Document.expiry_date))
@@ -234,6 +268,7 @@ def summary(
         "feedbackByRating": _keyed(by_rating),
         "feedbackByStatus": _keyed(by_feedback_status),
         "feedbackAverageRating": round(float(average), 2) if average is not None else None,
+        **_renewal_figures(db, scope),
         "improvements": _improvement_figures(db, scope, feedback),
     }
 

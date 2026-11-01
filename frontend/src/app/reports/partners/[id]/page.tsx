@@ -13,6 +13,7 @@ import { label, partnerTypeLabels } from "@/lib/labels";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
 import { AccessState, ErrorState, LoadingState } from "@/components/data-states";
+import { RenewalChain } from "@/components/renewals";
 
 const REPORT_ROLES = ["staff", "admin"];
 const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
@@ -116,6 +117,8 @@ export default function PartnerReportPage() {
         </table>
         <p className="mt-3 text-xs text-faint">นับตามวันที่ของแต่ละรายการ รายการที่ไม่มีวันที่รวมอยู่ในยอดทั้งหมดเท่านั้น</p>
       </section>
+
+      <RenewalChain partnerId={partner.id} />
     </div>
   );
 }
