@@ -364,6 +364,7 @@ interface RawFeedback {
   isPublished?: boolean;
   reply?: string | null;
   repliedAt?: string | null;
+  improvementCount?: number;
 }
 
 export interface RawExchange {
@@ -420,6 +421,8 @@ export interface FeedbackEntry {
   isPublished: boolean;
   reply: string | null;
   repliedAt: string | null;
+  /** Staff/admin inbox only: improvements recorded from this entry (V4-6). */
+  improvementCount: number;
 }
 
 export interface ExchangeStudent {
@@ -712,6 +715,7 @@ function mapFeedback(
     isPublished: raw.isPublished ?? true,
     reply: raw.reply ?? null,
     repliedAt: raw.repliedAt ?? null,
+    improvementCount: raw.improvementCount ?? 0,
   };
 }
 
@@ -1094,3 +1098,44 @@ export interface PartnerTimeline {
 
 /** GET /insights/partners/{id} (staff/admin): one partner's collaboration per year. */
 export const loadPartnerTimeline = (id: number) => apiGet<PartnerTimeline>(`/insights/partners/${id}`);
+
+// --- V4-6: improvements recorded from feedback (PDCA) ---
+
+export type ImprovementStatus = "planned" | "in_progress" | "done";
+
+export interface ImprovementFeedback {
+  id: number;
+  title: string;
+  date: string | null;
+}
+
+export interface Improvement {
+  id: number;
+  title: string;
+  description: string | null;
+  actionDate: string | null;
+  responsible: string | null;
+  status: ImprovementStatus;
+  createdAt: string;
+  updatedAt: string | null;
+  feedbacks: ImprovementFeedback[];
+}
+
+export interface ImprovementInput {
+  title: string;
+  description: string | null;
+  actionDate: string | null;
+  responsible: string | null;
+  status: ImprovementStatus;
+  feedbackIds: number[];
+}
+
+/** Coordinator/staff/admin; a coordinator gets only improvements on their own feedback. */
+export const loadImprovements = (feedbackId?: number) =>
+  apiGetList<Improvement>(`/improvements/${feedbackId != null ? `?feedback_id=${feedbackId}` : ""}`);
+/** Feedback the caller may link an improvement to. */
+export const loadImprovementFeedbackOptions = () => apiGetList<ImprovementFeedback>("/improvements/feedback-options");
+export const createImprovement = (body: ImprovementInput) => apiPost<Improvement>("/improvements/", body);
+export const updateImprovement = (id: number, body: Partial<ImprovementInput>) =>
+  apiPatch<Improvement>(`/improvements/${id}`, body);
+export const deleteImprovement = (id: number) => apiDelete(`/improvements/${id}`);
