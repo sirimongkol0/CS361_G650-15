@@ -138,3 +138,48 @@ def test_only_staff_and_admin_see_chains(client, world, cognito, role, status):
 def test_renewal_routes_require_sign_in(client, world):
     assert _decide(client, {}, world["mou_a"]).status_code == 401
     assert client.get(f"/api/v1/renewals/partners/{world['uni_a']}").status_code == 401
+
+
+# --- insights --------------------------------------------------------------------
+
+def _expiring(client, staff):
+    return [row["name"] for row in client.get(SUMMARY, headers=staff).json()["agreementsExpiring"]]
+
+
+def test_renewed_agreement_is_no_longer_expiring(client, world, staff):
+    assert _expiring(client, staff) == ["MOU A", "MOU C"]
+    _decide(client, staff, world["mou_a"])
+    assert _expiring(client, staff) == ["MOU C"]
+
+
+def test_terminated_agreement_no_longer_counts_as_live_for_dormant_partners(client, world, staff):
+    dormant = lambda: [p["name"] for p in client.get(SUMMARY, headers=staff).json()["dormantPartners"]]  # noqa: E731
+    assert dormant() == ["Company C"]
+    _decide(client, staff, world["mou_c"], "terminate", "ไม่มีกิจกรรมร่วม")
+    assert dormant() == []
+    assert _expiring(client, staff) == ["MOU A"]
+
+
+def test_renewal_and_activation_rates_match_the_fixture(client, world, staff):
+    figures = client.get(SUMMARY, headers=staff).json()["renewals"]
+    # Live or past agreements: MOU A, MOA B, MOU C (the draft does not count); only MOU A has an activity.
+    # Only the expired MOA B has come up for renewal, and it was not renewed.
+    assert figures == {"due": 1, "renewed": 0, "renewalRate": 0.0,
+                       "agreements": 3, "activated": 1, "activationRate": 0.3333}
+
+    _decide(client, staff, world["mou_a"])
+    _decide(client, staff, world["mou_c"], "terminate", "ไม่ต่อ")
+    figures = client.get(SUMMARY, headers=staff).json()["renewals"]
+    assert (figures["due"], figures["renewed"], figures["renewalRate"]) == (3, 1, 0.3333)
+    assert figures["agreements"] == 3  # the new renewal draft is not counted until approved
+
+
+def test_renewal_figures_follow_the_stakeholder_filter(client, world, staff):
+    figures = client.get(SUMMARY, params={"stakeholder_type": "company"}, headers=staff).json()["renewals"]
+    assert (figures["agreements"], figures["activated"], figures["due"]) == (1, 0, 0)
+    assert figures["renewalRate"] is None and figures["activationRate"] == 0.0
+
+
+def test_empty_database_has_no_rates(client, staff):
+    figures = client.get(SUMMARY, headers=staff).json()["renewals"]
+    assert figures["renewalRate"] is None and figures["activationRate"] is None
