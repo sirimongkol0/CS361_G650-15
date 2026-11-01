@@ -27,7 +27,9 @@ const activities = [
       const parts = new URL(route.request().url()).pathname.split('/').filter(Boolean);
       const type = parts[2], id = Number(parts[3]);
       if (type === 'outcomes') return route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({items: [], total: 0, page: 1, pageSize: 100})});
-      const rows = type === 'documents' ? docs : type === 'activities' ? activities : [];
+      const rows = type === 'documents' ? docs : type === 'activities' ? activities : null;
+      // An endpoint this mock does not know is a 404 naming it, not an empty list the page may crash on.
+      if (!rows) return route.fulfill({status: 404, contentType: 'application/json', body: JSON.stringify({detail: `Mock has no route for ${parts.slice(2).join('/')}`})});
       const body = id ? rows.find(row => row.id === id) : rows;
       await route.fulfill({status: body ? 200 : 404, contentType: 'application/json', body: JSON.stringify(body || {detail: 'Not found'})});
     });
