@@ -128,6 +128,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
 const SHORTCUTS: [string, string][] = [
   ["Ctrl + K", "ค้นหาทั้งระบบ"],
+  ["Ctrl + B", "แสดงหรือซ่อนเมนูด้านข้าง"],
   ["/", "ไปที่ช่องค้นหาของหน้ารายการ"],
   ["Esc", "ล้างคำค้นหาหรือปิดหน้าต่าง"],
   ["← / →", "ไปรายการก่อนหน้าหรือถัดไป ในหน้ารายละเอียด"],
