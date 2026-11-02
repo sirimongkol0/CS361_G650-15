@@ -151,6 +151,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.getByText('บันทึก “กิจกรรมของฉัน” แล้ว').waitFor();
       assert.equal(activities.calls.at(-1).body.is_published, true);
       await page.getByRole('row', { name: /กิจกรรมของคนอื่น/ }).getByRole('button', { name: 'ลบ' }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'ลบกิจกรรม' }).click();
       await page.getByText('ลบ “กิจกรรมของคนอื่น” แล้ว').waitFor();
       assert.ok(!activities.items.has(2));
       await context.close();
@@ -224,6 +225,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       assert.equal(staff.partners.calls.at(-1).method, 'PUT');
       assert.equal(staff.partners.calls.at(-1).body.is_published, false);
       await row.getByRole('button', { name: 'ลบ' }).click();
+      await p2.getByRole('alertdialog').getByRole('button', { name: 'ลบ', exact: true }).click();
       await p2.getByText('ลบ “มหาวิทยาลัยคู่ความร่วมมือ” แล้ว').waitFor();
       await staff.context.close();
     });

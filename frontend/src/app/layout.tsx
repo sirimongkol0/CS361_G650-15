@@ -3,6 +3,7 @@ import { Sarabun } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import { RoleProvider } from "@/lib/role-context";
+import { ConfirmProvider } from "@/components/confirm-dialog";
 
 export const metadata: Metadata = {
   title: "CSTU | PCSMS",
@@ -28,7 +29,9 @@ export default function RootLayout({
     <html lang="th" className={sarabun.variable}>
       <body className="bg-paper text-ink flex flex-col min-h-screen">
         <RoleProvider>
-          <AppShell>{children}</AppShell>
+          <ConfirmProvider>
+            <AppShell>{children}</AppShell>
+          </ConfirmProvider>
         </RoleProvider>
       </body>
     </html>

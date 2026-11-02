@@ -204,6 +204,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await signedFetch;
 
       await dialog.getByRole('button', { name: 'ลบข้อตกลง' }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'ลบข้อตกลง' }).click();
       await page.getByText('ลบ “MoU รออนุมัติ” แล้ว').waitFor();
       assert.equal(api.docs.size, 0);
       const sent = api.calls.map((c) => `${c.method} ${c.path}`);

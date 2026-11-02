@@ -17,6 +17,7 @@ import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { StatusBadge } from "@/components/status-badge";
+import { useConfirm } from "@/components/confirm-dialog";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // same limit as the backend (MAX_UPLOAD_BYTES)
 
@@ -336,6 +337,7 @@ function ManagePanel({
   // Public pages list only documents with a verified source; "keep" needs one.
   const needsSource = cstu === "keep" && doc.sources.length === 0 && !sourceUrl.trim();
   const action = useAction();
+  const confirm = useConfirm();
 
   const act = async (fn: () => Promise<unknown>, message: string) => {
     if (await action.run(fn)) onChanged(message);
@@ -446,8 +448,15 @@ function ManagePanel({
               {TRANSITIONS[status].map((next) => (
                 <button key={next} type="button" disabled={action.busy}
                   className={`btn text-sm ${next === "cancelled" ? "btn-outline" : "btn-primary"}`}
-                  onClick={() => (next !== "cancelled" || confirm(`ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม\nการยกเลิกย้อนกลับไม่ได้`)) &&
-                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next])}>
+                  onClick={async () => {
+                    if (next === "cancelled" && !(await confirm({
+                      title: `ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม`,
+                      description: "การยกเลิกย้อนกลับไม่ได้",
+                      action: "ยกเลิกข้อตกลง",
+                      destructive: true,
+                    }))) return;
+                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next]);
+                  }}>
                   {transitionLabels[next]}
                 </button>
               ))}
@@ -509,7 +518,12 @@ function ManagePanel({
         <div className="flex justify-end">
           <button className="btn gap-1.5 text-sm text-red-700 hover:bg-red-50" type="button" disabled={action.busy}
             onClick={async () => {
-              if (!confirm(`ลบข้อตกลง “${doc.name}” ใช่ไหม\nข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
+              if (!(await confirm({
+                title: `ลบข้อตกลง “${doc.name}” ใช่ไหม`,
+                description: "ข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+                action: "ลบข้อตกลง",
+                destructive: true,
+              }))) return;
               if (await action.run(() => apiDelete(`/documents/${doc.id}`))) onDeleted(`ลบ “${doc.name}” แล้ว`);
             }}>
             <Trash2 className="h-4 w-4" />

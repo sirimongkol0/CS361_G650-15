@@ -15,6 +15,7 @@ import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { useConfirm } from "@/components/confirm-dialog";
 
 /** GET /activities/manage row (internal view). */
 interface ManagedActivity {
@@ -45,6 +46,7 @@ export default function ManageActivitiesPage() {
   const [editing, setEditing] = useState<ManagedActivity | "new" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const action = useAction();
+  const confirm = useConfirm();
 
   const allowed = session === "authenticated" && canManage(role);
   const isStaff = role === "staff" || role === "admin";
@@ -156,7 +158,12 @@ export default function ManageActivitiesPage() {
                         <button className="btn ml-1 gap-1.5 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50" type="button"
                           disabled={action.busy}
                           onClick={async () => {
-                            if (!confirm(`ลบกิจกรรม “${a.name}” ใช่ไหม\nกิจกรรมนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
+                            if (!(await confirm({
+                              title: `ลบกิจกรรม “${a.name}” ใช่ไหม`,
+                              description: "กิจกรรมนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+                              action: "ลบกิจกรรม",
+                              destructive: true,
+                            }))) return;
                             if (await action.run(() => apiDelete(`/activities/${a.id}`))) refresh(`ลบ “${a.name}” แล้ว`);
                           }}>
                           <Trash2 className="h-3.5 w-3.5" />
