@@ -151,6 +151,33 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
 /** Shown to every signed-in account, including the public role (whose sidebar anonymous visitors share). */
 export const ACCOUNT_NAV: NavItem = { to: '/settings', label: 'ตั้งค่าบัญชี', icon: 'settings' };
 
+/* ---- Sidebar groups: published data, the user's own work, admin settings, account ---- */
+export type NavGroupId = 'public' | 'work' | 'admin' | 'account';
+
+export const NAV_GROUPS: { id: NavGroupId; label: string }[] = [
+  { id: 'public', label: 'ข้อมูลที่เผยแพร่' },
+  { id: 'work', label: 'งานของฉัน' },
+  { id: 'admin', label: 'ผู้ดูแลระบบ' },
+  { id: 'account', label: 'บัญชี' },
+];
+
+const PUBLIC_ROUTES = new Set(['/stakeholders', '/documents', '/activities']);
+const ADMIN_ROUTES = new Set(['/users', '/feedback/lookups', '/outcomes/types']);
+
+export function navGroup(item: NavItem): NavGroupId {
+  if (item.to.startsWith('/dashboard/') || PUBLIC_ROUTES.has(item.to)) return 'public';
+  if (ADMIN_ROUTES.has(item.to)) return 'admin';
+  if (item.to === ACCOUNT_NAV.to) return 'account';
+  return 'work';
+}
+
+/** The items of each non-empty group, in NAV_GROUPS order; items keep their ROLE_NAV order. */
+export function groupNav(items: NavItem[]) {
+  return NAV_GROUPS
+    .map((group) => ({ ...group, items: items.filter((item) => navGroup(item) === group.id) }))
+    .filter((group) => group.items.length > 0);
+}
+
 /* ---- Context ---- */
 export type SessionStatus = 'loading' | 'anonymous' | 'authenticated';
 

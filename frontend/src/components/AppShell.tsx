@@ -16,7 +16,7 @@ import {
   Users, Globe, Folder, History, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
-import { ACCOUNT_NAV, ROLE_NAV, useRole } from '@/lib/role-context';
+import { ACCOUNT_NAV, ROLE_NAV, groupNav, useRole } from '@/lib/role-context';
 
 /* Map icon string → Lucide component */
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -52,6 +52,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const cameBack = useRef(false);
 
   const navItems = status === 'authenticated' ? [...ROLE_NAV[role], ACCOUNT_NAV] : ROLE_NAV[role];
+  const navGroups = groupNav(navItems);
+  // A single group (anonymous visitors, public role) needs no headings.
+  const showGroupLabels = navGroups.length > 1;
 
   const handleLogout = async () => {
     await logout();
@@ -168,26 +171,39 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Nav */}
-      <nav aria-label="เมนูหลัก" className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
-        {navItems.map(({ to, icon, label, end }) => {
-          const Icon = ICON_MAP[icon] ?? LayoutDashboard;
-          // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.
-          const active = end
-            ? pathname === to
-            : pathname.startsWith(to) && !navItems.some((other) => other.to.length > to.length && pathname.startsWith(other.to));
-          return (
-            <Link
-              key={`${to}-${label}`}
-              href={to}
-              className={`sidebar-link ${active ? 'active' : ''}`}
-              title={collapsed ? label : undefined}
-              aria-current={active ? 'page' : undefined}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {!collapsed && <span>{label}</span>}
-            </Link>
-          );
-        })}
+      <nav aria-label="เมนูหลัก" className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-3">
+        {navGroups.map((group, index) => (
+          <div
+            key={group.id}
+            role="group"
+            // aria-label rather than an id: this markup renders twice (desktop sidebar and mobile drawer).
+            aria-label={showGroupLabels ? group.label : undefined}
+            className="flex flex-col gap-0.5"
+          >
+            {showGroupLabels && (collapsed
+              ? index > 0 && <hr className="mx-2 mb-2 border-line" />
+              : <p aria-hidden className="px-3 pb-1 text-xs font-semibold text-faint">{group.label}</p>)}
+            {group.items.map(({ to, icon, label, end }) => {
+              const Icon = ICON_MAP[icon] ?? LayoutDashboard;
+              // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.
+              const active = end
+                ? pathname === to
+                : pathname.startsWith(to) && !navItems.some((other) => other.to.length > to.length && pathname.startsWith(other.to));
+              return (
+                <Link
+                  key={`${to}-${label}`}
+                  href={to}
+                  className={`sidebar-link ${active ? 'active' : ''}`}
+                  title={collapsed ? label : undefined}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {!collapsed && <span>{label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
     </div>
