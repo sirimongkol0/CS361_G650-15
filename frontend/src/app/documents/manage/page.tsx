@@ -11,11 +11,12 @@ import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
-import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
+import { cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { StatusBadge } from "@/components/status-badge";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // same limit as the backend (MAX_UPLOAD_BYTES)
 
@@ -39,10 +40,6 @@ const transitionDone: Record<string, string> = {
   active: "ข้อตกลงมีผลแล้ว",
   expired: "บันทึกว่าหมดอายุแล้ว",
   cancelled: "ยกเลิกข้อตกลงแล้ว",
-};
-const statusColors: Record<string, string> = {
-  draft: "badge-gray", approved: "badge-blue", active: "badge-green",
-  expiring: "badge-gold", expired: "badge-gray", cancelled: "badge-gray",
 };
 
 const currentStatus = (doc: ManagedDocument) => doc.status ?? "draft";
@@ -151,12 +148,12 @@ export default function ManageDocumentsPage() {
                     </td>
                     <td className="px-4 py-3 text-faint">{doc.partner?.name ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`badge ${statusColors[currentStatus(doc)] ?? "badge-gray"}`}>
+                      <StatusBadge kind="document" status={currentStatus(doc)}>
                         {label(documentStatusLabels, currentStatus(doc))}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`badge ${cstuStatusColors[doc.cstuStatus]}`}>{label(cstuStatusLabels, doc.cstuStatus)}</span>
+                      <StatusBadge kind="cstu" status={doc.cstuStatus}>{label(cstuStatusLabels, doc.cstuStatus)}</StatusBadge>
                     </td>
                     <td className="px-4 py-3">
                       {doc.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
@@ -441,7 +438,7 @@ function ManagePanel({
 
       <Section title="สถานะข้อตกลง">
         <p className="mb-2 text-sm">
-          สถานะ: <span className={`badge ${statusColors[status] ?? "badge-gray"}`}>{label(documentStatusLabels, status)}</span>
+          สถานะ: <StatusBadge kind="document" status={status}>{label(documentStatusLabels, status)}</StatusBadge>
         </p>
         {isStaff ? (
           TRANSITIONS[status]?.length ? (

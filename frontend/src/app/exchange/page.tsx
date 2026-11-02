@@ -18,13 +18,7 @@ import { Dialog, Notice } from "@/components/form-ui";
 import { ExchangeForm } from "@/components/exchange-form";
 import { OutcomeSection } from "@/components/outcome-section";
 import { downloadCsv } from "@/lib/list-tools";
-
-const statusColors: Record<string, string> = {
-  "เสร็จสิ้น": "badge-green",
-  "กำลังดำเนินการ": "badge-blue",
-  "กำลังสมัคร": "badge-gold",
-  "วางแผน": "badge-purple",
-};
+import { StatusBadge } from "@/components/status-badge";
 
 export default function StudentExchangePage() {
   const [search, setSearch] = useState("");
@@ -294,9 +288,9 @@ export default function StudentExchangePage() {
                     <span className="badge badge-crimson text-xs">{s.program}</span>
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`badge ${statusColors[s.status] ?? "badge-gray"}`}>
+                    <StatusBadge kind="exchange" status={s.status}>
                       {s.status}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="px-4 py-4">
                     {session === "authenticated" && role !== "public" && (

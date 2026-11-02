@@ -125,11 +125,17 @@ export const cstuStatusLabels: Record<string, string> = {
   out_of_scope: "ไม่เกี่ยวข้องกับ CSTU",
 };
 
-export const cstuStatusColors: Record<string, string> = {
-  keep: "badge-green",
-  review: "badge-gold",
-  out_of_scope: "badge-gray",
-};
+/* Badge tone for each status, the one map every page reads through <StatusBadge>.
+   A status missing here shows gray. Tones are the Badge variants in components/ui/badge.tsx. */
+export type StatusTone = "crimson" | "gold" | "blue" | "green" | "purple" | "indigo" | "gray";
+
+export const statusTones = {
+  document: { draft: "gray", approved: "blue", active: "green", expiring: "gold", expired: "gray", cancelled: "gray" },
+  cstu: { keep: "green", review: "gold", out_of_scope: "gray" },
+  exchange: { "เสร็จสิ้น": "green", "กำลังดำเนินการ": "blue", "กำลังสมัคร": "gold", "วางแผน": "purple" },
+} satisfies Record<string, Record<string, StatusTone>>;
+
+export type StatusKind = keyof typeof statusTones;
 
 // The shared demo banner carries this notice; downloadable PDFs keep theirs.
 export const displayDescription = (value: string) =>
