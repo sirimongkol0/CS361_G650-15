@@ -16,7 +16,7 @@ const sarabun = Sarabun({
   weight: ["400", "500", "600", "700", "800"],
   subsets: ["thai", "latin"],
   display: "swap",
-  variable: "--font-sans",
+  variable: "--font-sarabun",
 });
 
 export default function RootLayout({

@@ -21,7 +21,7 @@ import {
 import { DateInput } from "@/components/form-ui";
 
 const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 export default function ActivitiesPage() {
   useDocumentTitle("กิจกรรม");
@@ -138,7 +138,7 @@ export default function ActivitiesPage() {
   );
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
@@ -165,26 +165,26 @@ export default function ActivitiesPage() {
           <div className="bg-white rounded-base shadow-card p-4 mb-5">
             <div className="flex flex-wrap gap-3">
               <SearchInput className={inputCls} placeholder="ค้นหาชื่อกิจกรรมหรือหน่วยงาน" value={search} onChange={setSearch} />
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเภทกิจกรรม" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ประเภทกิจกรรม" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
                 <option value="all">ประเภท: ทั้งหมด</option>
                 {types.map((type) => <option key={type} value={type}>{label(activityTypeLabels, type)}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="หน่วยงาน" value={orgFilter} onChange={(event) => setOrgFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="หน่วยงาน" value={orgFilter} onChange={(event) => setOrgFilter(event.target.value)}>
                 <option value="all">หน่วยงาน: ทั้งหมด</option>
                 {organizations.map((org) => <option key={org} value={org}>{org}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="สถานะกิจกรรม" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="สถานะกิจกรรม" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                 <option value="all">สถานะ: ทั้งหมด</option>
                 <option value="เสร็จสิ้น">เสร็จสิ้น</option>
                 <option value="กำลังดำเนินการ">กำลังดำเนินการ</option>
                 <option value="วางแผน">วางแผน</option>
                 <option value="ไม่ระบุ">ไม่ระบุ</option>
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
               <DateInput wrapperClassName="inline-block"
-                className={`${inputCls} !w-auto`}
+                className={`${inputCls} w-auto!`}
                 aria-label="ตั้งแต่วันที่"
                 value={dateFrom}
                 max={dateTo || undefined}
@@ -192,7 +192,7 @@ export default function ActivitiesPage() {
               />
 
               <DateInput wrapperClassName="inline-block"
-                className={`${inputCls} !w-auto`}
+                className={`${inputCls} w-auto!`}
                 aria-label="ถึงวันที่"
                 value={dateTo}
                 min={dateFrom || undefined}
@@ -251,7 +251,7 @@ export default function ActivitiesPage() {
                     return (
                     <tr key={item.id} onClick={row.onClick} className={`${row.className} border-b border-soft hover:bg-[#FAFAFA] transition-colors`}>
                       <td className="px-5 py-4"><div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#DBEAFE]"><CalendarDays className="w-4 h-4 text-[#1D4ED8]" /></div>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#DBEAFE]"><CalendarDays className="w-4 h-4 text-[#1D4ED8]" /></div>
                         <Link href={`/activities/${item.id}`} className="text-sm font-semibold hover:underline text-ink"><Highlight text={item.name} query={search} /></Link>
                       </div></td>
                       <td className="px-4 py-4 text-sm text-faint"><Highlight text={item.org} query={search} /></td>

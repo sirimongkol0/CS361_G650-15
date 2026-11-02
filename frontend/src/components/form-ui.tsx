@@ -9,7 +9,7 @@ import { AlertCircle, CalendarDays, CheckCircle2, X } from "lucide-react";
 import { apiErrorMessage, formatThaiDate } from "@/lib/api";
 
 export const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
 
 /** Modal dialog using the native <dialog> (focus trap, Esc to close). */
 export function Dialog({
@@ -62,7 +62,7 @@ export function FormError({ error }: { error: unknown }) {
   if (!error) return null;
   return (
     <p className="mb-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
       {apiErrorMessage(error)}
     </p>
   );
@@ -127,10 +127,10 @@ export function DateInput({
       />
       <span
         aria-hidden
-        className={`${className} flex min-w-[10.5rem] items-center justify-between gap-2 peer-focus:border-crimson peer-focus:ring-[3px] peer-focus:ring-crimson/10 peer-disabled:bg-soft`}
+        className={`${className} flex min-w-42 items-center justify-between gap-2 peer-focus:border-crimson peer-focus:ring-[3px] peer-focus:ring-crimson/10 peer-disabled:bg-soft`}
       >
         <span className={value ? "text-ink" : "text-faint"}>{value ? formatThaiDate(value) : "เลือกวันที่"}</span>
-        <CalendarDays className="h-4 w-4 flex-shrink-0 text-faint" />
+        <CalendarDays className="h-4 w-4 shrink-0 text-faint" />
       </span>
     </span>
   );

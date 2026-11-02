@@ -72,7 +72,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-md flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-crimson to-[#B8243E]">
+            <div className="w-11 h-11 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E]">
               <Globe className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
               className="flex items-start gap-2.5 p-3 rounded-md text-sm"
               style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
             >
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
@@ -110,7 +110,7 @@ export default function LoginPage() {
             </label>
             <input
               id="login-email"
-              className="w-full px-3 py-2 text-sm rounded-md border outline-none focus:border-crimson"
+              className="w-full px-3 py-2 text-sm rounded-md border outline-hidden focus:border-crimson"
               style={{ borderColor: 'var(--border)' }}
               type="email"
               autoComplete="username"
@@ -129,7 +129,7 @@ export default function LoginPage() {
             <div className="relative">
               <input
                 id="login-password"
-                className="w-full px-3 py-2 pr-10 text-sm rounded-md border outline-none focus:border-crimson"
+                className="w-full px-3 py-2 pr-10 text-sm rounded-md border outline-hidden focus:border-crimson"
                 style={{ borderColor: 'var(--border)' }}
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
@@ -161,7 +161,7 @@ export default function LoginPage() {
           </button>
 
           <p className="flex items-start gap-2 text-xs text-faint">
-            <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             หากยังไม่มีบัญชี กรุณาติดต่อผู้ดูแลระบบ
           </p>
         </form>

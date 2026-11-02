@@ -74,7 +74,7 @@ const card =
   "rounded-lg border border-line bg-white p-5 shadow-card";
 
 const control =
-  "rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-crimson focus:outline-none focus:ring-2 focus:ring-crimson/10";
+  "rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-crimson focus:outline-hidden focus:ring-2 focus:ring-crimson/10";
 
 function errorText(error: unknown): string {
   if (error instanceof ApiError && error.status === 415) {
@@ -413,7 +413,7 @@ export default function ImportSection() {
 
             <button
               type="button"
-              className="rounded p-1 text-faint hover:bg-soft"
+              className="rounded-sm p-1 text-faint hover:bg-soft"
               aria-label="รีเฟรชประวัติ"
               onClick={() =>
                 void loadHistory().catch((error) =>
@@ -595,7 +595,7 @@ export default function ImportSection() {
                             </span>
                           </div>
 
-                          <pre className="whitespace-pre-wrap [overflow-wrap:anywhere] text-[11px] text-mute">
+                          <pre className="whitespace-pre-wrap wrap-anywhere text-[11px] text-mute">
                             {JSON.stringify(row, null, 2)}
                           </pre>
                         </div>

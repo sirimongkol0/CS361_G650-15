@@ -144,14 +144,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const sidebarContent = (collapsed: boolean) => (
     <div className="flex flex-col h-full overflow-hidden">
       {/* TU colour strip */}
-      <div className="h-1 tu-stripe flex-shrink-0" />
+      <div className="h-1 tu-stripe shrink-0" />
 
       {/* Logo */}
       <div
-        className="flex items-center gap-3 px-4 py-4 flex-shrink-0"
+        className="flex items-center gap-3 px-4 py-4 shrink-0"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
-        <div className="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-crimson to-[#B8243E]">
+        <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E]">
           <Globe className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
@@ -183,7 +183,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               title={collapsed ? label : undefined}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
+              <Icon className="w-4 h-4 shrink-0" />
               {!collapsed && <span>{label}</span>}
             </Link>
           );
@@ -200,7 +200,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible" style={{ background: 'var(--background)' }}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-card"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-60 focus:rounded-sm focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-card"
       >
         ข้ามไปยังเนื้อหาหลัก
       </a>
@@ -211,7 +211,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar — desktop */}
       <aside
-        className="hidden md:flex flex-col flex-shrink-0 border-r transition-all duration-200 overflow-hidden print:hidden"
+        className="hidden md:flex flex-col shrink-0 border-r transition-all duration-200 overflow-hidden print:hidden"
         style={{
           width: collapsed ? 68 : 256,
           borderColor: 'var(--border)',
@@ -233,11 +233,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col flex-1 overflow-hidden print:overflow-visible">
         {/* Topbar (replaces the old top Navbar) */}
         <header
-          className="flex items-center gap-3 px-4 md:px-5 border-b bg-white flex-shrink-0 print:hidden"
+          className="flex items-center gap-3 px-4 md:px-5 border-b bg-white shrink-0 print:hidden"
           style={{ height: 60, borderColor: 'var(--border)' }}
         >
           <button
-            className="p-1.5 rounded hover:bg-soft"
+            className="p-1.5 rounded-sm hover:bg-soft"
             onClick={toggleSidebar}
             title="แสดงหรือซ่อนเมนู"
             aria-label="แสดงหรือซ่อนเมนู"
@@ -264,7 +264,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Search className="w-4 h-4" />
             ค้นหาทั้งระบบ
-            <kbd className="rounded border border-line px-1.5 text-[11px]">Ctrl K</kbd>
+            <kbd className="rounded-sm border border-line px-1.5 text-[11px]">Ctrl K</kbd>
           </button>
           {status === 'authenticated' && user && (
             <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           )}
           <button
             type="button"
-            className="p-1.5 rounded hover:bg-soft"
+            className="p-1.5 rounded-sm hover:bg-soft"
             onClick={() => setHelpOpen(true)}
             title="คีย์ลัด (?)"
             aria-label="คีย์ลัด"
@@ -311,7 +311,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           id="main-content"
           ref={mainRef}
           tabIndex={-1}
-          className="flex-1 overflow-y-auto flex flex-col outline-none print:overflow-visible"
+          className="flex-1 overflow-y-auto flex flex-col outline-hidden print:overflow-visible"
           onScroll={onMainScroll}
         >
           {offline && (
@@ -320,7 +320,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               ไม่ได้เชื่อมต่ออินเทอร์เน็ต ข้อมูลที่เห็นอาจไม่ใช่ข้อมูลล่าสุด
             </div>
           )}
-          <div key={pathname} className="flex-grow animate-fade-up">{children}</div>
+          <div key={pathname} className="grow animate-fade-up">{children}</div>
         </main>
 
         {showTop && (

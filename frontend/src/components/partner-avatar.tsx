@@ -14,7 +14,7 @@ export function PartnerAvatar({ partner, size = 34, className = "" }: {
   className?: string;
 }) {
   const [failed, setFailed] = useState(process.env.NEXT_PUBLIC_DEMO_MODE === 'true');
-  const base = `rounded-full flex items-center justify-center font-bold flex-shrink-0 overflow-hidden ${className}`;
+  const base = `rounded-full flex items-center justify-center font-bold shrink-0 overflow-hidden ${className}`;
 
   if (!failed) {
     return (

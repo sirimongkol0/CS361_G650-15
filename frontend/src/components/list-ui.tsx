@@ -17,7 +17,7 @@ export function Highlight({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, index) =>
         index % 2 === 1
-          ? <mark key={index} className="rounded-sm bg-[#F5E0A8] text-inherit">{part}</mark>
+          ? <mark key={index} className="rounded-xs bg-gold-muted text-inherit">{part}</mark>
           : <Fragment key={index}>{part}</Fragment>
       )}
     </>
@@ -63,7 +63,7 @@ export function FilterChips({ chips }: { chips: FilterChip[] }) {
           key={chip.label}
           type="button"
           onClick={chip.onRemove}
-          className="inline-flex items-center gap-1 rounded-full border border-crimson/30 bg-[#FDF2F5] px-2.5 py-0.5 text-xs text-crimson hover:bg-[#F5D6DE]"
+          className="inline-flex items-center gap-1 rounded-full border border-crimson/30 bg-crimson-light px-2.5 py-0.5 text-xs text-crimson hover:bg-crimson-muted"
           aria-label={`ลบตัวกรอง ${chip.label}`}
         >
           {chip.label}
@@ -208,11 +208,11 @@ export function TableSkeleton({ rows = 6, columns = 5 }: { rows?: number; column
       <div className="h-11 border-b border-line bg-paper" />
       {Array.from({ length: rows }, (_, row) => (
         <div key={row} className="flex items-center gap-6 border-b border-soft px-5 py-4">
-          <div className="h-8 w-8 flex-shrink-0 animate-pulse rounded-lg bg-soft" />
+          <div className="h-8 w-8 shrink-0 animate-pulse rounded-lg bg-soft" />
           {Array.from({ length: columns }, (_, column) => (
             <div
               key={column}
-              className="h-3 animate-pulse rounded bg-soft"
+              className="h-3 animate-pulse rounded-sm bg-soft"
               style={{ width: column === 0 ? "28%" : `${10 + ((row + column) % 3) * 4}%` }}
             />
           ))}

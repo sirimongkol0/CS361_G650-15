@@ -57,7 +57,7 @@ export default function DashboardAdmin() {
   ];
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -170,11 +170,11 @@ export default function DashboardAdmin() {
             {loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-sm font-bold w-4 flex-shrink-0" style={{ color: i < 3 ? "#8B1538" : "#656C79" }}>{i + 1}</span>
+                <span className="text-sm font-bold w-4 shrink-0" style={{ color: i < 3 ? "#8B1538" : "#656C79" }}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold truncate" style={{ color: "#111827" }}>{c.name}</span>
-                    <span className="text-xs font-bold flex-shrink-0 ml-1" style={{ color: "#8B1538" }}>{c.score}</span>
+                    <span className="text-xs font-bold shrink-0 ml-1" style={{ color: "#8B1538" }}>{c.score}</span>
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#E5E7EB" }}>
                     <div className="h-full rounded-full" style={{ width: `${c.pct}%`, background: "#8B1538" }} />

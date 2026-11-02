@@ -58,7 +58,7 @@ export default function OutcomeTypesPage() {
   };
 
   const rows = resource.data;
-  return <div className="p-6 max-w-screen-xl mx-auto space-y-5">
+  return <div className="p-6 max-w-(--breakpoint-xl) mx-auto space-y-5">
     <div>
       <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint"><Link href="/" className="hover:text-crimson">หน้าหลัก</Link><ChevronRight className="w-3 h-3" /><span className="text-crimson">ตั้งค่าประเภทผลลัพธ์</span></nav>
       <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทผลลัพธ์</h1>

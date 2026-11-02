@@ -39,7 +39,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 const inputClass =
-  "rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+  "rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 const show = (value: unknown) =>
   value === null || value === undefined || value === "" ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value);
@@ -65,8 +65,8 @@ function Changes({ row }: { row: AuditLogRow }) {
           {fields.map((field) => (
             <tr key={field.key} className="border-t border-line align-top">
               <td className="py-1 pr-3 font-mono text-mute">{field.key}</td>
-              <td className="py-1 pr-3 [overflow-wrap:anywhere] text-[#b91c1c]">{show(field.before)}</td>
-              <td className="py-1 [overflow-wrap:anywhere] text-[#15803d]">{show(field.after)}</td>
+              <td className="py-1 pr-3 wrap-anywhere text-[#b91c1c]">{show(field.before)}</td>
+              <td className="py-1 wrap-anywhere text-[#15803d]">{show(field.after)}</td>
             </tr>
           ))}
         </tbody>
@@ -111,7 +111,7 @@ export default function AuditLogPage() {
 
   const setFilter = (set: (value: string) => void) => (value: string) => { set(value); setPage(1); };
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
         <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
         <ChevronRight className="w-3 h-3" aria-hidden />

@@ -98,7 +98,7 @@ export function OutcomeSection({ field, id, canAdd, canPublish }: {
                 {row.description && <p className="text-sm text-faint mt-1 whitespace-pre-line">{row.description}</p>}
               </div>
               {row.canEdit && (
-                <div className="flex gap-1 flex-shrink-0 print:hidden">
+                <div className="flex gap-1 shrink-0 print:hidden">
                   {canPublish && <button type="button" className="btn btn-outline text-xs" disabled={action.busy} onClick={() => togglePublish(row)}>{row.isPublished ? "ยกเลิกเผยแพร่" : "เผยแพร่"}</button>}
                   <button type="button" className="btn p-1.5 text-faint hover:bg-soft" aria-label={`แก้ไข ${row.title}`} onClick={() => open(row)}><Pencil className="w-3.5 h-3.5" /></button>
                   {canPublish && <button type="button" className="btn p-1.5 text-faint hover:bg-soft" aria-label={`ลบ ${row.title}`} disabled={action.busy} onClick={() => remove(row)}><Trash2 className="w-3.5 h-3.5" /></button>}

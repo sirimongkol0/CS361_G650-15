@@ -47,7 +47,7 @@ export default function ImportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-screen-xl p-6">
+    <div className="mx-auto max-w-(--breakpoint-xl) p-6">
 
       {/* Page Header */}
       <div className="mb-6">

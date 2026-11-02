@@ -51,7 +51,7 @@ export default function PartnerReportPage() {
     : "ยังไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ที่บันทึกไว้";
 
   return (
-    <div className="p-6 max-w-screen-lg mx-auto">
+    <div className="p-6 max-w-(--breakpoint-lg) mx-auto">
       <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint print:hidden">
         <Link href="/reports" className="text-faint hover:text-crimson">รายงานและสถิติ</Link>
         <ChevronRight className="w-3 h-3" aria-hidden />

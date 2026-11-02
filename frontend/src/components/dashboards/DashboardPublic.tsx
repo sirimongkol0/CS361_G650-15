@@ -39,7 +39,7 @@ export default function DashboardPublic() {
   ];
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
@@ -49,7 +49,7 @@ export default function DashboardPublic() {
       </div>
 
       <div className="flex items-center gap-3 p-4 rounded-xl mb-6 bg-paper shadow-lightring">
-        <Globe className="w-5 h-5 flex-shrink-0 text-crimson" />
+        <Globe className="w-5 h-5 shrink-0 text-crimson" />
         <p className="text-sm text-mute flex-1">แสดงเฉพาะข้อมูลที่เผยแพร่แล้ว ตัวเลขด้านล่างนับเฉพาะความร่วมมือของ CSTU โดยตรง และแยกระดับคณะ/มหาวิทยาลัยไว้ต่างหาก</p>
         {lastFetched && (
           <span className="flex items-center gap-1.5 text-xs text-faint whitespace-nowrap" title={lastFetched.toLocaleString("th-TH")}>
@@ -90,7 +90,7 @@ export default function DashboardPublic() {
             {activities.status === "success" && activities.data.length > 0 && (
               <div className="divide-y divide-soft">{latest.map((item) => (
                 <Link key={item.id} href={`/activities/${item.id}`} className="flex items-center gap-4 px-2 py-4 hover:bg-[#FAFAFA] rounded-lg">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#F5D6DE]"><CalendarDays className="w-4 h-4 text-crimson" /></div>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-crimson-muted"><CalendarDays className="w-4 h-4 text-crimson" /></div>
                   <div className="flex-1 min-w-0"><div className="font-semibold text-sm truncate text-ink">{item.name}</div><div className="text-xs mt-0.5 text-faint">{item.org} • {item.date}</div></div>
                   <ScopeLevelBadge level={item.scopeLevel} />
                   <span className={`badge ${item.statusColor}`}>{item.status}</span>
@@ -125,12 +125,12 @@ export default function DashboardPublic() {
       {endingSoon.length > 0 && (
         <section className={`${contentCard} mt-5`}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-            <h2 className="font-bold text-ink flex items-center gap-2"><AlarmClock className="w-4 h-4 text-[#92670A]" />ข้อตกลงใกล้หมดอายุ</h2>
+            <h2 className="font-bold text-ink flex items-center gap-2"><AlarmClock className="w-4 h-4 text-gold-dark" />ข้อตกลงใกล้หมดอายุ</h2>
             <Link href="/documents?sort=expire" className="text-xs font-semibold text-crimson">เรียงตามวันหมดอายุ</Link>
           </div>
           <div className="p-3 divide-y divide-soft">{endingSoon.map((doc) => (
             <Link key={doc.id} href={`/documents/${doc.id}`} className="flex items-center gap-4 p-3 hover:bg-soft rounded-lg">
-              <FileText className="w-5 h-5 text-[#92670A]" />
+              <FileText className="w-5 h-5 text-gold-dark" />
               <div className="flex-1 min-w-0"><div className="font-semibold text-sm truncate text-ink">{doc.title}</div><div className="text-xs text-faint">{doc.org}{doc.expire ? ` • หมดอายุ ${doc.expire}` : ""}</div></div>
               <ExpiryBadge expiryDate={doc.expiryDate} />
             </Link>

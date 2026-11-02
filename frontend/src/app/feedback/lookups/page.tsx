@@ -93,7 +93,7 @@ export default function FeedbackLookupsPage() {
   if (resource.status === "error") return <div className="p-6"><ErrorState error={resource.error} onRetry={resource.retry} /></div>;
 
   const changed = (message: string) => { setNotice(message); setReload((n) => n + 1); };
-  return <div className="p-6 max-w-screen-xl mx-auto space-y-5">
+  return <div className="p-6 max-w-(--breakpoint-xl) mx-auto space-y-5">
     <div>
       <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint"><Link href="/" className="hover:text-crimson">หน้าหลัก</Link><ChevronRight className="w-3 h-3" /><Link href="/feedback" className="hover:text-crimson">ความคิดเห็น</Link><ChevronRight className="w-3 h-3" /><span className="text-crimson">ตั้งค่าประเภท Feedback</span></nav>
       <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทและแหล่ง Feedback</h1>

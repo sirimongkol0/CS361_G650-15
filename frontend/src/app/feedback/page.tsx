@@ -277,7 +277,7 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="mb-6">
         <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
           <Link href="/" className="text-faint hover:text-crimson">
@@ -335,7 +335,7 @@ export default function FeedbackPage() {
               <div className="relative flex-1 min-w-48">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
                 <input
-                  className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+                  className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
                   placeholder="ค้นหาความคิดเห็น"
                   aria-label="ค้นหาความคิดเห็น"
                   value={search}
@@ -343,7 +343,7 @@ export default function FeedbackPage() {
                 />
               </div>
               <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
                 style={{ width: "auto", minWidth: 180 }}
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
@@ -371,7 +371,7 @@ export default function FeedbackPage() {
               <label className="text-xs text-faint flex items-center gap-2">ตั้งแต่ <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
               <label className="text-xs text-faint flex items-center gap-2">ถึง <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
               <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
                 style={{ width: "auto", minWidth: 140 }}
                 value={ratingFilter}
                 onChange={(e) => setRatingFilter(e.target.value)}
@@ -406,7 +406,7 @@ export default function FeedbackPage() {
                   <p className="text-sm font-semibold leading-snug flex-1 text-ink">
                     {f.title}
                   </p>
-                  <div className="flex gap-1.5 flex-shrink-0">
+                  <div className="flex gap-1.5 shrink-0">
                     {isManager && !f.isPublished && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
                     <span className={`badge ${statusColors[f.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, f.status)}</span>
                   </div>

@@ -38,7 +38,7 @@ export default function DashboardTeacher() {
   ];
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
@@ -83,7 +83,7 @@ export default function DashboardTeacher() {
             {loaded && mine!.recentActivities.length === 0 && <p className="px-5 py-4 text-xs text-faint">ยังไม่มีกิจกรรมที่คุณดูแล</p>}
             {mine?.recentActivities.map((a) => (
               <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FAFAFA]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#DBEAFE" }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#DBEAFE" }}>
                   <CalendarDays className="w-4 h-4" style={{ color: "#1D4ED8" }} aria-hidden />
                 </div>
                 <div className="flex-1 min-w-0">

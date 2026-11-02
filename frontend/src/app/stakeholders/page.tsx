@@ -20,7 +20,7 @@ import {
 } from "@/components/list-ui";
 
 const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 export default function StakeholdersPage() {
   useDocumentTitle("หน่วยงานคู่ความร่วมมือ");
@@ -86,7 +86,7 @@ export default function StakeholdersPage() {
   );
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
@@ -123,15 +123,15 @@ export default function StakeholdersPage() {
                 value={search}
                 onChange={setSearch}
               />
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเภทหน่วยงาน" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ประเภทหน่วยงาน" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
                 <option value="all">ประเภท: ทั้งหมด</option>
                 {types.map((type) => <option key={type} value={type}>{label(partnerTypeLabels, type)}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ประเทศ" value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ประเทศ" value={countryFilter} onChange={(event) => setCountryFilter(event.target.value)}>
                 <option value="all">ประเทศ: ทั้งหมด</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer !w-auto min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
               <button type="button" className="btn btn-outline disabled:opacity-40 disabled:cursor-not-allowed" disabled={chips.length === 0} onClick={() => {

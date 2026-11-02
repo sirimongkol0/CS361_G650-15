@@ -1,12 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 /* =============================================
    THAMMASAT UNIVERSITY COLOR SYSTEM (from the former Figma mock prototype)
    Primary: Crimson Red  #8B1538
    Accent:  Gold         #C8961E
    Base:    White + Black/Dark Gray
+   Each colour is defined once here, with shadcn/ui names; the Tailwind colour
+   names the pages use (crimson, gold, ink, faint, …) map onto it in @theme below.
    ============================================= */
 :root {
   --background:          #F7F8FA;
@@ -20,11 +20,14 @@
   --primary-muted:       #F5D6DE;
 
   --accent:              #C8961E;
+  --accent-hover:        #A87A18;
   --accent-light:        #FEF6E4;
   --accent-muted:        #F5E0A8;
+  --accent-dark:         #92670A;
 
   --muted:               #F3F4F6;
   --muted-foreground:    #656C79;
+  --subtle-foreground:   #4B5563;
   --border:              #E5E7EB;
   --ring:                #8B1538;
   --radius:              10px;
@@ -35,43 +38,128 @@
   --info:                #1D4ED8;
 }
 
-html {
-  height: 100%;
+@theme inline {
+  --color-ink: var(--foreground);
+  --color-mute: var(--subtle-foreground);
+  --color-faint: var(--muted-foreground);
+  --color-line: var(--border);
+  --color-paper: var(--background);
+  --color-soft: var(--muted);
+
+  --color-crimson: var(--primary);
+  --color-crimson-hover: var(--primary-hover);
+  --color-crimson-light: var(--primary-light);
+  --color-crimson-muted: var(--primary-muted);
+
+  --color-gold: var(--accent);
+  --color-gold-hover: var(--accent-hover);
+  --color-gold-light: var(--accent-light);
+  --color-gold-muted: var(--accent-muted);
+  --color-gold-dark: var(--accent-dark);
+
+  /* --font-sarabun comes from next/font (app/layout.tsx). Headings use it too:
+     the former display face (Plus Jakarta Sans) has no Thai glyphs. */
+  --font-sans: var(--font-sarabun), system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-display: var(--font-sarabun), system-ui, sans-serif;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border);
+  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.09), 0 0 0 1px var(--border);
+  --shadow-lightring: 0 0 0 1px var(--border);
+  --shadow-ring: 0 0 0 1px var(--border), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-body {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 15px;
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+@theme {
+  --radius-base: 10px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-fade-up: fade-up 0.3s ease-out both;
+  --animate-scale-in: scale-in 0.18s ease-out both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
 }
 
-main {
-  flex: 1;
-}
+/* Element defaults live in the base layer, so any utility on the element still
+   wins (unlayered CSS would beat every utility in Tailwind v4). */
+@layer base {
+  /* v4 changed the default border colour to currentcolor; keep v3's light grey. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
 
-/* Keyboard focus ring for buttons, links and nav items. :where() keeps it at zero
-   specificity, so inputs that draw their own focus style with outline-none keep it. */
-:where(:focus-visible) {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
+  /* v4 preflight strips the native file-picker button, leaving plain text;
+     give it a small outline-button look so it still reads as a button. */
+  ::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.125rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--muted);
+    color: var(--foreground);
+    font-weight: 500;
+    cursor: pointer;
+  }
 
-/* Placeholder text must still reach 4.5:1 (preflight's default gray-400 is 2.5:1) */
-input::placeholder,
-textarea::placeholder {
-  color: var(--muted-foreground);
-  opacity: 1;
-}
+  /* v4 preflight dropped cursor:pointer on buttons; keep v3's behaviour. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 
-::selection {
-  background: rgba(139, 21, 56, 0.12);
+  html {
+    height: 100%;
+  }
+
+  body {
+    font-family: var(--font-sarabun), system-ui, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
+  }
+
+  /* Keyboard focus ring for buttons, links and nav items. Inputs that draw their own
+     focus style use outline-hidden, a utility, which beats this base rule. */
+  :where(:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Placeholder text must still reach 4.5:1 (preflight's default gray-400 is 2.5:1) */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
+
+  ::selection {
+    background: rgba(139, 21, 56, 0.12);
+  }
 }
 
 /* ---- Scrollbars (from mock) ---- */
@@ -163,7 +251,7 @@ textarea::placeholder {
 
 /* ---- Small caps technical label (kept from previous UI, restyled) ---- */
 .mono-label {
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sarabun), system-ui, sans-serif;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;

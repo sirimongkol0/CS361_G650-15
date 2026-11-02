@@ -35,11 +35,11 @@ export default function ActivityDetailPage() {
   useDocumentTitle(activity.status === "success" ? activity.data.name : "กิจกรรม");
 
   if (activity.status === "loading") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดกิจกรรม…" /></div>;
+    return <div className="p-6 max-w-(--breakpoint-xl) mx-auto"><LoadingState title="กำลังโหลดกิจกรรม…" /></div>;
   }
   if (activity.status === "error") {
     return (
-      <div className="p-6 max-w-screen-xl mx-auto">
+      <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
         <ErrorState error={activity.error} onRetry={activity.retry} />
         <div className="mt-4 text-center"><Link href="/activities" className="text-sm font-semibold text-crimson hover:underline">กลับไปที่รายการกิจกรรม</Link></div>
       </div>
@@ -49,7 +49,7 @@ export default function ActivityDetailPage() {
   const item = activity.data;
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint print:hidden">
         <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
         <ChevronRight className="w-3 h-3" />

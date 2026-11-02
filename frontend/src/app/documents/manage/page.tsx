@@ -99,7 +99,7 @@ export default function ManageDocumentsPage() {
   const isStaff = role === "staff" || role === "admin";
 
   return (
-    <div className="mx-auto max-w-screen-xl p-6">
+    <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">

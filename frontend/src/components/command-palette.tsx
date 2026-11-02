@@ -63,7 +63,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   };
 
   return (
-    <div className="fixed inset-0 z-[70] animate-fade-in flex items-start justify-center bg-black/40 px-4 pt-[12vh]" onClick={onClose}>
+    <div className="fixed inset-0 z-70 animate-fade-in flex items-start justify-center bg-black/40 px-4 pt-[12vh]" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
@@ -75,7 +75,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           <Search className="w-4 h-4 text-faint" />
           <input
             ref={inputRef}
-            className="flex-1 py-3.5 text-sm text-ink outline-none placeholder:text-faint"
+            className="flex-1 py-3.5 text-sm text-ink outline-hidden placeholder:text-faint"
             placeholder="ค้นหาหน่วยงาน ข้อตกลง หรือกิจกรรม"
             value={query}
             onChange={(event) => { setQuery(event.target.value); setActive(0); }}
@@ -87,7 +87,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             }}
             aria-activedescendant={results[active] ? `palette-${active}` : undefined}
           />
-          <kbd className="rounded border border-line px-1.5 text-[11px] text-faint">Esc</kbd>
+          <kbd className="rounded-sm border border-line px-1.5 text-[11px] text-faint">Esc</kbd>
         </div>
         <div className="max-h-[50vh] overflow-y-auto p-2" role="listbox">
           {!entries && <div className="flex items-center gap-2 px-3 py-6 text-sm text-faint"><LoaderCircle className="w-4 h-4 animate-spin" />กำลังโหลด…</div>}
@@ -103,11 +103,11 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 type="button"
                 role="option"
                 aria-selected={index === active}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left ${index === active ? "bg-[#FDF2F5]" : "hover:bg-soft"}`}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left ${index === active ? "bg-crimson-light" : "hover:bg-soft"}`}
                 onMouseEnter={() => setActive(index)}
                 onClick={() => go(entry)}
               >
-                <Icon className="w-4 h-4 flex-shrink-0 text-crimson" />
+                <Icon className="w-4 h-4 shrink-0 text-crimson" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-ink"><Highlight text={entry.title} query={query} /></span>
                   {entry.subtitle && <span className="block truncate text-xs text-faint">{entry.subtitle}</span>}
@@ -139,14 +139,14 @@ export function ShortcutsHelp({ open, onClose }: { open: boolean; onClose: () =>
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[70] animate-fade-in flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-70 animate-fade-in flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label="คีย์ลัด" className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <h2 className="mb-4 font-bold text-ink">คีย์ลัด</h2>
         <dl className="space-y-2.5 text-sm">
           {SHORTCUTS.map(([keys, text]) => (
             <div key={keys} className="flex items-center justify-between gap-4">
               <dt className="text-mute">{text}</dt>
-              <dd><kbd className="rounded border border-line bg-paper px-2 py-0.5 text-xs text-ink whitespace-nowrap">{keys}</kbd></dd>
+              <dd><kbd className="rounded-sm border border-line bg-paper px-2 py-0.5 text-xs text-ink whitespace-nowrap">{keys}</kbd></dd>
             </div>
           ))}
         </dl>

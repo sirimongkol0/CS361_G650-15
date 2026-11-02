@@ -35,7 +35,7 @@ export default function DashboardStudent() {
   ];
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
@@ -53,7 +53,7 @@ export default function DashboardStudent() {
         style={{ background: "linear-gradient(135deg, #8B1538 0%, #B8243E 100%)", color: "#fff" }}
       >
         <div
-          className="rounded-full flex items-center justify-center w-14 h-14 flex-shrink-0"
+          className="rounded-full flex items-center justify-center w-14 h-14 shrink-0"
           style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
         >
           <GraduationCap className="w-7 h-7" />
@@ -100,7 +100,7 @@ export default function DashboardStudent() {
             )}
             {exchange.slice(0, 5).map((p) => (
               <div key={p.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#FAFAFA]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#F5D6DE" }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#F5D6DE" }}>
                   <GraduationCap className="w-5 h-5" style={{ color: "#8B1538" }} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -125,7 +125,7 @@ export default function DashboardStudent() {
               {upcoming.length === 0 && <p className="text-xs text-faint">ยังไม่มีกิจกรรมที่จะถึง</p>}
               {upcoming.slice(0, 5).map((a) => (
                 <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-3 p-2.5 rounded-lg bg-paper">
-                  <Clock className="w-4 h-4 flex-shrink-0" style={{ color: "#C8961E" }} />
+                  <Clock className="w-4 h-4 shrink-0" style={{ color: "#C8961E" }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate" style={{ color: "#111827" }}>{a.name}</div>
                     <div className="text-xs" style={{ color: "#656C79" }}>{a.date}{a.location && ` • ${a.location}`}</div>

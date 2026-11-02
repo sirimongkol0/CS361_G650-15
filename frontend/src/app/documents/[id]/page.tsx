@@ -26,16 +26,16 @@ export default function DocumentDetailPage() {
   useDocumentTitle(documents.status === "success" ? documents.data.title : "ข้อตกลง");
 
   if (documents.status === "loading") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดข้อตกลง…" /></div>;
+    return <div className="p-6 max-w-(--breakpoint-xl) mx-auto"><LoadingState title="กำลังโหลดข้อตกลง…" /></div>;
   }
   if (documents.status === "error") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><ErrorState error={documents.error} onRetry={documents.retry} /></div>;
+    return <div className="p-6 max-w-(--breakpoint-xl) mx-auto"><ErrorState error={documents.error} onRetry={documents.retry} /></div>;
   }
 
   const doc = documents.data;
 
 return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint">
         <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
         <ChevronRight className="w-3 h-3" />
@@ -95,7 +95,7 @@ return (
           <section className="bg-white rounded-base shadow-card p-5">
             <h2 className="font-bold mb-3 text-ink">ไฟล์ข้อตกลง</h2>
             <p className="text-sm text-faint mb-3">{doc.fileAvailabilityLabel}</p>
-            {doc.fileName && <p className="text-sm text-mute break-words mb-2">{doc.fileName}</p>}
+            {doc.fileName && <p className="text-sm text-mute wrap-break-word mb-2">{doc.fileName}</p>}
             {(doc.mimeType || doc.sizeBytes !== null) && <p className="text-xs text-faint mb-3">
               {[doc.mimeType, doc.sizeBytes !== null ? formatFileSize(doc.sizeBytes) : null].filter(Boolean).join(" • ")}
             </p>}
