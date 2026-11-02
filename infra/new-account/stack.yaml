@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CS361 low-cost layout for a fresh account: one EC2 instance (Docker, SSM, no
+  SSH) runs both the API and PostgreSQL, plus a private S3 bucket for files.
+  The frontend (Amplify) and Cognito are set up by deploy.sh, not here.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cs361
+    AllowedPattern: '[a-z0-9-]+'
+  InstanceType:
+    Type: String
+    Default: t3.micro
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  # --- Network: one VPC with one public subnet ------------------------------
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.40.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags: [{ Key: Name, Value: !Sub '${ProjectName}-vpc' }]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: { VpcId: !Ref Vpc, InternetGatewayId: !Ref InternetGateway }
+
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.40.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: !Sub '${ProjectName}-public' }]
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref Vpc }
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  SubnetRoutes:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref Subnet, RouteTableId: !Ref RouteTable }
+
+  # Amplify has no fixed source IP, so the API port stays open (same as V2).
+  # PostgreSQL is never published: it is reachable only on the Docker network.
+  # No SSH: the instance is managed through SSM Session Manager / Run Command.
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Backend API
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 8000, ToPort: 8000, CidrIp: 0.0.0.0/0 }
+
+  # --- Storage: uploaded PDFs and database backups ---------------------------
+  DocsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub '${ProjectName}-docs-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      VersioningConfiguration: { Status: Enabled }
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-backups
+            Status: Enabled
+            Prefix: backups/
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration: { NoncurrentDays: 7 }
+
+  # --- Backend instance ------------------------------------------------------
+  AppRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: app
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:DeleteObject]
+                Resource: !Sub '${DocsBucket.Arn}/*'
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt DocsBucket.Arn
+
+  AppInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { Roles: [!Ref AppRole] }
+
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref Subnet
+      SecurityGroupIds: [!Ref AppSecurityGroup]
+      IamInstanceProfile: !Ref AppInstanceProfile
+      MetadataOptions: { HttpTokens: required }
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs: { VolumeSize: 20, VolumeType: gp3, Encrypted: true }
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -euxo pipefail
+          # 1 GB of RAM runs PostgreSQL + the API, but docker build needs swap.
+          fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+          echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          dnf install -y docker
+          systemctl enable --now docker
+          mkdir -p /opt/cs361/pgdata
+      Tags: [{ Key: Name, Value: !Sub '${ProjectName}-backend' }]
+
+  # A public IPv4 address costs the same with or without an Elastic IP, and the
+  # Elastic IP keeps Amplify's API_PROXY_TARGET valid across stop/start.
+  AppAddress:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref AppInstance
+
+Outputs:
+  InstanceId:
+    Value: !Ref AppInstance
+  ApiBaseUrl:
+    Value: !Sub 'http://${AppAddress}:8000'
+  BucketName:
+    Value: !Ref DocsBucket
