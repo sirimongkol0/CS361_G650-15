@@ -35,9 +35,13 @@ const ENTITY_PATHS: Record<string, string> = {
   partners: "/stakeholders", documents: "/documents", activities: "/activities",
 };
 
+// Every action code the backend passes to audit.record (backend/routers/*.py).
 const ACTION_LABELS: Record<string, string> = {
-  create: "สร้าง", update: "แก้ไข", delete: "ลบ", approve: "อนุมัติ", approved: "อนุมัติ",
-  transition: "เปลี่ยนสถานะ", cstu_review: "ทบทวนขอบเขต", commit: "ยืนยันนำเข้า", rollback: "ย้อนการนำเข้า",
+  create: "สร้าง", update: "แก้ไข", delete: "ลบ",
+  approved: "อนุมัติ", transition: "เปลี่ยนสถานะ", cstu_review: "ตรวจความเกี่ยวข้องกับ CSTU",
+  publish: "เผยแพร่", unpublish: "หยุดเผยแพร่", upload: "อัปโหลดไฟล์", replace_file: "เปลี่ยนไฟล์",
+  renewal_decision: "พิจารณาต่ออายุ", commit_import: "ยืนยันนำเข้า", rollback_import: "ย้อนการนำเข้า",
+  change_password: "เปลี่ยนรหัสผ่าน",
 };
 
 const inputClass =
