@@ -37,13 +37,13 @@
 - `frontend/` Next.js App Router หน้าเว็บทุกหน้าอ่านข้อมูลจาก API ไม่มีข้อมูลตัวอย่างสำรองในตัว
 - `backend/` FastAPI + SQLAlchemy ตรวจสิทธิ์ที่ server ทุก endpoint (`auth.require_role`, `auth.optional_user`)
 - `database/` สคริปต์ฐานข้อมูล ส่วน `backend/migrate_v*.py` ปรับ schema ของฐานข้อมูลเดิมทีละเวอร์ชัน
-- `infra/` สคริปต์ตั้งค่า Cognito และฐานเดโมบน RDS
+- `infra/` สคริปต์ตั้งค่า Cognito ฐานเดโมบน RDS และ deploy ลงบัญชีใหม่ (`infra/new-account/`)
 - `scripts/` smoke test และสคริปต์เตรียมข้อมูลทดสอบ
 
-เว็บที่ deploy แล้ว: **https://main.d5kr2senr2j9o.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต)
-หน้าเว็บอยู่บน AWS Amplify (push เข้า `main` แล้วอัปเดตเอง) ส่วน API อยู่บน EC2 ฐานข้อมูลอยู่บน RDS และไฟล์อยู่บน S3
-ดูรายละเอียดที่ [สถาปัตยกรรมระบบ V3](docs/architecture/v3-architecture.md)
-และ [การ deploy](docs/decisions/v2-deployment-amplify-ec2.md)
+เว็บที่ deploy แล้ว: **https://main.d1vzv59tpxqtoa.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต, AWS Sydney)
+หน้าเว็บอยู่บน AWS Amplify (push เข้า `main` แล้วอัปเดตเอง) ส่วน API และ PostgreSQL อยู่ใน Docker บน EC2 เครื่องเดียวกัน
+และไฟล์กับไฟล์สำรองอยู่บน S3
+ดูรายละเอียดที่ [สถาปัตยกรรมระบบ V4](docs/architecture/v4-architecture.md)
 
 ## สิทธิ์ตามบทบาท
 
@@ -151,11 +151,11 @@ cd frontend && npm run lint && npm run test:display && npm run build
 
 ## เอกสาร
 
-- [สถาปัตยกรรมระบบ V3](docs/architecture/v3-architecture.md) · [V2](docs/architecture/v2-architecture.md)
+- [สถาปัตยกรรมระบบ V4](docs/architecture/v4-architecture.md) · [V3](docs/architecture/v3-architecture.md) · [V2](docs/architecture/v2-architecture.md)
 - [สิทธิ์ตามบทบาท](docs/decisions/v3-role-permissions.md)
 - [ขอบเขตหลักสูตร CSTU และแผนพัฒนา](docs/decisions/cstu-program-scope.md)
 - [คู่มือคำศัพท์และน้ำเสียงหน้าเว็บ](docs/ui-writing-guide-th.md)
-- [การ deploy: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
+- [การ deploy V4: Amplify + EC2 (API + PostgreSQL) + S3](docs/architecture/v4-architecture.md#การ-deploy-v4) · [การ deploy V2–V3: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
 - [คู่มือติดตั้ง](docs/setup/README-th.md) · [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
 - [สัญญา field ของ API](docs/api/v2-field-contract.md)
 - [เดโมข้อมูลสมมติ](docs/demo-fictional.md) · [เดโมบน S3](docs/demo-s3.md) · [ฐานเดโมบน RDS](docs/demo-rds.md)
