@@ -21,6 +21,7 @@ import {
 import { downloadFile } from "@/lib/download-file";
 import { useConfirm } from "@/components/confirm-dialog";
 import { StepProgress } from "@/components/step-progress";
+import { importStatusLabels } from "@/lib/labels";
 
 type ImportKind = "feedback" | "outcome";
 
@@ -54,13 +55,7 @@ interface ImportBatch {
   rolledBackAt: string | null;
 }
 
-const statusLabels: Record<ImportStatus, string> = {
-  processing: "กำลังตรวจสอบไฟล์",
-  previewed: "ตรวจสอบแล้ว / รอยืนยัน",
-  committed: "นำเข้าแล้ว",
-  rolled_back: "ยกเลิกแล้ว",
-  failed: "ประมวลผลไม่สำเร็จ",
-};
+const statusLabels: Record<ImportStatus, string> = importStatusLabels;
 
 /* Stages of an import, shown for the selected batch: after upload the batch is checked
    (ตรวจข้อมูล) until someone confirms it; a rolled-back or failed batch stops there. */
@@ -224,9 +219,9 @@ export default function ImportSection() {
     if (
       !selected ||
       !(await confirm({
-        title: `ยกเลิกชุดนำเข้า “${selected.fileName}” ใช่ไหม`,
+        title: `ย้อนการนำเข้า “${selected.fileName}” ใช่ไหม`,
         description: "หากนำเข้าแล้ว ระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้",
-        action: "ยกเลิกชุดนี้",
+        action: "ย้อนการนำเข้า",
         destructive: true,
       }))
     ) {
@@ -244,7 +239,7 @@ export default function ImportSection() {
       setSelected(updated);
       await loadHistory();
 
-      setNotice("ยกเลิกชุดนำเข้าเรียบร้อยแล้ว");
+      setNotice(`ย้อนการนำเข้า “${selected.fileName}” แล้ว`);
     } catch (error) {
       setPageError(errorText(error));
     } finally {
@@ -514,7 +509,7 @@ export default function ImportSection() {
                       onClick={() => void rollback()}
                     >
                       <XCircle className="mr-1 inline h-4 w-4" />
-                      ยกเลิกชุดนี้
+                      ย้อนการนำเข้า
                     </button>
                   )}
                 </div>
@@ -592,7 +587,7 @@ export default function ImportSection() {
                         {selected.invalidRows > 0 && (
                           <li>ข้าม {selected.invalidRows} แถวที่ไม่ผ่าน ตามเหตุผลด้านบน</li>
                         )}
-                        <li>ยกเลิกชุดนี้ได้ภายหลัง โดยระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้</li>
+                        <li>ย้อนการนำเข้าได้ภายหลัง โดยระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้</li>
                       </ul>
                       {selected.validRows > 0 ? (
                         <button

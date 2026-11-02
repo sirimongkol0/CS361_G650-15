@@ -13,14 +13,14 @@ import { useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Pagination } from "@/components/list-ui";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { fieldLabel } from "@/lib/field-labels";
+import { fieldLabel, valueLabels } from "@/lib/field-labels";
 
 const PAGE_SIZE = 25;
 const MANAGER_ROLES = ["staff", "admin"];
 
 const ENTITY_LABELS: Record<string, string> = {
   partners: "หน่วยงาน",
-  documents: "ข้อตกลง/เอกสาร",
+  documents: "ข้อตกลง",
   activities: "กิจกรรม",
   exchange_students: "นักศึกษาแลกเปลี่ยน",
   feedbacks: "ความคิดเห็น",
@@ -37,7 +37,7 @@ const ENTITY_PATHS: Record<string, string> = {
 
 const ACTION_LABELS: Record<string, string> = {
   create: "สร้าง", update: "แก้ไข", delete: "ลบ", approve: "อนุมัติ", approved: "อนุมัติ",
-  transition: "เปลี่ยนสถานะ", cstu_review: "ทบทวนขอบเขต", commit: "ยืนยันนำเข้า", rollback: "ยกเลิกนำเข้า",
+  transition: "เปลี่ยนสถานะ", cstu_review: "ทบทวนขอบเขต", commit: "ยืนยันนำเข้า", rollback: "ย้อนการนำเข้า",
 };
 
 const inputClass =
@@ -45,10 +45,12 @@ const inputClass =
 
 const isEmpty = (value: unknown) => value === null || value === undefined || value === "";
 
-/** A before/after value: "—" when empty, ใช่/ไม่ใช่ for flags, long JSON folded away. */
-function Value({ value }: { value: unknown }) {
+/** A before/after value: "—" when empty, ใช่/ไม่ใช่ for flags, Thai names for stored codes
+ *  (the code stays in the tooltip), long JSON folded away. */
+function Value({ value, labels }: { value: unknown; labels?: Record<string, string> }) {
   if (isEmpty(value)) return <>—</>;
   if (typeof value === "boolean") return <>{value ? "ใช่" : "ไม่ใช่"}</>;
+  if (typeof value === "string" && labels?.[value]) return <span title={value}>{labels[value]}</span>;
   if (typeof value !== "object") return <>{String(value)}</>;
   const text = JSON.stringify(value);
   if (text.length <= 80) return <>{text}</>;
@@ -75,7 +77,7 @@ function changedFields(row: AuditLogRow) {
 }
 
 function Changes({ row }: { row: AuditLogRow }) {
-  const fields = changedFields(row);
+  const fields = changedFields(row).map((field) => ({ ...field, labels: valueLabels(row.entity, field.key) }));
   if (fields.length === 0) return <span className="text-xs text-faint">ไม่มีค่าที่เปลี่ยน</span>;
   return (
     <details>
@@ -91,11 +93,11 @@ function Changes({ row }: { row: AuditLogRow }) {
               <th scope="row" className="py-1 pr-3 text-left font-medium text-mute" title={field.key}>{fieldLabel(field.key)}</th>
               <td className="py-1 pr-3 wrap-anywhere text-[#b91c1c]">
                 {!isEmpty(field.before) && isEmpty(field.after) && <ChangeTag>ลบ</ChangeTag>}
-                <Value value={field.before} />
+                <Value value={field.before} labels={field.labels} />
               </td>
               <td className="py-1 wrap-anywhere text-[#15803d]">
                 {isEmpty(field.before) && !isEmpty(field.after) && <ChangeTag>เพิ่ม</ChangeTag>}
-                <Value value={field.after} />
+                <Value value={field.after} labels={field.labels} />
               </td>
             </tr>
           ))}

@@ -1,3 +1,9 @@
+import {
+  activityTypeLabels, cstuStatusLabels, documentStatusLabels, documentTypeLabels, feedbackSourceLabels,
+  feedbackStatusLabels, importStatusLabels, improvementStatusLabels, partnerTypeLabels, scopeLevelLabels,
+} from "@/lib/labels";
+import { ROLES } from "@/lib/role-context";
+
 /* Thai names for the database columns that appear in audit-log snapshots
    (backend audit.snapshot uses the column keys). A key missing here shows as-is. */
 export const FIELD_LABELS: Record<string, string> = {
@@ -110,7 +116,7 @@ export const FIELD_LABELS: Record<string, string> = {
   errors: "ข้อผิดพลาด",
   preview_data: "ตัวอย่างข้อมูล",
   committed_at: "วันที่ยืนยันนำเข้า",
-  rolled_back_at: "วันที่ยกเลิกนำเข้า",
+  rolled_back_at: "วันที่ย้อนการนำเข้า",
 
   // users
   email: "อีเมล",
@@ -120,3 +126,25 @@ export const FIELD_LABELS: Record<string, string> = {
 };
 
 export const fieldLabel = (key: string) => FIELD_LABELS[key] ?? key;
+
+const ROLE_LABELS: Record<string, string> = Object.fromEntries(ROLES.map((role) => [role.id, role.label]));
+
+/* Thai names for stored codes, by "entity.field" (or "*.field" for any entity). Free-text
+   values (exchange and activity statuses are already Thai) are not listed. */
+const VALUE_LABELS: Record<string, Record<string, string>> = {
+  "documents.status": documentStatusLabels,
+  "feedbacks.status": feedbackStatusLabels,
+  "improvements.status": improvementStatusLabels,
+  "import_batches.status": importStatusLabels,
+  "partners.type": partnerTypeLabels,
+  "feedbacks.source": feedbackSourceLabels,
+  "users.role": ROLE_LABELS,
+  "*.cstu_status": cstuStatusLabels,
+  "*.doc_type": documentTypeLabels,
+  "*.scope_level": scopeLevelLabels,
+  "*.activity_type": activityTypeLabels,
+};
+
+/** The code → Thai map for one field of one audited entity, if the field holds codes. */
+export const valueLabels = (entity: string, key: string): Record<string, string> | undefined =>
+  VALUE_LABELS[`${entity}.${key}`] ?? VALUE_LABELS[`*.${key}`];

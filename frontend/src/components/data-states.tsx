@@ -15,14 +15,14 @@ const container = (compact: boolean) =>
 
 export function LoadingState({
   title = "กำลังโหลด…",
-  message = "กรุณารอสักครู่",
+  message,
   compact = false,
 }: StateProps) {
   return (
     <div className={container(compact)} role="status" aria-live="polite">
       <LoaderCircle className="mb-3 h-7 w-7 animate-spin text-crimson" />
       <h2 className="font-semibold text-ink">{title}</h2>
-      <p className="mt-1 text-sm text-faint">{message}</p>
+      {message && <p className="mt-1 text-sm text-faint">{message}</p>}
     </div>
   );
 }

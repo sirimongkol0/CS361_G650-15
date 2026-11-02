@@ -119,6 +119,16 @@ export const documentStatusLabels: Record<string, string> = {
 };
 
 /* V3-3 CSTU relevance review; only "keep" can appear publicly. */
+/* Import batch status (API field status). Rolling back is "ย้อนการนำเข้า":
+   the guide keeps "ยกเลิก" for agreements and for closing dialogs. */
+export const importStatusLabels: Record<string, string> = {
+  processing: "กำลังตรวจสอบไฟล์",
+  previewed: "รอยืนยัน",
+  committed: "นำเข้าแล้ว",
+  rolled_back: "ย้อนการนำเข้าแล้ว",
+  failed: "ประมวลผลไม่สำเร็จ",
+};
+
 export const cstuStatusLabels: Record<string, string> = {
   keep: "เกี่ยวข้องกับ CSTU",
   review: "รอตรวจ",
