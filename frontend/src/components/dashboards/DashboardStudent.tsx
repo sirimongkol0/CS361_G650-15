@@ -4,17 +4,11 @@ import Link from "next/link";
 import { CalendarDays, GraduationCap, CheckCircle2, Clock, ChevronRight, Bell, MessageSquare } from "lucide-react";
 import { formatThaiPeriod, loadActivities, useApiData, type ActivityView } from "@/lib/api";
 import { shown, upcomingActivities, useMyInsights } from "@/lib/dashboard-data";
+import { StatusBadge } from "@/components/status-badge";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
 const contentCard = "content-card bg-white rounded-base shadow-card";
-
-const exchangeStatusColors: Record<string, string> = {
-  "เสร็จสิ้น": "badge-green",
-  "กำลังดำเนินการ": "badge-blue",
-  "กำลังสมัคร": "badge-gold",
-  "วางแผน": "badge-purple",
-};
 
 export default function DashboardStudent() {
   // Upcoming activities are the published list; exchange and feedback are this student's own (GET /insights/me).
@@ -107,7 +101,7 @@ export default function DashboardStudent() {
                   <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{p.program ?? p.name}</div>
                   <div className="text-xs mt-0.5" style={{ color: "#656C79" }}>{p.toOrganization ?? "—"} • {formatThaiPeriod(p.startDate, p.endDate)}</div>
                 </div>
-                {p.status && <span className={`badge ${exchangeStatusColors[p.status] ?? "badge-gray"}`}>{p.status}</span>}
+                {p.status && <StatusBadge kind="exchange" status={p.status}>{p.status}</StatusBadge>}
               </div>
             ))}
           </div>

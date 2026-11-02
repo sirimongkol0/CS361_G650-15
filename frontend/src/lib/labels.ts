@@ -133,6 +133,8 @@ export const statusTones = {
   document: { draft: "gray", approved: "blue", active: "green", expiring: "gold", expired: "gray", cancelled: "gray" },
   cstu: { keep: "green", review: "gold", out_of_scope: "gray" },
   exchange: { "เสร็จสิ้น": "green", "กำลังดำเนินการ": "blue", "กำลังสมัคร": "gold", "วางแผน": "purple" },
+  feedback: { reviewed: "green", pending: "gold" },
+  improvement: { planned: "gray", in_progress: "gold", done: "green" },
 } satisfies Record<string, Record<string, StatusTone>>;
 
 export type StatusKind = keyof typeof statusTones;

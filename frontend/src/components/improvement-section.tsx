@@ -13,14 +13,9 @@ import {
 import { improvementStatusLabels, label } from "@/lib/labels";
 import { DateInput, Field, FormError, inputCls, orNull, useAction } from "@/components/form-ui";
 import { ErrorState, LoadingState } from "@/components/data-states";
+import { StatusBadge } from "@/components/status-badge";
 
 const STATUSES: ImprovementStatus[] = ["planned", "in_progress", "done"];
-
-export const improvementStatusColors: Record<ImprovementStatus, string> = {
-  planned: "badge-gray",
-  in_progress: "badge-gold",
-  done: "badge-green",
-};
 
 function ImprovementForm({ initial, feedbackId, options, onDone, onCancel }: {
   initial?: Improvement;
@@ -152,7 +147,7 @@ export function ImprovementSection({ feedbackId, canDelete, onChanged }: {
               <article key={row.id} className="rounded-lg border border-line p-3">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold text-ink">{row.title}</p>
-                  <span className={`badge ${improvementStatusColors[row.status]}`}>{label(improvementStatusLabels, row.status)}</span>
+                  <StatusBadge kind="improvement" status={row.status}>{label(improvementStatusLabels, row.status)}</StatusBadge>
                 </div>
                 {row.description && <p className="mt-1 text-sm text-mute whitespace-pre-line">{row.description}</p>}
                 <p className="mt-1 text-xs text-faint">

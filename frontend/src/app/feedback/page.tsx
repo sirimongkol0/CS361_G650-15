@@ -17,6 +17,7 @@ import { Field, FormError, Notice, inputCls, useAction } from "@/components/form
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 import { feedbackStatusLabels, label } from "@/lib/labels";
 import { ImprovementSection } from "@/components/improvement-section";
+import { StatusBadge } from "@/components/status-badge";
 
 const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
@@ -41,11 +42,6 @@ const sourceColors: Record<string, string> = {
   "หน่วยงานคู่ความร่วมมือ": "badge-crimson",
   "ระบบสหกิจศึกษา": "badge-gold",
   "นักศึกษา": "badge-green",
-};
-
-const statusColors: Record<string, string> = {
-  reviewed: "badge-green",
-  pending: "badge-gold",
 };
 
 type ContextType = "partner" | "document" | "activity" | "exchange";
@@ -408,7 +404,7 @@ export default function FeedbackPage() {
                   </p>
                   <div className="flex gap-1.5 shrink-0">
                     {isManager && !f.isPublished && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
-                    <span className={`badge ${statusColors[f.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, f.status)}</span>
+                    <StatusBadge kind="feedback" status={f.status}>{label(feedbackStatusLabels, f.status)}</StatusBadge>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -441,7 +437,7 @@ export default function FeedbackPage() {
                     {selected.title}
                   </h2>
                   <div className="flex gap-1.5">
-                    <span className={`badge ${statusColors[selected.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, selected.status)}</span>
+                    <StatusBadge kind="feedback" status={selected.status}>{label(feedbackStatusLabels, selected.status)}</StatusBadge>
                     {isManager && (
                       selected.isPublished
                         ? <span className="badge badge-green">เผยแพร่แล้ว</span>

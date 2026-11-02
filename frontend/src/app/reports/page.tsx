@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import { beYear, monthLabel } from "@/lib/dashboard-data";
 import { documentStatusLabels, feedbackStatusLabels, improvementStatusLabels, label, partnerTypeLabels } from "@/lib/labels";
-import { improvementStatusColors } from "@/components/improvement-section";
+import { StatusBadge } from "@/components/status-badge";
 import { downloadFile } from "@/lib/download-file";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
@@ -141,7 +141,7 @@ function ImprovementsReport({ improvements, period }: { improvements: InsightsSu
                 <tr key={row.id} className="border-t border-line align-top break-inside-avoid">
                   <td className="py-2 pr-3 text-mute">{row.feedbacks.map((f) => f.title).join(", ") || "—"}</td>
                   <td className="py-2 pr-3 text-ink">{row.title}</td>
-                  <td className="py-2 pr-3"><span className={`badge ${improvementStatusColors[row.status]}`}>{label(improvementStatusLabels, row.status)}</span></td>
+                  <td className="py-2 pr-3"><StatusBadge kind="improvement" status={row.status}>{label(improvementStatusLabels, row.status)}</StatusBadge></td>
                   <td className="py-2 pr-3 whitespace-nowrap">{row.actionDate ? formatThaiDate(row.actionDate) : "—"}</td>
                   <td className="py-2 text-mute">{row.responsible || "—"}</td>
                 </tr>
