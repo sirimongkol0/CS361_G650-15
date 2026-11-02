@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Building2, FileText, CalendarDays, Target, AlertTriangle, Plus } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { formatThaiDate, insightsQuery, loadActivities, useApiData, type ActivityView } from "@/lib/api";
 import {
   RECENT_YEARS, THIS_YEAR, beYear, countFor, daysUntil, monthlyFromSummary, recentActivities, shown, sumCounts,
@@ -91,15 +92,15 @@ export default function DashboardStaff() {
               <p className="text-xs mt-0.5" style={{ color: "#656C79" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#656C79" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="กิจกรรม" fill="#8B1538" radius={[4, 4, 0, 0]} />
+          <ChartContainer config={{ กิจกรรม: { label: "กิจกรรม" } }} className="aspect-auto h-[200px] w-full">
+            <BarChart accessibilityLayer data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="กิจกรรม" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
 
         {/* Expiring docs */}

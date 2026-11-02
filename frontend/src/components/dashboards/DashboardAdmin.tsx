@@ -8,8 +8,9 @@ import {
 } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid,
 } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { label, partnerTypeLabels } from "@/lib/labels";
 import { insightsQuery } from "@/lib/api";
 import {
@@ -98,36 +99,36 @@ export default function DashboardAdmin() {
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>จำนวนความร่วมมือรายปี</h2>
           <p className="text-xs mb-4" style={{ color: "#656C79" }}>นับจากปีที่ข้อตกลงเริ่มมีผล</p>
-          <ResponsiveContainer width="100%" height={170}>
-            <AreaChart data={adminYearlyTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+          <ChartContainer config={{ ความร่วมมือ: { label: "ความร่วมมือ" } }} className="aspect-auto h-[170px] w-full">
+            <AreaChart accessibilityLayer data={adminYearlyTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <defs>
                 <linearGradient id="gCollab" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8B1538" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#8B1538" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
-              <Area type="monotone" dataKey="ความร่วมมือ" stroke="#8B1538" fill="url(#gCollab)" strokeWidth={2.5} dot={{ fill: "#8B1538", r: 3 }} />
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="year" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area type="monotone" dataKey="ความร่วมมือ" stroke="var(--chart-1)" fill="url(#gCollab)" strokeWidth={2.5} dot={{ fill: "var(--chart-1)", r: 3 }} />
             </AreaChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
 
         {/* Monthly activities */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>กิจกรรมรายเดือน</h2>
           <p className="text-xs mb-4" style={{ color: "#656C79" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
-          <ResponsiveContainer width="100%" height={170}>
-            <BarChart data={adminMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#656C79" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="กิจกรรม" fill="#8B1538" radius={[3, 3, 0, 0]} />
+          <ChartContainer config={{ กิจกรรม: { label: "กิจกรรม" } }} className="aspect-auto h-[170px] w-full">
+            <BarChart accessibilityLayer data={adminMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="กิจกรรม" fill="var(--chart-1)" radius={[3, 3, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </div>
 
         {/* Stakeholder types: one labelled bar per type, largest first */}

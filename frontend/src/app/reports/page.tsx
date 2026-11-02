@@ -9,8 +9,9 @@ import {
   Printer, FileText, AlertTriangle, Building2, CalendarDays, MessageSquare, Target,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   formatThaiDate, insightsQuery, loadInsightsSummary, useApiData, useApiResource, type InsightsSummary, type LabelledCount,
 } from "@/lib/api";
@@ -28,12 +29,13 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { KpiCard, type KpiTone } from "@/components/kpi-card";
 
 const REPORT_ROLES = ["staff", "admin"];
-const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
-const tooltipStyle = { border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 };
+// TU chart palette (--chart-1..5 in globals.css), then grey for any further types.
+const PIE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "#656C79"];
 const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
 const selectClass =
   "cursor-pointer rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
-const axis = { tick: { fontSize: 11, fill: "#94a3b8" }, tickLine: false, axisLine: false } as const;
+// Tick colour comes from ChartContainer (muted foreground, AA on white).
+const axis = { tick: { fontSize: 11 }, tickLine: false, axisLine: false } as const;
 
 const THIS_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => THIS_YEAR - i);
@@ -227,15 +229,15 @@ function Report({ summary, previous, year, onChanged }: {
           <p className="text-xs mb-4 text-faint">{period} • ตามวันที่จัดกิจกรรม</p>
           <div style={{ height: 220 }}>
             {summary.activitiesByMonth.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <ChartContainer config={{ กิจกรรม: { label: "กิจกรรม" } }} className="aspect-auto h-full w-full">
+                <BarChart accessibilityLayer data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis dataKey="month" interval={0} {...axis} />
                   <YAxis allowDecimals={false} {...axis} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="กิจกรรม" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="กิจกรรม" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             ) : <EmptyChart />}
           </div>
         </section>
@@ -245,15 +247,16 @@ function Report({ summary, previous, year, onChanged }: {
           <p className="text-xs mb-2 text-faint">หน่วยงานที่ยังไม่ถูกลบ</p>
           <div style={{ height: 220 }}>
             {partnerTypes.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={partnerTypes} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
+              <ChartContainer config={{}} className="aspect-auto h-full w-full">
+                <PieChart accessibilityLayer>
+                  <Pie data={partnerTypes} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" nameKey="name" paddingAngle={3}>
                     {partnerTypes.map((entry, i) => <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  {/* Legend text in the body colour: recharts colours it like the slice, and gold text is 2.7:1. */}
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} formatter={(value) => <span className="text-mute">{value}</span>} />
+                  <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
                 </PieChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             ) : <EmptyChart />}
           </div>
         </section>
