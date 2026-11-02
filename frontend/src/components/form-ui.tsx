@@ -4,7 +4,7 @@
 // and an error line. Every form submits through the API helpers in lib/api.ts,
 // so the backend's role checks and Thai error messages apply everywhere.
 
-import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { AlertCircle, CalendarDays, CheckCircle2, X } from "lucide-react";
 import { apiErrorMessage, formatThaiDate } from "@/lib/api";
 
@@ -45,15 +45,22 @@ export function Dialog({
   );
 }
 
-/** Labelled control; the hint sits outside the <label> so it is not part of the field's name. */
+/** Labelled control; the hint sits outside the <label> so it is not part of the field's name,
+ *  and is linked to the control with aria-describedby so screen readers still read it. */
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  const hintId = useId();
+  const control = hint && isValidElement<{ "aria-describedby"?: string }>(children)
+    ? cloneElement(children, {
+        "aria-describedby": [children.props["aria-describedby"], hintId].filter(Boolean).join(" "),
+      })
+    : children;
   return (
     <div className="mb-3">
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-ink">{label}</span>
-        {children}
+        {control}
       </label>
-      {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
+      {hint && <p id={hintId} className="mt-1 text-xs text-faint">{hint}</p>}
     </div>
   );
 }
