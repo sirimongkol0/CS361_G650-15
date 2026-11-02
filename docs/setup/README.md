@@ -8,6 +8,9 @@ For disposable sample data, migration and browser checks, follow the
 - Docker Engine or Docker Desktop with Docker Compose v2 (recommended), or
 - Python 3.11+, Node.js 22+, and PostgreSQL 16+ for running processes manually.
 
+Supported browsers: Chrome or Edge 111+, Safari 16.4+, Firefox 128+ (the floor set by
+Next.js 16 and Tailwind CSS v4).
+
 ## Option A — clean-checkout Docker Compose
 
 No cloud database, AWS credentials or local language runtimes are required.
