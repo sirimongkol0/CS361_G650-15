@@ -110,8 +110,7 @@ export default function LoginPage() {
             </label>
             <input
               id="login-email"
-              className="w-full px-3 py-2 text-sm rounded-md border outline-hidden focus:border-crimson"
-              style={{ borderColor: 'var(--border)' }}
+              className="w-full px-3 py-2 text-sm rounded-md border border-line outline-hidden focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
               type="email"
               autoComplete="username"
               placeholder="email@tu.ac.th"
@@ -129,8 +128,7 @@ export default function LoginPage() {
             <div className="relative">
               <input
                 id="login-password"
-                className="w-full px-3 py-2 pr-10 text-sm rounded-md border outline-hidden focus:border-crimson"
-                style={{ borderColor: 'var(--border)' }}
+                className="w-full px-3 py-2 pr-10 text-sm rounded-md border border-line outline-hidden focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 placeholder="••••••••"
