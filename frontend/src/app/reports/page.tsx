@@ -104,14 +104,14 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
   }
   const feedback = sum(summary.feedbackByStatus);
   if (feedback) {
-    sentences.push(`ได้รับ Feedback ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
+    sentences.push(`ได้รับความคิดเห็น ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
   }
   const improvements = summary.improvements;
   const doneCount = improvements.byStatus.find((r) => r.key === "done")?.count ?? 0;
   const ongoing = improvements.items.length - doneCount;
   if (improvements.items.length) {
-    sentences.push(`หลักสูตรนำ Feedback ไปปรับปรุงแล้วเสร็จ ${doneCount} เรื่อง${ongoing ? ` และอยู่ระหว่างวางแผนหรือดำเนินการอีก ${ongoing} เรื่อง` : ""}`
-      + (feedback ? ` โดย Feedback ${improvements.feedbackWithImprovement} จาก ${improvements.feedbackTotal} รายการในปีนี้นำไปสู่การปรับปรุงที่เสร็จแล้ว` : ""));
+    sentences.push(`หลักสูตรนำความคิดเห็นไปปรับปรุงแล้วเสร็จ ${doneCount} เรื่อง${ongoing ? ` และอยู่ระหว่างวางแผนหรือดำเนินการอีก ${ongoing} เรื่อง` : ""}`
+      + (feedback ? ` โดยความคิดเห็น ${improvements.feedbackWithImprovement} จาก ${improvements.feedbackTotal} รายการในปีนี้นำไปสู่การปรับปรุงที่เสร็จแล้ว` : ""));
   }
   if (partners) sentences.push(`หน่วยงานที่มีความร่วมมือมากที่สุดคือ ${summary.topPartners[0].name}`);
   if (summary.dormantPartners.length) {
@@ -124,16 +124,16 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
 function ImprovementsReport({ improvements, period }: { improvements: InsightsSummary["improvements"]; period: string }) {
   return (
     <section className={`${card} mt-5`}>
-      <h2 className="font-bold mb-1 text-ink">การปรับปรุงจาก Feedback</h2>
+      <h2 className="font-bold mb-1 text-ink">การปรับปรุงจากความคิดเห็น</h2>
       <p className="text-xs mb-4 text-faint">
-        {period} • Feedback ที่นำไปสู่การปรับปรุงที่เสร็จแล้ว {improvements.feedbackWithImprovement} จาก {improvements.feedbackTotal} รายการ
+        {period} • ความคิดเห็นที่นำไปสู่การปรับปรุงที่เสร็จแล้ว {improvements.feedbackWithImprovement} จาก {improvements.feedbackTotal} รายการ
       </p>
       {improvements.items.length === 0 ? <p className="text-sm text-faint">ยังไม่มีการบันทึกการปรับปรุงในช่วงที่เลือก</p> : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-faint">
-                <th className="pb-2 font-medium">Feedback</th>
+                <th className="pb-2 font-medium">ความคิดเห็น</th>
                 <th className="pb-2 font-medium">การปรับปรุง</th>
                 <th className="pb-2 font-medium">สถานะ</th>
                 <th className="pb-2 font-medium">วันที่</th>
@@ -200,7 +200,7 @@ function Report({ summary, previous, year, onChanged }: {
     { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, tone: "green",
       change: change(sum(summary.outcomesByType), previous && sum(previous.outcomesByType)) },
     {
-      label: `Feedback (${period})`,
+      label: `ความคิดเห็น (${period})`,
       value: `${sum(summary.feedbackByStatus)}${summary.feedbackAverageRating == null ? "" : ` • ${summary.feedbackAverageRating.toFixed(1)}★`}`,
       icon: MessageSquare, tone: "purple",
       change: change(sum(summary.feedbackByStatus), previous && sum(previous.feedbackByStatus)),
@@ -282,7 +282,7 @@ function Report({ summary, previous, year, onChanged }: {
         </section>
 
         <section className={card}>
-          <h2 className="font-bold mb-4 text-ink">Feedback</h2>
+          <h2 className="font-bold mb-4 text-ink">ความคิดเห็น</h2>
           <div className="grid gap-5 sm:grid-cols-2">
             <CountList title="ตามแหล่งที่มา" rows={summary.feedbackBySource} />
             <CountList title="ตามประเภทผู้ส่ง" rows={summary.feedbackByRespondentType} />
@@ -315,7 +315,7 @@ function Report({ summary, previous, year, onChanged }: {
       <section className={`${card} mt-5`}>
         <h2 className="font-bold mb-1 text-ink">หน่วยงานที่ไม่มีความเคลื่อนไหว</h2>
         <p className="text-xs mb-4 text-faint">
-          ข้อตกลงยังมีผล แต่ไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ใน {summary.dormantWithinDays} วันที่ผ่านมา (ข้อมูล ณ วันนี้)
+          ข้อตกลงยังมีผล แต่ไม่มีกิจกรรม ผลลัพธ์ หรือความคิดเห็นใน {summary.dormantWithinDays} วันที่ผ่านมา (ข้อมูล ณ วันนี้)
         </p>
         {summary.dormantPartners.length === 0 ? <p className="text-sm text-faint">ทุกหน่วยงานที่มีข้อตกลงมีความเคลื่อนไหวในปีที่ผ่านมา</p> : (
           <ul className="divide-y divide-line">

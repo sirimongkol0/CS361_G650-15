@@ -25,7 +25,7 @@ export default function DashboardStudent() {
     { icon: CalendarDays, label: "กิจกรรมที่จะถึง", value: String(upcoming.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CheckCircle2, label: "เปิดรับสมัคร", value: String(openActivities.length), color: "#15803D", bg: "#DCFCE7" },
     { icon: GraduationCap, label: "โครงการแลกเปลี่ยนของฉัน", value: shown(loaded, exchange.length), color: "#8B1538", bg: "#F5D6DE" },
-    { icon: MessageSquare, label: "Feedback ที่ส่งแล้ว", value: shown(loaded, mine?.counts.feedbackSubmitted ?? 0), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: MessageSquare, label: "ความคิดเห็นที่ส่งแล้ว", value: shown(loaded, mine?.counts.feedbackSubmitted ?? 0), color: "#1D4ED8", bg: "#DBEAFE" },
   ];
 
   return (

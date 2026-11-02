@@ -220,7 +220,7 @@ export default function ExportSection() {
         {renderIdFilter("respondent_type_id")}
         {renderIdFilter("outcome_type_id")}
         <label className="grid gap-1 text-xs text-faint">
-          สถานะ Feedback
+          สถานะความคิดเห็น
           <select
             className={control}
             value={filters.status}
@@ -249,7 +249,7 @@ export default function ExportSection() {
           onClick={() => void exportCsv("feedback")}
         >
           <Download className="mr-1 inline h-4 w-4" />
-          Feedback CSV
+          ความคิดเห็น CSV
         </button>
         <button
           type="button"

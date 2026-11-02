@@ -54,7 +54,7 @@ export default function DashboardAdmin() {
     { icon: TrendingUp, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), tone: "green" as const },
     { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, tone: "amber" as const },
     { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), tone: "blue" as const },
-    { icon: GraduationCap, label: `Feedback ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.feedbackByStatus)), tone: "purple" as const },
+    { icon: GraduationCap, label: `ความคิดเห็นปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.feedbackByStatus)), tone: "purple" as const },
   ];
 
   return (

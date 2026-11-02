@@ -23,7 +23,7 @@ const ENTITY_LABELS: Record<string, string> = {
   documents: "ข้อตกลง/เอกสาร",
   activities: "กิจกรรม",
   exchange_students: "นักศึกษาแลกเปลี่ยน",
-  feedbacks: "Feedback",
+  feedbacks: "ความคิดเห็น",
   outcomes: "ผลลัพธ์",
   outcome_types: "ประเภทผลลัพธ์",
   improvements: "การปรับปรุง",

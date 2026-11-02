@@ -32,7 +32,7 @@ export default function DashboardTeacher() {
     { icon: Building2, label: "หน่วยงานที่ดูแล", value: shown(loaded, counts?.partners ?? 0), tone: "crimson", href: "/stakeholders" },
     { icon: CalendarDays, label: "กิจกรรมของฉัน", value: shown(loaded, counts?.activities ?? 0), tone: "blue", href: "/activities/manage" },
     { icon: Target, label: "ผลลัพธ์ที่บันทึก", value: shown(loaded, counts?.outcomes ?? 0), tone: "green" },
-    { icon: MessageSquare, label: "Feedback รอตรวจสอบ", value: loaded ? `${counts!.feedbackPending} / ${counts!.feedback}` : "—", tone: "purple", href: "/feedback" },
+    { icon: MessageSquare, label: "ความคิดเห็นรอตรวจสอบ", value: loaded ? `${counts!.feedbackPending} / ${counts!.feedback}` : "—", tone: "purple", href: "/feedback" },
   ];
 
   return (
@@ -45,7 +45,7 @@ export default function DashboardTeacher() {
             ภาพรวมความร่วมมือ
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>หน่วยงาน กิจกรรม และ Feedback ที่คุณดูแล</p>
+        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>หน่วยงาน กิจกรรม และความคิดเห็นที่ดูแล</p>
       </div>
 
       {/* KPI */}

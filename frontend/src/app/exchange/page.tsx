@@ -288,7 +288,7 @@ export default function StudentExchangePage() {
                   </td>
                   <td className="px-4 py-4">
                     {session === "authenticated" && role !== "public" && (
-                      <Link href={`/feedback?exchangeId=${s.id}`} className="btn btn-outline p-1.5 text-xs mr-2">ส่ง Feedback</Link>
+                      <Link href={`/feedback?exchangeId=${s.id}`} className="btn btn-outline p-1.5 text-xs mr-2">ส่งความคิดเห็น</Link>
                     )}
                     <button className="btn btn-outline p-1.5 text-xs mr-2" type="button" aria-label={`ผลลัพธ์ของ ${s.name}`}
                       onClick={() => setOutcomesFor(s)}>ผลลัพธ์</button>

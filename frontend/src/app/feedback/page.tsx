@@ -109,7 +109,7 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
   const current = CONTEXTS.find((c) => c.type === contextType)!;
   return (
     <form onSubmit={submit} className="rounded-lg bg-white shadow-card p-4 mb-5">
-      <h2 className="font-semibold text-ink mb-3">ส่ง Feedback</h2>
+      <h2 className="font-semibold text-ink mb-3">ส่งความคิดเห็น</h2>
       <FormError error={action.error} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>

@@ -22,7 +22,7 @@ const KINDS = [
   { key: "agreements", name: "ข้อตกลงที่เริ่มมีผล", color: "#d97706" },
   { key: "activities", name: "กิจกรรม", color: "#1d4ed8" },
   { key: "outcomes", name: "ผลลัพธ์", color: "#16a34a" },
-  { key: "feedback", name: "Feedback", color: "#be185d" },
+  { key: "feedback", name: "ความคิดเห็น", color: "#be185d" },
 ] as const;
 
 export default function PartnerReportPage() {
@@ -49,7 +49,7 @@ export default function PartnerReportPage() {
   const activeYears = timeline.filter((row) => row.activities + row.outcomes + row.feedback > 0).map((row) => row.year);
   const span = activeYears.length
     ? `มีความเคลื่อนไหว ${activeYears.length} ปี (${[...new Set([activeYears[0], activeYears[activeYears.length - 1]])].map(beYear).join("–")})`
-    : "ยังไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ที่บันทึกไว้";
+    : "ยังไม่มีกิจกรรม ผลลัพธ์ หรือความคิดเห็นที่บันทึกไว้";
 
   return (
     <div className="p-6 max-w-(--breakpoint-lg) mx-auto">

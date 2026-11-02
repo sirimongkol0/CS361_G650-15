@@ -74,7 +74,7 @@ export default function ActivityDetailPage() {
         </div>
         <div className="flex gap-2 flex-wrap print:hidden">
         {session === "authenticated" && role !== "public" && (
-          <Link href={`/feedback?activityId=${item.id}`} className="btn btn-primary gap-2"><MessageSquare className="w-4 h-4" />ส่ง Feedback</Link>
+          <Link href={`/feedback?activityId=${item.id}`} className="btn btn-primary gap-2"><MessageSquare className="w-4 h-4" />ส่งความคิดเห็น</Link>
         )}
         {canManage(role) && (
           <div className="flex gap-2">

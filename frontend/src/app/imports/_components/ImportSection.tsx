@@ -309,11 +309,11 @@ export default function ImportSection() {
               }
             >
               <option value="feedback">
-                ความคิดเห็น (Feedback)
+                ความคิดเห็น
               </option>
 
               <option value="outcome">
-                ผลลัพธ์ (Outcomes)
+                ผลลัพธ์
               </option>
             </select>
           </label>

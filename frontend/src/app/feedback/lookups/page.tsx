@@ -76,7 +76,7 @@ function LookupSection({ title, kind, rows, onChanged }: {
 }
 
 export default function FeedbackLookupsPage() {
-  useDocumentTitle("ตั้งค่าประเภท Feedback");
+  useDocumentTitle("ตั้งค่าประเภทความคิดเห็น");
   const { role, status } = useRole();
   const [reload, setReload] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
@@ -95,9 +95,9 @@ export default function FeedbackLookupsPage() {
   const changed = (message: string) => { setNotice(message); setReload((n) => n + 1); };
   return <div className="p-6 max-w-(--breakpoint-xl) mx-auto space-y-5">
     <div>
-      <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ความคิดเห็น", href: "/feedback" }, { label: "ตั้งค่าประเภท Feedback" }]} />
-      <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทและแหล่ง Feedback</h1>
-      <p className="text-sm text-faint mt-1">ปิดใช้งานรายการที่ไม่ต้องการใช้ได้ โดยข้อมูล Feedback เดิมยังคงอยู่</p>
+      <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ความคิดเห็น", href: "/feedback" }, { label: "ตั้งค่าประเภทความคิดเห็น" }]} />
+      <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทและแหล่งที่มาของความคิดเห็น</h1>
+      <p className="text-sm text-faint mt-1">ปิดใช้งานรายการที่ไม่ต้องการใช้ได้ โดยความคิดเห็นเดิมยังคงอยู่</p>
     </div>
     <Notice text={notice} />
     <LookupSection title="ประเภทผู้ส่ง" kind="respondent-types" rows={resource.data.respondentTypes} onChanged={changed} />
