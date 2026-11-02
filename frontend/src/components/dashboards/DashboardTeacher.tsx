@@ -43,7 +43,7 @@ export default function DashboardTeacher() {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-          <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "#111827" }}>
             ภาพรวมความร่วมมือ
           </h1>
         </div>
@@ -58,7 +58,7 @@ export default function DashboardTeacher() {
               <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
               </div>
-              <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
+              <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827" }}>{s.value}</div>
               <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
             </>
           );

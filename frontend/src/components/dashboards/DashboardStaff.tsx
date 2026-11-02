@@ -54,7 +54,7 @@ export default function DashboardStaff() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-            <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "#111827" }}>
               ภาพรวมความร่วมมือของหลักสูตร
             </h1>
           </div>
@@ -85,7 +85,7 @@ export default function DashboardStaff() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: s.bg }}>
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
               </div>
-              <div className="text-xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
+              <div className="text-xl font-extrabold mb-0.5" style={{ color: "#111827" }}>{s.value}</div>
               <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
             </>
           );

@@ -40,7 +40,7 @@ export default function DashboardStudent() {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-          <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <h1 className="text-2xl font-bold" style={{ color: "#111827" }}>
             หน้าหลักนักศึกษา
           </h1>
         </div>
@@ -59,13 +59,13 @@ export default function DashboardStudent() {
           <GraduationCap className="w-7 h-7" />
         </div>
         <div className="flex-1">
-          <div className="font-extrabold text-lg" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="font-extrabold text-lg">
             สวัสดี
           </div>
           <div className="text-sm opacity-80">ติดตามกิจกรรมที่จะถึงและโครงการแลกเปลี่ยนได้ที่นี่</div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-extrabold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="text-2xl font-extrabold">
             {shown(loaded, completedExchange)}
           </div>
           <div className="text-xs opacity-70">โครงการที่เสร็จสิ้น</div>
@@ -79,7 +79,7 @@ export default function DashboardStudent() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
               <s.icon className="w-5 h-5" style={{ color: s.color }} />
             </div>
-            <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
+            <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827" }}>{s.value}</div>
             <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
           </div>
         ))}

@@ -63,7 +63,7 @@ export default function DashboardAdmin() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-            <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "#111827" }}>
               ภาพรวมความร่วมมือระดับหลักสูตร
             </h1>
           </div>
@@ -92,7 +92,7 @@ export default function DashboardAdmin() {
                 <s.icon className="w-4 h-4" style={{ color: s.color }} />
               </div>
             </div>
-            <div className="text-xl font-extrabold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
+            <div className="text-xl font-extrabold" style={{ color: "#111827" }}>{s.value}</div>
             <div className="text-xs mt-0.5" style={{ color: "#6B7280" }}>{s.label}</div>
             {s.warn && <div className="text-xs font-semibold mt-1" style={{ color: "#B45309" }}>{s.warn}</div>}
           </div>

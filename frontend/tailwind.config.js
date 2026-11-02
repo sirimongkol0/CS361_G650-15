@@ -34,9 +34,10 @@ module.exports = {
         },
       },
       fontFamily: {
+        // --font-sans is Sarabun from next/font (app/layout.tsx). Headings use it too:
+        // the former display face (Plus Jakarta Sans) has no Thai glyphs.
         sans: [
-          'Sarabun',
-          'Plus Jakarta Sans',
+          'var(--font-sans)',
           'system-ui',
           '-apple-system',
           'Segoe UI',
@@ -44,8 +45,7 @@ module.exports = {
           'sans-serif',
         ],
         display: [
-          'Plus Jakarta Sans',
-          'Sarabun',
+          'var(--font-sans)',
           'system-ui',
           'sans-serif',
         ],
