@@ -4,17 +4,15 @@ import Link from "next/link";
 import { Building2, CalendarDays, Target, MessageSquare, ChevronRight } from "lucide-react";
 import { formatThaiDate } from "@/lib/api";
 import { shown, useMyInsights } from "@/lib/dashboard-data";
+import { KpiCard, type KpiTone } from "@/components/kpi-card";
 
-const statCard =
-  "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
 const contentCard = "content-card bg-white rounded-base shadow-card";
 
 type Kpi = {
   icon: React.ElementType;
   label: string;
   value: string;
-  color: string;
-  bg: string;
+  tone: KpiTone;
   href?: string;
 };
 
@@ -31,10 +29,10 @@ export default function DashboardTeacher() {
   const counts = mine?.counts;
 
   const kpis: Kpi[] = [
-    { icon: Building2, label: "หน่วยงานที่ดูแล", value: shown(loaded, counts?.partners ?? 0), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-    { icon: CalendarDays, label: "กิจกรรมของฉัน", value: shown(loaded, counts?.activities ?? 0), color: "#1D4ED8", bg: "#DBEAFE", href: "/activities/manage" },
-    { icon: Target, label: "ผลลัพธ์ที่บันทึก", value: shown(loaded, counts?.outcomes ?? 0), color: "#15803D", bg: "#DCFCE7" },
-    { icon: MessageSquare, label: "Feedback รอตรวจสอบ", value: loaded ? `${counts!.feedbackPending} / ${counts!.feedback}` : "—", color: "#B45309", bg: "#FEF3C7", href: "/feedback" },
+    { icon: Building2, label: "หน่วยงานที่ดูแล", value: shown(loaded, counts?.partners ?? 0), tone: "crimson", href: "/stakeholders" },
+    { icon: CalendarDays, label: "กิจกรรมของฉัน", value: shown(loaded, counts?.activities ?? 0), tone: "blue", href: "/activities/manage" },
+    { icon: Target, label: "ผลลัพธ์ที่บันทึก", value: shown(loaded, counts?.outcomes ?? 0), tone: "green" },
+    { icon: MessageSquare, label: "Feedback รอตรวจสอบ", value: loaded ? `${counts!.feedbackPending} / ${counts!.feedback}` : "—", tone: "purple", href: "/feedback" },
   ];
 
   return (
@@ -52,22 +50,9 @@ export default function DashboardTeacher() {
 
       {/* KPI */}
       <div className="grid grid-cols-4 gap-4 mb-6 stagger">
-        {kpis.map((s) => {
-          const inner = (
-            <>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
-                <s.icon className="w-4 h-4" style={{ color: s.color }} />
-              </div>
-              <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827" }}>{s.value}</div>
-              <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
-            </>
-          );
-          return s.href ? (
-            <Link key={s.label} href={s.href} className={`${statCard} block`} style={{ textDecoration: "none" }}>{inner}</Link>
-          ) : (
-            <div key={s.label} className={statCard}>{inner}</div>
-          );
-        })}
+        {kpis.map((s) => (
+          <KpiCard key={s.label} icon={s.icon} label={s.label} value={s.value} tone={s.tone} href={s.href} />
+        ))}
       </div>
 
       <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 1fr" }}>

@@ -25,6 +25,7 @@ import { ExportCsvButton } from "@/components/list-ui";
 import { Notice } from "@/components/form-ui";
 import { RenewalDecisionDialog, RenewalSummary } from "@/components/renewals";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { KpiCard, type KpiTone } from "@/components/kpi-card";
 
 const REPORT_ROLES = ["staff", "admin"];
 const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
@@ -190,19 +191,19 @@ function Report({ summary, previous, year, onChanged }: {
   const period = year ? `ปี ${beYear(year)}` : "ทุกช่วงเวลา";
 
   const kpis = [
-    { label: "หน่วยงาน", value: sum(summary.partnersByType), icon: Building2, color: "#7c3aed", bg: "#ede9fe" },
-    { label: "ข้อตกลง MoU/MoA", value: sum(summary.agreementsByStatus), icon: FileText, color: "#d97706", bg: "#fef3c7" },
-    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe",
+    { label: "หน่วยงาน", value: sum(summary.partnersByType), icon: Building2, tone: "crimson" },
+    { label: "ข้อตกลง MoU/MoA", value: sum(summary.agreementsByStatus), icon: FileText, tone: "amber" },
+    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, tone: "blue",
       change: change(sum(summary.activitiesByMonth), previous && sum(previous.activitiesByMonth)) },
-    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, color: "#16a34a", bg: "#dcfce7",
+    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, tone: "green",
       change: change(sum(summary.outcomesByType), previous && sum(previous.outcomesByType)) },
     {
       label: `Feedback (${period})`,
       value: `${sum(summary.feedbackByStatus)}${summary.feedbackAverageRating == null ? "" : ` • ${summary.feedbackAverageRating.toFixed(1)}★`}`,
-      icon: MessageSquare, color: "#be185d", bg: "#fce7f3",
+      icon: MessageSquare, tone: "purple",
       change: change(sum(summary.feedbackByStatus), previous && sum(previous.feedbackByStatus)),
     },
-  ] as { label: string; value: number | string; icon: typeof Building2; color: string; bg: string; change?: ReturnType<typeof change> }[];
+  ] as { label: string; value: number | string; icon: typeof Building2; tone: KpiTone; change?: ReturnType<typeof change> }[];
 
   return (
     <>
@@ -214,14 +215,9 @@ function Report({ summary, previous, year, onChanged }: {
       )}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={card}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: kpi.bg }}>
-              <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} aria-hidden />
-            </div>
-            <div className="text-2xl font-bold mb-0.5 text-ink font-display">{kpi.value}</div>
-            <div className="text-xs text-faint">{kpi.label}</div>
+          <KpiCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone}>
             {kpi.change && <div className={`text-xs mt-1 font-semibold ${kpi.change.tone}`}>{kpi.change.text}</div>}
-          </div>
+          </KpiCard>
         ))}
       </div>
 

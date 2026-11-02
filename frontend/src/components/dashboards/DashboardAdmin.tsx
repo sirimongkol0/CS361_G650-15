@@ -17,8 +17,8 @@ import {
 } from "@/lib/dashboard-data";
 import { downloadFile } from "@/lib/download-file";
 import { ExportCsvButton } from "@/components/list-ui";
+import { KpiCard } from "@/components/kpi-card";
 
-const statCard = "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover transition-all duration-150";
 const contentCard = "content-card bg-white rounded-base shadow-card";
 
 const systemActions = [
@@ -49,11 +49,11 @@ export default function DashboardAdmin() {
   const exportMonthly = () => { downloadFile(`/insights/summary.csv${insightsQuery({ year })}`).catch(() => {}); };
 
   const kpis = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, partnerTotal), color: "#8B1538", bg: "#F5D6DE" },
-    { icon: TrendingUp, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), color: "#C8961E", bg: "#FEF6E4" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, color: "#B45309", bg: "#FEF3C7" },
-    { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), color: "#1D4ED8", bg: "#DBEAFE" },
-    { icon: GraduationCap, label: `Feedback ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.feedbackByStatus)), color: "#15803D", bg: "#DCFCE7" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, partnerTotal), tone: "crimson" as const },
+    { icon: TrendingUp, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), tone: "green" as const },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, tone: "amber" as const },
+    { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), tone: "blue" as const },
+    { icon: GraduationCap, label: `Feedback ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.feedbackByStatus)), tone: "purple" as const },
   ];
 
   return (
@@ -86,16 +86,9 @@ export default function DashboardAdmin() {
       {/* Executive KPI */}
       <div className="grid grid-cols-5 gap-3 mb-6 stagger">
         {kpis.map((s) => (
-          <div key={s.label} className={statCard} style={{ padding: "16px 14px" }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: s.bg }}>
-                <s.icon className="w-4 h-4" style={{ color: s.color }} />
-              </div>
-            </div>
-            <div className="text-xl font-extrabold" style={{ color: "#111827" }}>{s.value}</div>
-            <div className="text-xs mt-0.5" style={{ color: "#6B7280" }}>{s.label}</div>
-            {s.warn && <div className="text-xs font-semibold mt-1" style={{ color: "#B45309" }}>{s.warn}</div>}
-          </div>
+          <KpiCard key={s.label} icon={s.icon} label={s.label} value={s.value} tone={s.tone}>
+            {s.warn && <div className="text-xs font-semibold mt-1 text-[#B45309]">{s.warn}</div>}
+          </KpiCard>
         ))}
       </div>
 

@@ -11,17 +11,15 @@ import {
 } from "@/lib/dashboard-data";
 import { downloadFile } from "@/lib/download-file";
 import { ExportCsvButton } from "@/components/list-ui";
+import { KpiCard, type KpiTone } from "@/components/kpi-card";
 
-const statCard =
-  "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150";
 const contentCard = "content-card bg-white rounded-base shadow-card";
 
 type Kpi = {
   icon: React.ElementType;
   label: string;
   value: string;
-  color: string;
-  bg: string;
+  tone: KpiTone;
   href?: string;
 };
 
@@ -40,11 +38,11 @@ export default function DashboardStaff() {
   const exportMonthly = () => { downloadFile(`/insights/summary.csv${insightsQuery({ year })}`).catch(() => {}); };
 
   const kpis: Kpi[] = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, sumCounts(summary?.partnersByType)), color: "#8B1538", bg: "#F5D6DE", href: "/stakeholders" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(loaded, sumCounts(summary?.agreementsByStatus)), color: "#B45309", bg: "#FEF3C7" },
-    { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), color: "#1D4ED8", bg: "#DBEAFE" },
-    { icon: Target, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), color: "#15803D", bg: "#DCFCE7", href: "/reports" },
-    { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(loaded, staffExpiringDocs.length), color: "#B45309", bg: "#FEF3C7" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, sumCounts(summary?.partnersByType)), tone: "crimson", href: "/stakeholders" },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(loaded, sumCounts(summary?.agreementsByStatus)), tone: "amber" },
+    { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), tone: "blue" },
+    { icon: Target, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), tone: "green", href: "/reports" },
+    { icon: AlertTriangle, label: "ใกล้หมดอายุ", value: shown(loaded, staffExpiringDocs.length), tone: "amber" },
   ];
 
   return (
@@ -79,22 +77,9 @@ export default function DashboardStaff() {
 
       {/* KPI row */}
       <div className="grid grid-cols-5 gap-3 mb-6 stagger">
-        {kpis.map((s) => {
-          const inner = (
-            <>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2" style={{ background: s.bg }}>
-                <s.icon className="w-4 h-4" style={{ color: s.color }} />
-              </div>
-              <div className="text-xl font-extrabold mb-0.5" style={{ color: "#111827" }}>{s.value}</div>
-              <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
-            </>
-          );
-          return s.href ? (
-            <Link key={s.label} href={s.href} className={`${statCard} block`} style={{ textDecoration: "none", padding: "16px 14px" }}>{inner}</Link>
-          ) : (
-            <div key={s.label} className={statCard} style={{ padding: "16px 14px" }}>{inner}</div>
-          );
-        })}
+        {kpis.map((s) => (
+          <KpiCard key={s.label} icon={s.icon} label={s.label} value={s.value} tone={s.tone} href={s.href} />
+        ))}
       </div>
 
       {/* Chart + Recent activities */}

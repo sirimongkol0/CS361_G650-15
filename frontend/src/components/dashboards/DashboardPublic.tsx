@@ -12,8 +12,8 @@ import { useDocumentTitle } from "@/lib/list-tools";
 import { latestActivities } from "@/lib/activity-display";
 import { countByScope } from "@/lib/scope-summary";
 import { ScopeLevelBadge } from "@/components/scope-level-badge";
+import { KpiCard } from "@/components/kpi-card";
 
-const statCard = "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
 const contentCard = "content-card bg-white rounded-base shadow-card";
 
 export default function DashboardPublic() {
@@ -33,9 +33,9 @@ export default function DashboardPublic() {
   const lastFetched = allLoaded ? getLastFetchedAt() : null;
   // Headline = CSTU directly (scope "program"); broader levels are counted separately, never as CSTU.
   const kpis = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", loaded: partners.status === "success", counts: countByScope(partnerData), sub: "รายการ", href: "/stakeholders", note: null as string | null, color: "#8B1538", bg: "#F5D6DE" },
-    { icon: Globe, label: "กิจกรรม", loaded: activities.status === "success", counts: countByScope(activityData), sub: "กิจกรรม", href: "/activities", note: null, color: "#15803D", bg: "#DCFCE7" },
-    { icon: FileText, label: "ข้อตกลง MoU/MoA", loaded: documents.status === "success", counts: countByScope(agreementData), sub: "ฉบับ", href: "/documents", note: "ไม่รวมแบบฟอร์ม", color: "#7C3AED", bg: "#EDE9FE" },
+    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", loaded: partners.status === "success", counts: countByScope(partnerData), sub: "รายการ", href: "/stakeholders", note: null as string | null, tone: "crimson" as const },
+    { icon: Globe, label: "กิจกรรม", loaded: activities.status === "success", counts: countByScope(activityData), sub: "กิจกรรม", href: "/activities", note: null, tone: "blue" as const },
+    { icon: FileText, label: "ข้อตกลง MoU/MoA", loaded: documents.status === "success", counts: countByScope(agreementData), sub: "ฉบับ", href: "/documents", note: "ไม่รวมแบบฟอร์ม", tone: "amber" as const },
   ];
 
   return (
@@ -61,10 +61,15 @@ export default function DashboardPublic() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 stagger">
         {kpis.map((item) => (
-          <Link key={item.label} href={`${item.href}?scope=program`} className={`${statCard} block`} title={`ดู${item.label}ของ CSTU โดยตรง`}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: item.bg }}><item.icon className="w-5 h-5" style={{ color: item.color }} /></div>
-            <div className="text-2xl font-extrabold mb-0.5 text-ink font-display">{item.loaded ? String(item.counts.program) : "—"}</div>
-            <div className="text-xs text-faint">{item.label} (CSTU โดยตรง){item.note && ` • ${item.note}`}</div>
+          <KpiCard
+            key={item.label}
+            icon={item.icon}
+            tone={item.tone}
+            href={`${item.href}?scope=program`}
+            title={`ดู${item.label}ของ CSTU โดยตรง`}
+            value={item.loaded ? String(item.counts.program) : "—"}
+            label={<>{item.label} (CSTU โดยตรง){item.note && ` • ${item.note}`}</>}
+          >
             {item.loaded && (item.counts.broader > 0 || item.counts.unclassified > 0) && (
               <div className="text-xs mt-1.5 text-faint">
                 {[
@@ -73,7 +78,7 @@ export default function DashboardPublic() {
                 ].filter(Boolean).join(" • ")}
               </div>
             )}
-          </Link>
+          </KpiCard>
         ))}
       </div>
 
