@@ -17,6 +17,7 @@ import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { StatusBadge } from "@/components/status-badge";
+import { LifecycleProgress } from "@/components/lifecycle-progress";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -439,6 +440,7 @@ function ManagePanel({
         <p className="mb-2 text-sm">
           สถานะ: <StatusBadge kind="document" status={status}>{label(documentStatusLabels, status)}</StatusBadge>
         </p>
+        <LifecycleProgress status={status} />
         {isStaff ? (
           TRANSITIONS[status]?.length ? (
             <div className="flex flex-wrap gap-2">
