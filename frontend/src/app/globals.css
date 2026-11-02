@@ -24,7 +24,7 @@
   --accent-muted:        #F5E0A8;
 
   --muted:               #F3F4F6;
-  --muted-foreground:    #6B7280;
+  --muted-foreground:    #656C79;
   --border:              #E5E7EB;
   --radius:              10px;
 
@@ -53,6 +53,13 @@ body {
 
 main {
   flex: 1;
+}
+
+/* Placeholder text must still reach 4.5:1 (preflight's default gray-400 is 2.5:1) */
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
 }
 
 ::selection {
@@ -99,7 +106,7 @@ main {
   white-space: nowrap;
 }
 .badge-crimson { background: var(--primary-muted); color: var(--primary); }
-.badge-gold    { background: var(--accent-muted);  color: #92670A; }
+.badge-gold    { background: var(--accent-muted);  color: #7C5608; }
 .badge-blue    { background: #DBEAFE; color: #1D4ED8; }
 .badge-green   { background: #DCFCE7; color: #15803D; }
 .badge-purple  { background: #EDE9FE; color: #6D28D9; }
@@ -129,11 +136,6 @@ main {
   color: #fff;
 }
 .btn-primary:hover { background: var(--primary-hover); }
-.btn-accent {
-  background: var(--accent);
-  color: #fff;
-}
-.btn-accent:hover { background: #A87A18; }
 .btn-secondary {
   background: var(--primary-muted);
   color: var(--primary);

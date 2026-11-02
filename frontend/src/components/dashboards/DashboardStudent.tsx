@@ -105,7 +105,7 @@ export default function DashboardStudent() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{p.program ?? p.name}</div>
-                  <div className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{p.toOrganization ?? "—"} • {formatThaiPeriod(p.startDate, p.endDate)}</div>
+                  <div className="text-xs mt-0.5" style={{ color: "#656C79" }}>{p.toOrganization ?? "—"} • {formatThaiPeriod(p.startDate, p.endDate)}</div>
                 </div>
                 {p.status && <span className={`badge ${exchangeStatusColors[p.status] ?? "badge-gray"}`}>{p.status}</span>}
               </div>
@@ -128,7 +128,7 @@ export default function DashboardStudent() {
                   <Clock className="w-4 h-4 flex-shrink-0" style={{ color: "#C8961E" }} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate" style={{ color: "#111827" }}>{a.name}</div>
-                    <div className="text-xs" style={{ color: "#9CA3AF" }}>{a.date}{a.location && ` • ${a.location}`}</div>
+                    <div className="text-xs" style={{ color: "#656C79" }}>{a.date}{a.location && ` • ${a.location}`}</div>
                   </div>
                 </Link>
               ))}

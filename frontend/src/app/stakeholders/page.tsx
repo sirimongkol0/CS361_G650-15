@@ -20,7 +20,7 @@ import {
 } from "@/components/list-ui";
 
 const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 export default function StakeholdersPage() {
   useDocumentTitle("หน่วยงานคู่ความร่วมมือ");

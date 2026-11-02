@@ -104,7 +104,7 @@ export default function DashboardAdmin() {
         {/* Yearly trend */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>จำนวนความร่วมมือรายปี</h2>
-          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>นับจากปีที่ข้อตกลงเริ่มมีผล</p>
+          <p className="text-xs mb-4" style={{ color: "#656C79" }}>นับจากปีที่ข้อตกลงเริ่มมีผล</p>
           <ResponsiveContainer width="100%" height={170}>
             <AreaChart data={adminYearlyTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <defs>
@@ -114,8 +114,8 @@ export default function DashboardAdmin() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="ความร่วมมือ" stroke="#8B1538" fill="url(#gCollab)" strokeWidth={2.5} dot={{ fill: "#8B1538", r: 3 }} />
             </AreaChart>
@@ -125,12 +125,12 @@ export default function DashboardAdmin() {
         {/* Monthly activities */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>กิจกรรมรายเดือน</h2>
-          <p className="text-xs mb-4" style={{ color: "#9CA3AF" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
+          <p className="text-xs mb-4" style={{ color: "#656C79" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
           <ResponsiveContainer width="100%" height={170}>
             <BarChart data={adminMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#656C79" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="กิจกรรม" fill="#8B1538" radius={[3, 3, 0, 0]} />
             </BarChart>
@@ -140,7 +140,7 @@ export default function DashboardAdmin() {
         {/* Stakeholder types: one labelled bar per type, largest first */}
         <div className={`${contentCard} p-5`}>
           <h2 className="font-bold mb-1" style={{ color: "#111827" }}>หน่วยงานคู่ความร่วมมือ</h2>
-          <p className="text-xs mb-3" style={{ color: "#9CA3AF" }}>ตามประเภท • {shown(loaded, partnerTotal)} หน่วยงาน</p>
+          <p className="text-xs mb-3" style={{ color: "#656C79" }}>ตามประเภท • {shown(loaded, partnerTotal)} หน่วยงาน</p>
           {loaded && adminStakeholderTypes.length === 0 && <p className="text-xs text-faint">ยังไม่มีหน่วยงาน</p>}
           <ul className="space-y-2">
             {adminStakeholderTypes.map((t) => (
@@ -165,12 +165,12 @@ export default function DashboardAdmin() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
           </div>
-          <p className="text-xs -mt-2 mb-3" style={{ color: "#9CA3AF" }}>นับข้อตกลงที่เริ่มมีผลและกิจกรรมในปี {beYear(year)}</p>
+          <p className="text-xs -mt-2 mb-3" style={{ color: "#656C79" }}>นับข้อตกลงที่เริ่มมีผลและกิจกรรมในปี {beYear(year)}</p>
           <div className="space-y-3.5">
             {loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-sm font-bold w-4 flex-shrink-0" style={{ color: i < 3 ? "#8B1538" : "#9CA3AF" }}>{i + 1}</span>
+                <span className="text-sm font-bold w-4 flex-shrink-0" style={{ color: i < 3 ? "#8B1538" : "#656C79" }}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold truncate" style={{ color: "#111827" }}>{c.name}</span>

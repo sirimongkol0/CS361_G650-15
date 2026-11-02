@@ -75,7 +75,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           <Search className="w-4 h-4 text-faint" />
           <input
             ref={inputRef}
-            className="flex-1 py-3.5 text-sm text-ink outline-none placeholder:text-[#CBD5E1]"
+            className="flex-1 py-3.5 text-sm text-ink outline-none placeholder:text-faint"
             placeholder="ค้นหาหน่วยงาน ข้อตกลง หรือกิจกรรม"
             value={query}
             onChange={(event) => { setQuery(event.target.value); setActive(0); }}

@@ -13,7 +13,7 @@ module.exports = {
         // semantic base (mapped to mock tokens)
         ink: '#111827', // --foreground
         mute: '#4B5563', // secondary-foreground-ish
-        faint: '#6B7280', // --muted-foreground
+        faint: '#656C79', // --muted-foreground
         line: '#E5E7EB', // --border
         paper: '#F7F8FA', // --background
         soft: '#F3F4F6', // --muted

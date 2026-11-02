@@ -88,7 +88,7 @@ export default function DashboardTeacher() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{a.name}</div>
-                  <div className="text-xs" style={{ color: "#9CA3AF" }}>{formatThaiDate(a.date)}</div>
+                  <div className="text-xs" style={{ color: "#656C79" }}>{formatThaiDate(a.date)}</div>
                 </div>
                 {a.status && <span className="badge badge-gray">{a.status}</span>}
               </Link>

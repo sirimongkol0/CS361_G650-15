@@ -143,7 +143,7 @@ export default function LoginPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2"
                 onClick={() => setShowPassword((s) => !s)}
                 aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
-                style={{ color: '#9CA3AF' }}
+                style={{ color: '#656C79' }}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>

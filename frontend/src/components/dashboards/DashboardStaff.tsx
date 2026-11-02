@@ -103,14 +103,14 @@ export default function DashboardStaff() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-bold" style={{ color: "#111827" }}>จำนวนกิจกรรมรายเดือน</h2>
-              <p className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
+              <p className="text-xs mt-0.5" style={{ color: "#656C79" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#9CA3AF" }} tickLine={false} axisLine={false} />
+              <XAxis dataKey="month" interval={0} tick={{ fontSize: 10, fill: "#656C79" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#656C79" }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="กิจกรรม" fill="#8B1538" radius={[4, 4, 0, 0]} />
             </BarChart>

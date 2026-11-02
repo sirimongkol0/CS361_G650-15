@@ -143,7 +143,7 @@ export default function UserManagementPage() {
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
               <input
-                className="w-full rounded-lg border-[1.5px] border-line bg-white pl-9 pr-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
+                className="w-full rounded-lg border-[1.5px] border-line bg-white pl-9 pr-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
                 placeholder="ค้นหาอีเมลหรือบทบาท"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

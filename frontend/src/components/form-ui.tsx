@@ -9,7 +9,7 @@ import { AlertCircle, CalendarDays, CheckCircle2, X } from "lucide-react";
 import { apiErrorMessage, formatThaiDate } from "@/lib/api";
 
 export const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
 
 /** Modal dialog using the native <dialog> (focus trap, Esc to close). */
 export function Dialog({
@@ -129,7 +129,7 @@ export function DateInput({
         aria-hidden
         className={`${className} flex min-w-[10.5rem] items-center justify-between gap-2 peer-focus:border-crimson peer-focus:ring-[3px] peer-focus:ring-crimson/10 peer-disabled:bg-soft`}
       >
-        <span className={value ? "text-ink" : "text-[#CBD5E1]"}>{value ? formatThaiDate(value) : "เลือกวันที่"}</span>
+        <span className={value ? "text-ink" : "text-faint"}>{value ? formatThaiDate(value) : "เลือกวันที่"}</span>
         <CalendarDays className="h-4 w-4 flex-shrink-0 text-faint" />
       </span>
     </span>
