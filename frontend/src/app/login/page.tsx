@@ -63,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F7F8FA' }}>
+    <div className="min-h-screen flex bg-paper">
       {/* ── Left: Form ──────────────────────────────── */}
       <div
         className="flex flex-col justify-center w-full max-w-md px-10 py-12 mx-auto lg:mx-0 bg-white min-h-screen"
@@ -105,7 +105,7 @@ export default function LoginPage() {
 
           {/* Email */}
           <div>
-            <label htmlFor="login-email" className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
+            <label htmlFor="login-email" className="block text-sm font-semibold mb-1.5 text-mute">
               อีเมล
             </label>
             <input
@@ -122,7 +122,7 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label htmlFor="login-password" className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
+            <label htmlFor="login-password" className="block text-sm font-semibold mb-1.5 text-mute">
               รหัสผ่าน
             </label>
             <div className="relative">
@@ -187,7 +187,7 @@ export default function LoginPage() {
         <div className="relative z-10 max-w-sm w-full">
           {/* Heading */}
           <div className="mb-8">
-            <div className="text-sm font-bold mb-3" style={{ color: '#C8961E' }}>
+            <div className="text-sm font-bold mb-3 text-gold">
               มหาวิทยาลัยธรรมศาสตร์
             </div>
             <h2 className="text-3xl font-extrabold text-white leading-snug mb-3 font-display">

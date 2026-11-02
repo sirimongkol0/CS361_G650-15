@@ -53,11 +53,11 @@ export default function DashboardStaff() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-            <h1 className="text-2xl font-bold" style={{ color: "#111827" }}>
+            <h1 className="text-2xl font-bold text-ink">
               ภาพรวมความร่วมมือของหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ข้อตกลง กิจกรรม และเรื่องที่ต้องติดตาม</p>
+          <p className="text-sm ml-4 text-faint">ข้อตกลง กิจกรรม และเรื่องที่ต้องติดตาม</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -88,8 +88,8 @@ export default function DashboardStaff() {
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-bold" style={{ color: "#111827" }}>จำนวนกิจกรรมรายเดือน</h2>
-              <p className="text-xs mt-0.5" style={{ color: "#656C79" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
+              <h2 className="font-bold text-ink">จำนวนกิจกรรมรายเดือน</h2>
+              <p className="text-xs mt-0.5 text-faint">ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
             </div>
           </div>
           <ChartContainer config={{ กิจกรรม: { label: "กิจกรรม" } }} className="aspect-auto h-[200px] w-full">
@@ -106,7 +106,7 @@ export default function DashboardStaff() {
         {/* Expiring docs */}
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold" style={{ color: "#111827" }}>ข้อตกลงที่ต้องติดตาม</h2>
+            <h2 className="font-bold text-ink">ข้อตกลงที่ต้องติดตาม</h2>
           </div>
           <div className="space-y-3">
             {staffExpiringDocs.map((d) => (
@@ -136,25 +136,25 @@ export default function DashboardStaff() {
 
       {/* Recent activities table */}
       <div className={contentCard}>
-        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-          <h2 className="font-bold" style={{ color: "#111827" }}>กิจกรรมล่าสุด</h2>
-          <Link href="/activities" className="text-xs font-semibold" style={{ color: "#8B1538" }}>ดูทั้งหมด →</Link>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+          <h2 className="font-bold text-ink">กิจกรรมล่าสุด</h2>
+          <Link href="/activities" className="text-xs font-semibold text-crimson">ดูทั้งหมด →</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)", background: "#F9FAFB" }}>
                 {[ "ชื่อกิจกรรม", "หน่วยงาน", "วันที่", "สถานะ" ].map((h) => (
-                  <th key={h} className="text-left px-5 py-3 text-xs font-semibold" style={{ color: "#6B7280" }}>{h}</th>
+                  <th key={h} className="text-left px-5 py-3 text-xs font-semibold text-faint">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {staffRecentActivities.map((a, i) => (
-                <tr key={i} className="hover:bg-[#FAFAFA] border-b" style={{ borderColor: "#F3F4F6" }}>
-                  <td className="px-5 py-3.5 text-sm font-semibold" style={{ color: "#111827" }}>{a.name}</td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: "#6B7280" }}>{a.org}</td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: "#6B7280" }}>{a.date}</td>
+                <tr key={i} className="hover:bg-[#FAFAFA] border-b border-soft">
+                  <td className="px-5 py-3.5 text-sm font-semibold text-ink">{a.name}</td>
+                  <td className="px-5 py-3.5 text-sm text-faint">{a.org}</td>
+                  <td className="px-5 py-3.5 text-sm text-faint">{a.date}</td>
                   <td className="px-5 py-3.5"><span className={`badge ${a.statusColor}`}>{a.status}</span></td>
                 </tr>
               ))}

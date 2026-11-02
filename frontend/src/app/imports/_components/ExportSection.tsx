@@ -262,7 +262,7 @@ export default function ExportSection() {
         </button>
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn hover:bg-soft"
           disabled={busy}
           onClick={() => {
             setFilters(initialFilters);

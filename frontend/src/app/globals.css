@@ -238,27 +238,6 @@
 ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 
-/* ---- Sidebar/nav link style (from mock) ---- */
-.sidebar-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  color: #6B7280;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.15s;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.sidebar-link:hover { background: #F3F4F6; color: #111827; }
-.sidebar-link.active {
-  background: var(--primary-light);
-  color: var(--primary);
-  font-weight: 600;
-}
-
 /* ---- Badge system (from mock) ---- */
 .badge {
   display: inline-flex;
@@ -319,15 +298,6 @@
   background: linear-gradient(90deg, var(--primary) 0%, #B8243E 60%, var(--gold) 100%);
 }
 
-/* ---- Small caps technical label (kept from previous UI, restyled) ---- */
-.mono-label {
-  font-family: var(--font-sarabun), system-ui, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
 /* ---- Motion (subtle) ---- */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(8px); }
@@ -346,13 +316,10 @@
 .shadow-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-a.shadow-card:hover, .card-lift:hover {
+a.shadow-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.09), 0 0 0 1px #E5E7EB;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.09), 0 0 0 1px var(--border);
 }
-
-.sidebar-link svg { transition: transform 0.15s ease; }
-.sidebar-link:hover svg { transform: translateX(2px); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

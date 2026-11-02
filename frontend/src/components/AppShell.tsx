@@ -128,7 +128,7 @@ function SidebarToggleButton() {
       aria-keyshortcuts="Control+B"
       aria-expanded={isMobile ? openMobile : open}
     >
-      <Menu className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
+      <Menu className="w-5 h-5 text-faint" />
     </button>
   );
 }
@@ -306,7 +306,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             title="คีย์ลัด (?)"
             aria-label="คีย์ลัด"
           >
-            <Keyboard className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
+            <Keyboard className="w-5 h-5 text-faint" />
           </button>
         </header>
 

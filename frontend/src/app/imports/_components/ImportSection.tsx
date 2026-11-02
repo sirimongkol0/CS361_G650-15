@@ -394,7 +394,7 @@ export default function ImportSection() {
 
               <button
                 type="button"
-                className="btn btn-ghost px-2 py-1 text-xs"
+                className="btn px-2 py-1 text-xs hover:bg-soft"
                 onClick={() =>
                   void downloadTemplate(
                     `/imports/templates/${item}?format=csv&sample=true`

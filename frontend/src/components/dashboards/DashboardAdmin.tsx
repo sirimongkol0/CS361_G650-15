@@ -64,11 +64,11 @@ export default function DashboardAdmin() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-            <h1 className="text-2xl font-bold" style={{ color: "#111827" }}>
+            <h1 className="text-2xl font-bold text-ink">
               ภาพรวมความร่วมมือระดับหลักสูตร
             </h1>
           </div>
-          <p className="text-sm ml-4" style={{ color: "#6B7280" }}>ภาพรวมปี {beYear(year)}</p>
+          <p className="text-sm ml-4 text-faint">ภาพรวมปี {beYear(year)}</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -97,8 +97,8 @@ export default function DashboardAdmin() {
       <div className="grid gap-5 mb-5 stagger" style={{ gridTemplateColumns: "1fr 1fr 300px" }}>
         {/* Yearly trend */}
         <div className={`${contentCard} p-5`}>
-          <h2 className="font-bold mb-1" style={{ color: "#111827" }}>จำนวนความร่วมมือรายปี</h2>
-          <p className="text-xs mb-4" style={{ color: "#656C79" }}>นับจากปีที่ข้อตกลงเริ่มมีผล</p>
+          <h2 className="font-bold mb-1 text-ink">จำนวนความร่วมมือรายปี</h2>
+          <p className="text-xs mb-4 text-faint">นับจากปีที่ข้อตกลงเริ่มมีผล</p>
           <ChartContainer config={{ ความร่วมมือ: { label: "ความร่วมมือ" } }} className="aspect-auto h-[170px] w-full">
             <AreaChart accessibilityLayer data={adminYearlyTrend} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <defs>
@@ -118,8 +118,8 @@ export default function DashboardAdmin() {
 
         {/* Monthly activities */}
         <div className={`${contentCard} p-5`}>
-          <h2 className="font-bold mb-1" style={{ color: "#111827" }}>กิจกรรมรายเดือน</h2>
-          <p className="text-xs mb-4" style={{ color: "#656C79" }}>ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
+          <h2 className="font-bold mb-1 text-ink">กิจกรรมรายเดือน</h2>
+          <p className="text-xs mb-4 text-faint">ปี {beYear(year)} • ตามวันที่จัดกิจกรรม</p>
           <ChartContainer config={{ กิจกรรม: { label: "กิจกรรม" } }} className="aspect-auto h-[170px] w-full">
             <BarChart accessibilityLayer data={adminMonthlyActivities} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -133,15 +133,15 @@ export default function DashboardAdmin() {
 
         {/* Stakeholder types: one labelled bar per type, largest first */}
         <div className={`${contentCard} p-5`}>
-          <h2 className="font-bold mb-1" style={{ color: "#111827" }}>หน่วยงานคู่ความร่วมมือ</h2>
-          <p className="text-xs mb-3" style={{ color: "#656C79" }}>ตามประเภท • {shown(loaded, partnerTotal)} หน่วยงาน</p>
+          <h2 className="font-bold mb-1 text-ink">หน่วยงานคู่ความร่วมมือ</h2>
+          <p className="text-xs mb-3 text-faint">ตามประเภท • {shown(loaded, partnerTotal)} หน่วยงาน</p>
           {loaded && adminStakeholderTypes.length === 0 && <p className="text-xs text-faint">ยังไม่มีหน่วยงาน</p>}
           <ul className="space-y-2">
             {adminStakeholderTypes.map((t) => (
               <li key={t.name}>
                 <div className="flex items-center justify-between text-xs mb-0.5">
                   <span style={{ color: "#374151" }}>{t.name}</span>
-                  <span className="font-semibold" style={{ color: "#111827" }}>{t.value}</span>
+                  <span className="font-semibold text-ink">{t.value}</span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#F3F4F6" }}>
                   <div className="h-full rounded-full" style={{ width: `${(t.value / topTypeCount) * 100}%`, background: "#8B1538" }} />
@@ -157,9 +157,9 @@ export default function DashboardAdmin() {
         {/* Top collabs */}
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-sm" style={{ color: "#111827" }}>หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
+            <h2 className="font-bold text-sm text-ink">หน่วยงานที่มีความร่วมมือมากที่สุด</h2>
           </div>
-          <p className="text-xs -mt-2 mb-3" style={{ color: "#656C79" }}>นับข้อตกลงที่เริ่มมีผลและกิจกรรมในปี {beYear(year)}</p>
+          <p className="text-xs -mt-2 mb-3 text-faint">นับข้อตกลงที่เริ่มมีผลและกิจกรรมในปี {beYear(year)}</p>
           <div className="space-y-3.5">
             {loaded && adminTopCollaborations.length === 0 && <p className="text-xs text-faint">ยังไม่มีข้อมูล</p>}
             {adminTopCollaborations.map((c, i) => (
@@ -167,8 +167,8 @@ export default function DashboardAdmin() {
                 <span className="text-sm font-bold w-4 shrink-0" style={{ color: i < 3 ? "#8B1538" : "#656C79" }}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold truncate" style={{ color: "#111827" }}>{c.name}</span>
-                    <span className="text-xs font-bold shrink-0 ml-1" style={{ color: "#8B1538" }}>{c.score}</span>
+                    <span className="text-xs font-semibold truncate text-ink">{c.name}</span>
+                    <span className="text-xs font-bold shrink-0 ml-1 text-crimson">{c.score}</span>
                   </div>
                   <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#E5E7EB" }}>
                     <div className="h-full rounded-full" style={{ width: `${c.pct}%`, background: "#8B1538" }} />
@@ -182,7 +182,7 @@ export default function DashboardAdmin() {
         {/* MoU watch */}
         <div className={`${contentCard} p-5`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-sm" style={{ color: "#111827" }}>ข้อตกลงที่ต้องติดตาม</h2>
+            <h2 className="font-bold text-sm text-ink">ข้อตกลงที่ต้องติดตาม</h2>
           </div>
           <div className="space-y-3">
             {adminWatchMOU.map((m, i) => (
@@ -205,8 +205,8 @@ export default function DashboardAdmin() {
       <div className={`${contentCard} p-5 mt-5`}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-bold" style={{ color: "#111827" }}>การจัดการระบบ</h2>
-            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>เฉพาะผู้ดูแลระบบ</p>
+            <h2 className="font-bold text-ink">การจัดการระบบ</h2>
+            <p className="text-xs mt-0.5 text-faint">เฉพาะผู้ดูแลระบบ</p>
           </div>
           <div className="flex gap-3">
             {systemActions.map((a) => (
