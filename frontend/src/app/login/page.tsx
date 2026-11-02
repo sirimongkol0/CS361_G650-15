@@ -76,10 +76,10 @@ export default function LoginPage() {
               <Globe className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-display font-extrabold text-lg leading-tight text-ink">
+              <div className="font-display font-extrabold text-lg leading-snug text-ink">
                 PCSMS
               </div>
-              <div className="text-xs leading-tight text-faint">
+              <div className="text-xs leading-snug text-faint">
                 ระบบบริหารความร่วมมือและผู้มีส่วนได้ส่วนเสีย
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function LoginPage() {
             <div className="text-sm font-bold mb-3" style={{ color: '#C8961E' }}>
               มหาวิทยาลัยธรรมศาสตร์
             </div>
-            <h2 className="text-3xl font-extrabold text-white leading-tight mb-3 font-display">
+            <h2 className="text-3xl font-extrabold text-white leading-snug mb-3 font-display">
               ระบบบริหารความร่วมมือ
               <br />
               และผู้มีส่วนได้ส่วนเสีย

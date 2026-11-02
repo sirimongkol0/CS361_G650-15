@@ -26,6 +26,7 @@
   --muted:               #F3F4F6;
   --muted-foreground:    #656C79;
   --border:              #E5E7EB;
+  --ring:                #8B1538;
   --radius:              10px;
 
   --success:             #15803D;
@@ -53,6 +54,13 @@ body {
 
 main {
   flex: 1;
+}
+
+/* Keyboard focus ring for buttons, links and nav items. :where() keeps it at zero
+   specificity, so inputs that draw their own focus style with outline-none keep it. */
+:where(:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 /* Placeholder text must still reach 4.5:1 (preflight's default gray-400 is 2.5:1) */

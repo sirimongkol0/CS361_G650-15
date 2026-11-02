@@ -156,10 +156,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         {!collapsed && (
           <div className="overflow-hidden">
-            <div className="font-display font-extrabold text-sm leading-tight text-ink">
+            <div className="font-display font-extrabold text-sm leading-snug text-ink">
               CSTU • PCSMS
             </div>
-            <div className="text-xs leading-tight text-faint">
+            <div className="text-xs leading-snug text-faint">
               ความร่วมมือของหลักสูตร<br />
               วิทยาการคอมพิวเตอร์ ธรรมศาสตร์
             </div>

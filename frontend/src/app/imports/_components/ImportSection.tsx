@@ -595,7 +595,7 @@ export default function ImportSection() {
                             </span>
                           </div>
 
-                          <pre className="whitespace-pre-wrap break-all text-[11px] text-mute">
+                          <pre className="whitespace-pre-wrap [overflow-wrap:anywhere] text-[11px] text-mute">
                             {JSON.stringify(row, null, 2)}
                           </pre>
                         </div>

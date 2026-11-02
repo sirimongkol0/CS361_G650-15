@@ -65,8 +65,8 @@ function Changes({ row }: { row: AuditLogRow }) {
           {fields.map((field) => (
             <tr key={field.key} className="border-t border-line align-top">
               <td className="py-1 pr-3 font-mono text-mute">{field.key}</td>
-              <td className="py-1 pr-3 break-all text-[#b91c1c]">{show(field.before)}</td>
-              <td className="py-1 break-all text-[#15803d]">{show(field.after)}</td>
+              <td className="py-1 pr-3 [overflow-wrap:anywhere] text-[#b91c1c]">{show(field.before)}</td>
+              <td className="py-1 [overflow-wrap:anywhere] text-[#15803d]">{show(field.after)}</td>
             </tr>
           ))}
         </tbody>
