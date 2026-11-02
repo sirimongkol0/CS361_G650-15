@@ -20,6 +20,7 @@ import {
 
 import { downloadFile } from "@/lib/download-file";
 import { useConfirm } from "@/components/confirm-dialog";
+import { StepProgress } from "@/components/step-progress";
 
 type ImportKind = "feedback" | "outcome";
 
@@ -60,6 +61,11 @@ const statusLabels: Record<ImportStatus, string> = {
   rolled_back: "ยกเลิกแล้ว",
   failed: "ประมวลผลไม่สำเร็จ",
 };
+
+/* Stages of an import, shown for the selected batch: after upload the batch is checked
+   (ตรวจข้อมูล) until someone confirms it; a rolled-back or failed batch stops there. */
+const IMPORT_STEPS = ["เลือกไฟล์", "ตรวจข้อมูล", "ยืนยันนำเข้า"];
+const importStep = (status: ImportStatus) => (status === "committed" ? IMPORT_STEPS.length : 1);
 
 const kindLabels: Record<ImportKind, string> = {
   feedback: "ความคิดเห็น",
@@ -498,19 +504,6 @@ export default function ImportSection() {
                 </div>
 
                 <div className="flex gap-2">
-                  {selected.status === "previewed" &&
-                    selected.validRows > 0 && (
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        disabled={busy}
-                        onClick={() => void commit()}
-                      >
-                        <CheckCircle2 className="mr-1 inline h-4 w-4" />
-                        ยืนยันนำเข้า ({selected.validRows})
-                      </button>
-                    )}
-
                   {(["previewed", "committed"] as ImportStatus[]).includes(
                     selected.status
                   ) && (
@@ -525,6 +518,15 @@ export default function ImportSection() {
                     </button>
                   )}
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <StepProgress
+                  label="ขั้นตอนการนำเข้า"
+                  steps={IMPORT_STEPS}
+                  current={importStep(selected.status)}
+                  stopped={selected.status === "rolled_back" || selected.status === "failed"}
+                />
               </div>
 
               {selected.status === "processing" ? (
@@ -579,6 +581,32 @@ export default function ImportSection() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {selected.status === "previewed" && (
+                    <div className="mb-4 rounded-md border border-line bg-paper p-4">
+                      <h3 className="text-sm font-semibold text-ink">ตรวจก่อนยืนยัน</h3>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-mute">
+                        <li>จะนำเข้า{kindLabels[selected.kind]} {selected.validRows} แถว</li>
+                        {selected.invalidRows > 0 && (
+                          <li>ข้าม {selected.invalidRows} แถวที่ไม่ผ่าน ตามเหตุผลด้านบน</li>
+                        )}
+                        <li>ยกเลิกชุดนี้ได้ภายหลัง โดยระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้</li>
+                      </ul>
+                      {selected.validRows > 0 ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary mt-3"
+                          disabled={busy}
+                          onClick={() => void commit()}
+                        >
+                          <CheckCircle2 className="mr-1 inline h-4 w-4" />
+                          ยืนยันนำเข้า ({selected.validRows})
+                        </button>
+                      ) : (
+                        <p className="mt-3 text-sm text-faint">ไม่มีแถวที่นำเข้าได้ แก้ไฟล์แล้วอัปโหลดใหม่</p>
+                      )}
                     </div>
                   )}
 
