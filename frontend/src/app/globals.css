@@ -1,44 +1,80 @@
 @import 'tailwindcss';
+/* shadcn/ui: enter/exit animations and the data-* state variants its components use */
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/* The app has no dark theme: dark: utilities in shadcn components apply only
+   under an explicit .dark class, never from the OS colour scheme. */
+@custom-variant dark (&:is(.dark *));
 
 /* =============================================
    THAMMASAT UNIVERSITY COLOR SYSTEM (from the former Figma mock prototype)
    Primary: Crimson Red  #8B1538
-   Accent:  Gold         #C8961E
+   Gold:    TU Gold      #C8961E
    Base:    White + Black/Dark Gray
-   Each colour is defined once here, with shadcn/ui names; the Tailwind colour
-   names the pages use (crimson, gold, ink, faint, …) map onto it in @theme below.
+   Each colour is defined once here. The shadcn/ui names (--primary, --accent,
+   --ring, …) feed its components; the Tailwind names the pages use (crimson,
+   gold, ink, faint, …) map onto the same values in @theme below.
    ============================================= */
 :root {
   --background:          #F7F8FA;
   --foreground:          #111827;
   --card:                #FFFFFF;
+  --card-foreground:     var(--foreground);
+  --popover:             #FFFFFF;
+  --popover-foreground:  var(--foreground);
 
   --primary:             #8B1538;
   --primary-foreground:  #FFFFFF;
   --primary-hover:       #6F1030;
   --primary-light:       #FDF2F5;
   --primary-muted:       #F5D6DE;
+  --secondary:           var(--primary-muted);
+  --secondary-foreground: var(--primary);
 
-  --accent:              #C8961E;
-  --accent-hover:        #A87A18;
-  --accent-light:        #FEF6E4;
-  --accent-muted:        #F5E0A8;
-  --accent-dark:         #92670A;
+  --gold:                #C8961E;
+  --gold-hover:          #A87A18;
+  --gold-light:          #FEF6E4;
+  --gold-muted:          #F5E0A8;
+  --gold-dark:           #92670A;
+
+  /* shadcn's "accent" is the subtle hover/selected background in menus and
+     lists, not a brand colour, so it is neutral here; TU gold is --gold. */
+  --accent:              #F3F4F6;
+  --accent-foreground:   var(--foreground);
 
   --muted:               #F3F4F6;
   --muted-foreground:    #656C79;
   --subtle-foreground:   #4B5563;
   --border:              #E5E7EB;
+  --input:               var(--border);
   --ring:                #8B1538;
   --radius:              10px;
 
+  --destructive:         #B91C1C;
   --success:             #15803D;
   --warning:             #B45309;
-  --danger:              #B91C1C;
+  --danger:              var(--destructive);
   --info:                #1D4ED8;
+
+  --chart-1:             var(--primary);
+  --chart-2:             var(--gold);
+  --chart-3:             #1D4ED8;
+  --chart-4:             #15803D;
+  --chart-5:             #6D28D9;
+
+  --sidebar:                    #FFFFFF;
+  --sidebar-foreground:         var(--foreground);
+  --sidebar-primary:            var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent:             var(--primary-light);
+  --sidebar-accent-foreground:  var(--primary);
+  --sidebar-border:             var(--border);
+  --sidebar-ring:               var(--ring);
 }
 
 @theme inline {
+  /* Names used across the existing pages */
   --color-ink: var(--foreground);
   --color-mute: var(--subtle-foreground);
   --color-faint: var(--muted-foreground);
@@ -51,16 +87,50 @@
   --color-crimson-light: var(--primary-light);
   --color-crimson-muted: var(--primary-muted);
 
-  --color-gold: var(--accent);
-  --color-gold-hover: var(--accent-hover);
-  --color-gold-light: var(--accent-light);
-  --color-gold-muted: var(--accent-muted);
-  --color-gold-dark: var(--accent-dark);
+  --color-gold: var(--gold);
+  --color-gold-hover: var(--gold-hover);
+  --color-gold-light: var(--gold-light);
+  --color-gold-muted: var(--gold-muted);
+  --color-gold-dark: var(--gold-dark);
+
+  /* Names used by shadcn/ui components */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 
   /* --font-sarabun comes from next/font (app/layout.tsx). Headings use it too:
      the former display face (Plus Jakarta Sans) has no Thai glyphs. */
   --font-sans: var(--font-sarabun), system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   --font-display: var(--font-sarabun), system-ui, sans-serif;
+  --font-heading: var(--font-display);
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border);
   --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.09), 0 0 0 1px var(--border);
@@ -202,7 +272,7 @@
   white-space: nowrap;
 }
 .badge-crimson { background: var(--primary-muted); color: var(--primary); }
-.badge-gold    { background: var(--accent-muted);  color: #7C5608; }
+.badge-gold    { background: var(--gold-muted);  color: #7C5608; }
 .badge-blue    { background: #DBEAFE; color: #1D4ED8; }
 .badge-green   { background: #DCFCE7; color: #15803D; }
 .badge-purple  { background: #EDE9FE; color: #6D28D9; }
@@ -246,7 +316,7 @@
 
 /* TU gradient strip (sidebar header / topbar accent) */
 .tu-stripe {
-  background: linear-gradient(90deg, var(--primary) 0%, #B8243E 60%, var(--accent) 100%);
+  background: linear-gradient(90deg, var(--primary) 0%, #B8243E 60%, var(--gold) 100%);
 }
 
 /* ---- Small caps technical label (kept from previous UI, restyled) ---- */

@@ -11,6 +11,7 @@ import { ApiError, apiErrorMessage, apiPost } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
 import { AccessState, LoadingState } from "@/components/data-states";
 import { Field, Notice, inputCls, useAction } from "@/components/form-ui";
+import { Button } from "@/components/ui/button";
 import { useDocumentTitle } from "@/lib/list-tools";
 
 const POLICY_HINT = "อย่างน้อย 8 ตัว มีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข";
@@ -75,10 +76,10 @@ function ChangePasswordForm() {
       <Field label="ยืนยันรหัสผ่านใหม่">
         <input className={inputCls} type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
       </Field>
-      <button type="submit" className="btn btn-primary mt-1 gap-2" disabled={action.busy}>
+      <Button type="submit" className="mt-1 gap-2" disabled={action.busy}>
         <KeyRound className="w-4 h-4" />
         เปลี่ยนรหัสผ่าน
-      </button>
+      </Button>
     </form>
   );
 }
