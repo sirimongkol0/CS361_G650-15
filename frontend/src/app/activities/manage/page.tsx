@@ -4,8 +4,7 @@
 // Coordinators manage only activities they created; the backend re-checks every action.
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { CalendarPlus, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import {
   apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadManagePartners, useApiResource,
   type AgreementOption, type PartnerView,
@@ -16,6 +15,7 @@ import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useConfirm } from "@/components/confirm-dialog";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 /** GET /activities/manage row (internal view). */
 interface ManagedActivity {
@@ -97,11 +97,7 @@ export default function ManageActivitiesPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-            <Link href="/activities" className="text-faint hover:text-crimson">กิจกรรม</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-crimson">จัดการกิจกรรม</span>
-          </nav>
+          <Breadcrumb items={[{ label: "กิจกรรม", href: "/activities" }, { label: "จัดการกิจกรรม" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการกิจกรรม</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff ? "กิจกรรมทั้งหมด รวมรายการที่ยังไม่เผยแพร่" : "เพิ่มและแก้ไขกิจกรรมของตัวเองได้ เจ้าหน้าที่เป็นผู้เผยแพร่และลบ"}

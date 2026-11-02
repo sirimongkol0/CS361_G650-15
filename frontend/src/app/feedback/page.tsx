@@ -7,8 +7,7 @@
 // The sender type follows the role; only staff/admin pick it (#101).
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { Search, ChevronRight, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
+import { Search, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
 import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadExchangeStudents, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
 import { averageRating } from "@/lib/dashboard-data";
 import { useRole } from "@/lib/role-context";
@@ -18,6 +17,7 @@ import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 import { feedbackStatusLabels, label } from "@/lib/labels";
 import { ImprovementSection } from "@/components/improvement-section";
 import { StatusBadge } from "@/components/status-badge";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
@@ -275,13 +275,7 @@ export default function FeedbackPage() {
   return (
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="mb-6">
-        <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-          <Link href="/" className="text-faint hover:text-crimson">
-            หน้าหลัก
-          </Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-crimson">ความคิดเห็น</span>
-        </nav>
+        <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ความคิดเห็น" }]} />
         <h1 className="text-2xl font-bold text-ink font-display">ความคิดเห็น</h1>
         <p className="text-sm mt-0.5 text-faint">
           {role === "coordinator" && isManager

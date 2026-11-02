@@ -168,7 +168,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
+      <nav aria-label="เมนูหลัก" className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
         {navItems.map(({ to, icon, label, end }) => {
           const Icon = ICON_MAP[icon] ?? LayoutDashboard;
           // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.

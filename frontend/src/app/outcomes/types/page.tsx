@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
-import { ChevronRight, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { apiGetFresh, apiPatch, apiPost, useApiResource, type OutcomeType } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export default function OutcomeTypesPage() {
   useDocumentTitle("ตั้งค่าประเภทผลลัพธ์");
@@ -60,7 +60,7 @@ export default function OutcomeTypesPage() {
   const rows = resource.data;
   return <div className="p-6 max-w-(--breakpoint-xl) mx-auto space-y-5">
     <div>
-      <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint"><Link href="/" className="hover:text-crimson">หน้าหลัก</Link><ChevronRight className="w-3 h-3" /><span className="text-crimson">ตั้งค่าประเภทผลลัพธ์</span></nav>
+      <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ตั้งค่าประเภทผลลัพธ์" }]} />
       <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทผลลัพธ์</h1>
       <p className="text-sm text-faint mt-1">ประเภทที่เพิ่มจะใช้ในฟอร์มผลลัพธ์ได้ทันที ปิดใช้งานได้โดยผลลัพธ์เดิมยังคงอยู่</p>
     </div>

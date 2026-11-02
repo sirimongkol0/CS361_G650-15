@@ -4,7 +4,7 @@ import { useMemo, useRef } from "react";
 import Link from "next/link";
 import { useUrlState } from "@/lib/url-state";
 import { SearchInput } from "@/components/search-input";
-import { CalendarDays, ChevronRight, MoreHorizontal, Plus, Users } from "lucide-react";
+import { CalendarDays, MoreHorizontal, Plus, Users } from "lucide-react";
 import { EmptyState, ErrorState } from "@/components/data-states";
 import { ScopeLevelBadge, ScopeLevelOptions } from "@/components/scope-level-badge";
 import { loadActivities, useApiResource } from "@/lib/api";
@@ -19,6 +19,7 @@ import {
   useRowLink, yearPresets, type FilterChip,
 } from "@/components/list-ui";
 import { DateInput } from "@/components/form-ui";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
@@ -141,11 +142,7 @@ export default function ActivitiesPage() {
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-            <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">กิจกรรม</span>
-          </nav>
+          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "กิจกรรม" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">กิจกรรม</h1>
           <p className="text-sm mt-0.5 text-faint">
             {role === "public" ? "กิจกรรมความร่วมมือของหลักสูตร" : "กิจกรรมและโครงการความร่วมมือ"}

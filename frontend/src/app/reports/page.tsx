@@ -6,7 +6,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronRight, Printer, FileText, AlertTriangle, Building2, CalendarDays, MessageSquare, Target,
+  Printer, FileText, AlertTriangle, Building2, CalendarDays, MessageSquare, Target,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
@@ -24,6 +24,7 @@ import { AccessState, ErrorState, LoadingState } from "@/components/data-states"
 import { ExportCsvButton } from "@/components/list-ui";
 import { Notice } from "@/components/form-ui";
 import { RenewalDecisionDialog, RenewalSummary } from "@/components/renewals";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const REPORT_ROLES = ["staff", "admin"];
 const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
@@ -369,11 +370,7 @@ export default function ReportsPage() {
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint print:hidden">
-            <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">รายงานและสถิติ</span>
-          </nav>
+          <Breadcrumb className="mb-1.5 print:hidden" items={[{ label: "หน้าหลัก", href: "/" }, { label: "รายงานและสถิติ" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">
             รายงานและสถิติ {year ? `ปี ${beYear(year)}` : "ทุกช่วงเวลา"}
           </h1>

@@ -5,8 +5,7 @@
 // staff/admin: all); writes are re-checked by the backend.
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { ChevronRight, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Pencil, Trash2, UserPlus } from "lucide-react";
 import { apiDelete, apiGetList, apiPost, apiPut, countryLabel, useApiResource } from "@/lib/api";
 import { label, partnerTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
@@ -14,6 +13,7 @@ import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useConfirm } from "@/components/confirm-dialog";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 /** GET /partners/ row as seen by a signed-in manager. */
 interface ManagedPartner {
@@ -78,11 +78,7 @@ export default function ManageStakeholdersPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-            <Link href="/stakeholders" className="text-faint hover:text-crimson">หน่วยงานคู่ความร่วมมือ</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-crimson">จัดการหน่วยงาน</span>
-          </nav>
+          <Breadcrumb items={[{ label: "หน่วยงานคู่ความร่วมมือ", href: "/stakeholders" }, { label: "จัดการหน่วยงาน" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการหน่วยงานและผู้ประสานงาน</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff ? "ทุกรายการ รวมฉบับร่าง" : "รายการที่เผยแพร่แล้วและฉบับร่างของตัวเอง แก้ไขได้เฉพาะรายการของตัวเอง"}

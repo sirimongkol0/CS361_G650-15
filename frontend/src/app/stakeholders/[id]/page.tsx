@@ -4,7 +4,7 @@ import { partnerTypeLabels, label, displayDescription } from "@/lib/labels";
 import Link from "next/link";
 import { PartnerAvatar } from "@/components/partner-avatar";
 import { useParams } from "next/navigation";
-import { ChevronRight, ExternalLink, Globe, Mail, MapPin } from "lucide-react";
+import { ExternalLink, Globe, Mail, MapPin } from "lucide-react";
 import { ErrorState, LoadingState } from "@/components/data-states";
 import { RelatedRecords } from "@/components/related-records";
 import { SourceLinks } from "@/components/source-links";
@@ -13,6 +13,7 @@ import { DetailToolbar } from "@/components/detail-toolbar";
 import { canManage, useRole } from "@/lib/role-context";
 import { OutcomeSection } from "@/components/outcome-section";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export default function StakeholderDetailPage() {
   const params = useParams<{ id: string }>();
@@ -46,13 +47,7 @@ export default function StakeholderDetailPage() {
 
   return (
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint">
-        <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
-        <ChevronRight className="w-3 h-3" />
-        <Link href="/stakeholders" className="hover:text-crimson">หน่วยงานคู่ความร่วมมือ</Link>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-crimson">{item.name}</span>
-      </nav>
+      <Breadcrumb className="mb-5" items={[{ label: "หน้าหลัก", href: "/" }, { label: "หน่วยงานคู่ความร่วมมือ", href: "/stakeholders" }, { label: item.name }]} />
       <DetailToolbar kind="stakeholders" id={item.id} title={item.name} />
 
       <section className="bg-white rounded-base shadow-card p-6 mb-5">

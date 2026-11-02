@@ -6,7 +6,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ChevronRight, Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
+import { Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
 import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
@@ -18,6 +18,7 @@ import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInpu
 import { useDocumentTitle } from "@/lib/list-tools";
 import { StatusBadge } from "@/components/status-badge";
 import { useConfirm } from "@/components/confirm-dialog";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // same limit as the backend (MAX_UPLOAD_BYTES)
 
@@ -100,11 +101,7 @@ export default function ManageDocumentsPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-            <Link href="/documents" className="text-faint hover:text-crimson">ข้อตกลง</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-crimson">จัดการข้อตกลง</span>
-          </nav>
+          <Breadcrumb items={[{ label: "ข้อตกลง", href: "/documents" }, { label: "จัดการข้อตกลง" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการข้อตกลง</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff

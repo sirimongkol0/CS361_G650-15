@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronRight, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ApiError, loadPartnerTimeline, useApiResource } from "@/lib/api";
 import { beYear } from "@/lib/dashboard-data";
@@ -14,6 +14,7 @@ import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
 import { AccessState, ErrorState, LoadingState } from "@/components/data-states";
 import { RenewalChain } from "@/components/renewals";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const REPORT_ROLES = ["staff", "admin"];
 const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
@@ -52,11 +53,7 @@ export default function PartnerReportPage() {
 
   return (
     <div className="p-6 max-w-(--breakpoint-lg) mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint print:hidden">
-        <Link href="/reports" className="text-faint hover:text-crimson">รายงานและสถิติ</Link>
-        <ChevronRight className="w-3 h-3" aria-hidden />
-        <span className="text-crimson">{partner.name}</span>
-      </nav>
+      <Breadcrumb className="mb-1.5 print:hidden" items={[{ label: "รายงานและสถิติ", href: "/reports" }, { label: partner.name }]} />
       <div className="flex items-start justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-bold text-ink font-display">รายงานความร่วมมือ: {partner.name}</h1>

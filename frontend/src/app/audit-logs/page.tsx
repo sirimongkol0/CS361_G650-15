@@ -5,7 +5,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import {
   formatThaiDateTime, loadAuditLogs, loadAuditUsers, useApiData, useApiResource, type AuditLogRow,
 } from "@/lib/api";
@@ -13,6 +12,7 @@ import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Pagination } from "@/components/list-ui";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const PAGE_SIZE = 25;
 const MANAGER_ROLES = ["staff", "admin"];
@@ -112,11 +112,7 @@ export default function AuditLogPage() {
   const setFilter = (set: (value: string) => void) => (value: string) => { set(value); setPage(1); };
   return (
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-        <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
-        <ChevronRight className="w-3 h-3" aria-hidden />
-        <span className="text-crimson">ประวัติการแก้ไข</span>
-      </nav>
+      <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ประวัติการแก้ไข" }]} />
       <h1 className="text-2xl font-bold text-ink font-display">ประวัติการแก้ไข</h1>
       <p className="text-sm mt-0.5 mb-5 text-faint">บันทึกการเปลี่ยนแปลงข้อมูลทั้งหมด (อ่านอย่างเดียว)</p>
 

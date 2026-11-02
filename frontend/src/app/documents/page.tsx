@@ -8,7 +8,6 @@ import { SearchInput } from "@/components/search-input";
 import { documentStatusLabels, documentTypeLabels, label, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import Link from "next/link";
 import {
-  ChevronRight,
   FileText,
   FolderCog,
 } from "lucide-react";
@@ -25,6 +24,7 @@ import {
   useRowLink, yearPresets, type FilterChip,
 } from "@/components/list-ui";
 import { DateInput } from "@/components/form-ui";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 
 const inputCls =
@@ -108,13 +108,7 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-            <Link href="/" className="text-faint hover:text-crimson">
-              หน้าหลัก
-            </Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">ข้อตกลง</span>
-          </nav>
+          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ข้อตกลง" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">
             ข้อตกลง
           </h1>

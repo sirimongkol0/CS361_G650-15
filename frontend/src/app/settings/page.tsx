@@ -5,14 +5,14 @@
 // Roles live in Cognito groups, so they are not editable here.
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
-import { ChevronRight, KeyRound, Mail, Shield } from "lucide-react";
+import { KeyRound, Mail, Shield } from "lucide-react";
 import { ApiError, apiErrorMessage, apiPost } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
 import { AccessState, LoadingState } from "@/components/data-states";
 import { Field, Notice, inputCls, useAction } from "@/components/form-ui";
 import { Button } from "@/components/ui/button";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const POLICY_HINT = "อย่างน้อย 8 ตัว มีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข";
 
@@ -94,11 +94,7 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-5">
       <div>
-        <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-          <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-crimson">ตั้งค่าบัญชี</span>
-        </nav>
+        <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ตั้งค่าบัญชี" }]} />
         <h1 className="text-2xl font-bold text-ink font-display">ตั้งค่าบัญชี</h1>
         <p className="text-sm mt-0.5 text-faint">ข้อมูลบัญชีที่ใช้เข้าสู่ระบบ</p>
       </div>

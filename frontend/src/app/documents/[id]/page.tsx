@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronRight } from "lucide-react";
 import { ErrorState, LoadingState } from "@/components/data-states";
 import { RelatedRecords } from "@/components/related-records";
 import { SourceLinks } from "@/components/source-links";
@@ -15,6 +14,7 @@ import { OutcomeSection } from "@/components/outcome-section";
 import { DocumentPreview } from "@/components/document-preview";
 import { ExpiryBadge } from "@/components/expiry-badge";
 import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 
 export default function DocumentDetailPage() {
@@ -36,13 +36,7 @@ export default function DocumentDetailPage() {
 
 return (
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint">
-        <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
-        <ChevronRight className="w-3 h-3" />
-        <Link href="/documents" className="hover:text-crimson">ข้อตกลง</Link>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-crimson">{doc.title}</span>
-      </nav>
+      <Breadcrumb className="mb-5" items={[{ label: "หน้าหลัก", href: "/" }, { label: "ข้อตกลง", href: "/documents" }, { label: doc.title }]} />
       <DetailToolbar kind="documents" id={doc.id} title={doc.title} />
 
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
