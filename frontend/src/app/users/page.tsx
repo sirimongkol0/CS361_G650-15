@@ -4,12 +4,13 @@
 // a row appears here after the account's first login. Admins can switch an account off or on.
 
 import { useState } from "react";
-import Link from "next/link";
-import { ChevronRight, Search, Shield } from "lucide-react";
+import { Search, Shield } from "lucide-react";
 import { apiErrorMessage, apiPatch, formatThaiDateTime, loadUsers, useApiResource, type UserAccount } from "@/lib/api";
 import { ROLES, getRoleConfig, useRole, type UserRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
+import { useConfirm } from "@/components/confirm-dialog";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   public: "ดูข้อมูลที่เผยแพร่",
@@ -49,6 +50,7 @@ function RoleBadge({ role }: { role: UserRole }) {
 }
 
 export default function UserManagementPage() {
+  const confirm = useConfirm();
   useDocumentTitle("ผู้ใช้และสิทธิ์");
   const { role, status: session } = useRole();
   const [activeTab, setActiveTab] = useState<"users" | "matrix">("users");
@@ -65,7 +67,14 @@ export default function UserManagementPage() {
 
   async function toggleActive(user: UserAccount) {
     const verb = user.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน";
-    if (!window.confirm(`ยืนยัน${verb}บัญชี ${user.email}?`)) return;
+    if (!(await confirm({
+      title: `${verb}บัญชี ${user.email} ใช่ไหม`,
+      description: user.isActive
+        ? "ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้จนกว่าจะเปิดการใช้งานอีกครั้ง"
+        : "ผู้ใช้นี้จะเข้าสู่ระบบได้อีกครั้งตามบทบาทเดิม",
+      action: `${verb}บัญชี`,
+      destructive: user.isActive,
+    }))) return;
     setBusyId(user.id);
     setToggleError(null);
     try {
@@ -94,13 +103,9 @@ export default function UserManagementPage() {
     }`;
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="mb-6">
-        <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-          <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-crimson">ผู้ใช้และสิทธิ์</span>
-        </nav>
+        <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ผู้ใช้และสิทธิ์" }]} />
         <h1 className="text-2xl font-bold text-ink font-display">ผู้ใช้และสิทธิ์</h1>
         <p className="text-sm mt-0.5 text-faint">บัญชีที่เข้าสู่ระบบแล้ว และสิทธิ์ของแต่ละบทบาท</p>
       </div>
@@ -143,7 +148,7 @@ export default function UserManagementPage() {
             <div className="relative max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
               <input
-                className="w-full rounded-lg border-[1.5px] border-line bg-white pl-9 pr-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
+                className="w-full rounded-lg border-[1.5px] border-line bg-white pl-9 pr-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
                 placeholder="ค้นหาอีเมลหรือบทบาท"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

@@ -10,7 +10,7 @@ const card =
   "rounded-lg border border-line bg-white p-5 shadow-card";
 
 const control =
-  "rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-crimson focus:outline-none focus:ring-2 focus:ring-crimson/10";
+  "rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-crimson focus:outline-hidden focus:ring-2 focus:ring-crimson/10";
 
 const initialFilters = {
   date_from: "",
@@ -220,7 +220,7 @@ export default function ExportSection() {
         {renderIdFilter("respondent_type_id")}
         {renderIdFilter("outcome_type_id")}
         <label className="grid gap-1 text-xs text-faint">
-          สถานะ Feedback
+          สถานะความคิดเห็น
           <select
             className={control}
             value={filters.status}
@@ -249,7 +249,7 @@ export default function ExportSection() {
           onClick={() => void exportCsv("feedback")}
         >
           <Download className="mr-1 inline h-4 w-4" />
-          Feedback CSV
+          ความคิดเห็น CSV
         </button>
         <button
           type="button"
@@ -262,7 +262,7 @@ export default function ExportSection() {
         </button>
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn hover:bg-soft"
           disabled={busy}
           onClick={() => {
             setFilters(initialFilters);

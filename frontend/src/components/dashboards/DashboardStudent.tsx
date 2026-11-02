@@ -4,17 +4,11 @@ import Link from "next/link";
 import { CalendarDays, GraduationCap, CheckCircle2, Clock, ChevronRight, Bell, MessageSquare } from "lucide-react";
 import { formatThaiPeriod, loadActivities, useApiData, type ActivityView } from "@/lib/api";
 import { shown, upcomingActivities, useMyInsights } from "@/lib/dashboard-data";
+import { StatusBadge } from "@/components/status-badge";
 
 const statCard =
   "stat-card bg-white rounded-base shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all duration-150 p-5";
 const contentCard = "content-card bg-white rounded-base shadow-card";
-
-const exchangeStatusColors: Record<string, string> = {
-  "เสร็จสิ้น": "badge-green",
-  "กำลังดำเนินการ": "badge-blue",
-  "กำลังสมัคร": "badge-gold",
-  "วางแผน": "badge-purple",
-};
 
 export default function DashboardStudent() {
   // Upcoming activities are the published list; exchange and feedback are this student's own (GET /insights/me).
@@ -31,20 +25,20 @@ export default function DashboardStudent() {
     { icon: CalendarDays, label: "กิจกรรมที่จะถึง", value: String(upcoming.length), color: "#B45309", bg: "#FEF3C7" },
     { icon: CheckCircle2, label: "เปิดรับสมัคร", value: String(openActivities.length), color: "#15803D", bg: "#DCFCE7" },
     { icon: GraduationCap, label: "โครงการแลกเปลี่ยนของฉัน", value: shown(loaded, exchange.length), color: "#8B1538", bg: "#F5D6DE" },
-    { icon: MessageSquare, label: "Feedback ที่ส่งแล้ว", value: shown(loaded, mine?.counts.feedbackSubmitted ?? 0), color: "#1D4ED8", bg: "#DBEAFE" },
+    { icon: MessageSquare, label: "ความคิดเห็นที่ส่งแล้ว", value: shown(loaded, mine?.counts.feedbackSubmitted ?? 0), color: "#1D4ED8", bg: "#DBEAFE" },
   ];
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-2 h-6 rounded-full" style={{ background: "linear-gradient(180deg, #8B1538, #C8961E)" }} />
-          <h1 className="text-2xl font-bold" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <h1 className="text-2xl font-bold text-ink">
             หน้าหลักนักศึกษา
           </h1>
         </div>
-        <p className="text-sm ml-4" style={{ color: "#6B7280" }}>กิจกรรมที่จะถึงและโครงการแลกเปลี่ยนของคุณ</p>
+        <p className="text-sm ml-4 text-faint">กิจกรรมที่จะถึงและโครงการแลกเปลี่ยนของคุณ</p>
       </div>
 
       {/* Welcome card */}
@@ -53,19 +47,19 @@ export default function DashboardStudent() {
         style={{ background: "linear-gradient(135deg, #8B1538 0%, #B8243E 100%)", color: "#fff" }}
       >
         <div
-          className="rounded-full flex items-center justify-center w-14 h-14 flex-shrink-0"
+          className="rounded-full flex items-center justify-center w-14 h-14 shrink-0"
           style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
         >
           <GraduationCap className="w-7 h-7" />
         </div>
         <div className="flex-1">
-          <div className="font-extrabold text-lg" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="font-extrabold text-lg">
             สวัสดี
           </div>
           <div className="text-sm opacity-80">ติดตามกิจกรรมที่จะถึงและโครงการแลกเปลี่ยนได้ที่นี่</div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-extrabold" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="text-2xl font-extrabold">
             {shown(loaded, completedExchange)}
           </div>
           <div className="text-xs opacity-70">โครงการที่เสร็จสิ้น</div>
@@ -79,8 +73,8 @@ export default function DashboardStudent() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background: s.bg }}>
               <s.icon className="w-5 h-5" style={{ color: s.color }} />
             </div>
-            <div className="text-2xl font-extrabold mb-0.5" style={{ color: "#111827", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{s.value}</div>
-            <div className="text-xs" style={{ color: "#6B7280" }}>{s.label}</div>
+            <div className="text-2xl font-extrabold mb-0.5 text-ink">{s.value}</div>
+            <div className="text-xs text-faint">{s.label}</div>
           </div>
         ))}
       </div>
@@ -88,26 +82,26 @@ export default function DashboardStudent() {
       <div className="grid gap-5 stagger" style={{ gridTemplateColumns: "1fr 320px" }}>
         {/* Exchange programmes */}
         <div className={contentCard}>
-          <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-            <h2 className="font-bold" style={{ color: "#111827" }}>โครงการแลกเปลี่ยน</h2>
-            <Link href="/exchange" className="text-xs font-semibold flex items-center gap-1" style={{ color: "#8B1538" }}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+            <h2 className="font-bold text-ink">โครงการแลกเปลี่ยน</h2>
+            <Link href="/exchange" className="text-xs font-semibold flex items-center gap-1 text-crimson">
               ดูทั้งหมด <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
-          <div className="divide-y" style={{ borderColor: "#F3F4F6" }}>
+          <div className="divide-y border-soft">
             {loaded && exchange.length === 0 && (
               <p className="px-5 py-4 text-xs text-faint">ยังไม่มีข้อมูลการแลกเปลี่ยนของบัญชีนี้</p>
             )}
             {exchange.slice(0, 5).map((p) => (
               <div key={p.id} className="flex items-center gap-4 px-5 py-4 hover:bg-[#FAFAFA]">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#F5D6DE" }}>
-                  <GraduationCap className="w-5 h-5" style={{ color: "#8B1538" }} />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-crimson-muted">
+                  <GraduationCap className="w-5 h-5 text-crimson" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate" style={{ color: "#111827" }}>{p.program ?? p.name}</div>
-                  <div className="text-xs mt-0.5" style={{ color: "#9CA3AF" }}>{p.toOrganization ?? "—"} • {formatThaiPeriod(p.startDate, p.endDate)}</div>
+                  <div className="font-semibold text-sm truncate text-ink">{p.program ?? p.name}</div>
+                  <div className="text-xs mt-0.5 text-faint">{p.toOrganization ?? "—"} • {formatThaiPeriod(p.startDate, p.endDate)}</div>
                 </div>
-                {p.status && <span className={`badge ${exchangeStatusColors[p.status] ?? "badge-gray"}`}>{p.status}</span>}
+                {p.status && <StatusBadge kind="exchange" status={p.status}>{p.status}</StatusBadge>}
               </div>
             ))}
           </div>
@@ -118,17 +112,17 @@ export default function DashboardStudent() {
           {/* Upcoming */}
           <div className={`${contentCard} p-4`}>
             <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-4 h-4" style={{ color: "#8B1538" }} />
-              <h3 className="font-bold text-sm" style={{ color: "#111827" }}>กิจกรรมที่จะถึง</h3>
+              <Bell className="w-4 h-4 text-crimson" />
+              <h3 className="font-bold text-sm text-ink">กิจกรรมที่จะถึง</h3>
             </div>
             <div className="space-y-2.5">
               {upcoming.length === 0 && <p className="text-xs text-faint">ยังไม่มีกิจกรรมที่จะถึง</p>}
               {upcoming.slice(0, 5).map((a) => (
                 <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-3 p-2.5 rounded-lg bg-paper">
-                  <Clock className="w-4 h-4 flex-shrink-0" style={{ color: "#C8961E" }} />
+                  <Clock className="w-4 h-4 shrink-0 text-gold" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold truncate" style={{ color: "#111827" }}>{a.name}</div>
-                    <div className="text-xs" style={{ color: "#9CA3AF" }}>{a.date}{a.location && ` • ${a.location}`}</div>
+                    <div className="text-sm font-semibold truncate text-ink">{a.name}</div>
+                    <div className="text-xs text-faint">{a.date}{a.location && ` • ${a.location}`}</div>
                   </div>
                 </Link>
               ))}

@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronRight, Printer } from "lucide-react";
+import { Printer } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ApiError, loadPartnerTimeline, useApiResource } from "@/lib/api";
 import { beYear } from "@/lib/dashboard-data";
@@ -14,6 +14,7 @@ import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
 import { AccessState, ErrorState, LoadingState } from "@/components/data-states";
 import { RenewalChain } from "@/components/renewals";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const REPORT_ROLES = ["staff", "admin"];
 const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
@@ -21,7 +22,7 @@ const KINDS = [
   { key: "agreements", name: "ข้อตกลงที่เริ่มมีผล", color: "#d97706" },
   { key: "activities", name: "กิจกรรม", color: "#1d4ed8" },
   { key: "outcomes", name: "ผลลัพธ์", color: "#16a34a" },
-  { key: "feedback", name: "Feedback", color: "#be185d" },
+  { key: "feedback", name: "ความคิดเห็น", color: "#be185d" },
 ] as const;
 
 export default function PartnerReportPage() {
@@ -48,15 +49,11 @@ export default function PartnerReportPage() {
   const activeYears = timeline.filter((row) => row.activities + row.outcomes + row.feedback > 0).map((row) => row.year);
   const span = activeYears.length
     ? `มีความเคลื่อนไหว ${activeYears.length} ปี (${[...new Set([activeYears[0], activeYears[activeYears.length - 1]])].map(beYear).join("–")})`
-    : "ยังไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ที่บันทึกไว้";
+    : "ยังไม่มีกิจกรรม ผลลัพธ์ หรือความคิดเห็นที่บันทึกไว้";
 
   return (
-    <div className="p-6 max-w-screen-lg mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint print:hidden">
-        <Link href="/reports" className="text-faint hover:text-crimson">รายงานและสถิติ</Link>
-        <ChevronRight className="w-3 h-3" aria-hidden />
-        <span className="text-crimson">{partner.name}</span>
-      </nav>
+    <div className="p-6 max-w-(--breakpoint-lg) mx-auto">
+      <Breadcrumb className="mb-1.5 print:hidden" items={[{ label: "รายงานและสถิติ", href: "/reports" }, { label: partner.name }]} />
       <div className="flex items-start justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-bold text-ink font-display">รายงานความร่วมมือ: {partner.name}</h1>

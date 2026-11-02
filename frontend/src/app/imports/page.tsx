@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 
 import { AccessState, LoadingState } from "@/components/data-states";
 import { useRole } from "@/lib/role-context";
@@ -9,6 +7,7 @@ import { useDocumentTitle } from "@/lib/list-tools";
 
 import ImportSection from "./_components/ImportSection";
 import ExportSection from "./_components/ExportSection";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export default function ImportsPage() {
   useDocumentTitle("นำเข้าและส่งออกข้อมูล");
@@ -47,21 +46,11 @@ export default function ImportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-screen-xl p-6">
+    <div className="mx-auto max-w-(--breakpoint-xl) p-6">
 
       {/* Page Header */}
       <div className="mb-6">
-        <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-          <Link href="/" className="hover:text-crimson">
-            หน้าหลัก
-          </Link>
-
-          <ChevronRight className="h-3 w-3" />
-
-          <span className="text-crimson">
-            นำเข้าและส่งออกข้อมูล
-          </span>
-        </nav>
+        <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "นำเข้าและส่งออกข้อมูล" }]} />
 
         <h1 className="font-display text-2xl font-bold text-ink">
           นำเข้าและส่งออกข้อมูล

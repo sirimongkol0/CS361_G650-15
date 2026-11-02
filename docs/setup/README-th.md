@@ -8,6 +8,9 @@
 - Docker Engine หรือ Docker Desktop ที่มี Docker Compose v2 (วิธีแนะนำ) หรือ
 - Python 3.11+, Node.js 22+ และ PostgreSQL 16+ สำหรับรันแต่ละ process เอง
 
+เบราว์เซอร์ที่รองรับ: Chrome หรือ Edge 111 ขึ้นไป, Safari 16.4 ขึ้นไป, Firefox 128 ขึ้นไป
+(ขั้นต่ำของ Next.js 16 และ Tailwind CSS v4)
+
 ## วิธี A — Docker Compose จาก clean checkout
 
 ไม่ต้องมีฐานข้อมูลบน cloud, AWS credentials หรือ language runtime ในเครื่อง

@@ -70,7 +70,7 @@ export function SearchInput({
       {text ? (
         <button
           type="button"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-faint hover:bg-soft hover:text-ink"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-faint hover:bg-soft hover:text-ink"
           onClick={() => {
             change("", true);
             ref.current?.focus();
@@ -81,7 +81,7 @@ export function SearchInput({
           <X className="w-3.5 h-3.5" />
         </button>
       ) : (
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:block rounded border border-line px-1.5 text-[11px] text-faint">
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:block rounded-sm border border-line px-1.5 text-[11px] text-faint">
           /
         </kbd>
       )}

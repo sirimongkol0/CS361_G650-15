@@ -4,7 +4,7 @@ import { activityTypeColors, activityTypeLabels, label, displayDescription } fro
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { Calendar, Download, FileText, ChevronRight, Clock, MapPin, Users, MessageSquare } from "lucide-react";
+import { Calendar, Download, FileText, Clock, MapPin, Users, MessageSquare } from "lucide-react";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { ApiError, loadActivity, loadDocuments, useApiResource } from "@/lib/api";
 import { canManage, useRole } from "@/lib/role-context";
@@ -14,6 +14,7 @@ import { DetailToolbar } from "@/components/detail-toolbar";
 import { OutcomeSection } from "@/components/outcome-section";
 import { daysFromToday, relativeDays, useDocumentTitle } from "@/lib/list-tools";
 import { downloadFile } from "@/lib/download-file";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export default function ActivityDetailPage() {
   const params = useParams<{ id: string }>();
@@ -35,11 +36,11 @@ export default function ActivityDetailPage() {
   useDocumentTitle(activity.status === "success" ? activity.data.name : "กิจกรรม");
 
   if (activity.status === "loading") {
-    return <div className="p-6 max-w-screen-xl mx-auto"><LoadingState title="กำลังโหลดกิจกรรม…" /></div>;
+    return <div className="p-6 max-w-(--breakpoint-xl) mx-auto"><LoadingState title="กำลังโหลดกิจกรรม…" /></div>;
   }
   if (activity.status === "error") {
     return (
-      <div className="p-6 max-w-screen-xl mx-auto">
+      <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
         <ErrorState error={activity.error} onRetry={activity.retry} />
         <div className="mt-4 text-center"><Link href="/activities" className="text-sm font-semibold text-crimson hover:underline">กลับไปที่รายการกิจกรรม</Link></div>
       </div>
@@ -49,14 +50,8 @@ export default function ActivityDetailPage() {
   const item = activity.data;
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
-      <nav className="flex items-center gap-1.5 text-xs mb-5 text-faint print:hidden">
-        <Link href="/" className="hover:text-crimson">หน้าหลัก</Link>
-        <ChevronRight className="w-3 h-3" />
-        <Link href="/activities" className="hover:text-crimson">กิจกรรม</Link>
-        <ChevronRight className="w-3 h-3" />
-        <span className="text-crimson">{item.name}</span>
-      </nav>
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
+      <Breadcrumb className="mb-5 print:hidden" items={[{ label: "หน้าหลัก", href: "/" }, { label: "กิจกรรม", href: "/activities" }, { label: item.name }]} />
       <DetailToolbar kind="activities" id={item.id} title={item.name} />
 
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
@@ -79,7 +74,7 @@ export default function ActivityDetailPage() {
         </div>
         <div className="flex gap-2 flex-wrap print:hidden">
         {session === "authenticated" && role !== "public" && (
-          <Link href={`/feedback?activityId=${item.id}`} className="btn btn-primary gap-2"><MessageSquare className="w-4 h-4" />ส่ง Feedback</Link>
+          <Link href={`/feedback?activityId=${item.id}`} className="btn btn-primary gap-2"><MessageSquare className="w-4 h-4" />ส่งความคิดเห็น</Link>
         )}
         {canManage(role) && (
           <div className="flex gap-2">

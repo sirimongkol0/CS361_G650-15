@@ -32,7 +32,7 @@ function PartnerContext({ partnerId }: { partnerId: number }) {
   return (
     <div className="mb-4 rounded-lg bg-soft p-3 text-sm">
       <p className="text-ink">
-        กิจกรรม {totals.activities} • ผลลัพธ์ {totals.outcomes} • Feedback {totals.feedback} • ข้อตกลง {totals.agreements}
+        กิจกรรม {totals.activities} • ผลลัพธ์ {totals.outcomes} • ความคิดเห็น {totals.feedback} • ข้อตกลง {totals.agreements}
       </p>
       <p className="mt-1 text-xs text-faint">
         {last ? `มีความเคลื่อนไหวล่าสุดในปี ${beYear(last.year)}` : "ยังไม่มีกิจกรรมที่บันทึกไว้"} •{" "}

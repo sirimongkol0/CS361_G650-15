@@ -7,8 +7,7 @@
 // The sender type follows the role; only staff/admin pick it (#101).
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { Search, ChevronRight, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
+import { Search, Star, X, MessageSquare, Save, Eye, EyeOff } from "lucide-react";
 import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadExchangeStudents, loadFeedbackStrict, useApiResource, type FeedbackEntry } from "@/lib/api";
 import { averageRating } from "@/lib/dashboard-data";
 import { useRole } from "@/lib/role-context";
@@ -17,6 +16,8 @@ import { Field, FormError, Notice, inputCls, useAction } from "@/components/form
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 import { feedbackStatusLabels, label } from "@/lib/labels";
 import { ImprovementSection } from "@/components/improvement-section";
+import { StatusBadge } from "@/components/status-badge";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
@@ -41,11 +42,6 @@ const sourceColors: Record<string, string> = {
   "หน่วยงานคู่ความร่วมมือ": "badge-crimson",
   "ระบบสหกิจศึกษา": "badge-gold",
   "นักศึกษา": "badge-green",
-};
-
-const statusColors: Record<string, string> = {
-  reviewed: "badge-green",
-  pending: "badge-gold",
 };
 
 type ContextType = "partner" | "document" | "activity" | "exchange";
@@ -113,7 +109,7 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
   const current = CONTEXTS.find((c) => c.type === contextType)!;
   return (
     <form onSubmit={submit} className="rounded-lg bg-white shadow-card p-4 mb-5">
-      <h2 className="font-semibold text-ink mb-3">ส่ง Feedback</h2>
+      <h2 className="font-semibold text-ink mb-3">ส่งความคิดเห็น</h2>
       <FormError error={action.error} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
@@ -277,15 +273,9 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="mb-6">
-        <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-          <Link href="/" className="text-faint hover:text-crimson">
-            หน้าหลัก
-          </Link>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-crimson">ความคิดเห็น</span>
-        </nav>
+        <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ความคิดเห็น" }]} />
         <h1 className="text-2xl font-bold text-ink font-display">ความคิดเห็น</h1>
         <p className="text-sm mt-0.5 text-faint">
           {role === "coordinator" && isManager
@@ -335,7 +325,7 @@ export default function FeedbackPage() {
               <div className="relative flex-1 min-w-48">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
                 <input
-                  className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+                  className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
                   placeholder="ค้นหาความคิดเห็น"
                   aria-label="ค้นหาความคิดเห็น"
                   value={search}
@@ -343,7 +333,7 @@ export default function FeedbackPage() {
                 />
               </div>
               <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
                 style={{ width: "auto", minWidth: 180 }}
                 value={sourceFilter}
                 onChange={(e) => setSourceFilter(e.target.value)}
@@ -371,7 +361,7 @@ export default function FeedbackPage() {
               <label className="text-xs text-faint flex items-center gap-2">ตั้งแต่ <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
               <label className="text-xs text-faint flex items-center gap-2">ถึง <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
               <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
                 style={{ width: "auto", minWidth: 140 }}
                 value={ratingFilter}
                 onChange={(e) => setRatingFilter(e.target.value)}
@@ -406,9 +396,9 @@ export default function FeedbackPage() {
                   <p className="text-sm font-semibold leading-snug flex-1 text-ink">
                     {f.title}
                   </p>
-                  <div className="flex gap-1.5 flex-shrink-0">
+                  <div className="flex gap-1.5 shrink-0">
                     {isManager && !f.isPublished && <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
-                    <span className={`badge ${statusColors[f.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, f.status)}</span>
+                    <StatusBadge kind="feedback" status={f.status}>{label(feedbackStatusLabels, f.status)}</StatusBadge>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -441,7 +431,7 @@ export default function FeedbackPage() {
                     {selected.title}
                   </h2>
                   <div className="flex gap-1.5">
-                    <span className={`badge ${statusColors[selected.status] ?? "badge-gray"}`}>{label(feedbackStatusLabels, selected.status)}</span>
+                    <StatusBadge kind="feedback" status={selected.status}>{label(feedbackStatusLabels, selected.status)}</StatusBadge>
                     {isManager && (
                       selected.isPublished
                         ? <span className="badge badge-green">เผยแพร่แล้ว</span>

@@ -6,17 +6,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ChevronRight, Printer, FileText, AlertTriangle, Building2, CalendarDays, MessageSquare, Target,
+  Printer, FileText, AlertTriangle, Building2, CalendarDays, MessageSquare, Target,
 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   formatThaiDate, insightsQuery, loadInsightsSummary, useApiData, useApiResource, type InsightsSummary, type LabelledCount,
 } from "@/lib/api";
 import { beYear, monthLabel } from "@/lib/dashboard-data";
 import { documentStatusLabels, feedbackStatusLabels, improvementStatusLabels, label, partnerTypeLabels } from "@/lib/labels";
-import { improvementStatusColors } from "@/components/improvement-section";
+import { StatusBadge } from "@/components/status-badge";
 import { downloadFile } from "@/lib/download-file";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useRole } from "@/lib/role-context";
@@ -24,14 +25,17 @@ import { AccessState, ErrorState, LoadingState } from "@/components/data-states"
 import { ExportCsvButton } from "@/components/list-ui";
 import { Notice } from "@/components/form-ui";
 import { RenewalDecisionDialog, RenewalSummary } from "@/components/renewals";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { KpiCard, type KpiTone } from "@/components/kpi-card";
 
 const REPORT_ROLES = ["staff", "admin"];
-const PIE_COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#e11d48", "#64748b"];
-const tooltipStyle = { border: "1px solid #e2e8f0", borderRadius: 8, fontSize: 12 };
+// TU chart palette (--chart-1..5 in globals.css), then grey for any further types.
+const PIE_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "#656C79"];
 const card = "bg-white border border-line rounded-lg shadow-card p-5 break-inside-avoid";
 const selectClass =
-  "cursor-pointer rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
-const axis = { tick: { fontSize: 11, fill: "#94a3b8" }, tickLine: false, axisLine: false } as const;
+  "cursor-pointer rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+// Tick colour comes from ChartContainer (muted foreground, AA on white).
+const axis = { tick: { fontSize: 11 }, tickLine: false, axisLine: false } as const;
 
 const THIS_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 6 }, (_, i) => THIS_YEAR - i);
@@ -100,14 +104,14 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
   }
   const feedback = sum(summary.feedbackByStatus);
   if (feedback) {
-    sentences.push(`ได้รับ Feedback ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
+    sentences.push(`ได้รับความคิดเห็น ${feedback} รายการ${summary.feedbackAverageRating == null ? "" : ` คะแนนเฉลี่ย ${summary.feedbackAverageRating.toFixed(1)} จาก 5`}`);
   }
   const improvements = summary.improvements;
   const doneCount = improvements.byStatus.find((r) => r.key === "done")?.count ?? 0;
   const ongoing = improvements.items.length - doneCount;
   if (improvements.items.length) {
-    sentences.push(`หลักสูตรนำ Feedback ไปปรับปรุงแล้วเสร็จ ${doneCount} เรื่อง${ongoing ? ` และอยู่ระหว่างวางแผนหรือดำเนินการอีก ${ongoing} เรื่อง` : ""}`
-      + (feedback ? ` โดย Feedback ${improvements.feedbackWithImprovement} จาก ${improvements.feedbackTotal} รายการในปีนี้นำไปสู่การปรับปรุงที่เสร็จแล้ว` : ""));
+    sentences.push(`หลักสูตรนำความคิดเห็นไปปรับปรุงแล้วเสร็จ ${doneCount} เรื่อง${ongoing ? ` และอยู่ระหว่างวางแผนหรือดำเนินการอีก ${ongoing} เรื่อง` : ""}`
+      + (feedback ? ` โดยความคิดเห็น ${improvements.feedbackWithImprovement} จาก ${improvements.feedbackTotal} รายการในปีนี้นำไปสู่การปรับปรุงที่เสร็จแล้ว` : ""));
   }
   if (partners) sentences.push(`หน่วยงานที่มีความร่วมมือมากที่สุดคือ ${summary.topPartners[0].name}`);
   if (summary.dormantPartners.length) {
@@ -120,16 +124,16 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
 function ImprovementsReport({ improvements, period }: { improvements: InsightsSummary["improvements"]; period: string }) {
   return (
     <section className={`${card} mt-5`}>
-      <h2 className="font-bold mb-1 text-ink">การปรับปรุงจาก Feedback</h2>
+      <h2 className="font-bold mb-1 text-ink">การปรับปรุงจากความคิดเห็น</h2>
       <p className="text-xs mb-4 text-faint">
-        {period} • Feedback ที่นำไปสู่การปรับปรุงที่เสร็จแล้ว {improvements.feedbackWithImprovement} จาก {improvements.feedbackTotal} รายการ
+        {period} • ความคิดเห็นที่นำไปสู่การปรับปรุงที่เสร็จแล้ว {improvements.feedbackWithImprovement} จาก {improvements.feedbackTotal} รายการ
       </p>
       {improvements.items.length === 0 ? <p className="text-sm text-faint">ยังไม่มีการบันทึกการปรับปรุงในช่วงที่เลือก</p> : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-faint">
-                <th className="pb-2 font-medium">Feedback</th>
+                <th className="pb-2 font-medium">ความคิดเห็น</th>
                 <th className="pb-2 font-medium">การปรับปรุง</th>
                 <th className="pb-2 font-medium">สถานะ</th>
                 <th className="pb-2 font-medium">วันที่</th>
@@ -141,7 +145,7 @@ function ImprovementsReport({ improvements, period }: { improvements: InsightsSu
                 <tr key={row.id} className="border-t border-line align-top break-inside-avoid">
                   <td className="py-2 pr-3 text-mute">{row.feedbacks.map((f) => f.title).join(", ") || "—"}</td>
                   <td className="py-2 pr-3 text-ink">{row.title}</td>
-                  <td className="py-2 pr-3"><span className={`badge ${improvementStatusColors[row.status]}`}>{label(improvementStatusLabels, row.status)}</span></td>
+                  <td className="py-2 pr-3"><StatusBadge kind="improvement" status={row.status}>{label(improvementStatusLabels, row.status)}</StatusBadge></td>
                   <td className="py-2 pr-3 whitespace-nowrap">{row.actionDate ? formatThaiDate(row.actionDate) : "—"}</td>
                   <td className="py-2 text-mute">{row.responsible || "—"}</td>
                 </tr>
@@ -189,19 +193,19 @@ function Report({ summary, previous, year, onChanged }: {
   const period = year ? `ปี ${beYear(year)}` : "ทุกช่วงเวลา";
 
   const kpis = [
-    { label: "หน่วยงาน", value: sum(summary.partnersByType), icon: Building2, color: "#7c3aed", bg: "#ede9fe" },
-    { label: "ข้อตกลง MoU/MoA", value: sum(summary.agreementsByStatus), icon: FileText, color: "#d97706", bg: "#fef3c7" },
-    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, color: "#1d4ed8", bg: "#dbeafe",
+    { label: "หน่วยงาน", value: sum(summary.partnersByType), icon: Building2, tone: "crimson" },
+    { label: "ข้อตกลง MoU/MoA", value: sum(summary.agreementsByStatus), icon: FileText, tone: "amber" },
+    { label: `กิจกรรม (${period})`, value: sum(summary.activitiesByMonth), icon: CalendarDays, tone: "blue",
       change: change(sum(summary.activitiesByMonth), previous && sum(previous.activitiesByMonth)) },
-    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, color: "#16a34a", bg: "#dcfce7",
+    { label: `ผลลัพธ์ (${period})`, value: sum(summary.outcomesByType), icon: Target, tone: "green",
       change: change(sum(summary.outcomesByType), previous && sum(previous.outcomesByType)) },
     {
-      label: `Feedback (${period})`,
+      label: `ความคิดเห็น (${period})`,
       value: `${sum(summary.feedbackByStatus)}${summary.feedbackAverageRating == null ? "" : ` • ${summary.feedbackAverageRating.toFixed(1)}★`}`,
-      icon: MessageSquare, color: "#be185d", bg: "#fce7f3",
+      icon: MessageSquare, tone: "purple",
       change: change(sum(summary.feedbackByStatus), previous && sum(previous.feedbackByStatus)),
     },
-  ] as { label: string; value: number | string; icon: typeof Building2; color: string; bg: string; change?: ReturnType<typeof change> }[];
+  ] as { label: string; value: number | string; icon: typeof Building2; tone: KpiTone; change?: ReturnType<typeof change> }[];
 
   return (
     <>
@@ -213,14 +217,9 @@ function Report({ summary, previous, year, onChanged }: {
       )}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className={card}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: kpi.bg }}>
-              <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} aria-hidden />
-            </div>
-            <div className="text-2xl font-bold mb-0.5 text-ink font-display">{kpi.value}</div>
-            <div className="text-xs text-faint">{kpi.label}</div>
+          <KpiCard key={kpi.label} icon={kpi.icon} label={kpi.label} value={kpi.value} tone={kpi.tone}>
             {kpi.change && <div className={`text-xs mt-1 font-semibold ${kpi.change.tone}`}>{kpi.change.text}</div>}
-          </div>
+          </KpiCard>
         ))}
       </div>
 
@@ -230,15 +229,15 @@ function Report({ summary, previous, year, onChanged }: {
           <p className="text-xs mb-4 text-faint">{period} • ตามวันที่จัดกิจกรรม</p>
           <div style={{ height: 220 }}>
             {summary.activitiesByMonth.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <ChartContainer config={{ กิจกรรม: { label: "กิจกรรม" } }} className="aspect-auto h-full w-full">
+                <BarChart accessibilityLayer data={monthly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
                   <XAxis dataKey="month" interval={0} {...axis} />
                   <YAxis allowDecimals={false} {...axis} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="กิจกรรม" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="กิจกรรม" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             ) : <EmptyChart />}
           </div>
         </section>
@@ -248,15 +247,16 @@ function Report({ summary, previous, year, onChanged }: {
           <p className="text-xs mb-2 text-faint">หน่วยงานที่ยังไม่ถูกลบ</p>
           <div style={{ height: 220 }}>
             {partnerTypes.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={partnerTypes} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={3}>
+              <ChartContainer config={{}} className="aspect-auto h-full w-full">
+                <PieChart accessibilityLayer>
+                  <Pie data={partnerTypes} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" nameKey="name" paddingAngle={3}>
                     {partnerTypes.map((entry, i) => <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  <Tooltip contentStyle={tooltipStyle} />
+                  {/* Legend text in the body colour: recharts colours it like the slice, and gold text is 2.7:1. */}
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} formatter={(value) => <span className="text-mute">{value}</span>} />
+                  <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
                 </PieChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             ) : <EmptyChart />}
           </div>
         </section>
@@ -282,7 +282,7 @@ function Report({ summary, previous, year, onChanged }: {
         </section>
 
         <section className={card}>
-          <h2 className="font-bold mb-4 text-ink">Feedback</h2>
+          <h2 className="font-bold mb-4 text-ink">ความคิดเห็น</h2>
           <div className="grid gap-5 sm:grid-cols-2">
             <CountList title="ตามแหล่งที่มา" rows={summary.feedbackBySource} />
             <CountList title="ตามประเภทผู้ส่ง" rows={summary.feedbackByRespondentType} />
@@ -315,7 +315,7 @@ function Report({ summary, previous, year, onChanged }: {
       <section className={`${card} mt-5`}>
         <h2 className="font-bold mb-1 text-ink">หน่วยงานที่ไม่มีความเคลื่อนไหว</h2>
         <p className="text-xs mb-4 text-faint">
-          ข้อตกลงยังมีผล แต่ไม่มีกิจกรรม ผลลัพธ์ หรือ Feedback ใน {summary.dormantWithinDays} วันที่ผ่านมา (ข้อมูล ณ วันนี้)
+          ข้อตกลงยังมีผล แต่ไม่มีกิจกรรม ผลลัพธ์ หรือความคิดเห็นใน {summary.dormantWithinDays} วันที่ผ่านมา (ข้อมูล ณ วันนี้)
         </p>
         {summary.dormantPartners.length === 0 ? <p className="text-sm text-faint">ทุกหน่วยงานที่มีข้อตกลงมีความเคลื่อนไหวในปีที่ผ่านมา</p> : (
           <ul className="divide-y divide-line">
@@ -366,14 +366,10 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint print:hidden">
-            <Link href="/" className="text-faint hover:text-crimson">หน้าหลัก</Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">รายงานและสถิติ</span>
-          </nav>
+          <Breadcrumb className="mb-1.5 print:hidden" items={[{ label: "หน้าหลัก", href: "/" }, { label: "รายงานและสถิติ" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">
             รายงานและสถิติ {year ? `ปี ${beYear(year)}` : "ทุกช่วงเวลา"}
           </h1>

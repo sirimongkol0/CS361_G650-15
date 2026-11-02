@@ -63,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F7F8FA' }}>
+    <div className="min-h-screen flex bg-paper">
       {/* ── Left: Form ──────────────────────────────── */}
       <div
         className="flex flex-col justify-center w-full max-w-md px-10 py-12 mx-auto lg:mx-0 bg-white min-h-screen"
@@ -72,14 +72,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-md flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-crimson to-[#B8243E]">
+            <div className="w-11 h-11 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E]">
               <Globe className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="font-display font-extrabold text-lg leading-tight text-ink">
+              <div className="font-display font-extrabold text-lg leading-snug text-ink">
                 PCSMS
               </div>
-              <div className="text-xs leading-tight text-faint">
+              <div className="text-xs leading-snug text-faint">
                 ระบบบริหารความร่วมมือและผู้มีส่วนได้ส่วนเสีย
               </div>
             </div>
@@ -98,20 +98,19 @@ export default function LoginPage() {
               className="flex items-start gap-2.5 p-3 rounded-md text-sm"
               style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B' }}
             >
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Email */}
           <div>
-            <label htmlFor="login-email" className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
+            <label htmlFor="login-email" className="block text-sm font-semibold mb-1.5 text-mute">
               อีเมล
             </label>
             <input
               id="login-email"
-              className="w-full px-3 py-2 text-sm rounded-md border outline-none focus:border-crimson"
-              style={{ borderColor: 'var(--border)' }}
+              className="w-full px-3 py-2 text-sm rounded-md border border-line outline-hidden focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
               type="email"
               autoComplete="username"
               placeholder="email@tu.ac.th"
@@ -123,14 +122,13 @@ export default function LoginPage() {
 
           {/* Password */}
           <div>
-            <label htmlFor="login-password" className="block text-sm font-semibold mb-1.5" style={{ color: '#374151' }}>
+            <label htmlFor="login-password" className="block text-sm font-semibold mb-1.5 text-mute">
               รหัสผ่าน
             </label>
             <div className="relative">
               <input
                 id="login-password"
-                className="w-full px-3 py-2 pr-10 text-sm rounded-md border outline-none focus:border-crimson"
-                style={{ borderColor: 'var(--border)' }}
+                className="w-full px-3 py-2 pr-10 text-sm rounded-md border border-line outline-hidden focus:border-crimson focus:ring-[3px] focus:ring-crimson/10"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 placeholder="••••••••"
@@ -143,7 +141,7 @@ export default function LoginPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2"
                 onClick={() => setShowPassword((s) => !s)}
                 aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
-                style={{ color: '#9CA3AF' }}
+                style={{ color: '#656C79' }}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -161,7 +159,7 @@ export default function LoginPage() {
           </button>
 
           <p className="flex items-start gap-2 text-xs text-faint">
-            <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <Shield className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             หากยังไม่มีบัญชี กรุณาติดต่อผู้ดูแลระบบ
           </p>
         </form>
@@ -189,10 +187,10 @@ export default function LoginPage() {
         <div className="relative z-10 max-w-sm w-full">
           {/* Heading */}
           <div className="mb-8">
-            <div className="text-sm font-bold mb-3" style={{ color: '#C8961E' }}>
+            <div className="text-sm font-bold mb-3 text-gold">
               มหาวิทยาลัยธรรมศาสตร์
             </div>
-            <h2 className="text-3xl font-extrabold text-white leading-tight mb-3 font-display">
+            <h2 className="text-3xl font-extrabold text-white leading-snug mb-3 font-display">
               ระบบบริหารความร่วมมือ
               <br />
               และผู้มีส่วนได้ส่วนเสีย

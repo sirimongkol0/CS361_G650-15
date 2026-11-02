@@ -4,12 +4,12 @@
 // and an error line. Every form submits through the API helpers in lib/api.ts,
 // so the backend's role checks and Thai error messages apply everywhere.
 
-import { useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { AlertCircle, CalendarDays, CheckCircle2, X } from "lucide-react";
 import { apiErrorMessage, formatThaiDate } from "@/lib/api";
 
 export const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10 disabled:bg-soft disabled:text-faint";
 
 /** Modal dialog using the native <dialog> (focus trap, Esc to close). */
 export function Dialog({
@@ -45,15 +45,22 @@ export function Dialog({
   );
 }
 
-/** Labelled control; the hint sits outside the <label> so it is not part of the field's name. */
+/** Labelled control; the hint sits outside the <label> so it is not part of the field's name,
+ *  and is linked to the control with aria-describedby so screen readers still read it. */
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  const hintId = useId();
+  const control = hint && isValidElement<{ "aria-describedby"?: string }>(children)
+    ? cloneElement(children, {
+        "aria-describedby": [children.props["aria-describedby"], hintId].filter(Boolean).join(" "),
+      })
+    : children;
   return (
     <div className="mb-3">
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-ink">{label}</span>
-        {children}
+        {control}
       </label>
-      {hint && <p className="mt-1 text-xs text-faint">{hint}</p>}
+      {hint && <p id={hintId} className="mt-1 text-xs text-faint">{hint}</p>}
     </div>
   );
 }
@@ -62,7 +69,7 @@ export function FormError({ error }: { error: unknown }) {
   if (!error) return null;
   return (
     <p className="mb-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-      <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
       {apiErrorMessage(error)}
     </p>
   );
@@ -127,10 +134,10 @@ export function DateInput({
       />
       <span
         aria-hidden
-        className={`${className} flex min-w-[10.5rem] items-center justify-between gap-2 peer-focus:border-crimson peer-focus:ring-[3px] peer-focus:ring-crimson/10 peer-disabled:bg-soft`}
+        className={`${className} flex min-w-42 items-center justify-between gap-2 peer-focus:border-crimson peer-focus:ring-[3px] peer-focus:ring-crimson/10 peer-disabled:bg-soft`}
       >
-        <span className={value ? "text-ink" : "text-[#CBD5E1]"}>{value ? formatThaiDate(value) : "เลือกวันที่"}</span>
-        <CalendarDays className="h-4 w-4 flex-shrink-0 text-faint" />
+        <span className={value ? "text-ink" : "text-faint"}>{value ? formatThaiDate(value) : "เลือกวันที่"}</span>
+        <CalendarDays className="h-4 w-4 shrink-0 text-faint" />
       </span>
     </span>
   );

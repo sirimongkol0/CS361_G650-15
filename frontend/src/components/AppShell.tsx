@@ -16,7 +16,12 @@ import {
   Users, Globe, Folder, History, ArrowUp, Search, Keyboard, WifiOff, LogIn, LogOut,
 } from 'lucide-react';
 import { CommandPalette, ShortcutsHelp } from '@/components/command-palette';
-import { ACCOUNT_NAV, ROLE_NAV, useRole } from '@/lib/role-context';
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu,
+  SidebarMenuButton, SidebarMenuItem, SidebarProvider, useSidebar,
+} from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { ACCOUNT_NAV, ROLE_NAV, groupNav, useRole, type NavItem } from '@/lib/role-context';
 
 /* Map icon string → Lucide component */
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -37,9 +42,99 @@ const ICON_MAP: Record<string, React.ElementType> = {
 const COLLAPSE_KEY = 'pcsms:sidebar-collapsed';
 const SCROLL_KEY = 'pcsms:scroll:';
 
+/* Sidebar built on the shadcn Sidebar: collapses to icons (with tooltips) on desktop and
+   becomes a Radix Sheet on mobile, so the closed drawer is out of the tab order and the
+   open one traps focus and closes on Esc. Ctrl/⌘+B toggles it. */
+function AppSidebar({ navItems }: { navItems: NavItem[] }) {
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+  const navGroups = groupNav(navItems);
+  // A single group (anonymous visitors, public role) needs no headings.
+  const showGroupLabels = navGroups.length > 1;
+
+  // Close the mobile drawer after following a link.
+  useEffect(() => { setOpenMobile(false); }, [pathname, setOpenMobile]);
+
+  return (
+    <Sidebar collapsible="icon">
+      {/* TU colour strip */}
+      <div className="h-1 tu-stripe shrink-0" />
+
+      {/* Logo */}
+      <SidebarHeader className="flex-row items-center gap-3 border-b border-sidebar-border px-4 py-4 group-data-[collapsible=icon]:px-2">
+        <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E] group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
+          <Globe className="w-5 h-5 text-white" />
+        </div>
+        <div className="overflow-hidden group-data-[collapsible=icon]:hidden">
+          <div className="font-display font-extrabold text-sm leading-snug text-ink">
+            CSTU • PCSMS
+          </div>
+          <div className="text-xs leading-snug text-faint">
+            ความร่วมมือของหลักสูตร<br />
+            วิทยาการคอมพิวเตอร์ ธรรมศาสตร์
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <nav aria-label="เมนูหลัก" className="py-1">
+          {navGroups.map((group) => (
+            // aria-label rather than an id: the label must work in both the desktop and mobile sidebar.
+            <SidebarGroup key={group.id} role="group" aria-label={showGroupLabels ? group.label : undefined} className="py-1">
+              {showGroupLabels && (
+                <SidebarGroupLabel aria-hidden className="px-3 font-semibold text-faint">{group.label}</SidebarGroupLabel>
+              )}
+              <SidebarMenu className="gap-0.5">
+                {group.items.map(({ to, icon, label, end }) => {
+                  const Icon = ICON_MAP[icon] ?? LayoutDashboard;
+                  // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.
+                  const active = end
+                    ? pathname === to
+                    : pathname.startsWith(to) && !navItems.some((other) => other.to.length > to.length && pathname.startsWith(other.to));
+                  return (
+                    <SidebarMenuItem key={`${to}-${label}`}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={label}
+                        className="h-9 gap-2.5 px-3 text-mute hover:bg-soft hover:text-ink data-active:bg-crimson-light data-active:font-semibold data-active:text-crimson"
+                      >
+                        <Link href={to} aria-current={active ? 'page' : undefined}>
+                          <Icon />
+                          <span>{label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          ))}
+        </nav>
+      </SidebarContent>
+    </Sidebar>
+  );
+}
+
+/** Topbar menu button: collapses the desktop sidebar or opens the mobile drawer. */
+function SidebarToggleButton() {
+  const { toggleSidebar, isMobile, open, openMobile } = useSidebar();
+  return (
+    <button
+      className="p-1.5 rounded-sm hover:bg-soft"
+      onClick={toggleSidebar}
+      title="แสดงหรือซ่อนเมนู (Ctrl+B)"
+      aria-label="แสดงหรือซ่อนเมนู"
+      aria-keyshortcuts="Control+B"
+      aria-expanded={isMobile ? openMobile : open}
+    >
+      <Menu className="w-5 h-5 text-faint" />
+    </button>
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { role, config, user, status, logout } = useRole();
@@ -98,7 +193,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setMobileOpen(false);
     const main = mainRef.current;
     if (!main) return;
     let saved = 0;
@@ -123,128 +217,38 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     try { sessionStorage.setItem(SCROLL_KEY + pathname, String(Math.round(top))); } catch {}
   };
 
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setMobileOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [mobileOpen]);
-
-  const toggleSidebar = () => {
-    if (window.matchMedia('(min-width: 768px)').matches) {
-      setCollapsed((c) => {
-        try { localStorage.setItem(COLLAPSE_KEY, c ? '0' : '1'); } catch {}
-        return !c;
-      });
-    } else {
-      setMobileOpen((o) => !o);
-    }
+  const setSidebarOpen = (open: boolean) => {
+    setCollapsed(!open);
+    try { localStorage.setItem(COLLAPSE_KEY, open ? '0' : '1'); } catch {}
   };
-
-  const sidebarContent = (collapsed: boolean) => (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* TU colour strip */}
-      <div className="h-1 tu-stripe flex-shrink-0" />
-
-      {/* Logo */}
-      <div
-        className="flex items-center gap-3 px-4 py-4 flex-shrink-0"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        <div className="w-9 h-9 rounded-md flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-crimson to-[#B8243E]">
-          <Globe className="w-5 h-5 text-white" />
-        </div>
-        {!collapsed && (
-          <div className="overflow-hidden">
-            <div className="font-display font-extrabold text-sm leading-tight text-ink">
-              CSTU • PCSMS
-            </div>
-            <div className="text-xs leading-tight text-faint">
-              ความร่วมมือของหลักสูตร<br />
-              วิทยาการคอมพิวเตอร์ ธรรมศาสตร์
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto flex flex-col gap-0.5">
-        {navItems.map(({ to, icon, label, end }) => {
-          const Icon = ICON_MAP[icon] ?? LayoutDashboard;
-          // Prefix match, but a more specific item (e.g. /documents/manage) wins over /documents.
-          const active = end
-            ? pathname === to
-            : pathname.startsWith(to) && !navItems.some((other) => other.to.length > to.length && pathname.startsWith(other.to));
-          return (
-            <Link
-              key={`${to}-${label}`}
-              href={to}
-              className={`sidebar-link ${active ? 'active' : ''}`}
-              title={collapsed ? label : undefined}
-              aria-current={active ? 'page' : undefined}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {!collapsed && <span>{label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-    </div>
-  );
 
   // The login page has its own full-screen layout.
   if (pathname === '/login') return <>{children}</>;
 
   return (
-    <div className="flex h-screen overflow-hidden print:block print:h-auto print:overflow-visible" style={{ background: 'var(--background)' }}>
+    <TooltipProvider>
+    <SidebarProvider
+      open={!collapsed}
+      onOpenChange={setSidebarOpen}
+      className="h-screen min-h-0 overflow-hidden print:block print:h-auto print:overflow-visible"
+      style={{ background: 'var(--background)' }}
+    >
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-card"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-60 focus:rounded-sm focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow-card"
       >
         ข้ามไปยังเนื้อหาหลัก
       </a>
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/40 md:hidden animate-fade-in" onClick={() => setMobileOpen(false)} />
-      )}
-
-      {/* Sidebar — desktop */}
-      <aside
-        className="hidden md:flex flex-col flex-shrink-0 border-r transition-all duration-200 overflow-hidden print:hidden"
-        style={{
-          width: collapsed ? 68 : 256,
-          borderColor: 'var(--border)',
-          background: '#fff',
-        }}
-      >
-        {sidebarContent(collapsed)}
-      </aside>
-
-      {/* Sidebar — mobile drawer */}
-      <aside
-        className="fixed inset-y-0 left-0 z-50 flex flex-col md:hidden border-r transition-transform duration-200 print:hidden"
-        style={{ width: 256, borderColor: 'var(--border)', background: '#fff', transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)' }}
-      >
-        {sidebarContent(false)}
-      </aside>
+      <AppSidebar navItems={navItems} />
 
       {/* Main */}
-      <div className="flex flex-col flex-1 overflow-hidden print:overflow-visible">
+      <div className="flex min-w-0 flex-col flex-1 overflow-hidden print:overflow-visible">
         {/* Topbar (replaces the old top Navbar) */}
         <header
-          className="flex items-center gap-3 px-4 md:px-5 border-b bg-white flex-shrink-0 print:hidden"
+          className="flex items-center gap-3 px-4 md:px-5 border-b bg-white shrink-0 print:hidden"
           style={{ height: 60, borderColor: 'var(--border)' }}
         >
-          <button
-            className="p-1.5 rounded hover:bg-soft"
-            onClick={toggleSidebar}
-            title="แสดงหรือซ่อนเมนู"
-            aria-label="แสดงหรือซ่อนเมนู"
-            aria-expanded={mobileOpen || !collapsed}
-          >
-            <Menu className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
-          </button>
+          <SidebarToggleButton />
 
           {/* System name */}
           <div className="font-display font-extrabold text-sm text-ink hidden sm:block">
@@ -264,7 +268,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Search className="w-4 h-4" />
             ค้นหาทั้งระบบ
-            <kbd className="rounded border border-line px-1.5 text-[11px]">Ctrl K</kbd>
+            <kbd className="rounded-sm border border-line px-1.5 text-[11px]">Ctrl K</kbd>
           </button>
           {status === 'authenticated' && user && (
             <div className="flex items-center gap-2">
@@ -297,12 +301,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           )}
           <button
             type="button"
-            className="p-1.5 rounded hover:bg-soft"
+            className="p-1.5 rounded-sm hover:bg-soft"
             onClick={() => setHelpOpen(true)}
             title="คีย์ลัด (?)"
             aria-label="คีย์ลัด"
           >
-            <Keyboard className="w-5 h-5" style={{ color: 'var(--muted-foreground)' }} />
+            <Keyboard className="w-5 h-5 text-faint" />
           </button>
         </header>
 
@@ -311,7 +315,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           id="main-content"
           ref={mainRef}
           tabIndex={-1}
-          className="flex-1 overflow-y-auto flex flex-col outline-none print:overflow-visible"
+          className="flex-1 overflow-y-auto flex flex-col outline-hidden print:overflow-visible"
           onScroll={onMainScroll}
         >
           {offline && (
@@ -320,7 +324,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               ไม่ได้เชื่อมต่ออินเทอร์เน็ต ข้อมูลที่เห็นอาจไม่ใช่ข้อมูลล่าสุด
             </div>
           )}
-          <div key={pathname} className="flex-grow animate-fade-up">{children}</div>
+          <div key={pathname} className="grow animate-fade-up">{children}</div>
         </main>
 
         {showTop && (
@@ -337,6 +341,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <ShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
-    </div>
+    </SidebarProvider>
+    </TooltipProvider>
   );
 }

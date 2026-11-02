@@ -8,7 +8,6 @@ import { SearchInput } from "@/components/search-input";
 import { documentStatusLabels, documentTypeLabels, label, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import Link from "next/link";
 import {
-  ChevronRight,
   FileText,
   FolderCog,
 } from "lucide-react";
@@ -25,10 +24,11 @@ import {
   useRowLink, yearPresets, type FilterChip,
 } from "@/components/list-ui";
 import { DateInput } from "@/components/form-ui";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 
 const inputCls =
-  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-[#CBD5E1] focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
+  "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 
 export default function DocumentsPage() {
@@ -104,17 +104,11 @@ export default function DocumentsPage() {
   );
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-            <Link href="/" className="text-faint hover:text-crimson">
-              หน้าหลัก
-            </Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">ข้อตกลง</span>
-          </nav>
+          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ข้อตกลง" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">
             ข้อตกลง
           </h1>
@@ -155,16 +149,16 @@ export default function DocumentsPage() {
             <option value="all">ประเภท: ทั้งหมด</option>
             {types.map((type) => <option key={type} value={type}>{label(documentTypeLabels, type)}</option>)}
           </select>
-          <select className={`${inputCls} cursor-pointer !w-auto`} aria-label="สถานะข้อตกลง" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+          <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="สถานะข้อตกลง" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
             <option value="all">สถานะ: ทั้งหมด</option>
             {Object.entries(documentStatusLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
             <option value="unknown">ไม่ระบุ</option>
           </select>
-          <select className={`${inputCls} cursor-pointer !w-auto`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={event => setScopeFilter(event.target.value)}>
+          <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={event => setScopeFilter(event.target.value)}>
             <ScopeLevelOptions />
           </select>
-          <DateInput wrapperClassName="inline-block" aria-label="มีผลตั้งแต่วันที่" className={`${inputCls} !w-auto`} value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} />
-          <DateInput wrapperClassName="inline-block" aria-label="มีผลถึงวันที่" className={`${inputCls} !w-auto`} value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} />
+          <DateInput wrapperClassName="inline-block" aria-label="มีผลตั้งแต่วันที่" className={`${inputCls} w-auto!`} value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} />
+          <DateInput wrapperClassName="inline-block" aria-label="มีผลถึงวันที่" className={`${inputCls} w-auto!`} value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} />
           <button type="button" className="btn btn-outline disabled:opacity-40 disabled:cursor-not-allowed" disabled={chips.length === 0} onClick={() => {
             setSearch(""); setTypeFilter("all"); setStatusFilter("all"); setScopeFilter("all"); setDateFrom(""); setDateTo("");
           }}>ล้างตัวกรอง</button>
@@ -213,7 +207,7 @@ export default function DocumentsPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                         style={{
                           background: "#EDE9FE",
                         }}

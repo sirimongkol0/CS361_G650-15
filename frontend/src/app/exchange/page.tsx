@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Search,
   Plus,
-  ChevronRight,
   ArrowUpRight,
   ArrowDownLeft,
   Download,
@@ -18,13 +17,8 @@ import { Dialog, Notice } from "@/components/form-ui";
 import { ExchangeForm } from "@/components/exchange-form";
 import { OutcomeSection } from "@/components/outcome-section";
 import { downloadCsv } from "@/lib/list-tools";
-
-const statusColors: Record<string, string> = {
-  "เสร็จสิ้น": "badge-green",
-  "กำลังดำเนินการ": "badge-blue",
-  "กำลังสมัคร": "badge-gold",
-  "วางแผน": "badge-purple",
-};
+import { StatusBadge } from "@/components/status-badge";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export default function StudentExchangePage() {
   const [search, setSearch] = useState("");
@@ -75,16 +69,10 @@ export default function StudentExchangePage() {
       : { title: "ยังไม่มีข้อมูลนักศึกษาแลกเปลี่ยน", message: "ข้อมูลจะแสดงที่นี่เมื่อเผยแพร่แล้ว" };
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint">
-            <Link href="/" className="text-faint hover:text-crimson">
-              หน้าหลัก
-            </Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-crimson">นักศึกษาแลกเปลี่ยน</span>
-          </nav>
+          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "นักศึกษาแลกเปลี่ยน" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">
             นักศึกษาแลกเปลี่ยน
           </h1>
@@ -151,14 +139,14 @@ export default function StudentExchangePage() {
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
             <input
-              className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+              className="w-full rounded-md border border-line bg-white px-3 py-2 pl-9 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
               placeholder="ค้นหาชื่อนักศึกษาหรือสถาบัน"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select
-            className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+            className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
             style={{ width: "auto", minWidth: 180 }}
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
@@ -168,7 +156,7 @@ export default function StudentExchangePage() {
             <option value="inbound">ขาเข้า</option>
           </select>
           <select
-            className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-1 focus:ring-crimson"
+            className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
             style={{ width: "auto", minWidth: 160 }}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -245,7 +233,7 @@ export default function StudentExchangePage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className="rounded-full flex items-center justify-center font-semibold flex-shrink-0"
+                        className="rounded-full flex items-center justify-center font-semibold shrink-0"
                         style={{
                           background: s.type === "outbound" ? "#DBEAFE" : "#DCFCE7",
                           color: s.type === "outbound" ? "#1D4ED8" : "#15803D",
@@ -294,13 +282,13 @@ export default function StudentExchangePage() {
                     <span className="badge badge-crimson text-xs">{s.program}</span>
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`badge ${statusColors[s.status] ?? "badge-gray"}`}>
+                    <StatusBadge kind="exchange" status={s.status}>
                       {s.status}
-                    </span>
+                    </StatusBadge>
                   </td>
                   <td className="px-4 py-4">
                     {session === "authenticated" && role !== "public" && (
-                      <Link href={`/feedback?exchangeId=${s.id}`} className="btn btn-outline p-1.5 text-xs mr-2">ส่ง Feedback</Link>
+                      <Link href={`/feedback?exchangeId=${s.id}`} className="btn btn-outline p-1.5 text-xs mr-2">ส่งความคิดเห็น</Link>
                     )}
                     <button className="btn btn-outline p-1.5 text-xs mr-2" type="button" aria-label={`ผลลัพธ์ของ ${s.name}`}
                       onClick={() => setOutcomesFor(s)}>ผลลัพธ์</button>

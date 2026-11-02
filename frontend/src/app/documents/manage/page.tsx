@@ -6,16 +6,20 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ChevronRight, Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
+import { Download, FilePlus2, Settings2, Trash2, Upload } from "lucide-react";
 import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
-import { cstuStatusColors, cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
+import { cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { StatusBadge } from "@/components/status-badge";
+import { LifecycleProgress } from "@/components/lifecycle-progress";
+import { useConfirm } from "@/components/confirm-dialog";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // same limit as the backend (MAX_UPLOAD_BYTES)
 
@@ -39,10 +43,6 @@ const transitionDone: Record<string, string> = {
   active: "ข้อตกลงมีผลแล้ว",
   expired: "บันทึกว่าหมดอายุแล้ว",
   cancelled: "ยกเลิกข้อตกลงแล้ว",
-};
-const statusColors: Record<string, string> = {
-  draft: "badge-gray", approved: "badge-blue", active: "badge-green",
-  expiring: "badge-gold", expired: "badge-gray", cancelled: "badge-gray",
 };
 
 const currentStatus = (doc: ManagedDocument) => doc.status ?? "draft";
@@ -99,14 +99,10 @@ export default function ManageDocumentsPage() {
   const isStaff = role === "staff" || role === "admin";
 
   return (
-    <div className="mx-auto max-w-screen-xl p-6">
+    <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-            <Link href="/documents" className="text-faint hover:text-crimson">ข้อตกลง</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-crimson">จัดการข้อตกลง</span>
-          </nav>
+          <Breadcrumb items={[{ label: "ข้อตกลง", href: "/documents" }, { label: "จัดการข้อตกลง" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการข้อตกลง</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff
@@ -151,12 +147,12 @@ export default function ManageDocumentsPage() {
                     </td>
                     <td className="px-4 py-3 text-faint">{doc.partner?.name ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <span className={`badge ${statusColors[currentStatus(doc)] ?? "badge-gray"}`}>
+                      <StatusBadge kind="document" status={currentStatus(doc)}>
                         {label(documentStatusLabels, currentStatus(doc))}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`badge ${cstuStatusColors[doc.cstuStatus]}`}>{label(cstuStatusLabels, doc.cstuStatus)}</span>
+                      <StatusBadge kind="cstu" status={doc.cstuStatus}>{label(cstuStatusLabels, doc.cstuStatus)}</StatusBadge>
                     </td>
                     <td className="px-4 py-3">
                       {doc.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ยังไม่เผยแพร่</span>}
@@ -339,6 +335,7 @@ function ManagePanel({
   // Public pages list only documents with a verified source; "keep" needs one.
   const needsSource = cstu === "keep" && doc.sources.length === 0 && !sourceUrl.trim();
   const action = useAction();
+  const confirm = useConfirm();
 
   const act = async (fn: () => Promise<unknown>, message: string) => {
     if (await action.run(fn)) onChanged(message);
@@ -441,16 +438,24 @@ function ManagePanel({
 
       <Section title="สถานะข้อตกลง">
         <p className="mb-2 text-sm">
-          สถานะ: <span className={`badge ${statusColors[status] ?? "badge-gray"}`}>{label(documentStatusLabels, status)}</span>
+          สถานะ: <StatusBadge kind="document" status={status}>{label(documentStatusLabels, status)}</StatusBadge>
         </p>
+        <LifecycleProgress status={status} />
         {isStaff ? (
           TRANSITIONS[status]?.length ? (
             <div className="flex flex-wrap gap-2">
               {TRANSITIONS[status].map((next) => (
                 <button key={next} type="button" disabled={action.busy}
                   className={`btn text-sm ${next === "cancelled" ? "btn-outline" : "btn-primary"}`}
-                  onClick={() => (next !== "cancelled" || confirm(`ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม\nการยกเลิกย้อนกลับไม่ได้`)) &&
-                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next])}>
+                  onClick={async () => {
+                    if (next === "cancelled" && !(await confirm({
+                      title: `ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม`,
+                      description: "การยกเลิกย้อนกลับไม่ได้",
+                      action: "ยกเลิกข้อตกลง",
+                      destructive: true,
+                    }))) return;
+                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next]);
+                  }}>
                   {transitionLabels[next]}
                 </button>
               ))}
@@ -512,7 +517,12 @@ function ManagePanel({
         <div className="flex justify-end">
           <button className="btn gap-1.5 text-sm text-red-700 hover:bg-red-50" type="button" disabled={action.busy}
             onClick={async () => {
-              if (!confirm(`ลบข้อตกลง “${doc.name}” ใช่ไหม\nข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
+              if (!(await confirm({
+                title: `ลบข้อตกลง “${doc.name}” ใช่ไหม`,
+                description: "ข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+                action: "ลบข้อตกลง",
+                destructive: true,
+              }))) return;
               if (await action.run(() => apiDelete(`/documents/${doc.id}`))) onDeleted(`ลบ “${doc.name}” แล้ว`);
             }}>
             <Trash2 className="h-4 w-4" />

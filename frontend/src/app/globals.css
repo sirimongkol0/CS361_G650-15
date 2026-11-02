@@ -1,64 +1,235 @@
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+/* shadcn/ui: enter/exit animations and the data-* state variants its components use */
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* The app has no dark theme: dark: utilities in shadcn components apply only
+   under an explicit .dark class, never from the OS colour scheme. */
+@custom-variant dark (&:is(.dark *));
 
 /* =============================================
    THAMMASAT UNIVERSITY COLOR SYSTEM (from the former Figma mock prototype)
    Primary: Crimson Red  #8B1538
-   Accent:  Gold         #C8961E
+   Gold:    TU Gold      #C8961E
    Base:    White + Black/Dark Gray
+   Each colour is defined once here. The shadcn/ui names (--primary, --accent,
+   --ring, …) feed its components; the Tailwind names the pages use (crimson,
+   gold, ink, faint, …) map onto the same values in @theme below.
    ============================================= */
 :root {
   --background:          #F7F8FA;
   --foreground:          #111827;
   --card:                #FFFFFF;
+  --card-foreground:     var(--foreground);
+  --popover:             #FFFFFF;
+  --popover-foreground:  var(--foreground);
 
   --primary:             #8B1538;
   --primary-foreground:  #FFFFFF;
   --primary-hover:       #6F1030;
   --primary-light:       #FDF2F5;
   --primary-muted:       #F5D6DE;
+  --secondary:           var(--primary-muted);
+  --secondary-foreground: var(--primary);
 
-  --accent:              #C8961E;
-  --accent-light:        #FEF6E4;
-  --accent-muted:        #F5E0A8;
+  --gold:                #C8961E;
+  --gold-hover:          #A87A18;
+  --gold-light:          #FEF6E4;
+  --gold-muted:          #F5E0A8;
+  --gold-dark:           #92670A;
+
+  /* shadcn's "accent" is the subtle hover/selected background in menus and
+     lists, not a brand colour, so it is neutral here; TU gold is --gold. */
+  --accent:              #F3F4F6;
+  --accent-foreground:   var(--foreground);
 
   --muted:               #F3F4F6;
-  --muted-foreground:    #6B7280;
+  --muted-foreground:    #656C79;
+  --subtle-foreground:   #4B5563;
   --border:              #E5E7EB;
+  --input:               var(--border);
+  --ring:                #8B1538;
   --radius:              10px;
 
+  --destructive:         #B91C1C;
   --success:             #15803D;
   --warning:             #B45309;
-  --danger:              #B91C1C;
+  --danger:              var(--destructive);
   --info:                #1D4ED8;
+
+  --chart-1:             var(--primary);
+  --chart-2:             var(--gold);
+  --chart-3:             #1D4ED8;
+  --chart-4:             #15803D;
+  --chart-5:             #6D28D9;
+
+  --sidebar:                    #FFFFFF;
+  --sidebar-foreground:         var(--foreground);
+  --sidebar-primary:            var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent:             var(--primary-light);
+  --sidebar-accent-foreground:  var(--primary);
+  --sidebar-border:             var(--border);
+  --sidebar-ring:               var(--ring);
 }
 
-html {
-  height: 100%;
+@theme inline {
+  /* Names used across the existing pages */
+  --color-ink: var(--foreground);
+  --color-mute: var(--subtle-foreground);
+  --color-faint: var(--muted-foreground);
+  --color-line: var(--border);
+  --color-paper: var(--background);
+  --color-soft: var(--muted);
+
+  --color-crimson: var(--primary);
+  --color-crimson-hover: var(--primary-hover);
+  --color-crimson-light: var(--primary-light);
+  --color-crimson-muted: var(--primary-muted);
+
+  --color-gold: var(--gold);
+  --color-gold-hover: var(--gold-hover);
+  --color-gold-light: var(--gold-light);
+  --color-gold-muted: var(--gold-muted);
+  --color-gold-dark: var(--gold-dark);
+
+  /* Names used by shadcn/ui components */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* --font-sarabun comes from next/font (app/layout.tsx). Headings use it too:
+     the former display face (Plus Jakarta Sans) has no Thai glyphs. */
+  --font-sans: var(--font-sarabun), system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-display: var(--font-sarabun), system-ui, sans-serif;
+  --font-heading: var(--font-display);
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border);
+  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.09), 0 0 0 1px var(--border);
+  --shadow-lightring: 0 0 0 1px var(--border);
+  --shadow-ring: 0 0 0 1px var(--border), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-body {
-  font-family: 'Sarabun', 'Plus Jakarta Sans', system-ui, sans-serif;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 15px;
-  line-height: 1.65;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
+@theme {
+  --radius-base: 10px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-fade-up: fade-up 0.3s ease-out both;
+  --animate-scale-in: scale-in 0.18s ease-out both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
 }
 
-main {
-  flex: 1;
-}
+/* Element defaults live in the base layer, so any utility on the element still
+   wins (unlayered CSS would beat every utility in Tailwind v4). */
+@layer base {
+  /* v4 changed the default border colour to currentcolor; keep v3's light grey. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
 
-::selection {
-  background: rgba(139, 21, 56, 0.12);
+  /* v4 preflight strips the native file-picker button, leaving plain text;
+     give it a small outline-button look so it still reads as a button. */
+  ::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.125rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--muted);
+    color: var(--foreground);
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* v4 preflight dropped cursor:pointer on buttons; keep v3's behaviour. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    height: 100%;
+  }
+
+  body {
+    font-family: var(--font-sarabun), system-ui, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
+  }
+
+  /* Keyboard focus ring for buttons, links and nav items. Inputs that draw their own
+     focus style use outline-hidden, a utility, which beats this base rule. */
+  :where(:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Placeholder text must still reach 4.5:1 (preflight's default gray-400 is 2.5:1) */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
+
+  ::selection {
+    background: rgba(139, 21, 56, 0.12);
+  }
 }
 
 /* ---- Scrollbars (from mock) ---- */
@@ -66,27 +237,6 @@ main {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
-
-/* ---- Sidebar/nav link style (from mock) ---- */
-.sidebar-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  color: #6B7280;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.15s;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.sidebar-link:hover { background: #F3F4F6; color: #111827; }
-.sidebar-link.active {
-  background: var(--primary-light);
-  color: var(--primary);
-  font-weight: 600;
-}
 
 /* ---- Badge system (from mock) ---- */
 .badge {
@@ -101,7 +251,7 @@ main {
   white-space: nowrap;
 }
 .badge-crimson { background: var(--primary-muted); color: var(--primary); }
-.badge-gold    { background: var(--accent-muted);  color: #92670A; }
+.badge-gold    { background: var(--gold-muted);  color: #7C5608; }
 .badge-blue    { background: #DBEAFE; color: #1D4ED8; }
 .badge-green   { background: #DCFCE7; color: #15803D; }
 .badge-purple  { background: #EDE9FE; color: #6D28D9; }
@@ -131,11 +281,6 @@ main {
   color: #fff;
 }
 .btn-primary:hover { background: var(--primary-hover); }
-.btn-accent {
-  background: var(--accent);
-  color: #fff;
-}
-.btn-accent:hover { background: #A87A18; }
 .btn-secondary {
   background: var(--primary-muted);
   color: var(--primary);
@@ -150,16 +295,7 @@ main {
 
 /* TU gradient strip (sidebar header / topbar accent) */
 .tu-stripe {
-  background: linear-gradient(90deg, var(--primary) 0%, #B8243E 60%, var(--accent) 100%);
-}
-
-/* ---- Small caps technical label (kept from previous UI, restyled) ---- */
-.mono-label {
-  font-family: 'Plus Jakarta Sans', 'Sarabun', system-ui, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 600;
+  background: linear-gradient(90deg, var(--primary) 0%, #B8243E 60%, var(--gold) 100%);
 }
 
 /* ---- Motion (subtle) ---- */
@@ -180,13 +316,10 @@ main {
 .shadow-card {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-a.shadow-card:hover, .card-lift:hover {
+a.shadow-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.09), 0 0 0 1px #E5E7EB;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.09), 0 0 0 1px var(--border);
 }
-
-.sidebar-link svg { transition: transform 0.15s ease; }
-.sidebar-link:hover svg { transform: translateX(2px); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

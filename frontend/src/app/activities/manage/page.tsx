@@ -4,8 +4,7 @@
 // Coordinators manage only activities they created; the backend re-checks every action.
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { CalendarPlus, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
 import {
   apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadManagePartners, useApiResource,
   type AgreementOption, type PartnerView,
@@ -15,6 +14,8 @@ import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { useConfirm } from "@/components/confirm-dialog";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 /** GET /activities/manage row (internal view). */
 interface ManagedActivity {
@@ -45,6 +46,7 @@ export default function ManageActivitiesPage() {
   const [editing, setEditing] = useState<ManagedActivity | "new" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const action = useAction();
+  const confirm = useConfirm();
 
   const allowed = session === "authenticated" && canManage(role);
   const isStaff = role === "staff" || role === "admin";
@@ -92,14 +94,10 @@ export default function ManageActivitiesPage() {
   const canEdit = (a: ManagedActivity) => isStaff || a.ownerUserId === user?.id;
 
   return (
-    <div className="mx-auto max-w-screen-xl p-6">
+    <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <nav className="mb-1.5 flex items-center gap-1.5 text-xs text-faint">
-            <Link href="/activities" className="text-faint hover:text-crimson">กิจกรรม</Link>
-            <ChevronRight className="h-3 w-3" />
-            <span className="text-crimson">จัดการกิจกรรม</span>
-          </nav>
+          <Breadcrumb items={[{ label: "กิจกรรม", href: "/activities" }, { label: "จัดการกิจกรรม" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการกิจกรรม</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff ? "กิจกรรมทั้งหมด รวมรายการที่ยังไม่เผยแพร่" : "เพิ่มและแก้ไขกิจกรรมของตัวเองได้ เจ้าหน้าที่เป็นผู้เผยแพร่และลบ"}
@@ -156,7 +154,12 @@ export default function ManageActivitiesPage() {
                         <button className="btn ml-1 gap-1.5 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50" type="button"
                           disabled={action.busy}
                           onClick={async () => {
-                            if (!confirm(`ลบกิจกรรม “${a.name}” ใช่ไหม\nกิจกรรมนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข`)) return;
+                            if (!(await confirm({
+                              title: `ลบกิจกรรม “${a.name}” ใช่ไหม`,
+                              description: "กิจกรรมนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+                              action: "ลบกิจกรรม",
+                              destructive: true,
+                            }))) return;
                             if (await action.run(() => apiDelete(`/activities/${a.id}`))) refresh(`ลบ “${a.name}” แล้ว`);
                           }}>
                           <Trash2 className="h-3.5 w-3.5" />

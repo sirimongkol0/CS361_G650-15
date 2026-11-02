@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
-import { ChevronRight, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { apiGetFresh, apiPatch, apiPost, useApiResource } from "@/lib/api";
 import { useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
 import { useDocumentTitle } from "@/lib/list-tools";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 type LookupKind = "respondent-types" | "sources";
 type FeedbackLookup = { id: number; code: string; name_th: string; is_active: boolean; sort_order: number };
@@ -76,7 +76,7 @@ function LookupSection({ title, kind, rows, onChanged }: {
 }
 
 export default function FeedbackLookupsPage() {
-  useDocumentTitle("ตั้งค่าประเภท Feedback");
+  useDocumentTitle("ตั้งค่าประเภทความคิดเห็น");
   const { role, status } = useRole();
   const [reload, setReload] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
@@ -93,11 +93,11 @@ export default function FeedbackLookupsPage() {
   if (resource.status === "error") return <div className="p-6"><ErrorState error={resource.error} onRetry={resource.retry} /></div>;
 
   const changed = (message: string) => { setNotice(message); setReload((n) => n + 1); };
-  return <div className="p-6 max-w-screen-xl mx-auto space-y-5">
+  return <div className="p-6 max-w-(--breakpoint-xl) mx-auto space-y-5">
     <div>
-      <nav className="flex items-center gap-1.5 text-xs mb-1.5 text-faint"><Link href="/" className="hover:text-crimson">หน้าหลัก</Link><ChevronRight className="w-3 h-3" /><Link href="/feedback" className="hover:text-crimson">ความคิดเห็น</Link><ChevronRight className="w-3 h-3" /><span className="text-crimson">ตั้งค่าประเภท Feedback</span></nav>
-      <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทและแหล่ง Feedback</h1>
-      <p className="text-sm text-faint mt-1">ปิดใช้งานรายการที่ไม่ต้องการใช้ได้ โดยข้อมูล Feedback เดิมยังคงอยู่</p>
+      <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ความคิดเห็น", href: "/feedback" }, { label: "ตั้งค่าประเภทความคิดเห็น" }]} />
+      <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทและแหล่งที่มาของความคิดเห็น</h1>
+      <p className="text-sm text-faint mt-1">ปิดใช้งานรายการที่ไม่ต้องการใช้ได้ โดยความคิดเห็นเดิมยังคงอยู่</p>
     </div>
     <Notice text={notice} />
     <LookupSection title="ประเภทผู้ส่ง" kind="respondent-types" rows={resource.data.respondentTypes} onChanged={changed} />

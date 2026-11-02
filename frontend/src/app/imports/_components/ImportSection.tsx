@@ -19,6 +19,9 @@ import {
 } from "@/lib/api";
 
 import { downloadFile } from "@/lib/download-file";
+import { useConfirm } from "@/components/confirm-dialog";
+import { StepProgress } from "@/components/step-progress";
+import { importStatusLabels } from "@/lib/labels";
 
 type ImportKind = "feedback" | "outcome";
 
@@ -52,13 +55,12 @@ interface ImportBatch {
   rolledBackAt: string | null;
 }
 
-const statusLabels: Record<ImportStatus, string> = {
-  processing: "กำลังตรวจสอบไฟล์",
-  previewed: "ตรวจสอบแล้ว / รอยืนยัน",
-  committed: "นำเข้าแล้ว",
-  rolled_back: "ยกเลิกแล้ว",
-  failed: "ประมวลผลไม่สำเร็จ",
-};
+const statusLabels: Record<ImportStatus, string> = importStatusLabels;
+
+/* Stages of an import, shown for the selected batch: after upload the batch is checked
+   (ตรวจข้อมูล) until someone confirms it; a rolled-back or failed batch stops there. */
+const IMPORT_STEPS = ["เลือกไฟล์", "ตรวจข้อมูล", "ยืนยันนำเข้า"];
+const importStep = (status: ImportStatus) => (status === "committed" ? IMPORT_STEPS.length : 1);
 
 const kindLabels: Record<ImportKind, string> = {
   feedback: "ความคิดเห็น",
@@ -74,7 +76,7 @@ const card =
   "rounded-lg border border-line bg-white p-5 shadow-card";
 
 const control =
-  "rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-crimson focus:outline-none focus:ring-2 focus:ring-crimson/10";
+  "rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-crimson focus:outline-hidden focus:ring-2 focus:ring-crimson/10";
 
 function errorText(error: unknown): string {
   if (error instanceof ApiError && error.status === 415) {
@@ -97,6 +99,7 @@ function thaiDate(value: string | null): string {
 }
 
 export default function ImportSection() {
+  const confirm = useConfirm();
   const [kind, setKind] = useState<ImportKind>("feedback");
   const [source, setSource] = useState<ImportSource>("coop_system");
   const [file, setFile] = useState<File | null>(null);
@@ -215,9 +218,12 @@ export default function ImportSection() {
   const rollback = async () => {
     if (
       !selected ||
-      !window.confirm(
-        "ยืนยันยกเลิกชุดนำเข้านี้หรือไม่? หากนำเข้าแล้ว ระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้"
-      )
+      !(await confirm({
+        title: `ย้อนการนำเข้า “${selected.fileName}” ใช่ไหม`,
+        description: "หากนำเข้าแล้ว ระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้",
+        action: "ย้อนการนำเข้า",
+        destructive: true,
+      }))
     ) {
       return;
     }
@@ -233,7 +239,7 @@ export default function ImportSection() {
       setSelected(updated);
       await loadHistory();
 
-      setNotice("ยกเลิกชุดนำเข้าเรียบร้อยแล้ว");
+      setNotice(`ย้อนการนำเข้า “${selected.fileName}” แล้ว`);
     } catch (error) {
       setPageError(errorText(error));
     } finally {
@@ -298,11 +304,11 @@ export default function ImportSection() {
               }
             >
               <option value="feedback">
-                ความคิดเห็น (Feedback)
+                ความคิดเห็น
               </option>
 
               <option value="outcome">
-                ผลลัพธ์ (Outcomes)
+                ผลลัพธ์
               </option>
             </select>
           </label>
@@ -388,7 +394,7 @@ export default function ImportSection() {
 
               <button
                 type="button"
-                className="btn btn-ghost px-2 py-1 text-xs"
+                className="btn px-2 py-1 text-xs hover:bg-soft"
                 onClick={() =>
                   void downloadTemplate(
                     `/imports/templates/${item}?format=csv&sample=true`
@@ -413,7 +419,7 @@ export default function ImportSection() {
 
             <button
               type="button"
-              className="rounded p-1 text-faint hover:bg-soft"
+              className="rounded-sm p-1 text-faint hover:bg-soft"
               aria-label="รีเฟรชประวัติ"
               onClick={() =>
                 void loadHistory().catch((error) =>
@@ -493,19 +499,6 @@ export default function ImportSection() {
                 </div>
 
                 <div className="flex gap-2">
-                  {selected.status === "previewed" &&
-                    selected.validRows > 0 && (
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        disabled={busy}
-                        onClick={() => void commit()}
-                      >
-                        <CheckCircle2 className="mr-1 inline h-4 w-4" />
-                        ยืนยันนำเข้า ({selected.validRows})
-                      </button>
-                    )}
-
                   {(["previewed", "committed"] as ImportStatus[]).includes(
                     selected.status
                   ) && (
@@ -516,10 +509,19 @@ export default function ImportSection() {
                       onClick={() => void rollback()}
                     >
                       <XCircle className="mr-1 inline h-4 w-4" />
-                      ยกเลิกชุดนี้
+                      ย้อนการนำเข้า
                     </button>
                   )}
                 </div>
+              </div>
+
+              <div className="mb-4">
+                <StepProgress
+                  label="ขั้นตอนการนำเข้า"
+                  steps={IMPORT_STEPS}
+                  current={importStep(selected.status)}
+                  stopped={selected.status === "rolled_back" || selected.status === "failed"}
+                />
               </div>
 
               {selected.status === "processing" ? (
@@ -577,6 +579,32 @@ export default function ImportSection() {
                     </div>
                   )}
 
+                  {selected.status === "previewed" && (
+                    <div className="mb-4 rounded-md border border-line bg-paper p-4">
+                      <h3 className="text-sm font-semibold text-ink">ตรวจก่อนยืนยัน</h3>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-mute">
+                        <li>จะนำเข้า{kindLabels[selected.kind]} {selected.validRows} แถว</li>
+                        {selected.invalidRows > 0 && (
+                          <li>ข้าม {selected.invalidRows} แถวที่ไม่ผ่าน ตามเหตุผลด้านบน</li>
+                        )}
+                        <li>ย้อนการนำเข้าได้ภายหลัง โดยระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้</li>
+                      </ul>
+                      {selected.validRows > 0 ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary mt-3"
+                          disabled={busy}
+                          onClick={() => void commit()}
+                        >
+                          <CheckCircle2 className="mr-1 inline h-4 w-4" />
+                          ยืนยันนำเข้า ({selected.validRows})
+                        </button>
+                      ) : (
+                        <p className="mt-3 text-sm text-faint">ไม่มีแถวที่นำเข้าได้ แก้ไฟล์แล้วอัปโหลดใหม่</p>
+                      )}
+                    </div>
+                  )}
+
                   <h3 className="mb-2 text-sm font-semibold text-ink">
                     ข้อมูลที่ผ่านการตรวจสอบ (ตัวอย่างก่อนบันทึก)
                   </h3>
@@ -595,7 +623,7 @@ export default function ImportSection() {
                             </span>
                           </div>
 
-                          <pre className="whitespace-pre-wrap break-all text-[11px] text-mute">
+                          <pre className="whitespace-pre-wrap wrap-anywhere text-[11px] text-mute">
                             {JSON.stringify(row, null, 2)}
                           </pre>
                         </div>
