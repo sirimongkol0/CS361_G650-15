@@ -3,9 +3,12 @@
 // One confirmation dialog for the whole app, replacing window.confirm. Pages call
 //   if (!(await confirm({ title, description, action }))) return;
 // Title is the question and description the consequence (ui-writing-guide-th.md §3);
-// the close button is "ยกเลิก" and the action button names what will happen.
+// the close button is "ยกเลิก" and the action button names what will happen. For
+// destructive actions the two must not look alike ("ยกเลิก" next to "ยกเลิกข้อตกลง"),
+// so the action is solid red with an icon and the header carries a warning icon.
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { TriangleAlert } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +17,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
@@ -59,12 +63,21 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       <AlertDialog open={open} onOpenChange={(next) => { if (!next) finish(false); }}>
         <AlertDialogContent container={container}>
           <AlertDialogHeader>
+            {options?.destructive && (
+              <AlertDialogMedia className="bg-red-50 text-destructive">
+                <TriangleAlert aria-hidden />
+              </AlertDialogMedia>
+            )}
             <AlertDialogTitle className="font-semibold">{options?.title}</AlertDialogTitle>
             <AlertDialogDescription>{options?.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction variant={options?.destructive ? "destructive" : "default"} onClick={() => finish(true)}>
+            <AlertDialogAction
+              variant={options?.destructive ? "danger" : "default"}
+              onClick={() => finish(true)}
+            >
+              {options?.destructive && <TriangleAlert aria-hidden />}
               {options?.action}
             </AlertDialogAction>
           </AlertDialogFooter>
