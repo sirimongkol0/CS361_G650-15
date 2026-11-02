@@ -13,6 +13,7 @@ import { useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Pagination } from "@/components/list-ui";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { fieldLabel } from "@/lib/field-labels";
 
 const PAGE_SIZE = 25;
 const MANAGER_ROLES = ["staff", "admin"];
@@ -25,6 +26,7 @@ const ENTITY_LABELS: Record<string, string> = {
   feedbacks: "Feedback",
   outcomes: "ผลลัพธ์",
   outcome_types: "ประเภทผลลัพธ์",
+  improvements: "การปรับปรุง",
   import_batches: "ชุดนำเข้าข้อมูล",
   users: "ผู้ใช้",
 };
@@ -41,8 +43,27 @@ const ACTION_LABELS: Record<string, string> = {
 const inputClass =
   "rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
-const show = (value: unknown) =>
-  value === null || value === undefined || value === "" ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value);
+const isEmpty = (value: unknown) => value === null || value === undefined || value === "";
+
+/** A before/after value: "—" when empty, ใช่/ไม่ใช่ for flags, long JSON folded away. */
+function Value({ value }: { value: unknown }) {
+  if (isEmpty(value)) return <>—</>;
+  if (typeof value === "boolean") return <>{value ? "ใช่" : "ไม่ใช่"}</>;
+  if (typeof value !== "object") return <>{String(value)}</>;
+  const text = JSON.stringify(value);
+  if (text.length <= 80) return <>{text}</>;
+  return (
+    <details>
+      <summary className="cursor-pointer text-faint">ดูค่า ({text.length} ตัวอักษร)</summary>
+      <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap wrap-anywhere text-[11px] text-mute">{JSON.stringify(value, null, 2)}</pre>
+    </details>
+  );
+}
+
+/** Text tag for a value that appeared or was cleared, so the change is not shown by colour alone. */
+const ChangeTag = ({ children }: { children: string }) => (
+  <span className="mr-1 rounded-sm border border-current px-1 text-[10px] font-semibold">{children}</span>
+);
 
 /** Fields whose value differs between before and after (all fields for a create or delete). */
 function changedFields(row: AuditLogRow) {
@@ -59,14 +80,23 @@ function Changes({ row }: { row: AuditLogRow }) {
   return (
     <details>
       <summary className="cursor-pointer text-xs font-semibold text-crimson">{fields.length} ฟิลด์</summary>
-      <table className="mt-2 w-full text-xs">
-        <thead><tr className="text-left text-faint"><th className="pr-3 font-medium">ฟิลด์</th><th className="pr-3 font-medium">ก่อน</th><th className="font-medium">หลัง</th></tr></thead>
+      {/* Fixed column widths: with auto layout a short value column shrinks until even
+          "approved" breaks mid-word under overflow-wrap:anywhere. */}
+      <table className="mt-2 w-full table-fixed text-xs">
+        <colgroup><col className="w-[28%]" /><col className="w-[36%]" /><col className="w-[36%]" /></colgroup>
+        <thead><tr className="text-left text-faint"><th scope="col" className="pr-3 font-medium">ฟิลด์</th><th scope="col" className="pr-3 font-medium">ก่อน</th><th scope="col" className="font-medium">หลัง</th></tr></thead>
         <tbody>
           {fields.map((field) => (
             <tr key={field.key} className="border-t border-line align-top">
-              <td className="py-1 pr-3 font-mono text-mute">{field.key}</td>
-              <td className="py-1 pr-3 wrap-anywhere text-[#b91c1c]">{show(field.before)}</td>
-              <td className="py-1 wrap-anywhere text-[#15803d]">{show(field.after)}</td>
+              <th scope="row" className="py-1 pr-3 text-left font-medium text-mute" title={field.key}>{fieldLabel(field.key)}</th>
+              <td className="py-1 pr-3 wrap-anywhere text-[#b91c1c]">
+                {!isEmpty(field.before) && isEmpty(field.after) && <ChangeTag>ลบ</ChangeTag>}
+                <Value value={field.before} />
+              </td>
+              <td className="py-1 wrap-anywhere text-[#15803d]">
+                {isEmpty(field.before) && !isEmpty(field.after) && <ChangeTag>เพิ่ม</ChangeTag>}
+                <Value value={field.after} />
+              </td>
             </tr>
           ))}
         </tbody>
