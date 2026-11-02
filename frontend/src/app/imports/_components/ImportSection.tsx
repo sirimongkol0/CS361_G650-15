@@ -19,6 +19,7 @@ import {
 } from "@/lib/api";
 
 import { downloadFile } from "@/lib/download-file";
+import { useConfirm } from "@/components/confirm-dialog";
 
 type ImportKind = "feedback" | "outcome";
 
@@ -97,6 +98,7 @@ function thaiDate(value: string | null): string {
 }
 
 export default function ImportSection() {
+  const confirm = useConfirm();
   const [kind, setKind] = useState<ImportKind>("feedback");
   const [source, setSource] = useState<ImportSource>("coop_system");
   const [file, setFile] = useState<File | null>(null);
@@ -215,9 +217,12 @@ export default function ImportSection() {
   const rollback = async () => {
     if (
       !selected ||
-      !window.confirm(
-        "ยืนยันยกเลิกชุดนำเข้านี้หรือไม่? หากนำเข้าแล้ว ระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้"
-      )
+      !(await confirm({
+        title: `ยกเลิกชุดนำเข้า “${selected.fileName}” ใช่ไหม`,
+        description: "หากนำเข้าแล้ว ระบบจะลบเฉพาะข้อมูลที่มาจากชุดนี้",
+        action: "ยกเลิกชุดนี้",
+        destructive: true,
+      }))
     ) {
       return;
     }

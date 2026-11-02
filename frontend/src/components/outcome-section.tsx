@@ -8,6 +8,7 @@ import {
 } from "@/lib/api";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { DateInput, Dialog, Field, FormError, Notice, inputCls, orNull, useAction } from "@/components/form-ui";
+import { useConfirm } from "@/components/confirm-dialog";
 
 type Draft = { outcomeTypeId: string; title: string; value: string; unit: string; occurredOn: string; evidenceUrl: string; description: string };
 // List filters stay snake_case query parameters, like the other endpoints'.
@@ -37,6 +38,7 @@ export function OutcomeSection({ field, id, canAdd, canPublish }: {
   const [editing, setEditing] = useState<Outcome | "new" | null>(null);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const action = useAction();
+  const confirm = useConfirm();
   const outcomes = useApiResource(() => apiGetFresh<OutcomePage>(`/outcomes/?${queryParam[field]}=${id}&page_size=100`), [field, id, reload]);
   // Loaded on every render so a type an admin just added is offered straight away.
   const types = useApiResource(() => editing !== null ? apiGetFresh<OutcomeType[]>("/outcomes/types") : Promise.resolve([]), [editing !== null]);
@@ -66,7 +68,12 @@ export function OutcomeSection({ field, id, canAdd, canPublish }: {
   };
 
   const remove = async (row: Outcome) => {
-    if (!window.confirm(`ลบผลลัพธ์ "${row.title}" ?`)) return;
+    if (!(await confirm({
+      title: `ลบผลลัพธ์ “${row.title}” ใช่ไหม`,
+      description: "ผลลัพธ์นี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+      action: "ลบผลลัพธ์",
+      destructive: true,
+    }))) return;
     if (await action.run(() => apiDelete(`/outcomes/${row.id}`))) done("ลบผลลัพธ์แล้ว");
   };
 

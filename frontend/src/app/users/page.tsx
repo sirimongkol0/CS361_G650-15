@@ -10,6 +10,7 @@ import { apiErrorMessage, apiPatch, formatThaiDateTime, loadUsers, useApiResourc
 import { ROLES, getRoleConfig, useRole, type UserRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
+import { useConfirm } from "@/components/confirm-dialog";
 
 const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   public: "ดูข้อมูลที่เผยแพร่",
@@ -49,6 +50,7 @@ function RoleBadge({ role }: { role: UserRole }) {
 }
 
 export default function UserManagementPage() {
+  const confirm = useConfirm();
   useDocumentTitle("ผู้ใช้และสิทธิ์");
   const { role, status: session } = useRole();
   const [activeTab, setActiveTab] = useState<"users" | "matrix">("users");
@@ -65,7 +67,14 @@ export default function UserManagementPage() {
 
   async function toggleActive(user: UserAccount) {
     const verb = user.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน";
-    if (!window.confirm(`ยืนยัน${verb}บัญชี ${user.email}?`)) return;
+    if (!(await confirm({
+      title: `${verb}บัญชี ${user.email} ใช่ไหม`,
+      description: user.isActive
+        ? "ผู้ใช้นี้จะเข้าสู่ระบบไม่ได้จนกว่าจะเปิดการใช้งานอีกครั้ง"
+        : "ผู้ใช้นี้จะเข้าสู่ระบบได้อีกครั้งตามบทบาทเดิม",
+      action: `${verb}บัญชี`,
+      destructive: user.isActive,
+    }))) return;
     setBusyId(user.id);
     setToggleError(null);
     try {
