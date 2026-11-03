@@ -49,7 +49,8 @@ const outcomeTypes = [
   await page.getByLabel('ค้นหาประเภทผู้ส่ง').fill('staff');
   await page.waitForTimeout(150);
   assert.equal(await page.locator('section').first().locator('tbody tr').count(), 1, 'search filters respondent types');
-  await page.locator('section').first().locator('tbody tr input').first().fill('เจ้าหน้าที่ทดสอบ');
+  await page.getByLabel('ชื่อที่แสดง staff').fill('เจ้าหน้าที่ทดสอบ');
+  await page.getByLabel('ลำดับ staff').waitFor();
   await page.getByRole('button', { name: /บันทึกทั้งหมด \(1\)/ }).click();
   await page.getByText('บันทึก 1 รายการแล้ว').waitFor();
   assert.equal(patches.filter((item) => item.path.includes('/feedback/lookups/')).length, 1);
@@ -59,7 +60,9 @@ const outcomeTypes = [
   await page.getByLabel('ค้นหาประเภทผลลัพธ์').fill('grant');
   await page.waitForTimeout(150);
   assert.equal(await page.locator('tbody tr').count(), 1, 'search filters outcome types');
-  await page.locator('tbody tr input').first().fill('ทุนวิจัย');
+  await page.getByLabel('ชื่อที่แสดง grant').fill('ทุนวิจัย');
+  await page.getByLabel('หน่วย grant').waitFor();
+  await page.getByLabel('ลำดับ grant').waitFor();
   await page.getByRole('button', { name: /บันทึกทั้งหมด \(1\)/ }).click();
   await page.getByText('บันทึก 1 รายการแล้ว').waitFor();
   assert.equal(patches.filter((item) => item.path.includes('/outcomes/lookups/')).length, 1);

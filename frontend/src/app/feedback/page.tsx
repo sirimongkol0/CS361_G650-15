@@ -25,7 +25,7 @@ const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
 function StarRow({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5" aria-label={rating ? `${rating} จาก 5 ดาว` : "ไม่มีคะแนน"}>
+    <div className="flex gap-0.5" role="img" aria-label={rating ? `${rating} จาก 5 ดาว` : "ไม่มีคะแนน"}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
@@ -67,7 +67,7 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
   const [respondentTypeId, setRespondentTypeId] = useState("");
   const [contextType, setContextType] = useState<ContextType>("activity");
   const [contextId, setContextId] = useState("");
-  const [rating, setRating] = useState("5");
+  const [rating, setRating] = useState(NO_RATING);
   const action = useAction();
 
   useEffect(() => {
@@ -89,7 +89,8 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
         loaded[type].some((row) => String(row.id) === params.get(param)));
       const initial = preset?.type ?? CONTEXTS.find(({ type }) => loaded[type].length)?.type ?? "activity";
       setContextType(initial);
-      setContextId(preset ? String(params.get(preset.param)) : String(loaded[initial][0]?.id ?? ""));
+      // No implicit first context: the sender must choose what the feedback is about.
+      setContextId(preset ? String(params.get(preset.param)) : "");
     }).catch(() => undefined);
   }, [role, canPickSender]);
 
@@ -138,9 +139,8 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
       <FormSection title="บริบท" description="ความคิดเห็นนี้เกี่ยวกับกิจกรรม การแลกเปลี่ยน หน่วยงาน หรือข้อตกลงใด">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
-            const next = e.target.value as ContextType;
-            setContextType(next);
-            setContextId(String(choices[next][0]?.id ?? ""));
+            setContextType(e.target.value as ContextType);
+            setContextId("");
           }}>
             {CONTEXTS.map((c) => <option key={c.type} value={c.type}>{c.label}</option>)}
           </select></Field>
@@ -158,6 +158,9 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
         {choices[contextType].length === 0 && (
           <p className="text-xs text-faint">ยังไม่มี{current.label}ให้เลือก</p>
         )}
+        {choices[contextType].length > 0 && !contextId && (
+          <p className="text-xs text-faint">เลือก{current.label}ก่อนส่งความคิดเห็น</p>
+        )}
       </FormSection>
 
       <FormSection title="ข้อความ">
@@ -165,7 +168,7 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
       </FormSection>
 
       <div className="flex justify-end">
-        <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length}>ส่งความคิดเห็น</button>
+        <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length || !contextId || !comment.trim()}>ส่งความคิดเห็น</button>
       </div>
     </form>
   );

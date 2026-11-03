@@ -298,6 +298,10 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       const { context, posts } = await feedbackSession(browser);
       const page = await context.newPage();
       await page.goto(`${base}/feedback`, { waitUntil: 'networkidle' });
+      const rating = page.locator('form select').first();
+      assert.equal(await rating.inputValue(), '', 'rating starts unset');
+      const submit = page.getByRole('button', { name: 'ส่งความคิดเห็น' });
+      assert.ok(await submit.isDisabled(), 'submit needs a context and comment');
       await page.getByRole('button', { name: 'เลือกกิจกรรม' }).click();
       const search = page.getByRole('combobox', { name: 'ค้นหาตัวเลือก' });
       await search.fill('กิจกรรม 42');

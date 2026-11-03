@@ -45,6 +45,7 @@ const feedback = [
   await page.goto(`${base}/feedback`, { waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'ความคิดเห็น', level: 1 }).waitFor();
   await page.getByText('แสดง 2 จาก 2 รายการ').waitFor();
+  await page.getByRole('img', { name: '5 จาก 5 ดาว' }).first().waitFor();
 
   const statusGroup = page.getByRole('group', { name: 'สถานะความคิดเห็น' });
   await statusGroup.getByRole('button', { name: /รอตรวจสอบ/ }).click();

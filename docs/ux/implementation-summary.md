@@ -46,6 +46,19 @@
 | Event dates stay unprefixed in public labels | `f2b1eb2` | `v2-improvements` regression test |
 | Template documents keep an editable type | `0bade1a` | `v3-agreements` still 6 passed |
 
+## P4 desktop usability fixes (post-audit)
+
+| Change | Commit | Evidence |
+|---|---|---|
+| Login desktop no longer scrolls horizontally; role label contrast >= 4.5:1 | `028e465` | `v3-auth` 7 passed; axe desktop clean |
+| Feedback starts with no rating and no context; submit waits for a choice | `38788d4` | `v3-forms` 6 passed; axe desktop clean |
+| Star ratings expose `role="img"` | `38788d4` | `feedback-triage` checks the named image role |
+| Visible “ตั้งแต่วันที่ / ถึงวันที่” labels on documents and activities | `189402b` | `v2-improvements` waits for both labels |
+| Admin lookup row inputs get per-row accessible names | `a7a9a15` | `admin-lookups` uses the labels; axe label violation cleared |
+| Activity display utility stays standalone for `test:display` | `483516a` | `npm run test:display` passed |
+
+**Scope note:** mobile-only findings (dashboard grids, public table card layout) are intentionally deferred. P4 does not change responsive layout.
+
 ## Verification (3 Nov 2026)
 
 | Command / check | Result |
@@ -59,9 +72,10 @@
 | `tests/v3-agreements.cjs` | 6 passed |
 | `tests/feedback-triage.cjs` | passed |
 | `tests/imports.cjs` / `tests/admin-lookups.cjs` | passed |
-| `tests/v3-auth.cjs` | 6 passed |
+| `tests/v3-auth.cjs` | 7 passed (desktop login layout + contrast) |
 | `tests/v2-improvements.cjs` | 4 passed |
-| Mobile 390px | activity and document forms: no overflow, sticky save visible |
+| Desktop axe (P4 pages) | clean on login, documents, activities, feedback, admin lookups |
+| Mobile 390px | out of scope for P4; prior checks remain |
 | Live lab | backend + frontend healthy; `publiclyVisible` present on 25 documents and 32 partners; health 200 |
 
 Temporary harnesses were removed after verification; no `/dev` route remains in the build.

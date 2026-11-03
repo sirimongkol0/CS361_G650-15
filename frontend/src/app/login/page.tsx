@@ -170,7 +170,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right: Illustration ──────────────────────── */}
-      <div className="hidden lg:flex flex-1 relative flex-col items-center justify-center p-14" style={{ background: '#111827' }}>
+      <div className="hidden lg:flex flex-1 relative overflow-hidden flex-col items-center justify-center p-14" style={{ background: '#111827' }}>
         {/* TU stripe top */}
         <div className="absolute top-0 left-0 right-0 h-1 tu-stripe" />
 
@@ -203,7 +203,7 @@ export default function LoginPage() {
 
           {/* Role preview chips */}
           <div>
-            <div className="text-xs font-semibold mb-2.5 text-faint">
+            <div className="text-xs font-semibold mb-2.5" style={{ color: '#D1D5DB' }}>
               ผู้ใช้ 5 บทบาท
             </div>
             <div className="flex flex-wrap gap-2">

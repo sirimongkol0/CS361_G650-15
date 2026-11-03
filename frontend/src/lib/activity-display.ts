@@ -1,7 +1,12 @@
-import { activityDateKindLabels } from "@/lib/labels";
-
 // Date-only values are calendar dates, independent of the browser timezone.
+// Keep this utility self-contained: tests load the file directly without the app import map.
 const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+
+const kindLabels: Record<string, string> = {
+  announcement: "วันประกาศ", deadline: "กำหนดส่ง / สมัคร",
+  application_open: "วันเปิดรับสมัคร", application_close: "วันปิดรับสมัคร",
+  period_start: "เริ่มช่วงเวลา", period_end: "สิ้นสุดช่วงเวลา",
+};
 
 export function activityDateLabel(iso: string | null | undefined, kind?: string | null, precision?: string | null): string {
   if (!iso) return "ไม่ระบุวันที่";
@@ -13,7 +18,7 @@ export function activityDateLabel(iso: string | null | undefined, kind?: string 
     : precision === "month" ? `${month} ${year}`
     : `${parsed.getUTCDate()} ${month} ${year}`;
   // "event" is the default meaning, so the page does not need to spell it out.
-  const prefix = kind && kind !== "event" && activityDateKindLabels[kind] ? `${activityDateKindLabels[kind]}: ` : "";
+  const prefix = kind && kind !== "event" && kindLabels[kind] ? `${kindLabels[kind]}: ` : "";
   return `${prefix}${precision === "approximate" ? "ประมาณ " : ""}${date}`;
 }
 

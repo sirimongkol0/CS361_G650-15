@@ -142,9 +142,9 @@ export default function OutcomeTypesPage() {
               const value = { ...row, ...(edits[row.id] ?? {}) };
               return <tr key={row.id} className="border-b border-paper">
                 <td className="py-2 pr-3 font-mono text-xs">{row.code}</td>
-                <td className="py-2 pr-3"><input className={inputCls} value={value.name_th} onChange={(e) => edit(row, "name_th", e.target.value)} /></td>
-                <td className="py-2 pr-3"><input className={inputCls} value={value.unit ?? ""} onChange={(e) => edit(row, "unit", e.target.value)} /></td>
-                <td className="py-2 pr-3"><input className={inputCls} type="number" value={value.sort_order} onChange={(e) => edit(row, "sort_order", Number(e.target.value))} /></td>
+                <td className="py-2 pr-3"><input className={inputCls} value={value.name_th} aria-label={`ชื่อที่แสดง ${row.code}`} onChange={(e) => edit(row, "name_th", e.target.value)} /></td>
+                <td className="py-2 pr-3"><input className={inputCls} value={value.unit ?? ""} aria-label={`หน่วย ${row.code}`} onChange={(e) => edit(row, "unit", e.target.value)} /></td>
+                <td className="py-2 pr-3"><input className={inputCls} type="number" value={value.sort_order} aria-label={`ลำดับ ${row.code}`} onChange={(e) => edit(row, "sort_order", Number(e.target.value))} /></td>
                 <td className="py-2 pr-3"><input type="checkbox" checked={value.is_active} onChange={(e) => edit(row, "is_active", e.target.checked)} aria-label={`เปิดใช้ ${row.code}`} /></td>
                 <td className="py-2 text-right"><button type="button" className="btn btn-outline gap-1" disabled={action.busy || bulkBusy || !edits[row.id]} onClick={() => save(row)}><Save className="w-3.5 h-3.5" />บันทึก</button></td>
               </tr>;

@@ -35,6 +35,8 @@ const activities = [
     });
     await page.goto(`${base}/documents`);
     await page.getByRole('link', {name: 'Alpha Agreement', exact: true}).waitFor();
+    await page.locator('label').filter({hasText: 'ตั้งแต่วันที่'}).first().waitFor();
+    await page.locator('label').filter({hasText: 'ถึงวันที่'}).first().waitFor();
     await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill('Distinctive');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Distinctive');
     await page.getByLabel('ประเภทข้อตกลง').selectOption('MOU');
     await page.getByLabel('สถานะข้อตกลง').selectOption('active');
@@ -82,6 +84,8 @@ const activities = [
     await page.getByText('2569', {exact: true}).waitFor();
     await page.goto(`${base}/activities`);
     await page.getByRole('link', {name: 'Undated record', exact: true}).waitFor();
+    await page.locator('label').filter({hasText: 'ตั้งแต่วันที่'}).first().waitFor();
+    await page.locator('label').filter({hasText: 'ถึงวันที่'}).first().waitFor();
     await page.getByLabel('สถานะกิจกรรม').selectOption('ไม่ระบุ');
     assert.equal(await page.locator('tbody tr').count(), 2);
     checks.push('unknown status/date/enrollment and announcement/month/year precision');

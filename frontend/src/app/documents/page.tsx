@@ -157,8 +157,14 @@ export default function DocumentsPage() {
           <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={event => setScopeFilter(event.target.value)}>
             <ScopeLevelOptions />
           </select>
-          <DateInput wrapperClassName="inline-block" aria-label="มีผลตั้งแต่วันที่" className={`${inputCls} w-auto!`} value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} />
-          <DateInput wrapperClassName="inline-block" aria-label="มีผลถึงวันที่" className={`${inputCls} w-auto!`} value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} />
+          <label className="flex items-center gap-2 text-xs text-faint">
+            ตั้งแต่วันที่
+            <DateInput wrapperClassName="inline-block" aria-label="มีผลตั้งแต่วันที่" className={`${inputCls} w-auto!`} value={dateFrom} max={dateTo || undefined} onChange={event => setDateFrom(event.target.value)} />
+          </label>
+          <label className="flex items-center gap-2 text-xs text-faint">
+            ถึงวันที่
+            <DateInput wrapperClassName="inline-block" aria-label="มีผลถึงวันที่" className={`${inputCls} w-auto!`} value={dateTo} min={dateFrom || undefined} onChange={event => setDateTo(event.target.value)} />
+          </label>
           <button type="button" className="btn btn-outline disabled:opacity-40 disabled:cursor-not-allowed" disabled={chips.length === 0} onClick={() => {
             setSearch(""); setTypeFilter("all"); setStatusFilter("all"); setScopeFilter("all"); setDateFrom(""); setDateTo("");
           }}>ล้างตัวกรอง</button>
