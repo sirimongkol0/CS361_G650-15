@@ -59,11 +59,65 @@
 
 **Scope note:** mobile-only findings (dashboard grids, public table card layout) are intentionally deferred. P4 does not change responsive layout.
 
+**Deployment:** P4 is frontend-only and was deployed to the lab without touching the backend or database. The quick-tunnel URL changes after every instance restart.
+
+## P5 local-auth hardening (4 Nov 2026)
+
+| Change | Commit | Evidence |
+|---|---|---|
+| Local-auth backend merged from `feature/local-auth` | `94260d4` | `test_local_auth.py` 7 passed |
+| TOTP MFA, encrypted secrets, QR provisioning and one-time backup codes | `218af93` | `test_local_mfa.py` 8 passed |
+| Login/MFA rate limiting with `Retry-After` | `218af93` | 5 failures → 429; MFA challenge limit tested |
+| Password-first MFA challenge (5-minute single-use token) | `218af93` | challenge cannot access `/auth/me`; replay rejected |
+| MFA second login step and Settings enrollment card | `914d824` | `tests/mfa.cjs` 2 checks passed |
+| Permanent MFA Playwright test wired into CI | `914d824` | `.github/workflows/ci.yml` |
+
+**Scope note:** email verification and forgot-password are not included; they need an email provider/domain. Rate limiting is process-local because the deployment runs one uvicorn worker; Redis is the upgrade path if workers are added.
+
+**Deployment:** P5 backend and frontend were deployed to the DigitalOcean droplet on 4 Nov 2026. The startup `create_all` created `mfa_totp` and `mfa_backup_codes`; a temporary live account completed setup → enable → MFA login challenge → disable, then was removed. MFA remains opt-in; no demo account has it enabled yet.
+
+## UI cleanup pass (4 Nov 2026)
+
+| Change | Commit | Evidence |
+|---|---|---|
+| Settings split into password + MFA columns; account email shown in MFA login step | `c44c7f9` | desktop screenshot; `mfa.cjs` |
+| MFA/backup-code copy made consistently Thai | `c44c7f9` | `mfa.cjs`; WCAG axe clean |
+| Audit action labels for MFA enable/disable/backup rotation | `c44c7f9` | audit page no longer shows raw action codes |
+| Admin lookups column “Code” → “รหัส”; imports Template/Preview → Thai | `c44c7f9` | live checks passed |
+| Smoke-test MFA audit rows removed from demo data | — | audit page check passed |
+
+Full desktop crawl: **28 pages / 5 roles**, no horizontal overflow, no WCAG A/AA axe violations, no console errors, one `h1` per page. The production compose uses prebuilt images, so the frontend was built locally and transferred before recreating the container.
+
+## Terminology pass (4 Nov 2026)
+
+| Change | Commit | Evidence |
+|---|---|---|
+| `หน่วยงานคู่ความร่วมมือ` → `หน่วยงานความร่วมมือ` across nav, filters, forms and dashboards | `97e7440` | `v3-forms`, `scope-level` passed; live pages no old term |
+| `ระดับความร่วมมือ` → `ขอบเขตความร่วมมือ`; `หลักสูตร CSTU` → `ระดับหลักสูตร (CSTU)` | `97e7440` | `scope-level`, `scope-summary` passed |
+| `ประเภทผู้ส่ง` → `ประเภทผู้ให้ความคิดเห็น` | `97e7440` | `feedback-triage`, `admin-lookups` passed |
+| Documents use `เอกสาร` as the umbrella; MoU/MoA use `รูปแบบ` and document kind uses `ชนิดเอกสาร` | `97e7440`, `2a0823c`, `ef38caa` | `agreements`, `v2-improvements`, `v3-agreements` passed |
+| CSTU review label `รอตรวจ` → `รอตรวจสอบ` | `97e7440` | build + auth suites passed |
+| Native file picker replaced with Thai `เลือกไฟล์` control | `97e7440` | `imports.cjs` passed; live page has no “Choose File” |
+| Demo lookup `partner` label updated in seed and live DB | `7e393d5` | `/feedback` no longer shows the old term |
+
+Live verification after deploy: documents header shows `รูปแบบ` / `ขอบเขต`, activity form uses `หน่วยงานความร่วมมือ` / `ขอบเขตความร่วมมือ`, and feedback uses `ประเภทผู้ให้ความคิดเห็น`.
+
+## Brand mark (4 Nov 2026)
+
+| Change | Commit | Evidence |
+|---|---|---|
+| Favicon/app icon use the unmodified official TU emblem (512px PNG, ICO, 180px Apple icon) | `2f63283` | live `/favicon.ico`, `/icon.png`, `/apple-icon.png` return 200 |
+| Sidebar/login show the same official emblem at 36px/44px; the crimson rounded frame was removed | `2f63283` | live login mark 44px, sidebar mark 36px; `v3-auth`, `v2-improvements`, `v3-forms` passed |
+| Frontend image copies `public/` so the emblem is served in production | `7a117c8` | live `/tu-emblem.png` returns 200 |
+| No colour changes, cropping, or added graphic elements | — | official source: Thammasat Identity (Main logo artwork) |
+
+The emblem is the official university seal. The 2568 seal regulation and the 2558 University Act (ss. 86/89) restrict modification and non-university use; keep the artwork unmodified and confirm permission before any public/official launch.
+
 ## Verification (3 Nov 2026)
 
 | Command / check | Result |
 |---|---|
-| Backend `pytest tests -q` | 732 passed, 6 skipped |
+| Backend `pytest tests -q` | 760 passed, 6 skipped (P5) |
 | `npm run lint` | pass |
 | `npm run build` | pass |
 | `npm run test:display` | pass |
@@ -73,17 +127,18 @@
 | `tests/feedback-triage.cjs` | passed |
 | `tests/imports.cjs` / `tests/admin-lookups.cjs` | passed |
 | `tests/v3-auth.cjs` | 7 passed (desktop login layout + contrast) |
+| `tests/mfa.cjs` | 2 passed (login challenge + settings enrollment) |
 | `tests/v2-improvements.cjs` | 4 passed |
-| Desktop axe (P4 pages) | clean on login, documents, activities, feedback, admin lookups |
+| Desktop axe (P4/P5 pages) | clean on login, settings, documents, activities, feedback, admin lookups |
 | Mobile 390px | out of scope for P4; prior checks remain |
-| Live lab | backend + frontend healthy; `publiclyVisible` present on 25 documents and 32 partners; health 200 |
+| Live lab | DigitalOcean backend/frontend healthy; health 200; live MFA setup/challenge/disable smoke test passed |
 
 Temporary harnesses were removed after verification; no `/dev` route remains in the build.
 
 ## Notes and remaining work
 
 - **Git was not pushed.** The branch remains local.
-- The live lab (https://equal-preceding-hugo-treasures.trycloudflare.com) was updated by rebuilding both the backend and frontend containers. The lab's local-auth patch (`local_auth.py`, `auth.py`, `config.py`, `compose.lab.yml`) was preserved; only the five changed P3 backend files were copied. A lab reset will wipe this deployment.
+- The live lab is a temporary EC2 instance behind a Cloudflare **quick tunnel**. Its URL changes whenever the instance restarts, and AWS Academy stops the instance when the lab session ends. P3 was deployed by rebuilding both the backend and frontend containers; the lab's local-auth patch (`local_auth.py`, `auth.py`, `config.py`, `compose.lab.yml`) was preserved, and only the five changed P3 backend files were copied. A lab reset will wipe this deployment.
 - P3 changes backend validation and API response fields (`publiclyVisible`) but adds **no database migration**. Local auth remains a lab-only configuration.
 - `tasks/plan.md` and `tasks/todo.md` are local only; the repository ignores `tasks/`.
 - Imports and admin checks are permanent Playwright tests (`frontend/tests/imports.cjs`, `frontend/tests/admin-lookups.cjs`) and are wired into the CI e2e step.

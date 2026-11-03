@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, ArrowRight, Shield, Globe, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { ApiError } from '@/lib/api';
 import { ROLES, useRole, getRoleConfig } from '@/lib/role-context';
 
@@ -72,9 +72,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E]">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/tu-emblem.png"
+              alt="ตรามหาวิทยาลัยธรรมศาสตร์"
+              width={44}
+              height={44}
+              className="h-11 w-11 shrink-0"
+              draggable={false}
+            />
             <div>
               <div className="font-display font-extrabold text-lg leading-snug text-ink">
                 PCSMS
