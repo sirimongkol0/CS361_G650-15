@@ -41,7 +41,7 @@ function StarRow({ rating }: { rating: number }) {
 const sourceColors: Record<string, string> = {
   "ผู้เข้าร่วมกิจกรรม": "badge-blue",
   "ศิษย์เก่า": "badge-purple",
-  "หน่วยงานคู่ความร่วมมือ": "badge-crimson",
+  "หน่วยงานความร่วมมือ": "badge-crimson",
   "ระบบสหกิจศึกษา": "badge-gold",
   "นักศึกษา": "badge-green",
 };
@@ -123,7 +123,7 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
           {canPickSender && (
-            <Field label="ประเภทผู้ส่ง" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
+            <Field label="ประเภทผู้ให้ความคิดเห็น" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
               <select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
                 {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
               </select>
@@ -411,8 +411,8 @@ export default function FeedbackPage() {
                     {sources.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                   {isManager && (
-                    <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ส่ง">
-                      <option value="all">ทุกประเภทผู้ส่ง</option>
+                    <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ให้ความคิดเห็น">
+                      <option value="all">ทุกประเภทผู้ให้ความคิดเห็น</option>
                       {respondentTypes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
                     </select>
                   )}

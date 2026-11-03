@@ -24,7 +24,7 @@ const inputCls =
   "w-full rounded-lg border-[1.5px] border-line bg-white px-3 py-2 text-sm text-ink outline-hidden transition-colors placeholder:text-faint focus:border-crimson focus:ring-[3px] focus:ring-crimson/10";
 
 export default function StakeholdersPage() {
-  useDocumentTitle("หน่วยงานคู่ความร่วมมือ");
+  useDocumentTitle("หน่วยงานความร่วมมือ");
   const { role } = useRole();
   const [search, setSearch] = useUrlState("q", "");
   const [typeFilter, setTypeFilter] = useUrlState("type", "all");
@@ -90,8 +90,8 @@ export default function StakeholdersPage() {
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "หน่วยงานคู่ความร่วมมือ" }]} />
-          <h1 className="text-2xl font-bold text-ink font-display">หน่วยงานคู่ความร่วมมือ</h1>
+          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "หน่วยงานความร่วมมือ" }]} />
+          <h1 className="text-2xl font-bold text-ink font-display">หน่วยงานความร่วมมือ</h1>
           <p className="text-sm mt-0.5 text-faint">
             {role === "public"
               ? "หน่วยงานและผู้ประสานงานที่ร่วมมือกับหลักสูตร"
@@ -128,7 +128,7 @@ export default function StakeholdersPage() {
                 <option value="all">ประเทศ: ทั้งหมด</option>
                 {countries.map((country) => <option key={country} value={country}>{country}</option>)}
               </select>
-              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ขอบเขตความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
               <button type="button" className="btn btn-outline disabled:opacity-40 disabled:cursor-not-allowed" disabled={chips.length === 0} onClick={() => {

@@ -103,7 +103,7 @@ function LookupSection({ title, kind, rows, onChanged }: {
       )}
 
       <form onSubmit={create} className="grid gap-3 sm:grid-cols-[1fr_2fr_100px_auto] items-end">
-        <Field label="รหัส (code)"><input className={inputCls} required pattern="[a-z][a-z0-9_]*" maxLength={80} value={code} onChange={(e) => setCode(e.target.value)} /></Field>
+        <Field label="รหัส"><input className={inputCls} required pattern="[a-z][a-z0-9_]*" maxLength={80} value={code} onChange={(e) => setCode(e.target.value)} /></Field>
         <Field label="ชื่อที่แสดง"><input className={inputCls} required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="ลำดับ"><input className={inputCls} type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></Field>
         <button className="btn btn-primary mb-1" disabled={action.busy}>เพิ่ม</button>
@@ -114,7 +114,7 @@ function LookupSection({ title, kind, rows, onChanged }: {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="border-b border-line text-left text-faint"><th className="py-2 pr-3">Code</th><th className="py-2 pr-3">ชื่อที่แสดง</th><th className="py-2 pr-3">ลำดับ</th><th className="py-2 pr-3">ใช้งาน</th><th /></tr></thead>
+            <thead><tr className="border-b border-line text-left text-faint"><th className="py-2 pr-3">รหัส</th><th className="py-2 pr-3">ชื่อที่แสดง</th><th className="py-2 pr-3">ลำดับ</th><th className="py-2 pr-3">ใช้งาน</th><th /></tr></thead>
             <tbody>{filtered.map((row) => {
               const value = { ...row, ...(edits[row.id] ?? {}) };
               return <tr key={row.id} className="border-b border-paper">
@@ -153,11 +153,11 @@ export default function FeedbackLookupsPage() {
   return <div className="p-6 max-w-(--breakpoint-xl) mx-auto space-y-5">
     <div>
       <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ความคิดเห็น", href: "/feedback" }, { label: "ตั้งค่าประเภทความคิดเห็น" }]} />
-      <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทและแหล่งที่มาของความคิดเห็น</h1>
+      <h1 className="text-2xl font-bold text-ink font-display">จัดการประเภทผู้ให้ความคิดเห็นและช่องทางความคิดเห็น</h1>
       <p className="text-sm text-faint mt-1">ปิดใช้งานรายการที่ไม่ต้องการใช้ได้ โดยความคิดเห็นเดิมยังคงอยู่</p>
     </div>
     <Notice text={notice} />
-    <LookupSection title="ประเภทผู้ส่ง" kind="respondent-types" rows={resource.data.respondentTypes} onChanged={changed} />
-    <LookupSection title="แหล่งที่มา" kind="sources" rows={resource.data.feedbackSources} onChanged={changed} />
+    <LookupSection title="ประเภทผู้ให้ความคิดเห็น" kind="respondent-types" rows={resource.data.respondentTypes} onChanged={changed} />
+    <LookupSection title="ช่องทางความคิดเห็น" kind="sources" rows={resource.data.feedbackSources} onChanged={changed} />
   </div>;
 }

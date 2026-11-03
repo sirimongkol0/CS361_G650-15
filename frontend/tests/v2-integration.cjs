@@ -100,18 +100,18 @@ async function check(name,work) {await work();cases.push({name,status:'passed'})
       await section('กิจกรรมที่เกี่ยวข้อง').getByRole('link',{name:a.name,exact:true}).click();await page.getByRole('heading',{name:a.name,exact:true}).waitFor();
       await section('ข้อมูลกิจกรรม').getByRole('link').click();await page.getByRole('heading',{name:p.name,exact:true}).waitFor();
       await section('ข้อตกลงที่เกี่ยวข้อง').getByRole('link',{name:d.name,exact:true}).click();await page.getByRole('heading',{name:d.name,exact:true}).waitFor();
-      const promise=page.waitForEvent('download');await page.getByRole('button',{name:`ดาวน์โหลดไฟล์ข้อตกลง ${d.id}`,exact:true}).first().click();const download=await promise;
+      const promise=page.waitForEvent('download');await page.getByRole('button',{name:`ดาวน์โหลดไฟล์เอกสาร ${d.id}`,exact:true}).first().click();const download=await promise;
       assert.equal(download.suggestedFilename(),d.fileName);assert.equal(sha(fs.readFileSync(await download.path())),manifest.sampleSha256);
       await section('หน่วยงาน').getByRole('link').click();await page.getByRole('heading',{name:p.name,exact:true}).waitFor();
     });
     await check('UI agreement search/type/status/inclusive dates, invalid range, empty and reset',async()=>{
       const d=records.documents.find(x=>x.id===ids.document);await go('/documents');await page.getByRole('link',{name:d.name,exact:true}).waitFor();
-      await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill(d.name);await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,d.name);await page.getByLabel('ประเภทข้อตกลง').selectOption(d.type.toUpperCase());await page.getByLabel('สถานะข้อตกลง').selectOption(d.status);
+      await page.getByPlaceholder('ค้นหาชื่อเอกสารหรือหน่วยงาน').fill(d.name);await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,d.name);await page.getByLabel('รูปแบบเอกสาร').selectOption(d.type.toUpperCase());await page.getByLabel('สถานะเอกสาร').selectOption(d.status);
       await page.getByLabel('มีผลตั้งแต่วันที่').fill(d.expiryDate);await page.getByLabel('มีผลถึงวันที่').fill(d.expiryDate);/* Search matches every word in any field, so other agreements may also match; each must satisfy the other filters. */const shown=await page.locator('tbody tr td:first-child a[href^="/documents/"]').allInnerTexts();assert.ok(shown.includes(d.name),shown.join(', '));for(const name of shown){const r=records.documents.find(x=>x.name===name);assert.ok(r,name);assert.equal(r.type,d.type,name);assert.equal(r.status,d.status,name);assert.ok(r.expiryDate>=d.expiryDate&&(!r.effectiveDate||r.effectiveDate<=d.expiryDate),name);}await capture('agreement-filters');
       const afterExpiry=new Date(d.expiryDate+'T00:00:00Z');afterExpiry.setUTCDate(afterExpiry.getUTCDate()+1);
       await page.getByLabel('มีผลตั้งแต่วันที่').fill(afterExpiry.toISOString().slice(0,10));await page.getByText('วันเริ่มต้องไม่หลังวันสิ้นสุด',{exact:true}).waitFor();assert.equal(await page.locator('tbody tr').count(),0);
       await page.getByRole('button',{name:'ล้างตัวกรอง',exact:true}).click();assert.equal(await page.locator('tbody tr').count(),records.documents.length);
-      await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill('V2-NO-SUCH-RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบข้อตกลงที่ค้นหา',exact:true}).waitFor();
+      await page.getByPlaceholder('ค้นหาชื่อเอกสารหรือหน่วยงาน').fill('V2-NO-SUCH-RECORD');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'V2-NO-SUCH-RECORD');await page.getByRole('heading',{name:'ไม่พบเอกสารที่ค้นหา',exact:true}).waitFor();
     });
     await check('UI activity combined search/type/organization/status/dates, empty and reset',async()=>{
       const a=records.activities.find(x=>x.id===ids.activity),p=records.partners.find(x=>x.id===a.partnerId);await go('/activities');await page.getByRole('link',{name:a.name,exact:true}).waitFor();
@@ -124,11 +124,11 @@ async function check(name,work) {await work();cases.push({name,status:'passed'})
     await check('UI no agreement/related records, metadata-only and draft/unknown ID Not Found',async()=>{
       await go(`/stakeholders/${ids.emptyPartner}`);await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้อง',exact:true}).waitFor();await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();await capture('empty-relationships');
       await go(`/activities/${ids.noAgreementActivity}`);await page.getByRole('heading',{name:'ยังไม่มีข้อตกลงที่เกี่ยวข้อง',exact:true}).waitFor();
-      await go(`/documents/${ids.metadataDocument}`);await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:/ดาวน์โหลดไฟล์ข้อตกลง/}).count(),0);
+      await go(`/documents/${ids.metadataDocument}`);await page.getByRole('heading',{name:'ยังไม่มีกิจกรรมที่เกี่ยวข้อง',exact:true}).waitFor();assert.equal(await page.getByRole('button',{name:/ดาวน์โหลดไฟล์เอกสาร/}).count(),0);
       for(const route of [`/stakeholders/${ids.hiddenPartner}`,`/documents/${ids.hiddenDocument}`,`/activities/${ids.hiddenActivity}`,'/stakeholders/999999','/documents/999999','/activities/999999']) {await go(route);await page.getByRole('heading',{name:'ไม่พบรายการนี้',exact:true}).waitFor();}
       await capture('not-found');await go(`/activities/${ids.privateTargetsActivity}`);await page.getByRole('heading',{name:'V2-6 Public Activity Private Targets',exact:true}).waitFor();assert.equal(await page.locator(`a[href="/stakeholders/${ids.hiddenPartner}"],a[href="/documents/${ids.hiddenDocument}"]`).count(),0);
     });
-    for(const [route,endpoint,loading,emptyTitle] of [['/stakeholders','/partners/','กำลังโหลดหน่วยงาน','ยังไม่มีข้อมูล'],['/documents','/documents/','กำลังโหลดข้อตกลง…','ยังไม่มีข้อตกลงที่เผยแพร่'],['/activities','/activities/','กำลังโหลดกิจกรรม','ยังไม่มีกิจกรรมที่เผยแพร่']]) {
+    for(const [route,endpoint,loading,emptyTitle] of [['/stakeholders','/partners/','กำลังโหลดหน่วยงาน','ยังไม่มีข้อมูล'],['/documents','/documents/','กำลังโหลดข้อตกลง…','ยังไม่มีเอกสารที่เผยแพร่'],['/activities','/activities/','กำลังโหลดกิจกรรม','ยังไม่มีกิจกรรมที่เผยแพร่']]) {
       await check(`UI ${route} Loading/real empty list/Error/Retry without fallback`,async()=>{
         let release;gatePath=endpoint;gate=new Promise(r=>release=r);await go(route);await page.getByRole('status',{name:'กำลังโหลดข้อมูล',exact:true}).waitFor();await capture(route.slice(1)+'-loading');release();gate=null;gatePath=null;await page.locator('tbody tr').first().waitFor();
         emptyPath=endpoint;await page.reload();await page.getByRole('heading',{name:emptyTitle,exact:true}).waitFor();await capture(route.slice(1)+'-empty');emptyPath=null;
@@ -145,7 +145,7 @@ async function check(name,work) {await work();cases.push({name,status:'passed'})
       }
     });
     await check('UI actual missing file 404, restored fixture and download Retry',async()=>{
-      await go(`/documents/${ids.missingDocument}`);const button=page.getByRole('button',{name:`ดาวน์โหลดไฟล์ข้อตกลง ${ids.missingDocument}`,exact:true}).first();await button.click();await page.getByText('ไม่พบไฟล์ข้อตกลง',{exact:true}).waitFor();await capture('missing-file');
+      await go(`/documents/${ids.missingDocument}`);const button=page.getByRole('button',{name:`ดาวน์โหลดไฟล์เอกสาร ${ids.missingDocument}`,exact:true}).first();await button.click();await page.getByText('ไม่พบไฟล์เอกสาร',{exact:true}).waitFor();await capture('missing-file');
       const storageRoot=path.resolve(manifest.storageDirectory),target=path.resolve(storageRoot,manifest.missingStorageKey);assert.ok(target.startsWith(storageRoot+path.sep));fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,fs.readFileSync(manifest.sampleFile));
       const promise=page.waitForEvent('download');await button.click();const download=await promise;assert.equal(download.suggestedFilename(),'ตัวอย่าง V2-6.pdf');assert.equal(sha(fs.readFileSync(await download.path())),manifest.sampleSha256);
     });

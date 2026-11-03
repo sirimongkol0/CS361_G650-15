@@ -39,7 +39,7 @@ export default function DashboardStaff() {
   const exportMonthly = () => { downloadFile(`/insights/summary.csv${insightsQuery({ year })}`).catch(() => {}); };
 
   const kpis: Kpi[] = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, sumCounts(summary?.partnersByType)), tone: "crimson", href: "/stakeholders" },
+    { icon: Building2, label: "หน่วยงานความร่วมมือ", value: shown(loaded, sumCounts(summary?.partnersByType)), tone: "crimson", href: "/stakeholders" },
     { icon: FileText, label: "ข้อตกลง MoU/MoA", value: shown(loaded, sumCounts(summary?.agreementsByStatus)), tone: "amber" },
     { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), tone: "blue" },
     { icon: Target, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), tone: "green", href: "/reports" },

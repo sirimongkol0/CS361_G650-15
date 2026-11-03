@@ -42,7 +42,7 @@ type Option = { id: number; label: string };
 const idFilterLabels: Record<IdFilterKey, string> = {
   source_id: "แหล่งข้อมูล",
   respondent_type_id: "ประเภทผู้ตอบ",
-  partner_id: "หน่วยงานคู่ความร่วมมือ",
+  partner_id: "หน่วยงานความร่วมมือ",
   activity_id: "กิจกรรม",
   document_id: "ข้อตกลง",
   exchange_id: "การแลกเปลี่ยน",

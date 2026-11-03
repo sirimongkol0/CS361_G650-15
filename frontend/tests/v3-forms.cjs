@@ -153,7 +153,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await dialog.getByLabel('วันที่เริ่ม').fill('');
       assert.equal(await dialog.getByLabel('ลักษณะวันที่').inputValue(), '', 'clearing the date clears its kind');
       await dialog.getByLabel('ประเภทกิจกรรม').selectOption('seminar');
-      await dialog.getByLabel('ระดับความร่วมมือ').selectOption('program');
+      await dialog.getByLabel('ขอบเขตความร่วมมือ').selectOption('program');
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText('เพิ่ม “สัมมนา V3-7” แล้ว').waitFor();
       const sent = activities.calls.find((c) => c.method === 'POST').body;
@@ -268,7 +268,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.getByRole('button', { name: 'เพิ่มกิจกรรม' }).click();
       const dialog = page.getByRole('dialog');
 
-      await dialog.getByRole('button', { name: 'หน่วยงานคู่ความร่วมมือ' }).click();
+      await dialog.getByRole('button', { name: 'หน่วยงานความร่วมมือ' }).click();
       const search = page.getByRole('combobox', { name: 'ค้นหาตัวเลือก' });
       await search.fill('มหาวิทยาลัย');
       await search.press('ArrowDown');

@@ -124,10 +124,10 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'สร้างฉบับร่าง' }).click();
       const dialog = page.getByRole('dialog');
-      await dialog.getByLabel('ชื่อข้อตกลง *').fill(agreementName);
+      await dialog.getByLabel('ชื่อเอกสาร *').fill(agreementName);
       await dialog.getByLabel('วันที่เริ่มมีผล').fill('2026-11-01');
       await dialog.getByLabel('วันหมดอายุ').fill('2029-10-31');
-      await dialog.getByLabel('ระดับความร่วมมือ').selectOption('program');
+      await dialog.getByLabel('ขอบเขตความร่วมมือ').selectOption('program');
       await dialog.getByRole('button', { name: 'สร้างฉบับร่าง', exact: true }).click();
       await page.getByText(`สร้างฉบับร่าง “${agreementName}” แล้ว`).waitFor({ timeout: 15000 });
       await dialog.getByLabel('เลือกไฟล์ PDF').setInputFiles(samplePdf);
@@ -170,12 +170,12 @@ const shot = (page, name) => page.screenshot({ path: path.join(output, `${name}.
       await dialog.getByLabel('ลิงก์แหล่งที่มา').fill(`https://example.com/functional-test/${tag}`);
       await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click();
       await page.getByText('บันทึกความเกี่ยวข้องกับ CSTU แล้ว').waitFor({ timeout: 15000 });
-      for (const [button, label] of [['อนุมัติ', 'อนุมัติข้อตกลงแล้ว'], ['เริ่มมีผล', 'ข้อตกลงมีผลแล้ว']]) {
+      for (const [button, label] of [['อนุมัติ', 'อนุมัติเอกสารแล้ว'], ['เริ่มมีผล', 'เอกสารมีผลแล้ว']]) {
         await dialog.getByRole('button', { name: button, exact: true }).click();
         await page.getByText(label).waitFor({ timeout: 15000 });
       }
       await dialog.getByRole('button', { name: 'เผยแพร่', exact: true }).click();
-      await page.getByText('เผยแพร่ข้อตกลงแล้ว', { exact: true }).waitFor({ timeout: 15000 });
+      await page.getByText('เผยแพร่เอกสารแล้ว', { exact: true }).waitFor({ timeout: 15000 });
       await shot(page, '04-staff-agreement-published');
       const doc = (await callApi(page, 'GET', '/documents/manage')).data.find((d) => d.id === ids.agreement);
       assert.deepEqual([doc.status, doc.cstuStatus, doc.isPublished], ['active', 'keep', true]);

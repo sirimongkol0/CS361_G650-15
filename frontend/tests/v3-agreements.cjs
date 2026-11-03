@@ -120,7 +120,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
         await p.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
         await p.getByText('ไม่มีสิทธิ์เข้าถึง').waitFor();
         await p.goto(`${base}/documents`, { waitUntil: 'networkidle' });
-        assert.equal(await p.getByRole('link', { name: 'จัดการข้อตกลง' }).count(), 0, `${role} sees no manage link`);
+        assert.equal(await p.getByRole('link', { name: 'จัดการเอกสาร' }).count(), 0, `${role} sees no manage link`);
         await context.close();
       }
     });
@@ -130,10 +130,10 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       const page = await context.newPage();
       page.on('dialog', (d) => d.accept());
       await page.goto(`${base}/documents`, { waitUntil: 'networkidle' });
-      await page.getByRole('link', { name: 'จัดการข้อตกลง' }).first().click();
+      await page.getByRole('link', { name: 'จัดการเอกสาร' }).first().click();
       await page.waitForURL(/\/documents\/manage$/);
       await page.getByRole('button', { name: 'สร้างฉบับร่าง' }).click();
-      await page.getByLabel('ชื่อข้อตกลง *').fill('MoU ทดสอบ V3-7');
+      await page.getByLabel('ชื่อเอกสาร *').fill('MoU ทดสอบ V3-7');
       await page.getByLabel('ชนิดเอกสาร').selectOption('procedure');
       await page.getByLabel('สถานะไฟล์').selectOption('unavailable');
       await page.getByLabel('วันที่เริ่มมีผล').fill('2026-11-01');
@@ -200,12 +200,12 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.getByText('บันทึกความเกี่ยวข้องกับ CSTU แล้ว').waitFor();
 
       await dialog.getByRole('tab', { name: 'สถานะ' }).click();
-      for (const [button, label] of [['อนุมัติ', 'อนุมัติข้อตกลงแล้ว'], ['เริ่มมีผล', 'ข้อตกลงมีผลแล้ว']]) {
+      for (const [button, label] of [['อนุมัติ', 'อนุมัติเอกสารแล้ว'], ['เริ่มมีผล', 'เอกสารมีผลแล้ว']]) {
         await dialog.getByRole('button', { name: button, exact: true }).click();
         await page.getByText(label).waitFor();
       }
       await dialog.getByRole('button', { name: 'เผยแพร่', exact: true }).click();
-      await page.getByText('เผยแพร่ข้อตกลงแล้ว', { exact: true }).waitFor();
+      await page.getByText('เผยแพร่เอกสารแล้ว', { exact: true }).waitFor();
       assert.deepEqual(
         { status: doc.status, cstu: doc.cstuStatus, published: doc.isPublished },
         { status: 'active', cstu: 'keep', published: true },
@@ -218,8 +218,8 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await dialog.getByRole('button', { name: /เปิดไฟล์/ }).click();
       await signedFetch;
 
-      await dialog.getByRole('button', { name: 'ลบข้อตกลง' }).click();
-      await page.getByRole('alertdialog').getByRole('button', { name: 'ลบข้อตกลง' }).click();
+      await dialog.getByRole('button', { name: 'ลบเอกสาร' }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'ลบเอกสาร' }).click();
       await page.getByText('ลบ “MoU รออนุมัติ” แล้ว').waitFor();
       assert.equal(api.docs.size, 0);
       const sent = api.calls.map((c) => `${c.method} ${c.path}`);

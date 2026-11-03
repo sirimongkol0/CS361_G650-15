@@ -47,7 +47,7 @@ export const partnerTypeLabels: Record<string, string> = {
 export const feedbackSourceLabels: Record<string, string> = {
   participant: "ผู้เข้าร่วมกิจกรรม",
   alumni: "ศิษย์เก่า",
-  partner: "หน่วยงานคู่ความร่วมมือ",
+  partner: "หน่วยงานความร่วมมือ",
   student: "นักศึกษา",
   coop_system: "ระบบสหกิจศึกษา",
   web_form: "ฟอร์มบนเว็บ",
@@ -98,7 +98,7 @@ export const activityTypeColors: Record<string, string> = {
 export type ScopeLevel = "program" | "faculty" | "university";
 
 export const scopeLevelLabels: Record<ScopeLevel, string> = {
-  program: "หลักสูตร CSTU",
+  program: "ระดับหลักสูตร (CSTU)",
   faculty: "ระดับคณะ",
   university: "ระดับมหาวิทยาลัย",
 };
@@ -166,7 +166,7 @@ export const importStatusLabels: Record<string, string> = {
 
 export const cstuStatusLabels: Record<string, string> = {
   keep: "เกี่ยวข้องกับ CSTU",
-  review: "รอตรวจ",
+  review: "รอตรวจสอบ",
   out_of_scope: "ไม่เกี่ยวข้องกับ CSTU",
 };
 

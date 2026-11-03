@@ -4,7 +4,7 @@
  * Role context for PCSMS — ported from the former Figma mock prototype (removed in V4)
  * to Next.js (Link from next/link, localStorage handled SSR-safely).
  *
- * The role comes from the signed-in session (V3 login: backend + Amazon Cognito).
+ * The role comes from the signed-in session (V3 login: Cognito or local auth).
  * It only decides what the UI shows; every write is checked again by the backend
  * (require_role), so the UI role is never a security boundary.
  */
@@ -93,23 +93,23 @@ export interface NavItem {
 export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   public: [
     { to: '/dashboard/public', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
-    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
+    { to: '/stakeholders', label: 'หน่วยงานความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'เอกสาร', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
   ],
   student: [
     { to: '/dashboard/student', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
-    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
+    { to: '/stakeholders', label: 'หน่วยงานความร่วมมือ', icon: 'globe' },
+    { to: '/documents', label: 'เอกสาร', icon: 'file' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
   ],
   coordinator: [
     { to: '/dashboard/coordinator', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/stakeholders', label: 'หน่วยงานความร่วมมือ', icon: 'globe' },
     { to: '/stakeholders/manage', label: 'จัดการหน่วยงาน', icon: 'folder' },
-    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
-    { to: '/documents/manage', label: 'จัดการข้อตกลง', icon: 'folder' },
+    { to: '/documents', label: 'เอกสาร', icon: 'file' },
+    { to: '/documents/manage', label: 'จัดการเอกสาร', icon: 'folder' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
@@ -117,10 +117,10 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   ],
   staff: [
     { to: '/dashboard/staff', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/stakeholders', label: 'หน่วยงานความร่วมมือ', icon: 'globe' },
     { to: '/stakeholders/manage', label: 'จัดการหน่วยงาน', icon: 'folder' },
-    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
-    { to: '/documents/manage', label: 'จัดการข้อตกลง', icon: 'folder' },
+    { to: '/documents', label: 'เอกสาร', icon: 'file' },
+    { to: '/documents/manage', label: 'จัดการเอกสาร', icon: 'folder' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },
@@ -131,10 +131,10 @@ export const ROLE_NAV: Record<UserRole, NavItem[]> = {
   ],
   admin: [
     { to: '/dashboard/admin', label: 'หน้าหลัก', icon: 'home', end: true },
-    { to: '/stakeholders', label: 'หน่วยงานคู่ความร่วมมือ', icon: 'globe' },
+    { to: '/stakeholders', label: 'หน่วยงานความร่วมมือ', icon: 'globe' },
     { to: '/stakeholders/manage', label: 'จัดการหน่วยงาน', icon: 'folder' },
-    { to: '/documents', label: 'ข้อตกลง', icon: 'file' },
-    { to: '/documents/manage', label: 'จัดการข้อตกลง', icon: 'folder' },
+    { to: '/documents', label: 'เอกสาร', icon: 'file' },
+    { to: '/documents/manage', label: 'จัดการเอกสาร', icon: 'folder' },
     { to: '/activities', label: 'กิจกรรม', icon: 'calendar' },
     { to: '/activities/manage', label: 'จัดการกิจกรรม', icon: 'folder' },
     { to: '/exchange', label: 'นักศึกษาแลกเปลี่ยน', icon: 'graduation' },

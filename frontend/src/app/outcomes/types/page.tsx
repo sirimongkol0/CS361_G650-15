@@ -125,7 +125,7 @@ export default function OutcomeTypesPage() {
       )}
 
       <form onSubmit={create} className="grid gap-3 sm:grid-cols-[1fr_2fr_1fr_100px_auto] items-end">
-        <Field label="รหัส (code)"><input className={inputCls} required pattern="[a-z][a-z0-9_]*" maxLength={80} value={code} onChange={(e) => setCode(e.target.value)} /></Field>
+        <Field label="รหัส"><input className={inputCls} required pattern="[a-z][a-z0-9_]*" maxLength={80} value={code} onChange={(e) => setCode(e.target.value)} /></Field>
         <Field label="ชื่อที่แสดง"><input className={inputCls} required maxLength={200} value={name} onChange={(e) => setName(e.target.value)} /></Field>
         <Field label="หน่วย"><input className={inputCls} maxLength={50} placeholder="เช่น คน, บาท" value={unit} onChange={(e) => setUnit(e.target.value)} /></Field>
         <Field label="ลำดับ"><input className={inputCls} type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} /></Field>
@@ -137,7 +137,7 @@ export default function OutcomeTypesPage() {
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-sm">
-            <thead><tr className="border-b border-line text-left text-faint"><th className="py-2 pr-3">Code</th><th className="py-2 pr-3">ชื่อที่แสดง</th><th className="py-2 pr-3">หน่วย</th><th className="py-2 pr-3">ลำดับ</th><th className="py-2 pr-3">ใช้งาน</th><th /></tr></thead>
+            <thead><tr className="border-b border-line text-left text-faint"><th className="py-2 pr-3">รหัส</th><th className="py-2 pr-3">ชื่อที่แสดง</th><th className="py-2 pr-3">หน่วย</th><th className="py-2 pr-3">ลำดับ</th><th className="py-2 pr-3">ใช้งาน</th><th /></tr></thead>
             <tbody>{filtered.map((row) => {
               const value = { ...row, ...(edits[row.id] ?? {}) };
               return <tr key={row.id} className="border-b border-paper">

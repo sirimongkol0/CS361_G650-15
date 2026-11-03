@@ -33,7 +33,7 @@ export default function DashboardPublic() {
   const lastFetched = allLoaded ? getLastFetchedAt() : null;
   // Headline = CSTU directly (scope "program"); broader levels are counted separately, never as CSTU.
   const kpis = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", loaded: partners.status === "success", counts: countByScope(partnerData), sub: "รายการ", href: "/stakeholders", note: null as string | null, tone: "crimson" as const },
+    { icon: Building2, label: "หน่วยงานความร่วมมือ", loaded: partners.status === "success", counts: countByScope(partnerData), sub: "รายการ", href: "/stakeholders", note: null as string | null, tone: "crimson" as const },
     { icon: Globe, label: "กิจกรรม", loaded: activities.status === "success", counts: countByScope(activityData), sub: "กิจกรรม", href: "/activities", note: null, tone: "blue" as const },
     { icon: FileText, label: "ข้อตกลง MoU/MoA", loaded: documents.status === "success", counts: countByScope(agreementData), sub: "ฉบับ", href: "/documents", note: "ไม่รวมแบบฟอร์ม", tone: "amber" as const },
   ];
@@ -107,7 +107,7 @@ export default function DashboardPublic() {
 
         <section className={contentCard}>
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-            <h2 className="font-bold text-ink">หน่วยงานคู่ความร่วมมือ</h2>
+            <h2 className="font-bold text-ink">หน่วยงานความร่วมมือ</h2>
             <Link href="/stakeholders" className="text-xs font-semibold flex items-center gap-1 text-crimson">ดูทั้งหมด <ChevronRight className="w-3 h-3" /></Link>
           </div>
           <div className="p-4">

@@ -361,14 +361,14 @@ function ActivityForm({
 
       <FormSection title="ความสัมพันธ์" description="เชื่อมกิจกรรมกับหน่วยงานและข้อตกลงที่เกี่ยวข้อง">
         <div className="grid gap-x-4 sm:grid-cols-2">
-          <Field label="หน่วยงานคู่ความร่วมมือ">
+          <Field label="หน่วยงานความร่วมมือ">
             <Combobox
               options={partnerOptions}
               value={form.partner_id}
               onChange={pickPartner}
               placeholder="เลือกหน่วยงาน"
               emptyMessage="ไม่พบหน่วยงาน"
-              aria-label="หน่วยงานคู่ความร่วมมือ"
+              aria-label="หน่วยงานความร่วมมือ"
             />
           </Field>
           <Field label="ข้อตกลงที่เกี่ยวข้อง">
@@ -381,7 +381,7 @@ function ActivityForm({
               aria-label="ข้อตกลงที่เกี่ยวข้อง"
             />
           </Field>
-          <Field label="ระดับความร่วมมือ">
+          <Field label="ขอบเขตความร่วมมือ">
             <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
               <option value="">— ยังไม่ระบุ —</option>
               {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}

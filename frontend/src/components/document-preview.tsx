@@ -41,7 +41,7 @@ export function DocumentPreview({ id }: { id: number }) {
       {open && (
         <div className="mt-4">
           {error ? <p role="alert" className="text-sm text-crimson">{error}</p>
-            : url ? <iframe src={url} title="ตัวอย่างไฟล์ข้อตกลง" className="h-[70vh] w-full rounded-lg border border-line" />
+            : url ? <iframe src={url} title="ตัวอย่างไฟล์เอกสาร" className="h-[70vh] w-full rounded-lg border border-line" />
             : <div className="h-[70vh] w-full animate-pulse rounded-lg bg-soft" role="status" aria-label="กำลังโหลดตัวอย่าง" />}
         </div>
       )}

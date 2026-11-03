@@ -6,11 +6,11 @@ export function ScopeLevelBadge({ level }: { level: ScopeLevel | null }) {
   return <span className={`badge ${scopeLevelColors[level]}`}>{scopeLevelLabels[level]}</span>;
 }
 
-/* Shared options of the "ระดับความร่วมมือ" list filter (value "all" = no filter). */
+/* Shared options of the "ขอบเขตความร่วมมือ" list filter (value "all" = no filter). */
 export function ScopeLevelOptions() {
   return (
     <>
-      <option value="all">ระดับความร่วมมือ: ทั้งหมด</option>
+      <option value="all">ขอบเขตความร่วมมือ: ทั้งหมด</option>
       {(Object.keys(scopeLevelLabels) as ScopeLevel[]).map((level) => (
         <option key={level} value={level}>{scopeLevelLabels[level]}</option>
       ))}

@@ -39,19 +39,19 @@ const transitionLabels: Record<string, string> = {
   approved: "อนุมัติ",
   active: "เริ่มมีผล",
   expired: "บันทึกว่าหมดอายุ",
-  cancelled: "ยกเลิกข้อตกลง",
+  cancelled: "ยกเลิกเอกสาร",
 };
 const transitionDone: Record<string, string> = {
-  approved: "อนุมัติข้อตกลงแล้ว",
-  active: "ข้อตกลงมีผลแล้ว",
+  approved: "อนุมัติเอกสารแล้ว",
+  active: "เอกสารมีผลแล้ว",
   expired: "บันทึกว่าหมดอายุแล้ว",
-  cancelled: "ยกเลิกข้อตกลงแล้ว",
+  cancelled: "ยกเลิกเอกสารแล้ว",
 };
 
 const currentStatus = (doc: ManagedDocument) => doc.status ?? "draft";
 
 export default function ManageDocumentsPage() {
-  useDocumentTitle("จัดการข้อตกลง");
+  useDocumentTitle("จัดการเอกสาร");
   const { role, user, status: session } = useRole();
   const [reload, setReload] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -81,7 +81,7 @@ export default function ManageDocumentsPage() {
   }, [documents.status, documents.data]);
   const selected = rows?.find((d) => d.id === selectedId) ?? null;
 
-  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "เปิดข้อตกลง").
+  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "เปิดเอกสาร").
   useEffect(() => {
     const id = Number(new URLSearchParams(window.location.search).get("open"));
     if (id && rows) {
@@ -105,11 +105,11 @@ export default function ManageDocumentsPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Breadcrumb items={[{ label: "ข้อตกลง", href: "/documents" }, { label: "จัดการข้อตกลง" }]} />
-          <h1 className="font-display text-2xl font-bold text-ink">จัดการข้อตกลง</h1>
+          <Breadcrumb items={[{ label: "เอกสาร", href: "/documents" }, { label: "จัดการเอกสาร" }]} />
+          <h1 className="font-display text-2xl font-bold text-ink">จัดการเอกสาร</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff
-              ? "ข้อตกลงทั้งหมด รวมฉบับร่างและรายการที่ยังไม่เผยแพร่"
+              ? "เอกสารทั้งหมด รวมฉบับร่างและรายการที่ยังไม่เผยแพร่"
               : "สร้างฉบับร่างและแนบไฟล์ได้ เจ้าหน้าที่เป็นผู้อนุมัติและเผยแพร่"}
           </p>
         </div>
@@ -124,7 +124,7 @@ export default function ManageDocumentsPage() {
       {rows === null && documents.status === "loading" && <LoadingState />}
       {documents.status === "error" && <ErrorState error={documents.error} onRetry={documents.retry} />}
       {rows !== null && rows.length === 0 && (
-        <EmptyState title="ยังไม่มีข้อตกลง" message="กด “สร้างฉบับร่าง” เพื่อเริ่ม" />
+        <EmptyState title="ยังไม่มีเอกสาร" message="กด “สร้างฉบับร่าง” เพื่อเริ่ม" />
       )}
       {rows !== null && rows.length > 0 && (
         <div className="overflow-hidden rounded-lg bg-white shadow-card">
@@ -132,7 +132,7 @@ export default function ManageDocumentsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-soft text-left text-xs font-semibold text-faint">
-                  <th className="px-5 py-3">ชื่อข้อตกลง</th>
+                  <th className="px-5 py-3">ชื่อเอกสาร</th>
                   <th className="px-4 py-3">หน่วยงาน</th>
                   <th className="px-4 py-3">สถานะ</th>
                   <th className="px-4 py-3">CSTU</th>
@@ -267,12 +267,12 @@ function DocumentForm({
     <form onSubmit={submit}>
       <FormError error={action.error} />
 
-      <FormSection title="ข้อมูลพื้นฐาน" description="ชื่อ ประเภท และหน่วยงานคู่ความร่วมมือ">
-        <Field label="ชื่อข้อตกลง *">
+      <FormSection title="ข้อมูลพื้นฐาน" description="ชื่อ รูปแบบ และหน่วยงานความร่วมมือ">
+        <Field label="ชื่อเอกสาร *">
           <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
         </Field>
         <div className="grid gap-x-4 sm:grid-cols-2">
-          <Field label="ประเภท">
+          <Field label="รูปแบบ">
             <select className={inputCls} value={form.doc_type} onChange={set("doc_type")}>
               <option value="mou">MoU</option>
               <option value="moa">MoA</option>
@@ -292,14 +292,14 @@ function DocumentForm({
               <option value="unavailable">{fileAvailabilityLabels.unavailable}</option>
             </select>
           </Field>
-          <Field label="หน่วยงานคู่ความร่วมมือ">
+          <Field label="หน่วยงานความร่วมมือ">
             <Combobox
               options={partnerOptions}
               value={form.partner_id}
               onChange={(next) => setForm({ ...form, partner_id: next })}
               placeholder="เลือกหน่วยงาน"
               emptyMessage="ไม่พบหน่วยงาน"
-              aria-label="หน่วยงานคู่ความร่วมมือ"
+              aria-label="หน่วยงานความร่วมมือ"
             />
           </Field>
         </div>
@@ -316,7 +316,7 @@ function DocumentForm({
           <Field label="ผู้รับผิดชอบ">
             <input className={inputCls} value={form.responsible} onChange={set("responsible")} />
           </Field>
-          <Field label="ระดับความร่วมมือ">
+          <Field label="ขอบเขตความร่วมมือ">
             <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
               <option value="">— ยังไม่ระบุ —</option>
               {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
@@ -376,8 +376,8 @@ function ManagePanel({
   // Coordinators edit only their own drafts; staff/admin edit any status.
   const canEdit = isStaff || (isOwner && status === "draft");
   const readiness = [
-    { label: "ชื่อข้อตกลง", done: doc.name.trim().length > 0 },
-    { label: "ประเภทเอกสาร", done: Boolean(doc.documentKind) },
+    { label: "ชื่อเอกสาร", done: doc.name.trim().length > 0 },
+    { label: "ชนิดเอกสาร", done: Boolean(doc.documentKind) },
     { label: "สถานะ CSTU = เกี่ยวข้อง", done: doc.cstuStatus === "keep" },
     { label: "สถานะไฟล์", done: Boolean(doc.fileAvailability) },
     { label: "ไฟล์พร้อมใช้งาน", done: doc.fileAvailability !== "available" || Boolean(doc.fileName) },
@@ -440,7 +440,7 @@ function ManagePanel({
 
       <div
         role="tablist"
-        aria-label="ส่วนจัดการข้อตกลง"
+        aria-label="ส่วนจัดการเอกสาร"
         className="sticky top-0 z-10 -mx-5 -mt-4 mb-4 flex gap-1 border-b border-line bg-paper/95 px-5 pt-2 backdrop-blur"
       >
         {([
@@ -468,10 +468,10 @@ function ManagePanel({
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === "info" && (
           <>
-            <Section title="ข้อมูลข้อตกลง">
+            <Section title="ข้อมูลเอกสาร">
               <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
                 <div><dt className="inline text-faint">หน่วยงาน: </dt><dd className="inline">{doc.partner?.name ?? "—"}</dd></div>
-                <div><dt className="inline text-faint">ประเภท: </dt><dd className="inline">{doc.docType ? label(documentTypeLabels, doc.docType.toUpperCase()) : "—"}</dd></div>
+                <div><dt className="inline text-faint">รูปแบบ: </dt><dd className="inline">{doc.docType ? label(documentTypeLabels, doc.docType.toUpperCase()) : "—"}</dd></div>
                 <div><dt className="inline text-faint">ชนิดเอกสาร: </dt><dd className="inline">{label(documentKindLabels, doc.documentKind)}</dd></div>
                 <div><dt className="inline text-faint">สถานะไฟล์: </dt><dd className="inline">{label(fileAvailabilityLabels, doc.fileAvailability)}</dd></div>
                 <div><dt className="inline text-faint">ช่วงเวลา: </dt><dd className="inline">{formatThaiDate(doc.effectiveDate)} – {formatThaiDate(doc.expiryDate)}</dd></div>
@@ -501,13 +501,13 @@ function ManagePanel({
             </Section>
 
             {!isStaff && (
-              <p className="mb-4 text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างข้อตกลงอนุมัติเองไม่ได้</p>
+              <p className="mb-4 text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างเอกสารอนุมัติเองไม่ได้</p>
             )}
           </>
         )}
 
         {tab === "status" && (
-          <Section title="สถานะข้อตกลง">
+          <Section title="สถานะเอกสาร">
             <p className="mb-2 text-sm">
               สถานะ: <StatusBadge kind="document" status={status}>{label(documentStatusLabels, status)}</StatusBadge>
             </p>
@@ -520,9 +520,9 @@ function ManagePanel({
                       className={`btn text-sm ${next === "cancelled" ? "btn-outline" : "btn-primary"}`}
                       onClick={async () => {
                         if (next === "cancelled" && !(await confirm({
-                          title: `ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม`,
+                          title: `ยกเลิกเอกสาร “${doc.name}” ใช่ไหม`,
                           description: "การยกเลิกย้อนกลับไม่ได้",
-                          action: "ยกเลิกข้อตกลง",
+                          action: "ยกเลิกเอกสาร",
                           destructive: true,
                         }))) return;
                         act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next]);
@@ -531,16 +531,16 @@ function ManagePanel({
                     </button>
                   ))}
                 </div>
-              ) : <p className="text-xs text-faint">ข้อตกลงนี้ปิดแล้ว เปลี่ยนสถานะไม่ได้อีก</p>
+              ) : <p className="text-xs text-faint">เอกสารนี้ปิดแล้ว เปลี่ยนสถานะไม่ได้อีก</p>
             ) : (
-              <p className="text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างข้อตกลงอนุมัติเองไม่ได้</p>
+              <p className="text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างเอกสารอนุมัติเองไม่ได้</p>
             )}
           </Section>
         )}
 
         {tab === "files" && (
           <>
-            <Section title="ไฟล์ข้อตกลง">
+            <Section title="ไฟล์เอกสาร">
               <p className="mb-2 text-sm">
                 {doc.fileName ? <>ไฟล์ปัจจุบัน: <span className="font-medium">{doc.fileName}</span></> : "ยังไม่มีไฟล์"}
               </p>
@@ -583,7 +583,7 @@ function ManagePanel({
                   label="ลิงก์แหล่งที่มา"
                   hint={doc.sources.length
                     ? `มีแหล่งที่มาแล้ว ${doc.sources.length} รายการ จะเพิ่มอีกก็ได้`
-                    : "ลิงก์ที่ตรวจแล้วว่ายืนยันข้อตกลงนี้ได้ ขึ้นต้นด้วย https:// จำเป็นเมื่อระบุว่าเกี่ยวข้องกับ CSTU"}
+                    : "ลิงก์ที่ตรวจแล้วว่ายืนยันเอกสารนี้ได้ ขึ้นต้นด้วย https:// จำเป็นเมื่อระบุว่าเกี่ยวข้องกับ CSTU"}
                 >
                   <input className={inputCls} type="url" pattern="https://.*" value={sourceUrl}
                     onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" />
@@ -607,15 +607,15 @@ function ManagePanel({
             <button className="btn gap-1.5 text-sm text-red-700 hover:bg-red-50" type="button" disabled={action.busy}
               onClick={async () => {
                 if (!(await confirm({
-                  title: `ลบข้อตกลง “${doc.name}” ใช่ไหม`,
-                  description: "ข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
-                  action: "ลบข้อตกลง",
+                  title: `ลบเอกสาร “${doc.name}” ใช่ไหม`,
+                  description: "เอกสารนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+                  action: "ลบเอกสาร",
                   destructive: true,
                 }))) return;
                 if (await action.run(() => apiDelete(`/documents/${doc.id}`))) onDeleted(`ลบ “${doc.name}” แล้ว`);
               }}>
               <Trash2 className="h-4 w-4" />
-              ลบข้อตกลง
+              ลบเอกสาร
             </button>
           )}
         </div>
@@ -630,12 +630,12 @@ function ManagePanel({
                   <span className="ml-1 text-gold-dark">· แสดงเมื่อระบุว่าเกี่ยวข้องกับ CSTU</span>
                 )}
                 {doc.isPublished && doc.cstuStatus === "keep" && !doc.publiclyVisible && (
-                  <span className="ml-1 text-gold-dark">· ตรวจรายการที่ยังไม่ครบใน checklist</span>
+                  <span className="ml-1 text-gold-dark">· ตรวจรายการที่ยังไม่ครบในรายการตรวจสอบ</span>
                 )}
               </span>
               <button className="btn btn-outline text-sm" type="button" disabled={action.busy}
                 onClick={() => act(() => apiPost(`/documents/${doc.id}/${doc.isPublished ? "unpublish" : "publish"}`),
-                  doc.isPublished ? "หยุดเผยแพร่ข้อตกลงแล้ว" : "เผยแพร่ข้อตกลงแล้ว")}>
+                  doc.isPublished ? "หยุดเผยแพร่เอกสารแล้ว" : "เผยแพร่เอกสารแล้ว")}>
                 {doc.isPublished ? "หยุดเผยแพร่" : "เผยแพร่"}
               </button>
             </>

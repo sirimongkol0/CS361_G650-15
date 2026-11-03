@@ -294,7 +294,7 @@ export default function ImportSection() {
         </div>
         <StepProgress label="ขั้นตอนการนำเข้า" steps={IMPORT_STEPS} current={topStep} stopped={stopped} />
         <p className="mt-3 text-xs text-faint">
-          1. ดาวน์โหลด template หรือเตรียมไฟล์ &nbsp;→&nbsp; 2. อัปโหลดเพื่อให้ระบบตรวจทุกแถว &nbsp;→&nbsp; 3. ตรวจผลและยืนยันนำเข้า
+          1. ดาวน์โหลดไฟล์ตัวอย่างหรือเตรียมไฟล์ &nbsp;→&nbsp; 2. อัปโหลดเพื่อให้ระบบตรวจทุกแถว &nbsp;→&nbsp; 3. ตรวจผลและยืนยันนำเข้า
         </p>
       </section>
 
@@ -347,19 +347,27 @@ export default function ImportSection() {
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm text-mute">
-            เลือกไฟล์ CSV หรือ XLSX
-
-            <input
-              id="import-file"
-              className={control}
-              type="file"
-              accept=".csv,.xlsx"
-              onChange={(event) =>
-                setFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </label>
+          <div className="grid gap-1 text-sm text-mute">
+            <span>เลือกไฟล์ CSV หรือ XLSX</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id="import-file"
+                className="sr-only"
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={(event) =>
+                  setFile(event.target.files?.[0] ?? null)
+                }
+              />
+              <label htmlFor="import-file" className="btn btn-outline cursor-pointer gap-2">
+                <Upload className="h-4 w-4" />
+                เลือกไฟล์
+              </label>
+              <span className="text-xs text-faint">
+                {file ? file.name : "ยังไม่ได้เลือกไฟล์"}
+              </span>
+            </div>
+          </div>
 
           <button
             type="button"
@@ -378,7 +386,7 @@ export default function ImportSection() {
         </p>
         <p className="mt-1 text-xs text-faint">
           ไฟล์ไม่เกิน 10 MB • ระบบจะตรวจทุกแถวก่อนบันทึกจริง
-          และไม่เก็บชื่อ อีเมล หรือรหัสนักศึกษาไว้ใน Preview
+          และไม่เก็บชื่อ อีเมล หรือรหัสนักศึกษาไว้ในตัวอย่าง
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
@@ -407,7 +415,7 @@ export default function ImportSection() {
                   }
                 >
                   <Download className="mr-1 inline h-3 w-3" />
-                  Template {format.toUpperCase()}
+                  ไฟล์ตัวอย่าง {format.toUpperCase()}
                 </button>
               ))}
 

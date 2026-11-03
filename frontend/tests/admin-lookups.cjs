@@ -45,8 +45,8 @@ const outcomeTypes = [
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 
   await page.goto(`${base}/feedback/lookups`, { waitUntil: 'networkidle' });
-  await page.getByRole('heading', { name: 'จัดการประเภทและแหล่งที่มาของความคิดเห็น' }).waitFor();
-  await page.getByLabel('ค้นหาประเภทผู้ส่ง').fill('staff');
+  await page.getByRole('heading', { name: 'จัดการประเภทผู้ให้ความคิดเห็นและช่องทางความคิดเห็น' }).waitFor();
+  await page.getByLabel('ค้นหาประเภทผู้ให้ความคิดเห็น').fill('staff');
   await page.waitForTimeout(150);
   assert.equal(await page.locator('section').first().locator('tbody tr').count(), 1, 'search filters respondent types');
   await page.getByLabel('ชื่อที่แสดง staff').fill('เจ้าหน้าที่ทดสอบ');

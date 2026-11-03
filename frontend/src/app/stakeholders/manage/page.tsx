@@ -82,7 +82,7 @@ export default function ManageStakeholdersPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Breadcrumb items={[{ label: "หน่วยงานคู่ความร่วมมือ", href: "/stakeholders" }, { label: "จัดการหน่วยงาน" }]} />
+          <Breadcrumb items={[{ label: "หน่วยงานความร่วมมือ", href: "/stakeholders" }, { label: "จัดการหน่วยงาน" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการหน่วยงานและผู้ประสานงาน</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff ? "ทุกรายการ รวมฉบับร่าง" : "รายการที่เผยแพร่แล้วและฉบับร่างของตัวเอง แก้ไขได้เฉพาะรายการของตัวเอง"}
@@ -274,7 +274,7 @@ function PartnerForm({
           <Field label="เว็บไซต์">
             <input className={inputCls} type="url" value={form.website_url} onChange={set("website_url")} placeholder="https://" />
           </Field>
-          <Field label="ระดับความร่วมมือ">
+          <Field label="ขอบเขตความร่วมมือ">
             <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
               <option value="">— ยังไม่ระบุ —</option>
               {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}

@@ -177,7 +177,7 @@ export default function ActivitiesPage() {
                 <option value="วางแผน">วางแผน</option>
                 <option value="ไม่ระบุ">ไม่ระบุ</option>
               </select>
-              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ขอบเขตความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
               <label className="flex items-center gap-2 text-xs text-faint">

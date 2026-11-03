@@ -103,7 +103,7 @@ def expand(db, source, today=date(2026, 10, 2)):
             effective_date=start, expiry_date=end,
             file_availability="metadata_only" if i % 4 else "unavailable",
             responsible=f"อาจารย์ผู้รับผิดชอบสมมติ {i + 1}",
-            signer_our="ผู้ลงนามฝ่ายหลักสูตรสมมติ", signer_partner="ผู้ลงนามฝ่ายคู่ความร่วมมือสมมติ",
+            signer_our="ผู้ลงนามฝ่ายหลักสูตรสมมติ", signer_partner="ผู้ลงนามฝ่ายหน่วยงานสมมติ",
             scope_level=partner.scope_level, is_published=partner.is_published,
             cstu_status="keep" if partner.is_published else "review", sources=[source],
             scope_items=[
@@ -310,7 +310,7 @@ _OLD_SURNAMES = ("ศรีวงศ์", "วัฒนกุล", "ทองส
 def student_name(first: str) -> str:
     return f"{first} {SURNAMES[sum(map(ord, first)) % len(SURNAMES)]}"
 PLACES = {
-    "สถานที่สมมติของคู่ความร่วมมือ": "สำนักงานของหน่วยงานคู่ความร่วมมือ",
+    "สถานที่สมมติของคู่ความร่วมมือ": "สำนักงานของหน่วยงานความร่วมมือ",
     "ห้องประชุมสมมติ อาคาร 1": "ห้องประชุม 1 อาคารเรียนรวม",
     "หอประชุมสมมติ": "หอประชุมคณะ",
     "ออนไลน์ (สมมติ)": "ออนไลน์",

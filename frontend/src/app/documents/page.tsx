@@ -32,7 +32,7 @@ const inputCls =
 
 
 export default function DocumentsPage() {
-  useDocumentTitle("ข้อตกลง");
+  useDocumentTitle("เอกสาร");
   const { role } = useRole();
   const [search, setSearch] = useUrlState("q", "");
   const [typeFilter, setTypeFilter] = useUrlState("type", "all");
@@ -85,16 +85,16 @@ export default function DocumentsPage() {
   const presets = [...yearPresets(), { label: "มีผลวันนี้", from: today, to: today }];
   const chips: FilterChip[] = [
     search && { label: `ค้นหา: ${search}`, onRemove: () => setSearch("") },
-    typeFilter !== "all" && { label: `ประเภท: ${label(documentTypeLabels, typeFilter)}`, onRemove: () => setTypeFilter("all") },
+    typeFilter !== "all" && { label: `รูปแบบ: ${label(documentTypeLabels, typeFilter)}`, onRemove: () => setTypeFilter("all") },
     statusFilter !== "all" && { label: `สถานะ: ${statusFilter === "unknown" ? "ไม่ระบุ" : label(documentStatusLabels, statusFilter)}`, onRemove: () => setStatusFilter("all") },
-    scopeFilter !== "all" && { label: `ระดับ: ${scopeLevelLabels[scopeFilter as ScopeLevel] ?? scopeFilter}`, onRemove: () => setScopeFilter("all") },
+    scopeFilter !== "all" && { label: `ขอบเขต: ${scopeLevelLabels[scopeFilter as ScopeLevel] ?? scopeFilter}`, onRemove: () => setScopeFilter("all") },
     dateFrom && { label: `ตั้งแต่ ${formatThaiDate(dateFrom)}`, onRemove: () => setDateFrom("") },
     dateTo && { label: `ถึง ${formatThaiDate(dateTo)}`, onRemove: () => setDateTo("") },
   ].filter((chip): chip is FilterChip => Boolean(chip));
 
   const exportCsv = () => downloadCsv(
     "cstu-documents.csv",
-    ["ID", "ชื่อข้อตกลง", "หน่วยงาน", "ประเภท", "ระดับ", "สถานะ", "วันที่เริ่มมีผล", "วันหมดอายุ", "ผู้รับผิดชอบ"],
+    ["ID", "ชื่อเอกสาร", "หน่วยงาน", "รูปแบบ", "ขอบเขต", "สถานะ", "วันที่เริ่มมีผล", "วันหมดอายุ", "ผู้รับผิดชอบ"],
     filtered.map((doc) => [
       doc.id, doc.title, doc.org, doc.type ? label(documentTypeLabels, doc.type) : "",
       doc.scopeLevel ? scopeLevelLabels[doc.scopeLevel] : "",
@@ -108,25 +108,25 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
-          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "ข้อตกลง" }]} />
+          <Breadcrumb items={[{ label: "หน้าหลัก", href: "/" }, { label: "เอกสาร" }]} />
           <h1 className="text-2xl font-bold text-ink font-display">
-            ข้อตกลง
+            เอกสาร
           </h1>
           <p className="text-sm mt-0.5 text-faint">
-            MoU และ MoA ของหลักสูตรที่เผยแพร่แล้ว
+            เอกสารและข้อตกลงของหลักสูตรที่เผยแพร่แล้ว
           </p>
         </div>
         {canManage(role) && (
           <Link href="/documents/manage" className="btn btn-primary gap-2">
             <FolderCog className="w-4 h-4" />
-            จัดการข้อตกลง
+            จัดการเอกสาร
           </Link>
         )}
       </div>
 
       {documents.status === "loading" && <TableSkeleton columns={5} />}
       {documents.status === "error" && <ErrorState error={documents.error} onRetry={documents.retry} />}
-      {documents.status === "success" && data.length === 0 && <EmptyState title="ยังไม่มีข้อตกลงที่เผยแพร่" />}
+      {documents.status === "success" && data.length === 0 && <EmptyState title="ยังไม่มีเอกสารที่เผยแพร่" />}
 
       {documents.status === "success" && data.length > 0 && <>
 
@@ -135,7 +135,7 @@ export default function DocumentsPage() {
         <div className="flex flex-wrap gap-3">
           <SearchInput
             className={inputCls}
-            placeholder="ค้นหาชื่อข้อตกลงหรือหน่วยงาน"
+            placeholder="ค้นหาชื่อเอกสารหรือหน่วยงาน"
             value={search}
             onChange={setSearch}
           />
@@ -143,18 +143,18 @@ export default function DocumentsPage() {
             className={`${inputCls} cursor-pointer`}
             style={{ width: "auto", minWidth: 140 }}
             value={typeFilter}
-            aria-label="ประเภทข้อตกลง"
+            aria-label="รูปแบบเอกสาร"
             onChange={(e) => setTypeFilter(e.target.value)}
           >
-            <option value="all">ประเภท: ทั้งหมด</option>
+            <option value="all">รูปแบบ: ทั้งหมด</option>
             {types.map((type) => <option key={type} value={type}>{label(documentTypeLabels, type)}</option>)}
           </select>
-          <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="สถานะข้อตกลง" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+          <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="สถานะเอกสาร" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
             <option value="all">สถานะ: ทั้งหมด</option>
             {Object.entries(documentStatusLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
             <option value="unknown">ไม่ระบุ</option>
           </select>
-          <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={event => setScopeFilter(event.target.value)}>
+          <select className={`${inputCls} cursor-pointer w-auto!`} aria-label="ขอบเขตความร่วมมือ" value={scopeFilter} onChange={event => setScopeFilter(event.target.value)}>
             <ScopeLevelOptions />
           </select>
           <label className="flex items-center gap-2 text-xs text-faint">
@@ -170,7 +170,7 @@ export default function DocumentsPage() {
           }}>ล้างตัวกรอง</button>
         </div>
         <DatePresets presets={presets} onPick={(from, to) => { setDateFrom(from); setDateTo(to); }} />
-        <p className="text-xs text-faint mt-3">แสดงข้อตกลงที่มีผลอยู่ในช่วงวันที่เลือก</p>
+        <p className="text-xs text-faint mt-3">แสดงเอกสารที่มีผลอยู่ในช่วงวันที่เลือก</p>
         {dateFrom && dateTo && dateFrom > dateTo && <p role="alert" className="text-sm text-crimson mt-2">วันเริ่มต้องไม่หลังวันสิ้นสุด</p>}
         <FilterChips chips={chips} />
       </div>
@@ -182,7 +182,7 @@ export default function DocumentsPage() {
           <ExportCsvButton onExport={exportCsv} disabled={filtered.length === 0} />
         </div>
       </div>
-      {filtered.length === 0 && <EmptyState title="ไม่พบข้อตกลงที่ค้นหา" message="ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง" />}
+      {filtered.length === 0 && <EmptyState title="ไม่พบเอกสารที่ค้นหา" message="ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง" />}
 
       {/* Table */}
       {filtered.length > 0 && <div className="bg-white rounded-base shadow-card overflow-hidden">
@@ -190,10 +190,10 @@ export default function DocumentsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-line">
-                <SortHeader label="ชื่อข้อตกลง" sortKey="title" sort={sort} className="px-5" />
+                <SortHeader label="ชื่อเอกสาร" sortKey="title" sort={sort} className="px-5" />
                 <SortHeader label="หน่วยงาน" sortKey="org" sort={sort} />
-                <SortHeader label="ประเภท" sortKey="type" sort={sort} />
-                <SortHeader label="ระดับ" sortKey="scope" sort={sort} />
+                <SortHeader label="รูปแบบ" sortKey="type" sort={sort} />
+                <SortHeader label="ขอบเขต" sortKey="scope" sort={sort} />
                 <SortHeader label="สถานะ" sortKey="status" sort={sort} />
                 <SortHeader label="วันที่เริ่มมีผล" sortKey="start" sort={sort} />
                 {showExpiry && <SortHeader label="วันหมดอายุ" sortKey="expire" sort={sort} />}

@@ -36,7 +36,7 @@ const docs = [doc(1, 'Program Agreement', 'program'), doc(2, 'Faculty Agreement'
       const body = id ? rows.find(row => row.id === id) : rows;
       await route.fulfill({ status: body ? 200 : 404, contentType: 'application/json', body: JSON.stringify(body || { detail: 'Not found' }) });
     });
-    const levelSelect = () => page.getByLabel('ระดับความร่วมมือ');
+    const levelSelect = () => page.getByLabel('ขอบเขตความร่วมมือ');
     const rows = () => page.locator('tbody tr');
 
     // Each list shows a level badge per row and filters by level, kept in the URL.
@@ -48,7 +48,7 @@ const docs = [doc(1, 'Program Agreement', 'program'), doc(2, 'Faculty Agreement'
       await page.goto(`${base}/${route}`);
       await page.getByRole('link', { name: first, exact: true }).waitFor();
       assert.equal(await rows().count(), total);
-      assert.match(await rows().filter({ hasText: first }).first().innerText(), /หลักสูตร CSTU/);
+      assert.match(await rows().filter({ hasText: first }).first().innerText(), /ระดับหลักสูตร \(CSTU\)/);
       assert.match(await rows().filter({ hasText: facultyName }).first().innerText(), /ระดับคณะ/);
       await levelSelect().selectOption('faculty');
       assert.equal(await rows().count(), 1);
@@ -56,7 +56,7 @@ const docs = [doc(1, 'Program Agreement', 'program'), doc(2, 'Faculty Agreement'
       assert.equal(new URL(page.url()).searchParams.get('scope'), 'faculty');
       await page.reload();
       await page.getByRole('link', { name: facultyName, exact: true }).waitFor();
-      await page.waitForFunction(() => document.querySelector('select[aria-label="ระดับความร่วมมือ"]').value === 'faculty');
+      await page.waitForFunction(() => document.querySelector('select[aria-label="ขอบเขตความร่วมมือ"]').value === 'faculty');
       assert.equal(await rows().count(), 1);
       await page.getByRole('link', { name: facultyName, exact: true }).click();
       await page.waitForURL(new RegExp(`/${route}/\\d+$`));
@@ -79,7 +79,7 @@ const docs = [doc(1, 'Program Agreement', 'program'), doc(2, 'Faculty Agreement'
     assert.equal(await rows().count(), 1);
     await page.goto(`${base}/activities`);
     await page.getByRole('link', { name: 'Unclassified Activity', exact: true }).waitFor();
-    assert.doesNotMatch(await rows().filter({ hasText: 'Unclassified Activity' }).innerText(), /หลักสูตร CSTU|ระดับคณะ|ระดับมหาวิทยาลัย/);
+    assert.doesNotMatch(await rows().filter({ hasText: 'Unclassified Activity' }).innerText(), /ระดับหลักสูตร \(CSTU\)|ระดับคณะ|ระดับมหาวิทยาลัย/);
     checks.push('unclassified rows have no badge and are excluded by a specific level');
 
     // Dashboard separates CSTU-direct numbers from faculty/university ones.
@@ -87,7 +87,7 @@ const docs = [doc(1, 'Program Agreement', 'program'), doc(2, 'Faculty Agreement'
     await page.getByText('ระดับคณะ/มหาวิทยาลัย', { exact: false }).first().waitFor();
     const card = name => page.locator('.stat-card').filter({ hasText: name });
     for (const [name, direct, broader, unclassified] of [
-      ['คู่ความร่วมมือ (CSTU โดยตรง)', '1', 2, 1], ['กิจกรรม (CSTU โดยตรง)', '2', 2, 1], ['ข้อตกลง MoU/MoA (CSTU โดยตรง)', '1', 2, 0],
+      ['หน่วยงานความร่วมมือ (CSTU โดยตรง)', '1', 2, 1], ['กิจกรรม (CSTU โดยตรง)', '2', 2, 1], ['ข้อตกลง MoU/MoA (CSTU โดยตรง)', '1', 2, 0],
     ]) {
       assert.equal(await card(name).locator('.text-2xl').innerText(), direct);
       const text = await card(name).innerText();
