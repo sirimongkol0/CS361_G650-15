@@ -27,6 +27,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 import database
+import local_auth
 import models
 from config import settings
 
@@ -40,6 +41,10 @@ def _unauthorized(detail: str) -> HTTPException:
 
 
 def _require_configured() -> None:
+    if settings.AUTH_BACKEND == "local":
+        if not settings.LOCAL_AUTH_SECRET:
+            raise HTTPException(status_code=503, detail="Authentication is not configured")
+        return
     if not (settings.COGNITO_USER_POOL_ID and settings.COGNITO_APP_CLIENT_ID):
         raise HTTPException(status_code=503, detail="Authentication is not configured")
 
@@ -71,6 +76,8 @@ def cognito_client():
 
 def decode_token(token: str, token_use: str = "access") -> dict:
     """Verify a Cognito ``access`` or ``id`` token and return its claims."""
+    if settings.AUTH_BACKEND == "local":
+        return _decode_local_token(token, token_use)
     _require_configured()
     client_id = settings.COGNITO_APP_CLIENT_ID
     try:
@@ -93,6 +100,52 @@ def decode_token(token: str, token_use: str = "access") -> dict:
     if token_use == "access" and (claims.get("client_id") != client_id or not claims.get("jti")):
         raise _unauthorized("Invalid or expired token")
     return claims
+
+
+def _decode_local_token(token: str, token_use: str = "access") -> dict:
+    """Verify an HS256 token issued by the local auth backend."""
+    _require_configured()
+    try:
+        claims = jwt.decode(
+            token,
+            settings.LOCAL_AUTH_SECRET,
+            algorithms=["HS256"],
+            issuer=local_auth.ISSUER,
+            options={"require": ["exp", "iat", "sub", "token_use", "jti"]},
+        )
+    except jwt.PyJWTError as exc:
+        raise _unauthorized("Invalid or expired token") from exc
+    if claims.get("token_use") != token_use:
+        raise _unauthorized("Invalid or expired token")
+    return claims
+
+
+def local_sign_in(db: Session, email: str, password: str) -> models.User:
+    """Check a local password and return the matching active user."""
+    _require_configured()
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    credential = db.get(models.LocalCredential, user.id) if user is not None else None
+    if credential is None or not local_auth.verify_password(password, credential.password_hash):
+        raise _unauthorized("Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is disabled")
+    return user
+
+
+def local_token(user: models.User) -> tuple[str, int]:
+    return local_auth.create_access_token(user, settings.LOCAL_AUTH_TOKEN_MINUTES * 60)
+
+
+def local_change_password(db: Session, user: models.User, current: str, new: str) -> None:
+    """Change a local password after checking the current one."""
+    credential = db.get(models.LocalCredential, user.id)
+    if credential is None or not local_auth.verify_password(current, credential.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    policy_error = local_auth.password_policy_error(new)
+    if policy_error:
+        raise HTTPException(status_code=422, detail=policy_error)
+    credential.password_hash = local_auth.hash_password(new)
+    credential.updated_at = utcnow()
 
 
 def role_from_groups(groups) -> str:

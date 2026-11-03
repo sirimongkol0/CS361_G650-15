@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     # key per process (links stop working after a restart, fine for dev/CI).
     LOCAL_SIGNING_KEY: str = ""
 
+    # Login (V3): "cognito" (default) or "local" for demo/lab deployments
+    # where Cognito cannot be created. Local auth stores salted password hashes
+    # in local_credentials and signs its own short-lived HS256 tokens.
+    AUTH_BACKEND: str = "cognito"
+    LOCAL_AUTH_SECRET: str = ""      # required when AUTH_BACKEND=local
+    LOCAL_AUTH_TOKEN_MINUTES: int = 60
+
     # Login (V3): users, passwords and role groups live in an Amazon Cognito
     # User Pool. These IDs are not secrets; the backend needs no AWS keys for
     # login because Cognito's sign-in and JWKS endpoints are unauthenticated.
