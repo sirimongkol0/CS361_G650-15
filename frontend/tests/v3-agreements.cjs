@@ -145,6 +145,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       assert.equal(await dialog.getByRole('button', { name: 'เผยแพร่' }).count(), 0, 'no publish button');
       assert.equal(await dialog.getByText('ความเกี่ยวข้องกับ CSTU').count(), 0, 'no CSTU review');
 
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       await dialog.getByLabel('เลือกไฟล์ PDF').setInputFiles({ name: 'mou.pdf', mimeType: 'application/pdf', buffer: PDF });
       await dialog.getByRole('button', { name: 'อัปโหลด' }).click();
       await page.getByText('อัปโหลดไฟล์แล้ว').waitFor();
@@ -160,6 +161,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'จัดการ' }).click();
       const dialog = page.getByRole('dialog');
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       await dialog.getByLabel('เลือกไฟล์ PDF').setInputFiles({ name: 'note.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') });
       await dialog.getByText('เลือกได้เฉพาะไฟล์ PDF').waitFor();
       assert.ok(await dialog.getByRole('button', { name: 'อัปโหลด' }).isDisabled());
@@ -178,6 +180,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.getByRole('button', { name: 'จัดการ' }).click();
       const dialog = page.getByRole('dialog');
 
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       await dialog.getByLabel('ความเกี่ยวข้องกับ CSTU').selectOption('keep');
       assert.ok(await dialog.getByRole('button', { name: 'บันทึก', exact: true }).isDisabled(), 'evidence required');
       await dialog.getByLabel('เหตุผล').fill('CSTU เป็นคู่สัญญาตามข้อ 1');
@@ -186,6 +189,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click();
       await page.getByText('บันทึกความเกี่ยวข้องกับ CSTU แล้ว').waitFor();
 
+      await dialog.getByRole('tab', { name: 'สถานะ' }).click();
       for (const [button, label] of [['อนุมัติ', 'อนุมัติข้อตกลงแล้ว'], ['เริ่มมีผล', 'ข้อตกลงมีผลแล้ว']]) {
         await dialog.getByRole('button', { name: button, exact: true }).click();
         await page.getByText(label).waitFor();
@@ -199,6 +203,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.screenshot({ path: path.join(output, 'staff-manage.png'), fullPage: true });
 
       // The new tab fetches the signed link (headless Chromium downloads PDFs rather than showing them).
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       const signedFetch = context.waitForEvent('request', (r) => r.url().endsWith('/fake-signed.pdf'));
       await dialog.getByRole('button', { name: /เปิดไฟล์/ }).click();
       await signedFetch;
@@ -221,6 +226,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
       doc.status = 'cancelled'; // someone else cancelled it after the page loaded
       await page.getByRole('button', { name: 'จัดการ' }).click();
+      await page.getByRole('dialog').getByRole('tab', { name: 'สถานะ' }).click();
       await page.getByRole('dialog').getByRole('button', { name: 'เริ่มมีผล' }).click();
       await page.getByText('ทำรายการนี้ไม่ได้ในสถานะปัจจุบัน').waitFor();
       await context.close();

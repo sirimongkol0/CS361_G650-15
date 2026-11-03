@@ -93,9 +93,36 @@ async function session(browser, role, userId = 7) {
   await context.route(/\/api\/v1\/users\/students$/, (r) => reply(r, 200, [{ id: 42, email: 'student42@example.test' }]));
   // Agreements the activity form offers to link (activities.mou_document_id).
   await context.route(/\/api\/v1\/documents\/(manage)?$/, (r) => reply(r, 200, [
-    { id: 501, name: 'MoU ทดสอบ', documentKind: 'agreement', docType: 'mou', partnerId: null },
+    { id: 501, name: 'MoU ทดสอบ', documentKind: 'agreement', docType: 'mou', partnerId: 21 },
+    { id: 502, name: 'MoU หน่วยงานอื่น', documentKind: 'agreement', docType: 'mou', partnerId: 99 },
   ]));
   return { context, activities, exchange, partners };
+}
+
+async function feedbackSession(browser) {
+  const context = await browser.newContext();
+  await context.addInitScript(() => sessionStorage.setItem('pcsms_access_token', 'test-token'));
+  const posts = [];
+  const activities = Array.from({ length: 93 }, (_, index) => ({ id: index + 1, name: `กิจกรรม ${index + 1}` }));
+  await context.route('**/api/v1/**', async (route) => {
+    const req = route.request();
+    const p = new URL(req.url()).pathname;
+    if (p.endsWith('/auth/me')) return reply(route, 200, { id: 42, email: 'student@example.test', role: 'student' });
+    if (p.endsWith('/feedback/mine') || p.endsWith('/feedback/')) {
+      if (req.method() === 'POST') {
+        posts.push(JSON.parse(req.postData() || '{}'));
+        return reply(route, 201, { id: 900 });
+      }
+      return reply(route, 200, []);
+    }
+    if (p.endsWith('/feedback/respondent-types')) return reply(route, 200, []);
+    if (p.endsWith('/partners/')) return reply(route, 200, [{ id: 21, name: 'มหาวิทยาลัยคู่ความร่วมมือ' }]);
+    if (p.endsWith('/documents/')) return reply(route, 200, [{ id: 501, name: 'MoU ทดสอบ' }]);
+    if (p.endsWith('/activities/')) return reply(route, 200, activities);
+    if (p.includes('/exchange')) return reply(route, 200, []);
+    return reply(route, 200, []);
+  });
+  return { context, posts };
 }
 
 const cases = [];
@@ -228,6 +255,49 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await p2.getByRole('alertdialog').getByRole('button', { name: 'ลบ', exact: true }).click();
       await p2.getByText('ลบ “มหาวิทยาลัยคู่ความร่วมมือ” แล้ว').waitFor();
       await staff.context.close();
+    });
+    await check('activity form: partner/agreement comboboxes filter by partner and submit ids', async () => {
+      const { context, activities } = await session(browser, 'coordinator');
+      const page = await context.newPage();
+      await page.goto(`${base}/activities/manage`, { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'เพิ่มกิจกรรม' }).click();
+      const dialog = page.getByRole('dialog');
+
+      await dialog.getByRole('button', { name: 'หน่วยงานคู่ความร่วมมือ' }).click();
+      const search = page.getByRole('combobox', { name: 'ค้นหาตัวเลือก' });
+      await search.fill('มหาวิทยาลัย');
+      await search.press('ArrowDown');
+      await search.press('Enter');
+
+      await dialog.getByRole('button', { name: 'ข้อตกลงที่เกี่ยวข้อง' }).click();
+      assert.equal(await page.locator('[cmdk-item]').count(), 1, 'only agreements for the selected partner');
+      await page.locator('[cmdk-item]').filter({ hasText: 'MoU ทดสอบ' }).click();
+
+      await dialog.getByLabel('ชื่อกิจกรรม *').fill('กิจกรรม Combobox');
+      await dialog.getByLabel('ประเภทกิจกรรม').selectOption('seminar');
+      await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
+      await page.getByText('เพิ่ม “กิจกรรม Combobox” แล้ว').waitFor();
+      const sent = activities.calls.find((call) => call.method === 'POST').body;
+      assert.equal(sent.partner_id, 21);
+      assert.equal(sent.mou_document_id, 501);
+      await context.close();
+    });
+    await check('feedback form: searchable activity context submits activity_id', async () => {
+      const { context, posts } = await feedbackSession(browser);
+      const page = await context.newPage();
+      await page.goto(`${base}/feedback`, { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'เลือกกิจกรรม' }).click();
+      const search = page.getByRole('combobox', { name: 'ค้นหาตัวเลือก' });
+      await search.fill('กิจกรรม 42');
+      await search.press('ArrowDown');
+      await search.press('Enter');
+      await page.getByLabel('หัวข้อ *').fill('ความคิดเห็นทดสอบ Combobox');
+      await page.getByLabel('ความคิดเห็น *').fill('รายละเอียดความคิดเห็น');
+      await page.getByRole('button', { name: 'ส่งความคิดเห็น' }).click();
+      await page.getByText('ส่งความคิดเห็นแล้ว').waitFor();
+      assert.equal(posts.length, 1);
+      assert.equal(posts[0].activity_id, 42);
+      await context.close();
     });
   } finally {
     await browser.close();

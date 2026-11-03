@@ -13,6 +13,8 @@ import { averageRating } from "@/lib/dashboard-data";
 import { useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
+import { FormSection } from "@/components/form-layout";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 import { feedbackStatusLabels, label } from "@/lib/labels";
 import { ImprovementSection } from "@/components/improvement-section";
@@ -107,36 +109,64 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
   };
 
   const current = CONTEXTS.find((c) => c.type === contextType)!;
+  const contextOptions: ComboboxOption[] = choices[contextType].map((item) => ({
+    value: String(item.id),
+    label: item.name,
+  }));
   return (
     <form onSubmit={submit} className="rounded-lg bg-white shadow-card p-4 mb-5">
       <h2 className="font-semibold text-ink mb-3">ส่งความคิดเห็น</h2>
       <FormError error={action.error} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-        {canPickSender && (
-          <Field label="ประเภทผู้ส่ง" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
-            <select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
-              {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
-            </select>
+
+      <FormSection title="ความคิดเห็น" description="หัวข้อ ผู้ส่ง และคะแนน">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+          {canPickSender && (
+            <Field label="ประเภทผู้ส่ง" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
+              <select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
+                {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
+              </select>
+            </Field>
+          )}
+          <Field label="คะแนน"><select className={inputCls} value={rating} onChange={(e) => setRating(e.target.value)}>
+            {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} / 5</option>)}
+            <option value={NO_RATING}>ไม่ระบุคะแนน</option>
+          </select></Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="บริบท" description="ความคิดเห็นนี้เกี่ยวกับกิจกรรม การแลกเปลี่ยน หน่วยงาน หรือข้อตกลงใด">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
+            const next = e.target.value as ContextType;
+            setContextType(next);
+            setContextId(String(choices[next][0]?.id ?? ""));
+          }}>
+            {CONTEXTS.map((c) => <option key={c.type} value={c.type}>{c.label}</option>)}
+          </select></Field>
+          <Field label={`${current.pick} *`}>
+            <Combobox
+              options={contextOptions}
+              value={contextId}
+              onChange={setContextId}
+              placeholder={current.pick}
+              emptyMessage={`ไม่พบ${current.label}`}
+              aria-label={current.pick}
+            />
           </Field>
+        </div>
+        {choices[contextType].length === 0 && (
+          <p className="text-xs text-faint">ยังไม่มี{current.label}ให้เลือก</p>
         )}
-        <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
-          const next = e.target.value as ContextType;
-          setContextType(next);
-          setContextId(String(choices[next][0]?.id ?? ""));
-        }}>
-          {CONTEXTS.map((c) => <option key={c.type} value={c.type}>{c.label}</option>)}
-        </select></Field>
-        <Field label={current.pick}><select className={inputCls} required value={contextId} onChange={(e) => setContextId(e.target.value)}>
-          {choices[contextType].map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select></Field>
-        <Field label="คะแนน"><select className={inputCls} value={rating} onChange={(e) => setRating(e.target.value)}>
-          {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} / 5</option>)}
-          <option value={NO_RATING}>ไม่ระบุคะแนน</option>
-        </select></Field>
+      </FormSection>
+
+      <FormSection title="ข้อความ">
+        <Field label="ความคิดเห็น *"><textarea className={`${inputCls} resize-y`} rows={3} required maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
+      </FormSection>
+
+      <div className="flex justify-end">
+        <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length}>ส่งความคิดเห็น</button>
       </div>
-      <Field label="ความคิดเห็น *"><textarea className={`${inputCls} resize-y`} rows={3} required maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
-      <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length}>ส่งความคิดเห็น</button>
     </form>
   );
 }
