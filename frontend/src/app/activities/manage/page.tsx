@@ -9,7 +9,7 @@ import {
   apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadManagePartners, useApiResource,
   type AgreementOption, type PartnerView,
 } from "@/lib/api";
-import { activityTypeLabels, partnerTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
+import { activityDateKindLabels, activityTypeLabels, datePrecisionLabels, partnerTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
@@ -27,10 +27,13 @@ interface ManagedActivity {
   endDate: string | null;
   description: string | null;
   activity_type: string | null;
+  dateKind: string | null;
+  datePrecision: string | null;
   location: string | null;
   time: string | null;
   participants: number | null;
   status: string | null;
+  isOpen: boolean | null;
   scopeLevel: ScopeLevel | null;
   partner: { id: number; name: string } | null;
   partnerId: number | null;
@@ -208,11 +211,14 @@ function ActivityForm({
     name: activity?.name ?? "",
     activity_type: activity?.activity_type ?? "",
     date: activity?.date ?? "",
+    date_kind: activity?.dateKind ?? "",
+    date_precision: activity?.datePrecision ?? "",
     end_date: activity?.endDate ?? "",
     time: activity?.time ?? "",
     location: activity?.location ?? "",
     participants: activity?.participants != null ? String(activity.participants) : "",
     status: activity?.status ?? "วางแผน",
+    is_open: activity?.isOpen == null ? "" : activity.isOpen ? "true" : "false",
     partner_id: activity?.partnerId ? String(activity.partnerId) : "",
     mou_document_id: activity?.mouDocId ? String(activity.mouDocId) : "",
     scope_level: activity?.scopeLevel ?? "",
@@ -221,6 +227,12 @@ function ActivityForm({
   });
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
+  // The backend forbids date_kind/date_precision when there is no date.
+  const setDate = (e: { target: { value: string } }) => setForm({
+    ...form,
+    date: e.target.value,
+    ...(e.target.value ? {} : { date_kind: "", date_precision: "" }),
+  });
   // Agreements of the chosen partner (all when none is chosen); the current link always stays listed.
   const agreementChoices = agreements.filter((d) =>
     !form.partner_id || d.partnerId === Number(form.partner_id) || String(d.id) === form.mou_document_id);
@@ -266,11 +278,14 @@ function ActivityForm({
       name: form.name.trim(),
       activity_type: orNull(form.activity_type),
       date: orNull(form.date),
+      date_kind: form.date ? orNull(form.date_kind) : null,
+      date_precision: form.date ? orNull(form.date_precision) : null,
       end_date: orNull(form.end_date),
       time: orNull(form.time),
       location: orNull(form.location),
       participants: form.participants === "" ? null : Number(form.participants),
       status: orNull(form.status),
+      is_open: form.is_open === "" ? null : form.is_open === "true",
       partner_id: form.partner_id ? Number(form.partner_id) : null,
       mou_document_id: form.mou_document_id ? Number(form.mou_document_id) : null,
       scope_level: orNull(form.scope_level),
@@ -307,11 +322,30 @@ function ActivityForm({
               {ACTIVITY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </Field>
+          <Field label="เปิดรับสมัคร" hint="ใช้กับกิจกรรมที่ยังเปิดให้ลงทะเบียน">
+            <select className={inputCls} value={form.is_open} onChange={set("is_open")}>
+              <option value="">— ไม่ระบุ —</option>
+              <option value="true">เปิด</option>
+              <option value="false">ปิด</option>
+            </select>
+          </Field>
           <Field label="วันที่เริ่ม">
-            <DateInput className={inputCls} value={form.date} onChange={set("date")} />
+            <DateInput className={inputCls} value={form.date} onChange={setDate} />
           </Field>
           <Field label="วันที่สิ้นสุด">
             <DateInput className={inputCls} value={form.end_date} min={form.date || undefined} onChange={set("end_date")} />
+          </Field>
+          <Field label="ลักษณะวันที่" hint="ระบุว่าวันที่นี้คือวันจัดกิจกรรม ประกาศ หรือช่วงรับสมัคร">
+            <select className={inputCls} value={form.date_kind} onChange={set("date_kind")} disabled={!form.date}>
+              <option value="">— ไม่ระบุ —</option>
+              {Object.entries(activityDateKindLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+          <Field label="ความละเอียดวันที่" hint="ใช้เมื่อไม่ทราบวันจริง เช่น ระบุเฉพาะเดือนหรือปี">
+            <select className={inputCls} value={form.date_precision} onChange={set("date_precision")} disabled={!form.date}>
+              <option value="">— ไม่ระบุ —</option>
+              {Object.entries(datePrecisionLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
           </Field>
           <Field label="เวลา">
             <input className={inputCls} value={form.time} onChange={set("time")} placeholder="09:00 - 16:00" />

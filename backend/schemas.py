@@ -107,6 +107,7 @@ class PartnerResponse(BaseModel):
     contactIsPublic: bool = Field(default=False, validation_alias=AliasChoices('contact_is_public', 'contactIsPublic'), serialization_alias='contactIsPublic')
     scopeLevel: Optional[ScopeLevel] = Field(default=None, validation_alias=AliasChoices('scope_level', 'scopeLevel'), serialization_alias='scopeLevel')
     isPublished: bool = Field(default=False, validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    publiclyVisible: bool = Field(default=False, validation_alias=AliasChoices('publicly_visible', 'publiclyVisible'), serialization_alias='publiclyVisible')
     ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')
     organizationId: Optional[int] = Field(default=None, validation_alias=AliasChoices('organization_id', 'organizationId'), serialization_alias='organizationId')
     sources: List[SourceResponse] = Field(default_factory=list)
@@ -283,6 +284,7 @@ class DocumentUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     doc_type: Optional[str] = None
     document_kind: Optional[Literal['agreement', 'template', 'procedure', 'announcement', 'other']] = None
+    file_availability: Optional[Literal['available', 'metadata_only', 'unavailable']] = None
     partner_id: Optional[int] = None
     effective_date: Optional[datetime_date] = None
     expiry_date: Optional[datetime_date] = None
@@ -333,6 +335,7 @@ class DocumentCstuReview(BaseModel):
 class DocumentManageResponse(DocumentResponse):
     """Internal view for coordinator/staff/admin: adds review, publication and owner fields."""
     isPublished: bool = Field(validation_alias=AliasChoices('is_published', 'isPublished'), serialization_alias='isPublished')
+    publiclyVisible: bool = Field(default=False, validation_alias=AliasChoices('publicly_visible', 'publiclyVisible'), serialization_alias='publiclyVisible')
     cstuStatus: CstuStatus = Field(validation_alias=AliasChoices('cstu_status', 'cstuStatus'), serialization_alias='cstuStatus')
     cstuEvidence: Optional[str] = Field(default=None, validation_alias=AliasChoices('cstu_evidence', 'cstuEvidence'), serialization_alias='cstuEvidence')
     ownerUserId: Optional[int] = Field(default=None, validation_alias=AliasChoices('owner_user_id', 'ownerUserId'), serialization_alias='ownerUserId')

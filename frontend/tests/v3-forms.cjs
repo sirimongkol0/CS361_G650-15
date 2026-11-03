@@ -68,7 +68,7 @@ async function session(browser, role, userId = 7) {
     { id: 11, name: 'นักศึกษา ก', type: 'outbound', toOrganization: 'Partner U', status: 'วางแผน', ownerUserId: userId },
   ]);
   const partners = collection(role, userId, [
-    { id: 21, name: 'มหาวิทยาลัยคู่ความร่วมมือ', type: 'university', isPublished: true, ownerUserId: 99 },
+    { id: 21, name: 'มหาวิทยาลัยคู่ความร่วมมือ', type: 'university', isPublished: true, publiclyVisible: false, ownerUserId: 99 },
   ]);
   const route = (coll, prefix) => async (r) => {
     const req = r.request();
@@ -149,6 +149,9 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       assert.equal(await dialog.getByLabel('เผยแพร่ในหน้าสาธารณะ').count(), 0, 'no publish option');
       await dialog.getByLabel('ชื่อกิจกรรม *').fill('สัมมนา V3-7');
       await dialog.getByLabel('วันที่เริ่ม').fill('2026-11-25');
+      await dialog.getByLabel('ลักษณะวันที่').selectOption('announcement');
+      await dialog.getByLabel('วันที่เริ่ม').fill('');
+      assert.equal(await dialog.getByLabel('ลักษณะวันที่').inputValue(), '', 'clearing the date clears its kind');
       await dialog.getByLabel('ประเภทกิจกรรม').selectOption('seminar');
       await dialog.getByLabel('ระดับความร่วมมือ').selectOption('program');
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
@@ -156,6 +159,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       const sent = activities.calls.find((c) => c.method === 'POST').body;
       assert.equal(sent.name, 'สัมมนา V3-7');
       assert.equal(sent.scope_level, 'program');
+      assert.equal(sent.date_kind, null, 'no date_kind without a date');
       assert.ok(!('is_published' in sent), 'coordinator never sends is_published');
 
       await own.getByRole('button', { name: 'แก้ไข' }).click();
@@ -245,6 +249,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       p2.on('dialog', (d) => d.accept());
       await p2.goto(`${base}/stakeholders/manage`, { waitUntil: 'networkidle' });
       const row = p2.getByRole('row', { name: /มหาวิทยาลัยคู่ความร่วมมือ/ });
+      await row.getByText('เผยแพร่แล้ว · ยังไม่แสดงสาธารณะ').waitFor();
       await row.getByRole('button', { name: 'แก้ไข' }).click();
       await p2.getByRole('dialog').getByLabel('เผยแพร่ในหน้าสาธารณะ').uncheck();
       await p2.getByRole('dialog').getByRole('button', { name: 'บันทึก', exact: true }).click();
@@ -275,11 +280,18 @@ async function check(name, work) { await work(); cases.push(name); console.log('
 
       await dialog.getByLabel('ชื่อกิจกรรม *').fill('กิจกรรม Combobox');
       await dialog.getByLabel('ประเภทกิจกรรม').selectOption('seminar');
+      await dialog.getByLabel('วันที่เริ่ม').fill('2026-11-25');
+      await dialog.getByLabel('ลักษณะวันที่').selectOption('announcement');
+      await dialog.getByLabel('ความละเอียดวันที่').selectOption('month');
+      await dialog.getByRole('combobox', { name: /^เปิดรับสมัคร/ }).selectOption('true');
       await dialog.getByRole('button', { name: 'เพิ่ม', exact: true }).click();
       await page.getByText('เพิ่ม “กิจกรรม Combobox” แล้ว').waitFor();
       const sent = activities.calls.find((call) => call.method === 'POST').body;
       assert.equal(sent.partner_id, 21);
       assert.equal(sent.mou_document_id, 501);
+      assert.equal(sent.date_kind, 'announcement');
+      assert.equal(sent.date_precision, 'month');
+      assert.equal(sent.is_open, true);
       await context.close();
     });
     await check('feedback form: searchable activity context submits activity_id', async () => {

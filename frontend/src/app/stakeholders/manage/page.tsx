@@ -32,6 +32,7 @@ interface ManagedPartner {
   scopeLevel: ScopeLevel | null;
   organizationId: number | null;
   isPublished: boolean;
+  publiclyVisible?: boolean;
   ownerUserId: number | null;
   sources?: { id: number; sourceUrl: string }[];
 }
@@ -122,7 +123,11 @@ export default function ManageStakeholdersPage() {
                     <td className="px-4 py-3 text-faint">{label(TYPE_OPTIONS, p.type)}</td>
                     <td className="px-4 py-3 text-faint">{orgName(p.organizationId) ?? countryLabel(p.countryCode, p.country) ?? "—"}</td>
                     <td className="px-4 py-3">
-                      {p.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ฉบับร่าง</span>}
+                      {p.isPublished
+                        ? (p.publiclyVisible === false
+                          ? <span className="badge badge-gold">เผยแพร่แล้ว · ยังไม่แสดงสาธารณะ</span>
+                          : <span className="badge badge-green">เผยแพร่แล้ว</span>)
+                        : <span className="badge badge-gray">ฉบับร่าง</span>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       {canEdit(p) && (

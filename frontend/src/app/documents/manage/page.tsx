@@ -11,7 +11,7 @@ import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
-import { cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, partnerTypeLabels, scopeLevelLabels } from "@/lib/labels";
+import { cstuStatusLabels, documentKindLabels, documentStatusLabels, documentTypeLabels, fileAvailabilityLabels, label, partnerTypeLabels, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
@@ -216,6 +216,8 @@ function DocumentForm({
   const [form, setForm] = useState({
     name: doc?.name ?? "",
     doc_type: doc?.docType ?? "mou",
+    document_kind: doc?.documentKind ?? "agreement",
+    file_availability: doc?.fileAvailability === "unavailable" ? "unavailable" : "metadata_only",
     partner_id: doc?.partnerId ? String(doc.partnerId) : "",
     effective_date: doc?.effectiveDate ?? "",
     expiry_date: doc?.expiryDate ?? "",
@@ -225,6 +227,8 @@ function DocumentForm({
     scope_level: doc?.scopeLevel ?? "",
     scope_items: (doc?.scopeItems ?? []).map((item) => item.text).join("\n"),
   });
+  // Uploading a PDF is the only way to reach "available", so an existing file locks the select.
+  const hasFile = Boolean(doc?.fileName);
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
   const partnerOptions: ComboboxOption[] = partners.map((partner) => ({
@@ -239,6 +243,8 @@ function DocumentForm({
     const body = {
       name: form.name.trim(),
       doc_type: form.doc_type,
+      document_kind: form.document_kind,
+      ...(hasFile ? {} : { file_availability: form.file_availability }),
       partner_id: form.partner_id ? Number(form.partner_id) : null,
       effective_date: orNull(form.effective_date),
       expiry_date: orNull(form.expiry_date),
@@ -270,6 +276,20 @@ function DocumentForm({
             <select className={inputCls} value={form.doc_type} onChange={set("doc_type")}>
               <option value="mou">MoU</option>
               <option value="moa">MoA</option>
+              <option value="template">แบบฟอร์ม</option>
+            </select>
+          </Field>
+          <Field label="ชนิดเอกสาร" hint="ข้อตกลง แบบฟอร์ม ขั้นตอนปฏิบัติ หรือประกาศ">
+            <select className={inputCls} value={form.document_kind} onChange={set("document_kind")}>
+              {Object.entries(documentKindLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+          <Field label="สถานะไฟล์" hint={hasFile ? "มีไฟล์ PDF แล้ว สถานะไฟล์จะเปลี่ยนอัตโนมัติเมื่ออัปโหลด" : "ระบุว่ามีไฟล์ให้เปิดหรือมีเฉพาะข้อมูล"}>
+            <select className={inputCls} value={hasFile ? "available" : form.file_availability} disabled={hasFile}
+              onChange={set("file_availability")}>
+              {hasFile && <option value="available">{fileAvailabilityLabels.available}</option>}
+              <option value="metadata_only">{fileAvailabilityLabels.metadata_only}</option>
+              <option value="unavailable">{fileAvailabilityLabels.unavailable}</option>
             </select>
           </Field>
           <Field label="หน่วยงานคู่ความร่วมมือ">
@@ -452,6 +472,8 @@ function ManagePanel({
               <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
                 <div><dt className="inline text-faint">หน่วยงาน: </dt><dd className="inline">{doc.partner?.name ?? "—"}</dd></div>
                 <div><dt className="inline text-faint">ประเภท: </dt><dd className="inline">{doc.docType ? label(documentTypeLabels, doc.docType.toUpperCase()) : "—"}</dd></div>
+                <div><dt className="inline text-faint">ชนิดเอกสาร: </dt><dd className="inline">{label(documentKindLabels, doc.documentKind)}</dd></div>
+                <div><dt className="inline text-faint">สถานะไฟล์: </dt><dd className="inline">{label(fileAvailabilityLabels, doc.fileAvailability)}</dd></div>
                 <div><dt className="inline text-faint">ช่วงเวลา: </dt><dd className="inline">{formatThaiDate(doc.effectiveDate)} – {formatThaiDate(doc.expiryDate)}</dd></div>
                 <div><dt className="inline text-faint">ผู้รับผิดชอบ: </dt><dd className="inline">{doc.responsible ?? "—"}</dd></div>
               </dl>
@@ -601,9 +623,14 @@ function ManagePanel({
           {isStaff && (
             <>
               <span className="text-xs text-faint">
-                {doc.isPublished ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่"}
+                {doc.isPublished
+                  ? (doc.publiclyVisible ? "เผยแพร่แล้ว" : "เผยแพร่แล้ว · ยังไม่แสดงสาธารณะ")
+                  : "ยังไม่เผยแพร่"}
                 {doc.isPublished && doc.cstuStatus !== "keep" && (
                   <span className="ml-1 text-gold-dark">· แสดงเมื่อระบุว่าเกี่ยวข้องกับ CSTU</span>
+                )}
+                {doc.isPublished && doc.cstuStatus === "keep" && !doc.publiclyVisible && (
+                  <span className="ml-1 text-gold-dark">· ตรวจรายการที่ยังไม่ครบใน checklist</span>
                 )}
               </span>
               <button className="btn btn-outline text-sm" type="button" disabled={action.busy}

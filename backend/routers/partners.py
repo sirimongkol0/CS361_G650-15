@@ -7,13 +7,14 @@ import auth
 import database
 import models
 import schemas
-from public_visibility import attach_verified_source, partner_criteria
+from public_visibility import attach_verified_source, partner_criteria, partner_is_publicly_visible
 
 router = APIRouter(prefix="/partners", tags=["partners"])
 
 
 def _response(partner: models.Partner, current_user: Optional[models.User] = None):
     result = schemas.PartnerResponse.model_validate(partner)
+    result.publiclyVisible = partner_is_publicly_visible(partner)
     # หากไม่ได้ระบุให้เปิดเผย และไม่ใช่ Staff/Admin/Owner ให้ปิดซ่อนข้อมูลผู้ติดต่อ
     is_privileged = current_user and (
         current_user.role in ("staff", "admin") or partner.owner_user_id == current_user.id

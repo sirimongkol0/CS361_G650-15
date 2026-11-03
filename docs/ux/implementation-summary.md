@@ -30,33 +30,48 @@
 | Publish readiness checklist + grouped stakeholder form/sections | `1c17744` | `v3-forms` 6 passed; staff checklist shown |
 | Document readiness checklist in the agreement info tab | `1c17744` | `v3-agreements` 5 passed |
 | Feedback status tabs, collapsed advanced filters, result count | `b2cd5fd` | `feedback-triage` passed |
-| Thai `DateInput` for export date filters | `3336736` | export date fields show Thai dates |
+| Thai `DateInput` for export, feedback, and audit date filters | `3336736` | date fields show Thai dates |
 | Feedback date filters use `DateInput`; permanent triage test + CI | `b2cd5fd`, `aa76404` | `feedback-triage` passed |
 | Mobile 390px stakeholder/feedback check | — | no horizontal overflow; sticky save visible |
+
+## P3 consistency fixes (post-audit)
+
+| Change | Commit | Evidence |
+|---|---|---|
+| Activity form edits `date_kind`, `date_precision`, `is_open` | `8b90e59`, `686a3ab` | `v3-forms` asserts submitted fields and cleared date semantics |
+| Document form edits `document_kind` and safe `file_availability` | `6330131` | `v3-agreements` asserts create body; backend tests guard available-without-file |
+| Activity agreement must belong to the selected partner | `f092615` | create/update mismatch tests; partner-less agreements still allowed |
+| Document manage list exposes only verified sources | `73b7ad4` | backend test compares manage sources with public eligibility |
+| Published records expose `publiclyVisible` and warn when not public | `0be4226` | partner/document backend tests; UI warning tests |
+| Event dates stay unprefixed in public labels | `f2b1eb2` | `v2-improvements` regression test |
+| Template documents keep an editable type | `0bade1a` | `v3-agreements` still 6 passed |
 
 ## Verification (3 Nov 2026)
 
 | Command / check | Result |
 |---|---|
+| Backend `pytest tests -q` | 732 passed, 6 skipped |
 | `npm run lint` | pass |
 | `npm run build` | pass |
 | `npm run test:display` | pass |
 | `npm run test:scope` | pass |
 | `tests/v3-forms.cjs` | 6 passed |
-| `tests/v3-agreements.cjs` | 5 passed |
+| `tests/v3-agreements.cjs` | 6 passed |
+| `tests/feedback-triage.cjs` | passed |
+| `tests/imports.cjs` / `tests/admin-lookups.cjs` | passed |
 | `tests/v3-auth.cjs` | 6 passed |
 | `tests/v2-improvements.cjs` | 4 passed |
-| Temporary combobox check | 93 options, Thai filter, Arrow/Enter, Escape focus return, Home/End, clear, 390px |
-| Temporary imports check | step 0 → previewed step 2 → upload step 1; upload enabled after file |
-| Temporary admin check | search filters rows; save-all sends PATCH; failure/success path |
+| Mobile 390px | activity and document forms: no overflow, sticky save visible |
+| Live lab | backend + frontend healthy; `publiclyVisible` present on 25 documents and 32 partners; health 200 |
 
 Temporary harnesses were removed after verification; no `/dev` route remains in the build.
 
 ## Notes and remaining work
 
-- **Git was not pushed.** The live lab was updated by copying the frontend source and rebuilding the container; the branch remains local. A lab reset will wipe this deployment.
+- **Git was not pushed.** The branch remains local.
+- The live lab (https://equal-preceding-hugo-treasures.trycloudflare.com) was updated by rebuilding both the backend and frontend containers. The lab's local-auth patch (`local_auth.py`, `auth.py`, `config.py`, `compose.lab.yml`) was preserved; only the five changed P3 backend files were copied. A lab reset will wipe this deployment.
+- P3 changes backend validation and API response fields (`publiclyVisible`) but adds **no database migration**. Local auth remains a lab-only configuration.
 - `tasks/plan.md` and `tasks/todo.md` are local only; the repository ignores `tasks/`.
 - Imports and admin checks are permanent Playwright tests (`frontend/tests/imports.cjs`, `frontend/tests/admin-lookups.cjs`) and are wired into the CI e2e step.
-- No backend, auth, schema, or API changes.
 - `cmdk@1.1.1` is pinned; production dependency audit reports 0 vulnerabilities.
 - The combobox portals into the nearest native `<dialog>` when opened inside a modal, so the panel stays in the dialog top layer instead of behind it.

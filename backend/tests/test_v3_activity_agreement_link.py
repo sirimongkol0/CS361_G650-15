@@ -22,8 +22,16 @@ def _other_user(db_session):
     return other
 
 
-def _agreement(db_session, owner_id=None, public=False, deleted=False, name="MoU ทดสอบ"):
-    doc = models.Document(name=name, document_kind="agreement", doc_type="mou", status="active" if public else "draft",
+def _partner(db_session, name):
+    partner = models.Partner(name=name)
+    db_session.add(partner)
+    db_session.flush()
+    return partner
+
+
+def _agreement(db_session, owner_id=None, public=False, deleted=False, name="MoU ทดสอบ", partner_id=None):
+    doc = models.Document(name=name, document_kind="agreement", doc_type="mou", partner_id=partner_id,
+                          status="active" if public else "draft",
                           file_availability="metadata_only", owner_user_id=owner_id, is_deleted=deleted,
                           is_published=public, cstu_status="keep" if public else "review")
     if public:
@@ -81,3 +89,39 @@ def test_coordinator_cannot_relink_to_a_hidden_agreement_but_can_unlink(client, 
     assert client.patch(url, json={"name": "ชื่อใหม่", "mou_document_id": own.id}, headers=headers).status_code == 200
     unlinked = client.patch(url, json={"mou_document_id": None}, headers=headers)
     assert unlinked.status_code == 200 and unlinked.json()["mouDocId"] is None
+
+
+def test_activity_and_agreement_must_name_the_same_partner(client, db_session, cognito):
+    headers = bearer(token_for(client, "staff"))
+    partner_a = _partner(db_session, "มหาวิทยาลัย A")
+    partner_b = _partner(db_session, "มหาวิทยาลัย B")
+    doc_a = _agreement(db_session, name="MoU A", partner_id=partner_a.id)
+    doc_b = _agreement(db_session, name="MoU B", partner_id=partner_b.id)
+
+    created = client.post("/api/v1/activities/", headers=headers,
+                          json={"name": "กิจกรรม A", "partner_id": partner_a.id, "mou_document_id": doc_a.id})
+    assert created.status_code == 201, created.text
+    activity_id = created.json()["id"]
+    url = f"/api/v1/activities/{activity_id}"
+
+    mismatch = client.post("/api/v1/activities/", headers=headers,
+                           json={"name": "กิจกรรมผิดคู่", "partner_id": partner_b.id, "mou_document_id": doc_a.id})
+    assert mismatch.status_code == 422
+    assert "partner_id" in mismatch.json()["detail"]
+
+    partner_only = client.patch(url, headers=headers, json={"partner_id": partner_b.id})
+    assert partner_only.status_code == 422, "changing only the partner re-checks the existing link"
+    agreement_only = client.patch(url, headers=headers, json={"mou_document_id": doc_b.id})
+    assert agreement_only.status_code == 422, "changing only the agreement re-checks the existing partner"
+    matched = client.patch(url, headers=headers,
+                           json={"partner_id": partner_b.id, "mou_document_id": doc_b.id})
+    assert matched.status_code == 200, matched.text
+    assert (matched.json()["partnerId"], matched.json()["mouDocId"]) == (partner_b.id, doc_b.id)
+    # An unrelated edit keeps the link without re-checking it.
+    assert client.patch(url, headers=headers, json={"name": "ชื่อใหม่"}).status_code == 200
+
+    # An agreement with no partner has no partner to conflict with.
+    unlinked_doc = _agreement(db_session, name="MoU ไม่ระบุหน่วยงาน")
+    allowed = client.post("/api/v1/activities/", headers=headers,
+                          json={"name": "กิจกรรมอิสระ", "partner_id": partner_a.id, "mou_document_id": unlinked_doc.id})
+    assert allowed.status_code == 201, allowed.text
