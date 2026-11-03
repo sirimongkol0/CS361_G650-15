@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 
 import { apiGetList } from "@/lib/api";
 import { downloadFile } from "@/lib/download-file";
+import { DateInput } from "@/components/form-ui";
 
 const card =
   "rounded-lg border border-line bg-white p-5 shadow-card";
@@ -199,20 +200,18 @@ export default function ExportSection() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="grid gap-1 text-xs text-faint">
           ตั้งแต่วันที่
-          <input
-            className={control}
-            type="date"
+          <DateInput
             value={filters.date_from}
             onChange={(event) => setFilter("date_from", event.target.value)}
+            className={`${control} w-full`}
           />
         </label>
         <label className="grid gap-1 text-xs text-faint">
           ถึงวันที่
-          <input
-            className={control}
-            type="date"
+          <DateInput
             value={filters.date_to}
             onChange={(event) => setFilter("date_to", event.target.value)}
+            className={`${control} w-full`}
           />
         </label>
         {contextFilterKeys.map(renderIdFilter)}

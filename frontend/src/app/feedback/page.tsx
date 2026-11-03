@@ -12,7 +12,7 @@ import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadExchangeStudents
 import { averageRating } from "@/lib/dashboard-data";
 import { useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
-import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
+import { Field, FormError, Notice, inputCls, useAction, DateInput } from "@/components/form-ui";
 import { FormSection } from "@/components/form-layout";
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
@@ -296,6 +296,14 @@ export default function FeedbackPage() {
   // Until the user picks an entry, show the first one in the list.
   const selected = entries.find((f) => f.id === (selectedId ?? filtered[0]?.id));
   const avg = averageRating(entries);
+  const statusTabs = [
+    { value: "all", label: "ทั้งหมด", count: entries.length },
+    ...FEEDBACK_STATUSES.map((status) => ({
+      value: status,
+      label: label(feedbackStatusLabels, status),
+      count: entries.filter((entry) => entry.status === status).length,
+    })),
+  ];
 
   const saved = (message: string) => {
     setNotice(message);
@@ -350,8 +358,29 @@ export default function FeedbackPage() {
       <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
         {/* List */}
         <div>
+          <div role="group" aria-label="สถานะความคิดเห็น" className="mb-3 flex flex-wrap items-center gap-1">
+            {statusTabs.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                aria-pressed={statusFilter === tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  statusFilter === tab.value
+                    ? "border-crimson bg-crimson text-white"
+                    : "border-line bg-white text-faint hover:text-ink"
+                }`}
+              >
+                {tab.label}
+                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === tab.value ? "bg-white/20" : "bg-soft"}`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="rounded-lg bg-white shadow-card p-4 mb-4">
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-48">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
                 <input
@@ -362,50 +391,68 @@ export default function FeedbackPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
-                style={{ width: "auto", minWidth: 180 }}
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                aria-label="ช่องทาง"
-              >
-                <option value="all">ช่องทาง: ทั้งหมด</option>
-                {sources.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              {isManager && <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ส่ง">
-                <option value="all">ทุกประเภทผู้ส่ง</option>
-                {respondentTypes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-              </select>}
-              <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={contextFilter} onChange={(e) => setContextFilter(e.target.value)} aria-label="บริบท">
-                <option value="all">ทุกบริบท</option>
-                {contexts.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-              </select>
-              <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="สถานะ">
-                <option value="all">ทุกสถานะ</option>
-                {FEEDBACK_STATUSES.map((s) => <option key={s} value={s}>{label(feedbackStatusLabels, s)}</option>)}
-              </select>
-              <label className="text-xs text-faint flex items-center gap-2">ตั้งแต่ <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
-              <label className="text-xs text-faint flex items-center gap-2">ถึง <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
-                style={{ width: "auto", minWidth: 140 }}
-                value={ratingFilter}
-                onChange={(e) => setRatingFilter(e.target.value)}
-                aria-label="คะแนน"
-              >
-                <option value="all">คะแนน: ทั้งหมด</option>
-                {[5, 4, 3, 2, 1].map((r) => (
-                  <option key={r} value={r}>
-                    {r} ดาว
-                  </option>
-                ))}
-              </select>
+
+              <details className="w-full">
+                <summary className="cursor-pointer select-none text-sm font-medium text-crimson">
+                  ตัวกรองเพิ่มเติม
+                </summary>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <select
+                    className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
+                    style={{ width: "auto", minWidth: 180 }}
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value)}
+                    aria-label="ช่องทาง"
+                  >
+                    <option value="all">ช่องทาง: ทั้งหมด</option>
+                    {sources.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {isManager && (
+                    <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ส่ง">
+                      <option value="all">ทุกประเภทผู้ส่ง</option>
+                      {respondentTypes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                    </select>
+                  )}
+                  <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={contextFilter} onChange={(e) => setContextFilter(e.target.value)} aria-label="บริบท">
+                    <option value="all">ทุกบริบท</option>
+                    {contexts.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+                  </select>
+                  <select
+                    className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
+                    style={{ width: "auto", minWidth: 140 }}
+                    value={ratingFilter}
+                    onChange={(e) => setRatingFilter(e.target.value)}
+                    aria-label="คะแนน"
+                  >
+                    <option value="all">คะแนน: ทั้งหมด</option>
+                    {[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{r} ดาว</option>)}
+                  </select>
+                  <label className="flex items-center gap-2 text-xs text-faint">
+                    ตั้งแต่
+                    <DateInput
+                      aria-label="ตั้งแต่วันที่"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink"
+                      wrapperClassName="inline-block"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-faint">
+                    ถึง
+                    <DateInput
+                      aria-label="ถึงวันที่"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink"
+                      wrapperClassName="inline-block"
+                    />
+                  </label>
+                </div>
+              </details>
             </div>
           </div>
+
+          <p className="mb-2 text-xs text-faint">แสดง {filtered.length} จาก {entries.length} รายการ</p>
 
           <div className="space-y-3">
             {filtered.length === 0 && (

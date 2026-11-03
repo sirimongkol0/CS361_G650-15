@@ -60,6 +60,7 @@ you can still pass `aria-label` when the control is used outside a `Field`.
 - `aria-expanded`, `aria-haspopup="listbox"`, and `aria-controls` are set on the trigger; the input uses the ARIA combobox/listbox pattern from `cmdk`.
 - Optional groups render a heading and keep related options together.
 - The panel is portaled with Radix Popover and uses the trigger width, so it stays inside the viewport on mobile.
+- Inside a native `<dialog>`, the portal container is the dialog itself, so the panel stays in the dialog top layer instead of rendering behind the modal.
 
 ## Accessibility notes
 

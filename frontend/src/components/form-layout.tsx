@@ -73,36 +73,3 @@ export function FormActions({
   );
 }
 
-export interface StepIndicatorProps {
-  steps: string[];
-  current: number;
-  className?: string;
-}
-
-/** Compact numbered progress indicator; no routing or state. */
-export function StepIndicator({ steps, current, className }: StepIndicatorProps) {
-  return (
-    <ol className={cn('flex flex-wrap items-center gap-2 text-xs', className)} aria-label="ขั้นตอน">
-      {steps.map((step, index) => {
-        const done = index < current;
-        const active = index === current;
-        return (
-          <li key={step} className="flex items-center gap-2" aria-current={active ? 'step' : undefined}>
-            <span
-              className={cn(
-                'flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-semibold',
-                active && 'border-crimson bg-crimson text-white',
-                done && 'border-crimson bg-crimson-light text-crimson',
-                !active && !done && 'border-line bg-white text-faint',
-              )}
-              aria-hidden
-            >
-              {index + 1}
-            </span>
-            <span className={cn(active ? 'font-semibold text-ink' : 'text-faint')}>{step}</span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}

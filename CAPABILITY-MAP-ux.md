@@ -1,6 +1,6 @@
 # Capability Map — UX improvements
 
-**Status:** draft, pending human decisions on tradeoffs  
+**Status:** implemented in the `ux-improvements` worktree (all six modules); not pushed. Deployed to the temporary lab on 3 Nov 2026. See `docs/ux/implementation-summary.md`.  
 **Worktree:** `/home/la/Documents/cstu/workspace/CS361_G650-15-ux`  
 **Branch:** `ux-improvements` (based on `main`, not pushed)  
 **Source findings:** `docs/usability/flow-audit.md` on `feature/local-auth` (lab audit, 3 Nov 2026)

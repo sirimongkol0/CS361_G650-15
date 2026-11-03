@@ -20,6 +20,7 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { StatusBadge } from "@/components/status-badge";
 import { LifecycleProgress } from "@/components/lifecycle-progress";
+import { PublishChecklist } from "@/components/publish-checklist";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -354,6 +355,14 @@ function ManagePanel({
   const status = currentStatus(doc);
   // Coordinators edit only their own drafts; staff/admin edit any status.
   const canEdit = isStaff || (isOwner && status === "draft");
+  const readiness = [
+    { label: "ชื่อข้อตกลง", done: doc.name.trim().length > 0 },
+    { label: "ประเภทเอกสาร", done: Boolean(doc.documentKind) },
+    { label: "สถานะ CSTU = เกี่ยวข้อง", done: doc.cstuStatus === "keep" },
+    { label: "สถานะไฟล์", done: Boolean(doc.fileAvailability) },
+    { label: "ไฟล์พร้อมใช้งาน", done: doc.fileAvailability !== "available" || Boolean(doc.fileName) },
+    { label: "แหล่งที่มา", done: doc.sources.length > 0 },
+  ];
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState<"info" | "status" | "files">("info");
   const [file, setFile] = useState<File | null>(null);
@@ -425,7 +434,7 @@ function ManagePanel({
             role="tab"
             id={`tab-${id}`}
             aria-selected={tab === id}
-            aria-controls={`panel-${id}`}
+            aria-controls={tab === id ? `panel-${id}` : undefined}
             onClick={() => setTab(id)}
             className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
               tab === id ? "border-crimson text-crimson" : "border-transparent text-faint hover:text-ink"
@@ -451,6 +460,7 @@ function ManagePanel({
               ) : (
                 <p className="mt-3 text-xs text-faint">ผู้สร้างแก้ไขได้เฉพาะตอนเป็นฉบับร่าง หลังจากนั้นเจ้าหน้าที่เป็นผู้แก้ไข</p>
               )}
+              {isStaff && <PublishChecklist items={readiness} className="mt-3" />}
             </Section>
 
             <Section title="กิจกรรมที่เกี่ยวข้อง">
