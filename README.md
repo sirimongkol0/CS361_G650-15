@@ -157,7 +157,7 @@ cd frontend && npm run lint && npm run test:display && npm run build
 - [สิทธิ์ตามบทบาท](docs/decisions/v3-role-permissions.md)
 - [ขอบเขตหลักสูตร CSTU และแผนพัฒนา](docs/decisions/cstu-program-scope.md)
 - [คู่มือคำศัพท์และน้ำเสียงหน้าเว็บ](docs/ui-writing-guide-th.md)
-- [การ deploy V5: CloudFormation + EC2 + SSM/Secrets + fallback frontend](docs/architecture/v5-architecture.md#ลำดับการ-deploy) · [การ deploy V4: Amplify + EC2 (API + PostgreSQL) + S3](docs/architecture/v4-architecture.md#การ-deploy-v4) · [การ deploy V2–V3: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
+- [การ deploy V4: Amplify + EC2 (API + PostgreSQL) + S3](docs/architecture/v4-architecture.md#การ-deploy-v4) · [การ deploy V2–V3: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
 - [คู่มือติดตั้ง](docs/setup/README-th.md)
 - [สัญญา field ของ API](docs/api/v2-field-contract.md)
 - [เดโมข้อมูลสมมติ](docs/demo-fictional.md)
