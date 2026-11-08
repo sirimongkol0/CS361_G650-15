@@ -178,7 +178,7 @@ curl https://main.d5kr2senr2j9o.amplifyapp.com/api/v1/health
 5. เปิด backend: `sudo docker compose -f compose.yml up -d --wait`
 
 ไฟล์ PDF ใน S3 เก็บแบบระบุด้วย hash ถ้า PDF ใน `backend/fixtures/demo-documents/` เปลี่ยน
-ต้องรัน `scripts/upload_demo_s3.py` ก่อน seed (ดู [เอกสารเดโมบน S3](../demo-s3.md))
+ต้องรัน `scripts/upload_demo_s3.py` ก่อน seed
 
 ---
 

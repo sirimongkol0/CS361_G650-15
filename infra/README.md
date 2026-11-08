@@ -10,21 +10,14 @@
 
 ## เลือก Compose ให้ถูกไฟล์
 
-repo มี Compose หลายไฟล์ แต่ละไฟล์ใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
+repo มี Compose สองไฟล์ แต่ละไฟล์ใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
 
 | ไฟล์ | ใช้ทำอะไร | ฐานข้อมูล | เปิดเว็บที่ |
 |---|---|---|---|
 | `docker-compose.yml` | พัฒนาบนเครื่อง | PostgreSQL ใน Docker (`pcsms`) เริ่มต้นว่าง | http://localhost:3000 |
 | `docker-compose.demo.yml` | สาธิตด้วยข้อมูลสมมติ (แนะนำตอนนำเสนอ) | PostgreSQL ใน Docker (`cstu_demo`) | http://localhost:3100 |
-| `docker-compose.demo.yml` + `docker-compose.demo-s3.yml` | เดโมที่อ่าน PDF จาก S3 | เหมือนด้านบน | http://localhost:3100 |
-| `docker-compose.demo-rds.yml` (ใช้ร่วมกับไฟล์เดโม) | เดโมที่ต่อ RDS จริง | RDS `cstu_demo` | http://localhost:3100 |
-| `docker-compose.cstu.yml` | ข้อมูล CSTU จริงที่รวบรวมไว้ | PostgreSQL ใน Docker (`cstu_collaboration`) | http://localhost:3000 |
 
-คู่มือของแต่ละแบบ:
-[เดโมข้อมูลสมมติ](../docs/demo-fictional.md) ·
-[เดโมบน S3](../docs/demo-s3.md) ·
-[เดโมบน RDS](../docs/demo-rds.md) ·
-[ฐานข้อมูล CSTU](../docs/setup/cstu-database.md)
+คู่มือเดโม: [เดโมข้อมูลสมมติ](../docs/demo-fictional.md)
 
 ## รันระบบสำหรับพัฒนา
 
