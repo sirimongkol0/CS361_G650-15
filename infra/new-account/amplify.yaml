@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CS361 V5 Amplify frontend. Creates an Amplify Hosting app and its production
+  branch only when a GitHub token secret ARN is supplied. With an empty
+  OauthTokenSecretArn the stack creates no Amplify resources; deploy.sh amplify
+  then uses the EC2 frontend fallback.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cs361
+    Description: Prefix for resource names.
+    AllowedPattern: '[a-z0-9-]+'
+    MinLength: 1
+  Repository:
+    Type: String
+    Default: https://github.com/sirimongkol0/CS361_G650-15
+    Description: GitHub repository URL.
+  BranchName:
+    Type: String
+    Default: main
+    Description: Branch to build and deploy.
+  ApiBaseUrl:
+    Type: String
+    Description: >-
+      Backend origin used by the Next.js rewrite proxy, for example
+      http://1.2.3.4:8000.
+    MinLength: 1
+  OauthTokenSecretArn:
+    Type: String
+    Default: ''
+    Description: >-
+      Secrets Manager secret ARN whose JSON SecretString has key "token".
+      For GitHub this is a personal access token (AccessToken). Leave empty to
+      skip Amplify and use the EC2 frontend fallback.
+  AmplifyServiceRoleArn:
+    Type: String
+    Default: ''
+    Description: >-
+      Optional existing IAM service role ARN for Amplify SSR builds. Leave
+      empty to let Amplify use its own service role.
+  ConfigPrefix:
+    Type: String
+    Default: /cs361/config
+    Description: SSM parameter prefix shared by the V5 stacks.
+    MinLength: 1
+
+Conditions:
+  HasToken:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: OauthTokenSecretArn
+          - ''
+  HasServiceRole:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: AmplifyServiceRoleArn
+          - ''
+
+Resources:
+  # Without a token this stack creates no Amplify resources at all, so it can
+  # be deployed in the Learner Lab and the EC2 fallback used instead.
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Condition: HasToken
+    Properties:
+      Name:
+        Fn::Sub: '${ProjectName}-frontend'
+      Repository:
+        Ref: Repository
+      # GitHub uses AccessToken (personal access token + Amplify GitHub App).
+      # OauthToken is for non-GitHub providers such as Bitbucket/CodeCommit.
+      AccessToken:
+        Fn::Sub: '{{resolve:secretsmanager:${OauthTokenSecretArn}:SecretString:token}}'
+      Platform: WEB_COMPUTE
+      EnvironmentVariables:
+        - Name: AMPLIFY_MONOREPO_APP_ROOT
+          Value: frontend
+        - Name: API_PROXY_TARGET
+          Value:
+            Ref: ApiBaseUrl
+        - Name: NEXT_PUBLIC_API_URL
+          Value: /api/v1
+      IAMServiceRole:
+        Fn::If:
+          - HasServiceRole
+          - Ref: AmplifyServiceRoleArn
+          - Ref: AWS::NoValue
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: '${ProjectName}-frontend'
+        - Key: Project
+          Value:
+            Ref: ProjectName
+
+  AmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Condition: HasToken
+    Properties:
+      AppId:
+        Ref: AmplifyApp
+      BranchName:
+        Ref: BranchName
+      Stage: PRODUCTION
+      EnableAutoBuild: true
+      EnvironmentVariables:
+        - Name: AMPLIFY_MONOREPO_APP_ROOT
+          Value: frontend
+        - Name: API_PROXY_TARGET
+          Value:
+            Ref: ApiBaseUrl
+        - Name: NEXT_PUBLIC_API_URL
+          Value: /api/v1
+
+  AmplifyUrlParameter:
+    Type: AWS::SSM::Parameter
+    Condition: HasToken
+    Properties:
+      Name:
+        Fn::Sub: '${ConfigPrefix}/amplify_url'
+      Type: String
+      # DefaultDomain is a documented Fn::GetAtt attribute of AWS::Amplify::App.
+      Value:
+        Fn::Sub: 'https://${BranchName}.${AmplifyApp.DefaultDomain}'
+      Description: Amplify production branch URL for the backend CORS step.
+
+Outputs:
+  AppId:
+    Condition: HasToken
+    Description: Amplify app ID.
+    Value:
+      Ref: AmplifyApp
+  DefaultDomain:
+    Condition: HasToken
+    Description: Amplify app default domain (<id>.amplifyapp.com).
+    Value:
+      Fn::GetAtt: [AmplifyApp, DefaultDomain]
+  BranchUrl:
+    Condition: HasToken
+    Description: Public URL of the production branch.
+    Value:
+      Fn::Sub: 'https://${BranchName}.${AmplifyApp.DefaultDomain}'
+  CorsOrigin:
+    Condition: HasToken
+    Description: Value for CORS_ORIGINS when the browser calls the API directly.
+    Value:
+      Fn::Sub: 'https://${BranchName}.${AmplifyApp.DefaultDomain}'
