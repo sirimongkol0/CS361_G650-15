@@ -14,6 +14,7 @@
 | `v5-3-cors.txt` | #120 CORS preflight |
 | `v5-4-config.txt` | #121 SSM/Secrets |
 | `v5-5-oidc.txt` | #122 ปิดเป็น not planned |
+| `v5-auth-fallback.txt` | Cognito default + local auth fallback |
 | `v5-6-backup-stack.txt` | #123 backup stack/schedule/alarm |
 | `v5-6-backup-run.txt` | #123 backup ที่รันจริง |
 | `v5-6-restore.txt` | #123 restore ที่รันจริง |

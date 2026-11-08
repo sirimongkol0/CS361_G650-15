@@ -62,6 +62,10 @@ cd infra/new-account
 > Teardown + recreate ทดสอบแล้วด้วย `cs361-v5r`: run 1 = 7m59s, run 2 = 6m35s,
 > teardown `--purge` = 179s; หลัง cleanup เหลือเฉพาะ stack `cs361` เดิม
 > (ดู `v5-8-recreate.txt`)
+>
+> Auth: `cs361` ใช้ Cognito (login 200 role=admin); local auth fallback มี tests
+> ผ่าน 7 tests และ wiring `AUTH_BACKEND=local` พร้อมใช้ แต่ยังไม่เปิดใน run นี้
+> (ดู `v5/v5-auth-fallback.txt`)
 
 ## รายละเอียดคำสั่ง
 

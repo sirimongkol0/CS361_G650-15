@@ -62,6 +62,8 @@ aws iam list-open-id-connect-providers
 - Backup อัตโนมัติผ่าน EventBridge Scheduler → SSM Run Command → S3
 - SNS แจ้งเตือน และ CloudWatch alarm เมื่อ backup ไม่สำเร็จ
 - CI ตรวจ template ด้วย `cfn-lint`/`cfn-guard` และตรวจ drift
+- local auth fallback (`AUTH_BACKEND=local`) สำหรับ environment ที่สร้าง Cognito ไม่ได้;
+  Cognito ยังเป็นค่าเริ่มต้นและเป็นโหมดที่ใช้ใน V5 run นี้
 - Teardown แบบเก็บ S3/Cognito (`--yes`) และแบบลบทั้งหมด (`--yes --purge`)
 - เอกสาร baseline, validation, architecture และ runbook
 
@@ -72,6 +74,7 @@ aws iam list-open-id-connect-providers
 - custom domain, HTTPS ระหว่าง Amplify กับ EC2, load balancer, Auto Scaling, Multi-AZ
 - backup ข้าม region, point-in-time recovery, RDS snapshot
 - การหมุน secret อัตโนมัติ (V5 ทำ manual ผ่าน Secrets Manager + `deploy.sh backend`)
+- MFA, password reset และ federation ของ local auth (fallback นี้ใช้ demo/lab เท่านั้น)
 - การรัน scheduled job ขณะ Lab session ปิด
 - production SLA, load test, penetration test
 - การ migrate ข้อมูลจาก user pool/stack V4 เดิมโดยอัตโนมัติ

@@ -112,6 +112,35 @@ cd infra/new-account
 ห้ามพิมพ์หรือ commit ไฟล์รหัสผ่าน
 ถ้า pool ชื่อซ้ำกับ stack เดิม ให้เปลี่ยน `POOL_NAME`/`COGNITO_STACK` หรือลบ stack เดิมก่อน
 
+### 4.2.1 Local auth fallback (เมื่อ Cognito ใช้ไม่ได้)
+
+Cognito เป็นค่าเริ่มต้นของ V5; local auth เป็น **fallback สำหรับ demo/lab**
+ที่สร้าง Cognito ไม่ได้เท่านั้น ไม่ได้เปิดใน deployment `cs361` ปัจจุบัน
+
+```bash
+export AUTH_BACKEND=local
+
+./deploy.sh infra --apply       # สร้าง LocalAuthSecret ใน Secrets Manager
+# ข้าม ./deploy.sh cognito
+./deploy.sh backend             # เขียน AUTH_BACKEND=local + LOCAL_AUTH_SECRET
+./deploy.sh local-auth          # backend เรียกให้อัตโนมัติเมื่อ local; รันซ้ำเพื่อ rotate
+./deploy.sh seed --yes
+./deploy.sh status
+```
+
+รายละเอียด:
+
+- `deploy.sh infra` สร้าง secret `LocalAuthSecret` และ SSM
+  `${CONFIG_PREFIX}/local_auth_secret_arn` เฉพาะเมื่อ `AuthBackend=local`
+- `deploy.sh backend` mount `/opt/cs361/local-auth` ไปที่ `/app/storage` ของ container
+  และรัน `local_auth_setup.py`
+- รหัสผ่าน local auth อยู่ที่ `/opt/cs361/local-auth/local-auth-users.txt` บน instance
+  (โหมด `0600`); อ่านผ่าน SSM Session Manager เท่านั้น ห้ามพิมพ์/commit
+- local auth ไม่มี MFA, password reset หรือ federation; ใช้เฉพาะ demo/lab
+- ถ้าจะกลับไปใช้ Cognito อย่าสลับในฐานข้อมูลเดียวกันโดยไม่ล้าง local users
+  เพราะ `users.email` เป็น unique และ local users ใช้ `cognito_sub=local:<email>`;
+  ใช้ stack/DB ใหม่ หรือลบ users ที่ขึ้นต้นด้วย `local:` ก่อน
+
 ### 4.3 Amplify (ถ้ามี token)
 
 ```bash
@@ -457,6 +486,7 @@ aws cloudformation continue-update-rollback --stack-name cs361   # ถ้า UPD
 | ตรวจ | `./deploy.sh check` |
 | สร้าง base | `./deploy.sh infra --apply` |
 | Cognito | `./deploy.sh cognito --apply` |
+| Local auth (fallback) | `AUTH_BACKEND=local ./deploy.sh infra --apply` → `AUTH_BACKEND=local ./deploy.sh backend` (auto local-auth) |
 | Amplify | `GITHUB_TOKEN_SECRET_ARN=... ./deploy.sh amplify --apply` |
 | Fallback frontend | `./deploy.sh frontend --apply` |
 | Backend | `./deploy.sh backend` |

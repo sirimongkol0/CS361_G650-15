@@ -13,6 +13,7 @@
 #   amplify    Amplify app + branch as CloudFormation (needs GITHUB_TOKEN_SECRET_ARN)
 #   frontend   build and start the EC2/Docker fallback frontend on port 3000
 #   backend    upload backend/ and (re)start PostgreSQL + the API over SSM
+#   local-auth create/reset local demo accounts (fallback; needs AUTH_BACKEND=local)
 #   seed       load fictional demo data into cstu_demo (DELETES its data; needs --yes)
 #   schedule   EventBridge Scheduler + SSM backup document + CloudWatch alarm (plan; --apply)
 #   backup     pg_dump the database to s3://<bucket>/backups/ (kept 30 days)
@@ -30,6 +31,7 @@
 # AWS_REGION=us-west-2. Other settings: STACK (default cs361), PROJECT_NAME,
 # CONFIG_PREFIX (default /<project>/config), INSTANCE_PROFILE, INSTANCE_TYPE,
 # CORS_ORIGINS, GITHUB_TOKEN_SECRET_ARN, AMPLIFY_SERVICE_ROLE_ARN,
+# AUTH_BACKEND (cognito default; local is the offline/demo fallback),
 # ALERT_EMAIL, BACKUP_SCHEDULE, BACKUP_RETENTION_DAYS.
 set -euo pipefail
 
@@ -42,6 +44,8 @@ STACK="${STACK:-cs361}"
 PROJECT_NAME="${PROJECT_NAME:-$STACK}"
 LAB_MODE="${LAB_MODE:-auto}"
 CONFIG_PREFIX="${CONFIG_PREFIX:-/$PROJECT_NAME/config}"
+AUTH_BACKEND="${AUTH_BACKEND:-cognito}"
+[[ "$AUTH_BACKEND" == cognito || "$AUTH_BACKEND" == local ]] || { echo "AUTH_BACKEND must be cognito or local" >&2; exit 2; }
 POOL_NAME="${POOL_NAME:-cstu-v5-auth}"      # must match infra/new-account/cognito.yaml
 CLIENT_NAME="${CLIENT_NAME:-cstu-backend}"
 INSTANCE_PROFILE="${INSTANCE_PROFILE:-LabInstanceProfile}"
@@ -201,7 +205,11 @@ step_check() {
   probe aws cloudformation list-stacks --max-items 1
   probe aws ec2 describe-vpcs --max-items 1
   probe aws s3api list-buckets
-  probe aws cognito-idp list-user-pools --max-results 1
+  if [[ "$AUTH_BACKEND" == local ]]; then
+    echo "  INFO  AUTH_BACKEND=local: Cognito probe skipped"
+  else
+    probe aws cognito-idp list-user-pools --max-results 1
+  fi
   probe aws ssm describe-parameters --max-results 1
   probe aws secretsmanager list-secrets --max-results 1
   probe aws scheduler list-schedules --max-results 1
@@ -221,6 +229,7 @@ step_infra() {
     ProjectName="$PROJECT_NAME"
     LabMode="$LAB_MODE"
     InstanceProfileName="$INSTANCE_PROFILE"
+    AuthBackend="$AUTH_BACKEND"
     ConfigPrefix="$CONFIG_PREFIX"
     CorsOrigins="${CORS_ORIGINS:-http://localhost:3000}"
     BackupRetentionDays="${BACKUP_RETENTION_DAYS:-30}"
@@ -230,6 +239,11 @@ step_infra() {
 }
 
 step_cognito() {
+  if [[ "$AUTH_BACKEND" == local ]]; then
+    log "AUTH_BACKEND=local: skipping the Cognito stack"
+    echo "Run with AUTH_BACKEND=cognito to create the User Pool instead."
+    return 0
+  fi
   local params=(
     ProjectName="$PROJECT_NAME"
     PoolName="$POOL_NAME"
@@ -325,7 +339,11 @@ EOF
 
 step_backend() {
   [[ -n "${CORS_ORIGINS:-}" ]] || echo "WARNING: CORS_ORIGINS is not set; the backend will use the Amplify URL, the EC2 frontend URL, or the SSM default."
-  cognito_ids
+  if [[ "$AUTH_BACKEND" == local ]]; then
+    POOL_ID=""; CLIENT_ID=""
+  else
+    cognito_ids
+  fi
   local bucket key version frontend_url
   bucket=$(output BucketName); need "$bucket" "BucketName"
   version=$(date -u +%Y%m%d%H%M%S)
@@ -341,7 +359,14 @@ aws s3 cp "s3://$bucket/$key" app.tgz --region $AWS_REGION
 rm -rf backend && tar xzf app.tgz
 umask 077
 CONFIG_PREFIX='$CONFIG_PREFIX'
+AUTH_BACKEND_VALUE='$AUTH_BACKEND'
 get_param() { aws ssm get-parameter --name "\$CONFIG_PREFIX/\$1" --region $AWS_REGION --query Parameter.Value --output text; }
+if [[ "\$AUTH_BACKEND_VALUE" == "local" ]]; then
+  LOCAL_AUTH_SECRET_ARN=\$(get_param local_auth_secret_arn)
+  LOCAL_AUTH_SECRET=\$(aws secretsmanager get-secret-value --secret-id "\$LOCAL_AUTH_SECRET_ARN" --region $AWS_REGION --query SecretString --output text)
+else
+  LOCAL_AUTH_SECRET=""
+fi
 SECRET_ARN=\$(get_param db_secret_arn)
 SECRET_JSON=\$(aws secretsmanager get-secret-value --secret-id "\$SECRET_ARN" --region $AWS_REGION --query SecretString --output text)
 DB_USER=\$(python3 -c 'import json,sys; print(json.load(sys.stdin)["username"])' <<<"\$SECRET_JSON")
@@ -374,14 +399,18 @@ DATABASE_URL=postgresql://\$DB_USER:\$DB_PASS@cs361-db:5432/\$DB_NAME
 STORAGE_BACKEND=s3
 S3_BUCKET=$bucket
 AWS_REGION=$AWS_REGION
+AUTH_BACKEND=$AUTH_BACKEND
+LOCAL_AUTH_SECRET=\$LOCAL_AUTH_SECRET
 COGNITO_REGION=$AWS_REGION
 COGNITO_USER_POOL_ID=$POOL_ID
 COGNITO_APP_CLIENT_ID=$CLIENT_ID
 CORS_ORIGINS=\$CORS_ORIGINS_VALUE
 ENV
+mkdir -p /opt/cs361/local-auth
 docker build -q -t cs361-backend:$version backend
 docker rm -f cs361-backend 2>/dev/null || true
 docker run -d --name cs361-backend --network cs361 --restart unless-stopped --env-file .env \
+  -v /opt/cs361/local-auth:/app/storage \
   -p 8000:8000 cs361-backend:$version
 for i in \$(seq 1 30); do
   curl -fsS http://localhost:8000/api/v1/health && exit 0
@@ -392,6 +421,18 @@ exit 1
 EOF
 )" "deploy backend $version"
   step_status
+  if [[ "$AUTH_BACKEND" == local ]]; then
+    step_local_auth
+  fi
+}
+
+# Fallback for environments where Cognito cannot be created. Cognito remains
+# the default; this step is a no-op unless AUTH_BACKEND=local.
+step_local_auth() {
+  [[ "$AUTH_BACKEND" == local ]] || die "local-auth requires AUTH_BACKEND=local"
+  run_remote "docker exec cs361-backend python local_auth_setup.py --password-file /app/storage/local-auth-users.txt" "local auth users"
+  echo "Local auth password file: /opt/cs361/local-auth/local-auth-users.txt on the instance (mode 0600)."
+  echo "Read it through SSM Session Manager; do not paste it into chat or commit it."
 }
 
 step_seed() {
@@ -514,5 +555,6 @@ step_teardown() {
 
 case "$STEP" in
   check|infra|cognito|amplify|frontend|backend|seed|schedule|backup|restore|status|teardown) "step_$STEP" ;;
-  *) sed -n '2,38p' "$0"; exit 2 ;;
+  local-auth) step_local_auth ;;
+  *) sed -n '2,35p' "$0"; exit 2 ;;
 esac

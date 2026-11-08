@@ -1,0 +1,30 @@
+V5 auth fallback evidence
+Date: 2026-11-08 (UTC)
+Region: us-west-2
+
+Default (deployed cs361):
+  AUTH_BACKEND is not set -> default "cognito"
+  COGNITO_REGION=us-west-2
+  COGNITO_USER_POOL_ID=us-west-2_91XZumUyS
+  COGNITO_APP_CLIENT_ID=19k8vib1vf3d586cqvppbp4ntu
+  Login admin@example.test via /api/v1/auth/login -> 200, role=admin
+
+Local auth fallback (code only; not enabled on cs361):
+  Tests:
+    backend/.venv/bin/python -m pytest backend/tests/test_local_auth.py -q
+    -> 7 passed
+  Wiring added to V5:
+    - stack.yaml parameter AuthBackend (cognito default, local fallback)
+    - LocalAuthSecret in Secrets Manager only when AuthBackend=local
+    - SSM ${ConfigPrefix}/local_auth_secret_arn
+    - deploy.sh AUTH_BACKEND=local path (skips Cognito stack,
+      writes AUTH_BACKEND/LOCAL_AUTH_SECRET, mounts /opt/cs361/local-auth,
+      runs local_auth_setup.py)
+  Password file on the instance:
+    /opt/cs361/local-auth/local-auth-users.txt (mode 0600)
+    Read via SSM Session Manager only; never commit or paste it.
+
+Caveat:
+  Do not switch Cognito <-> local in the same database without clearing local
+  users: users.email is UNIQUE and local users use cognito_sub=local:<email>.
+  Use a fresh stack/DB or remove local users before switching back to Cognito.

@@ -234,6 +234,25 @@ flowchart LR
 - ถ้า secret เปลี่ยน `deploy.sh backend` จะ `ALTER USER` ให้ตรงกับค่าใหม่ (ไม่พิมพ์รหัสผ่าน)
 - การหมุนรหัสผ่านเป็นขั้น manual: update secret แล้วรัน backend (ดู runbook)
 
+## Authentication: Cognito และ local auth fallback
+
+Cognito เป็นค่าเริ่มต้นของ V5 (`AUTH_BACKEND=cognito`):
+
+- `cs361-cognito` สร้าง user pool, app client และกลุ่มบทบาท
+- backend ใช้ `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, `COGNITO_APP_CLIENT_ID`
+- V5 run นี้ทดสอบ login ผ่าน Cognito แล้ว (role `admin`)
+
+local auth เป็น **fallback** สำหรับ environment ที่สร้าง Cognito ไม่ได้:
+
+- เปิดด้วย `AUTH_BACKEND=local`; ไม่ต้อง deploy stack `cs361-cognito`
+- base stack สร้าง `LocalAuthSecret` ใน Secrets Manager เฉพาะเมื่อ `AuthBackend=local`
+- `deploy.sh backend` เขียน `AUTH_BACKEND`/`LOCAL_AUTH_SECRET` และ mount
+  `/opt/cs361/local-auth` ไปที่ `/app/storage` เพื่อเก็บ password file
+- `local_auth_setup.py` สร้าง/rotate บัญชีทดสอบ; รหัสผ่านอยู่บน instance โหมด `0600`
+- ไม่มี MFA/password reset/federation; ใช้เฉพาะ demo/lab
+- อย่าสลับ Cognito ↔ local ในฐานข้อมูลเดียวกันโดยไม่ล้าง local users
+  (`users.email` unique และ local users ใช้ `cognito_sub=local:<email>`)
+
 ## การสำรองและกู้คืน
 
 ```mermaid

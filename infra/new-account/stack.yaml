@@ -29,6 +29,14 @@ Parameters:
     Type: String
     Default: LabInstanceProfile
     Description: Existing instance profile used when LabMode=true.
+  AuthBackend:
+    Type: String
+    Default: cognito
+    AllowedValues: ['cognito', 'local']
+    Description: >-
+      cognito uses the Cognito stack; local is the offline/demo fallback for
+      environments where Cognito cannot be created. Local auth stores only a
+      salted password hash in PostgreSQL and signs its own short-lived tokens.
   ConfigPrefix:
     Type: String
     Default: /cs361/config
@@ -52,6 +60,8 @@ Conditions:
   # IAM roles are conditional only because Learner Lab forbids creating them.
   # A normal account (the default) gets stack-owned, least-privilege roles.
   CreateAppRole: !Equals [!Ref LabMode, 'false']
+  # Local auth is an explicit fallback; Cognito remains the default.
+  UseLocalAuth: !Equals [!Ref AuthBackend, 'local']
 
 Resources:
   # --- Network: one VPC with one public subnet ------------------------------
@@ -140,6 +150,18 @@ Resources:
         SecretStringTemplate: !Sub '{"username":"${DbUsername}","dbname":"${DbName}"}'
         GenerateStringKey: password
         PasswordLength: 32
+        ExcludePunctuation: true
+
+  # Fallback only: AUTH_BACKEND=local. Cognito remains the default and is
+  # created by the separate cs361-cognito stack. This secret is created only
+  # when the operator explicitly selects local auth.
+  LocalAuthSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: UseLocalAuth
+    DeletionPolicy: Delete
+    Properties:
+      GenerateSecretString:
+        PasswordLength: 48
         ExcludePunctuation: true
 
   # --- Backend identity (normal accounts only) -------------------------------
@@ -269,6 +291,13 @@ Resources:
       Name: !Sub '${ConfigPrefix}/db_secret_arn'
       Type: String
       Value: !Ref DbSecret
+  ConfigLocalAuthSecretArn:
+    Type: AWS::SSM::Parameter
+    Condition: UseLocalAuth
+    Properties:
+      Name: !Sub '${ConfigPrefix}/local_auth_secret_arn'
+      Type: String
+      Value: !Ref LocalAuthSecret
   ConfigInstanceId:
     Type: AWS::SSM::Parameter
     Properties:
@@ -291,6 +320,9 @@ Outputs:
     Value: !Ref DocsBucket
   DbSecretArn:
     Value: !Ref DbSecret
+  LocalAuthSecretArn:
+    Condition: UseLocalAuth
+    Value: !Ref LocalAuthSecret
   ConfigPrefix:
     Value: !Ref ConfigPrefix
   InstanceProfileName:
