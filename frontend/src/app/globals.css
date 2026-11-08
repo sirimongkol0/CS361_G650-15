@@ -332,3 +332,43 @@ a.shadow-card:hover {
 @media (max-width: 768px) {
   body { font-size: 14px; }
 }
+
+/* ---- Print / PDF -------------------------------------------------------
+   "พิมพ์ / PDF" calls window.print(). Setting @page margin to 0 also removes
+   the browser's automatic header/footer (date, URL, page number); the report
+   supplies its own padding below. A4 is the paper used for Thai reports. */
+@media print {
+  @page { size: A4; margin: 0; }
+
+  html, body, [data-slot="sidebar-wrapper"] {
+    background: #fff !important;
+    height: auto;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body { font-size: 12px; }
+
+  /* AppShell is a fixed-height scroll container on screen. Let it flow onto
+     paper and use the page padding instead of each page's p-6 wrapper. */
+  main {
+    padding: 14mm 14mm 16mm !important;
+    overflow: visible !important;
+  }
+  main > div { overflow: visible !important; }
+  main > div > div {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Keep a card or table row on one page. */
+  section.shadow-card, table, tr, .break-inside-avoid { break-inside: avoid; }
+
+  /* On paper these are references, not links. */
+  a { color: inherit !important; text-decoration: none !important; }
+  .shadow-card { box-shadow: none !important; border: 1px solid #e5e7eb; }
+  .badge { border: 1px solid #d1d5db; }
+
+  .print\:hidden { display: none !important; }
+}

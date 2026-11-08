@@ -128,12 +128,12 @@ def seed():
         if any(counts) or db.query(models.Source).count():
             raise RuntimeError("First demo preparation requires an empty dedicated database")
         source = models.Source(
-            source_url="https://cstu-demo.example.test/dataset/v1",
+            source_url=demo_expansion.SOURCE_URL,
             source_title=demo_expansion.SOURCE_TITLE,
             source_publisher=demo_expansion.SOURCE_PUBLISHER,
             source_type="demo_fixture", verification_status="verified",
             source_checked_at=datetime(2026, 10, 2, tzinfo=timezone.utc),
-            source_locator="ตรวจความสอดคล้องของชุดสาธิต ไม่ใช่การรับรองข้อเท็จจริงหรือความร่วมมือจริง",
+            source_locator=demo_expansion.SOURCE_LOCATOR,
         )
         partners = []
         for i, (name, kind, country, code) in enumerate(PARTNERS):

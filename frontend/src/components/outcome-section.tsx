@@ -77,8 +77,10 @@ export function OutcomeSection({ field, id, canAdd, canPublish }: {
     if (await action.run(() => apiDelete(`/outcomes/${row.id}`))) done("ลบผลลัพธ์แล้ว");
   };
 
+  const empty = outcomes.status === "success" && outcomes.data.items.length === 0;
+
   return (
-    <section className="bg-white rounded-base shadow-card p-5">
+    <section className={`bg-white rounded-base shadow-card p-5${empty ? " print:hidden" : ""}`}>
       <div className="flex items-center justify-between mb-3 gap-2">
         <h2 className="font-bold text-ink">ผลลัพธ์</h2>
         {canAdd && <button type="button" className="btn btn-outline gap-1 print:hidden" onClick={() => open("new")}><Plus className="w-3.5 h-3.5" />เพิ่มผลลัพธ์</button>}

@@ -234,6 +234,54 @@ def link_student_exchanges(db, email: str):
 # (still invented) names. The NOTICE line at the start of descriptions stays:
 # it is what marks the whole dataset as fictional, and the demo UI hides it.
 
+# A few early demo records used wordplay instead of names ("Firewall-Tan",
+# "Test-Suk"). Rename only people with no agreement attached to them.
+PARTNER_RENAMES = {
+    "คุณภูมิ ไบต์ทอง (ศิษย์เก่ารุ่น 12)": "คุณกิตติภูมิ พงษ์สุวรรณ (ศิษย์เก่ารุ่น 12)",
+    "คุณพลอย เทสต์สุข (ศิษย์เก่ารุ่น 15)": "คุณพลอยไพลิน เจริญสุข (ศิษย์เก่ารุ่น 15)",
+    "Dr. Lin Firewall-Tan": "Dr. Lin Tan",
+    "คุณกันต์ คอมไพล์ผ่าน (ศิษย์เก่ารุ่น 9)": "คุณกันต์ ธีรวงศ์ (ศิษย์เก่ารุ่น 9)",
+    "คุณฟ้า ดีพลอยไว (ศิษย์เก่ารุ่น 17)": "คุณฟ้า วัชรศิลป์ (ศิษย์เก่ารุ่น 17)",
+}
+
+# Displayed contact details. Keyed by the partner's final name. The domains end
+# in the reserved .test TLD, so they read like ordinary addresses without
+# pointing at a real organisation.
+PARTNER_PROFILES = {
+    "มหาวิทยาลัยรุ่งอรุณวิทยา": ("ผศ.ดร.กิตติพงษ์ วงศ์ไทย", "kittipong.w", "rungaroon"),
+    "Sakuragaoka Institute of Technology": ("Yuki Tanaka", "yuki.tanaka", "sakuragaoka-it"),
+    "บริษัท โค้ดช่างฝีมือ จำกัด (CodeCraft Studio)": ("คุณธนกฤต พึ่งบุญ", "thanakrit.p", "codecraft-studio"),
+    "บริษัท สะพานข้อมูล อนาไลติกส์ จำกัด": ("คุณพิมพ์ชนก อินทร์แก้ว", "pimchanok.i", "saphan-data"),
+    "สถาบันวิจัยนวัตกรรมดิจิทัลแม่โขง": ("ดร.วีรยุทธ ทองคำ", "weerayut.t", "mekong-digital"),
+    "สมาคมนักพัฒนาซอฟต์แวร์สยาม": ("คุณอรอุมา จันทร์เพ็ญ", "oruma.c", "siam-dev"),
+    "คุณกิตติภูมิ พงษ์สุวรรณ (ศิษย์เก่ารุ่น 12)": ("คุณกิตติภูมิ พงษ์สุวรรณ", "kittiphum.p", "kittiphum-p"),
+    "คุณพลอยไพลิน เจริญสุข (ศิษย์เก่ารุ่น 15)": ("คุณพลอยไพลิน เจริญสุข", "ploypailin.c", "ploypailin-c"),
+    "ดร.ปัญญา ประดิษฐ์กุล": ("ดร.ปัญญา ประดิษฐ์กุล", "panya.p", "panya-p"),
+    "Dr. Lin Tan": ("Dr. Lin Tan", "lin.tan", "lin-tan"),
+    "Asia Pacific Learning Alliance (APLA)": ("Maria Santos", "maria.santos", "apla"),
+    "บริษัท ม่านหมอก ซอฟต์แวร์ จำกัด": ("คุณนภัสวรรณ ศรีสุข", "naphaswan.s", "manmok-software"),
+    "Golden Dragon University of Science": ("Li Wei", "li.wei", "golden-dragon"),
+    "Hangang Institute of Digital Media": ("Park Ji-woo", "jiwoo.park", "hangang"),
+    "Southbank Polytechnic University": ("Emma Walker", "emma.walker", "southbank"),
+    "Riverside College of Computing": ("James Whitfield", "james.whitfield", "riverside-computing"),
+    "มหาวิทยาลัยดอยดาวเทคโนโลยี": ("ผศ.ดร.ณัฐวดี ศรีอรุณ", "natthawadee.s", "doidao"),
+    "มหาวิทยาลัยคลื่นอันดามันวิทยา": ("อ.ดร.จิราพร ปัญญาดี", "jiraporn.p", "andaman-wave"),
+    "Saigon Lotus University": ("Nguyen Thi Mai", "mai.nguyen", "saigon-lotus"),
+    "บริษัท รังเมฆ คลาวด์ จำกัด (CloudNest)": ("คุณปวีณา บุญมา", "paweena.b", "cloudnest"),
+    "บริษัท ยามไซเบอร์ จำกัด (CyberGuard)": ("คุณชยพล สายทอง", "chayaphon.s", "cyberguard"),
+    "บริษัท เหรียญเรือง ฟินเทค จำกัด": ("คุณสุภาวดี มีสุข", "supawadee.m", "rianrueng-fintech"),
+    "Pixel Fox Game Studio": ("Haruto Sato", "haruto.sato", "pixelfox"),
+    "Merlion SmartFreight Pte. Ltd.": ("Wei Ming Lim", "weiming.lim", "merlion-smartfreight"),
+    "สำนักงานรัฐไร้กระดาษ": ("คุณอนุชา ศรีวงศ์", "anucha.s", "paperless-office"),
+    "สถาบันข้อมูลสะอาดแห่งชาติ": ("คุณศิริพร แก้วมณี", "siriporn.k", "clean-data"),
+    "วิทยาลัยเทคนิคบางนาช่างไฟ": ("อาจารย์สมชาย ใจดี", "somchai.j", "bangna-tech"),
+    "โรงพยาบาลหมอดิจิทัล": ("นพ.ปรีชา สุขสวัสดิ์", "precha.s", "digital-doctor"),
+    "ASEAN Open Source Collective": ("Aisyah Rahman", "aisyah.rahman", "asean-oss"),
+    "คุณกันต์ ธีรวงศ์ (ศิษย์เก่ารุ่น 9)": ("คุณกันต์ ธีรวงศ์", "kan.t", "kan-t"),
+    "คุณฟ้า วัชรศิลป์ (ศิษย์เก่ารุ่น 17)": ("คุณฟ้า วัชรศิลป์", "fa.w", "fa-w"),
+    "Dr. Klaus Datenberg": ("Dr. Klaus Datenberg", "klaus.datenberg", "klaus-datenberg"),
+}
+
 CONTACT_NAMES = [
     "คุณนภัสวรรณ ศรีสุข", "คุณกิตติพงษ์ วงศ์ไทย", "คุณศิริพร แก้วมณี", "คุณธนกฤต พึ่งบุญ",
     "คุณพิมพ์ชนก อินทร์แก้ว", "คุณวีรยุทธ ทองคำ", "คุณอรอุมา จันทร์เพ็ญ", "คุณณัฐพล รุ่งเรือง",
@@ -245,8 +293,12 @@ LECTURER_NAMES = [
 ]
 SIGNER_OUR = "รศ.ดร.ประภาพร อินทรสุวรรณ"
 # The dataset's source, listed under "ที่มาของข้อมูล" on every detail page.
-SOURCE_TITLE = "ชุดข้อมูลสาธิต CSTU"
-SOURCE_PUBLISHER = "รายวิชา CS361"
+# It reads like an internal registry; source_type=demo_fixture still marks it as
+# sample data in the UI.
+SOURCE_TITLE = "ทะเบียนข้อตกลงและกิจกรรมความร่วมมือ"
+SOURCE_PUBLISHER = "งานวิเทศสัมพันธ์ คณะวิทยาศาสตร์และเทคโนโลยี"
+SOURCE_URL = "https://registry.cstu.test/collaboration/2569"
+SOURCE_LOCATOR = "รวบรวมจากทะเบียนข้อตกลง รายงานกิจกรรม และแบบประเมินผลของหลักสูตร"
 PARTNER_SIGNER_NAMES = ["คุณสมเกียรติ ธนากร", "คุณรัชนี พงษ์พานิช", "คุณประเสริฐ วงศ์สวัสดิ์", "คุณมาลัย เกษมสุข"]
 # Students get a surname picked by their first name, so one student's records agree.
 SURNAMES = ["ศรีวงศ์", "วัฒนกุล", "ทองสกุล", "ชัยมงคล", "เจริญศักดิ์", "พรหมมา", "แสงอรุณ", "บุญประเสริฐ",
@@ -300,8 +352,169 @@ def _labelled(value):
     return bool(value) and "สมมติ" in value
 
 
-def naturalize_demo(db) -> int:
-    """Rewrite the demo's 'สมมติ' names and text in place; returns rows changed."""
+_THAI_MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"]
+_GENERATED_ACTIVITY = re.compile(r"^.+? (?P<topic>.+?) #\d+$")
+_DOC_TOPIC = re.compile(r"^(?:MoU|MoA) (?P<topic>.+?) กับ ")
+_GENERATED_FEEDBACK = re.compile(r"^ความคิดเห็นที่ \d+ ต่อ ")
+_TEST_PREFIX = ("FT-", "DEMO-", "LT-")
+
+
+def _is_test_record(value):
+    return bool(value) and value.startswith(_TEST_PREFIX)
+
+
+def _join_th(prefix, text):
+    """Join a Thai prefix to a Thai or English topic with natural spacing."""
+    text = (text or "").strip()
+    if not text:
+        return prefix
+    return f"{prefix}{text}" if not text[0].isascii() else f"{prefix} {text}"
+
+
+def _month_year(value):
+    return f"{_THAI_MONTHS[value.month - 1]} {value.year + 543}"
+
+
+def _short_partner(name):
+    if not name:
+        return "หน่วยงานคู่ความร่วมมือ"
+    name = re.sub(r"\s*\(.*?\)\s*$", "", name).strip()
+    for prefix in ("บริษัท ", "มหาวิทยาลัย", "สถาบัน", "สมาคม", "สำนักงาน", "วิทยาลัย", "โรงพยาบาล"):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+            break
+    for suffix in (" จำกัด", " Pte. Ltd.", " Co., Ltd."):
+        if name.endswith(suffix):
+            name = name[:-len(suffix)]
+            break
+    return name.strip() or "หน่วยงานคู่ความร่วมมือ"
+
+
+def _natural_activity_name(kind, topic, partner_name, when):
+    short = _short_partner(partner_name)
+    suffix = f" ({_month_year(when)})" if when else ""
+    if kind == "collaboration_meeting":
+        return f"ประชุมความร่วมมือกับ {short} เรื่อง {topic}{suffix}"
+    if kind == "exchange":
+        return f"แลกเปลี่ยนนักศึกษากับ {short} ด้าน {topic}{suffix}"
+    if kind == "academic_visit":
+        return f"เยี่ยมชม {short} ด้าน {topic}{suffix}"
+    if kind == "student_workshop_competition":
+        return _join_th("เวิร์กช็อป", topic) + suffix
+    if kind == "student_activity":
+        return _join_th("กิจกรรมนักศึกษา", topic) + suffix
+    if kind == "engineering_camp":
+        return _join_th("ค่าย", topic) + suffix
+    if kind == "official_event":
+        return _join_th("พิธีเปิดงาน", topic) + suffix
+    if kind == "international_conference":
+        return _join_th("การประชุมนานาชาติด้าน", topic) + suffix
+    return _join_th("สัมมนา", topic) + suffix
+
+
+_ACTIVITY_DESCRIPTIONS = {
+    "seminar": "บรรยายและแลกเปลี่ยนความคิดเห็นเรื่อง {topic} โดยมีวิทยากรจาก {partner} "
+               "นักศึกษาได้ซักถามและร่วมอภิปรายหลังการบรรยาย",
+    "collaboration_meeting": "ประชุมหารือความร่วมมือกับ {partner} เรื่อง {topic} "
+                             "เพื่อกำหนดแผนกิจกรรม ผู้รับผิดชอบ และช่วงเวลาจัดงานในภาคการศึกษาถัดไป",
+    "exchange": "นักศึกษาแลกเปลี่ยนระยะสั้นกับ {partner} ด้าน {topic} ประกอบด้วยการเรียนร่วม "
+                "โครงงานกลุ่ม และการเยี่ยมชมสถานประกอบการ",
+    "student_workshop_competition": "เวิร์กช็อปภาคปฏิบัติเรื่อง {topic} แบ่งกลุ่มลงมือทำ "
+                                    "และนำเสนอผลงานเมื่อจบกิจกรรม",
+    "academic_visit": "เยี่ยมชมทีมวิจัยและห้องปฏิบัติการของ {partner} เพื่อเตรียมความร่วมมือด้าน {topic}",
+    "student_activity": "กิจกรรมเสริมหลักสูตรเรื่อง {topic} เปิดโอกาสให้นักศึกษาได้รู้จักเพื่อนต่างชั้นปี "
+                        "และฝึกทักษะการทำงานเป็นทีม",
+    "engineering_camp": "ค่ายเข้มข้นด้าน {topic} สำหรับนักศึกษาที่สนใจ มีทั้งบรรยาย ฝึกปฏิบัติ "
+                        "และการแข่งขันแบบทีม",
+    "official_event": "พิธีเปิดกิจกรรมความร่วมมือด้าน {topic} โดยมีผู้บริหาร คณาจารย์ "
+                      "และตัวแทนจาก {partner} เข้าร่วม",
+    "international_conference": "การประชุมวิชาการนานาชาติด้าน {topic} มีผู้แทนจากมหาวิทยาลัย "
+                                "และภาคอุตสาหกรรมร่วมนำเสนอผลงาน",
+}
+
+
+def _activity_description(kind, topic, partner_name):
+    short = _short_partner(partner_name)
+    text = _ACTIVITY_DESCRIPTIONS.get(
+        kind, "กิจกรรมความร่วมมือด้าน {topic} กับ {partner} สำหรับนักศึกษาและอาจารย์ของหลักสูตร"
+    ).format(topic=topic, partner=short)
+    return f"{NOTICE}\n\n{text}"
+
+
+FEEDBACK_VOICES = {
+    5: [
+        ("อยากให้จัดกิจกรรมแบบนี้อีก",
+         "เนื้อหาตรงกับงานจริงและได้ลงมือทำเต็มที่ วิทยากรอธิบายละเอียด "
+         "อยากให้จัดต่อเนื่องทุกภาคการศึกษา"),
+        ("คุ้มค่ากับเวลาที่มา",
+         "ได้เห็นขั้นตอนการทำงานจริงและได้ลองทำเอง นักศึกษาหลายคนสนใจสมัครฝึกงานต่อ"),
+        ("ได้ไอเดียกลับไปทำโครงงาน",
+         "กิจกรรมกระชับแต่มีตัวอย่างให้ดูครบ ได้คำแนะนำเรื่องโครงงานเพิ่มเติมจากพี่เลี้ยง"),
+    ],
+    4: [
+        ("มีประโยชน์ แต่อยากให้มีเวลาฝึกมากขึ้น",
+         "เนื้อหาเข้าใจง่ายและได้ลงมือทำจริง แต่ช่วงฝึกปฏิบัติน้อยไปหน่อย "
+         "อยากให้เพิ่มอีกราวครึ่งวัน"),
+        ("วิทยากรอธิบายเข้าใจง่าย",
+         "การบรรยายชัดเจนและยกตัวอย่างใกล้ตัว อยากให้มีเอกสารประกอบแจกเพิ่ม"),
+        ("จัดเวลาได้กระชับ",
+         "ได้ประโยชน์คุ้มเวลา แต่อยากให้เปิดรับผู้เข้าร่วมมากขึ้น"),
+    ],
+    3: [
+        ("เนื้อหาดี แต่ประชาสัมพันธ์ช้า",
+         "เพิ่งทราบกำหนดการใกล้วันจัด ทำให้เตรียมตัวไม่ทัน "
+         "อยากให้ประกาศล่วงหน้าอย่างน้อยสองสัปดาห์"),
+        ("อยากให้เพิ่มช่วงถามตอบ",
+         "เนื้อหาครบแต่เวลาถามตอบน้อย หลายคำถามยังไม่ได้คุยต่อ"),
+        ("โดยรวมโอเค แต่ห้องแน่นไปหน่อย",
+         "ผู้เข้าร่วมเกินที่นั่งเล็กน้อย ทำให้เดินดูฐานกิจกรรมไม่สะดวก"),
+    ],
+    2: [
+        ("กำหนดการเปลี่ยนบ่อย",
+         "มีการเลื่อนวันและเวลาหลายครั้ง ทำให้วางแผนเข้าร่วมยาก"),
+        ("เวลาจัดทับกับวิชาอื่น",
+         "นักศึกษาหลายคนติดเรียน จึงเข้าร่วมได้ไม่เต็มเวลา"),
+    ],
+    1: [
+        ("อุปกรณ์และสถานที่ยังไม่พร้อม",
+         "โปรเจกเตอร์และอินเทอร์เน็ตใช้งานไม่ได้ช่วงเริ่มกิจกรรม ต้องรอแก้ไขนาน"),
+        ("การจัดงานล่าช้ากว่ากำหนด",
+         "เริ่มกิจกรรมช้ากว่ากำหนดเกือบหนึ่งชั่วโมงและไม่มีประกาศแจ้ง"),
+    ],
+}
+
+# One name per student, so the 30 exchange rows do not reuse a handful of names.
+# Two linked rows of the same account share a name (see naturalize_demo).
+EXCHANGE_NAMES = [
+    "ฟ้า วัฒนกุล", "ใบเฟิร์น รัตนพันธ์", "กันต์ ธีรวงศ์", "ธัญ ชัยมงคล", "มายด์ มณีรัตน์",
+    "ต้น ปัญญาวงศ์", "พิม บุญประเสริฐ", "ปาล์ม ศรีสวัสดิ์", "ภูมิ พรหมมา", "ปุณ สุขเจริญ",
+    "ไอซ์ แสงอรุณ", "แนน ทองดี", "มิ้นท์ อินทร์ทอง", "โอ๊ต วัชรศิลป์", "บีม เจริญสุข",
+    "พลอย พงษ์สุวรรณ", "กวาง ศรีวงศ์", "นิว สายทอง", "เจมส์ มีสุข", "แตงโม บุญมา",
+    "หยก ใจดี", "ข้าวหอม สุขสวัสดิ์", "สายฝน วัฒนศิลป์", "ตะวัน รุ่งเรือง", "นาวา จันทร์เพ็ญ",
+    "อร ทองคำ", "อิง แก้วมณี", "จูน พึ่งบุญ", "เฟิร์น อินทร์แก้ว", "พีช เกษมสุข",
+]
+
+_OUTCOME_REWRITES = [
+    ("ผู้เข้าร่วมกิจกรรม", "ผู้เข้าร่วมปฐมนิเทศนักศึกษาแลกเปลี่ยน รุ่น 1",
+     "นักศึกษาแลกเปลี่ยนรุ่นแรกเข้าร่วมปฐมนิเทศครบตามจำนวนที่รับ"),
+    ("ผลงานจากการแลกเปลี่ยน", "รายงานสรุปผลการแลกเปลี่ยนระยะสั้น",
+     "รายงานสรุปผลการแลกเปลี่ยนและข้อเสนอสำหรับรุ่นถัดไป"),
+    ("งบสนับสนุนจากข้อตกลง", "งบสนับสนุนกิจกรรมความร่วมมือ",
+     "งบประมาณสนับสนุนการจัดกิจกรรมตามข้อตกลงความร่วมมือ"),
+    ("นักศึกษาฝึกงานกับหน่วยงาน", "นักศึกษาที่ได้รับเข้าฝึกงาน",
+     "นักศึกษาที่ได้รับเข้าฝึกงานกับหน่วยงานหลังจบโครงการ"),
+]
+
+
+def naturalize_demo(db, today=None) -> int:
+    """Give the fictional demo ordinary-looking data in place; returns rows changed.
+
+    Runs on every seed so an existing demo picks up the same touch-ups without
+    adding rows. Only rows whose current values are the generated placeholders
+    are rewritten, which keeps the function idempotent.
+    """
+    today = today or date.today()
     changed = set()
 
     def put(row, field, value):
@@ -310,11 +523,30 @@ def naturalize_demo(db) -> int:
             changed.add((type(row).__name__, row.id))
 
     for source in db.query(models.Source).filter(models.Source.source_type == "demo_fixture").all():
-        if _labelled(source.source_title) or _labelled(source.source_publisher):
+        if not source.source_title or _labelled(source.source_title) or source.source_title.startswith("ชุดข้อมูลสาธิต"):
             put(source, "source_title", SOURCE_TITLE)
+        if not source.source_publisher or _labelled(source.source_publisher) or source.source_publisher == "รายวิชา CS361":
             put(source, "source_publisher", SOURCE_PUBLISHER)
+        if source.source_url == "https://cstu-demo.example.test/dataset/v1":
+            put(source, "source_url", SOURCE_URL)
+        if not source.source_locator or "ตรวจความสอดคล้องของชุดสาธิต" in source.source_locator:
+            put(source, "source_locator", SOURCE_LOCATOR)
     for partner in db.query(models.Partner).all():
-        if _labelled(partner.contact_name):
+        final_name = PARTNER_RENAMES.get(partner.name, partner.name)
+        if final_name != partner.name:
+            put(partner, "name", final_name)
+        profile = PARTNER_PROFILES.get(final_name)
+        if profile:
+            contact_name, local_part, domain = profile
+            # Replace only the generated placeholders, so a contact edited later
+            # through the UI survives the next seed.
+            if _labelled(partner.contact_name) or not partner.contact_name:
+                put(partner, "contact_name", contact_name)
+            if not partner.contact_email or re.fullmatch(r"contact-\d+@example\.test", partner.contact_email):
+                put(partner, "contact_email", f"{local_part}@{domain}.test")
+            if not partner.website_url or re.fullmatch(r"https://stakeholder-\d+\.example\.test", partner.website_url):
+                put(partner, "website_url", f"https://{domain}.test")
+        elif _labelled(partner.contact_name):
             put(partner, "contact_name", CONTACT_NAMES[partner.id % len(CONTACT_NAMES)])
         put(partner, "description", naturalize(partner.description))
     for doc in db.query(models.Document).all():
@@ -325,18 +557,101 @@ def naturalize_demo(db) -> int:
         if _labelled(doc.signer_partner):
             put(doc, "signer_partner", PARTNER_SIGNER_NAMES[doc.id % len(PARTNER_SIGNER_NAMES)])
         put(doc, "file_name", naturalize(doc.file_name))
+        topic_match = _DOC_TOPIC.match(doc.name)
         for item in doc.scope_items:
-            put(item, "text", naturalize(item.text))
+            if topic_match and item.text.startswith("ขอบเขต: กิจกรรมสาธิต"):
+                put(item, "text", f"ขอบเขต: กิจกรรมร่วมด้าน{topic_match.group('topic')} "
+                                  "การแลกเปลี่ยนบุคลากร และการพัฒนานักศึกษา")
+            else:
+                put(item, "text", naturalize(item.text))
     for activity in db.query(models.Activity).all():
         put(activity, "description", naturalize(activity.description))
         put(activity, "location", naturalize(activity.location))
-    for row in db.query(models.ExchangeStudent).all():
-        for field in ("name", "from_program", "to_organization"):
+        match = _GENERATED_ACTIVITY.match(activity.name)
+        if not match:
+            continue
+        topic = match.group("topic").strip()
+        partner_name = activity.partner.name if activity.partner else None
+        put(activity, "name", _natural_activity_name(
+            activity.activity_type, topic, partner_name, activity.date))
+        put(activity, "description", _activity_description(
+            activity.activity_type, topic, partner_name))
+        if activity.date and activity.date_kind == "event" and not activity.is_deleted:
+            end = activity.end_date or activity.date
+            if end < today:
+                status = "เสร็จสิ้น"
+            elif activity.date <= today:
+                status = "กำลังดำเนินการ"
+            else:
+                status = "วางแผน"
+            put(activity, "status", status)
+            if status == "เสร็จสิ้น" and activity.participants is None:
+                put(activity, "participants", 15 + (activity.id * 7) % 106)
+            elif status == "วางแผน":
+                put(activity, "participants", None)
+    seen_users = {}
+    user_records = {}
+    next_name = 0
+    for row in db.query(models.ExchangeStudent).order_by(models.ExchangeStudent.id).all():
+        if row.owner_user_id is not None or _is_test_record(row.name):
+            continue
+        if row.user_id is not None and row.user_id in seen_users:
+            name = seen_users[row.user_id]
+        else:
+            name = EXCHANGE_NAMES[next_name % len(EXCHANGE_NAMES)]
+            next_name += 1
+            if row.user_id is not None:
+                seen_users[row.user_id] = name
+        put(row, "name", name)
+        if row.start_date and row.start_date.day == 1:
+            delta = timedelta(days=(row.id * 3) % 9)
+            put(row, "start_date", row.start_date + delta)
+            if row.end_date:
+                put(row, "end_date", row.end_date + delta)
+        if row.user_id is not None:
+            user_records.setdefault(row.user_id, []).append(row)
+        elif row.start_date and row.end_date:
+            if row.end_date < today:
+                status = "เสร็จสิ้น"
+            elif row.start_date <= today:
+                status = "กำลังดำเนินการ"
+            else:
+                status = "วางแผน"
+            put(row, "status", status)
+        for field in ("from_program", "to_organization"):
             put(row, field, naturalize(getattr(row, field)))
-        first, _, last = row.name.partition(" ")
-        if last in _OLD_SURNAMES:  # renamed before the wider surname list
-            put(row, "name", student_name(first))
+    # The demo student should see one finished and one current exchange, even
+    # after the original end date passes while this dataset is still in use.
+    for rows in user_records.values():
+        if len(rows) < 2 or any(row.status == "กำลังดำเนินการ" for row in rows):
+            continue
+        current = max(rows, key=lambda row: (row.end_date or row.start_date or date.min, row.id))
+        if current.start_date and current.start_date <= today:
+            put(current, "status", "กำลังดำเนินการ")
+            if not current.end_date or current.end_date < today + timedelta(days=30):
+                put(current, "end_date", date(today.year, 12, 31))
     for row in db.query(models.Feedback).all():
-        put(row, "title", naturalize(row.title))
-        put(row, "comment", naturalize(row.comment))
+        natural_title = naturalize(row.title)
+        voices = FEEDBACK_VOICES.get(row.rating)
+        # Fresh seeds still carry "ความคิดเห็นสมมติ #N: ..." here; older demos
+        # carry its naturalised form. Both should become a human headline.
+        if voices and (_GENERATED_FEEDBACK.match(row.title) or _GENERATED_FEEDBACK.match(natural_title)):
+            title, comment = voices[row.id % len(voices)]
+            put(row, "title", title)
+            put(row, "comment", comment)
+        else:
+            put(row, "title", natural_title)
+            put(row, "comment", naturalize(row.comment))
+    for outcome in db.query(models.Outcome).all():
+        if "ข้อมูลทดสอบ" not in (outcome.title or ""):
+            continue
+        for prefix, title, description in _OUTCOME_REWRITES:
+            if outcome.title.startswith(prefix):
+                put(outcome, "title", title)
+                put(outcome, "description", description)
+                if prefix == "ผู้เข้าร่วมกิจกรรม" and outcome.activity and outcome.activity.participants:
+                    put(outcome, "value", outcome.activity.participants)
+                break
+        else:
+            put(outcome, "title", outcome.title.replace(" (ข้อมูลทดสอบ V4-2)", ""))
     return len(changed)

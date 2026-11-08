@@ -330,7 +330,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {showTop && (
           <button
             type="button"
-            className="fixed bottom-5 right-5 z-30 rounded-full bg-crimson p-2.5 text-white shadow-card hover:opacity-90 animate-scale-in"
+            className="fixed bottom-5 right-5 z-30 rounded-full bg-crimson p-2.5 text-white shadow-card hover:opacity-90 animate-scale-in print:hidden"
             onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
             aria-label="กลับขึ้นด้านบน"
             title="กลับขึ้นด้านบน"
