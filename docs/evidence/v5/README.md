@@ -20,7 +20,8 @@
 | `v5-6-alert.txt` | #123 จำลอง backup ล้มเหลว |
 | `v5-7-ci.txt` | #124 cfn-lint/cfn-guard |
 | `v5-7-drift.txt` | #124 drift detection |
-| `v5-8-full-run.txt` | #125 ลำดับและเวลาที่รันจริง |
+| `v5-8-full-run.txt` | #125 ลำดับและเวลาที่รันจริง (stack cs361) |
+| `v5-8-recreate.txt` | #125 clean recreate stack cs361-v5r + teardown/purge |
 
 ## ข้อควรระวัง
 
