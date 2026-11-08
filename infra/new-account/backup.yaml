@@ -1,0 +1,175 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CS361 automated database backups: an SNS alert topic, an SSM Command
+  document that runs /opt/cs361/backup.sh on the backend instance, an
+  EventBridge Scheduler schedule, and a CloudWatch alarm that fires when a
+  backup fails or no success is reported.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cs361
+    AllowedPattern: '[a-z0-9-]+'
+    Description: Prefix for resource names; must match the base stack.
+  InstanceId:
+    Type: String
+    AllowedPattern: '^i-[0-9a-f]{8,17}$'
+    Description: Backend EC2 instance ID (the base stack InstanceId output).
+  BucketName:
+    Type: String
+    Description: S3 bucket that stores backups (the base stack BucketName output).
+  SchedulerRoleArn:
+    Type: String
+    Description: >-
+      ARN of a role trusted by scheduler.amazonaws.com with ssm:SendCommand on
+      the backup document and the instance. Use the base stack SchedulerRoleArn
+      output, or the LabRole ARN in a Learner Lab.
+  AlertEmail:
+    Type: String
+    Default: ''
+    Description: Optional email address for backup alerts; leave empty for none.
+  BackupSchedule:
+    Type: String
+    Default: rate(1 day)
+    Description: EventBridge Scheduler expression for automatic backups.
+  RetentionDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 3650
+    Description: >-
+      Backup retention in days. Stored in SSM for operators; expiry itself is
+      enforced by the S3 bucket lifecycle rule in the base stack.
+  ConfigPrefix:
+    Type: String
+    Default: /cs361/config
+    AllowedPattern: '^/[a-zA-Z0-9_./-]+$'
+    Description: SSM Parameter Store prefix shared with the base stack.
+
+Conditions:
+  HasAlertEmail: !Not [!Equals [!Ref AlertEmail, '']]
+
+Resources:
+  BackupTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-backup-alerts'
+      DisplayName: CS361 backup alerts
+
+  # The default topic policy does not always let CloudWatch publish, so grant
+  # the alarm service explicitly while keeping account-root administration.
+  BackupTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref BackupTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAccountOwner
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action:
+              - SNS:GetTopicAttributes
+              - SNS:SetTopicAttributes
+              - SNS:AddPermission
+              - SNS:RemovePermission
+              - SNS:DeleteTopic
+              - SNS:Subscribe
+              - SNS:ListSubscriptionsByTopic
+              - SNS:Publish
+            Resource: !Ref BackupTopic
+          - Sid: AllowCloudWatchAlarms
+            Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action: SNS:Publish
+            Resource: !Ref BackupTopic
+
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlertEmail
+    Properties:
+      TopicArn: !Ref BackupTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  BackupTopicParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '${ConfigPrefix}/backup_topic_arn'
+      Type: String
+      Value: !Ref BackupTopic
+      Description: SNS topic ARN for CS361 backup alerts.
+
+  RetentionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '${ConfigPrefix}/backup_retention_days'
+      Type: String
+      Value: !Ref RetentionDays
+      Description: CS361 backup retention in days.
+
+  # deploy.sh uploads backup.sh to /opt/cs361/backup.sh. A Command document
+  # keeps the scheduled invocation short and visible in SSM Run Command history.
+  BackupDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      Name: !Sub '${ProjectName}-backup'
+      DocumentType: Command
+      Content:
+        schemaVersion: '2.2'
+        description: Dump cstu_demo to S3 and report the result.
+        mainSteps:
+          - action: aws:runShellScript
+            name: backup
+            inputs:
+              timeoutSeconds: '1800'
+              runCommand:
+                - !Sub "CONFIG_PREFIX='${ConfigPrefix}' /opt/cs361/backup.sh backup"
+
+  BackupScheduleResource:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: !Sub '${ProjectName}-backup'
+      ScheduleExpression: !Ref BackupSchedule
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State: ENABLED
+      Target:
+        # SSM has no templated Scheduler target; use the universal target and
+        # pass the SendCommand request body in Input.
+        Arn: !Sub 'arn:${AWS::Partition}:scheduler:::aws-sdk:ssm:sendCommand'
+        RoleArn: !Ref SchedulerRoleArn
+        Input: !Sub '{"DocumentName":"${BackupDocument}","InstanceIds":["${InstanceId}"]}'
+
+  BackupAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-backup-failed'
+      AlarmDescription: !Sub >-
+        No successful CS361 database backup to ${BucketName} was reported in
+        the last day, or the latest backup run reported failure.
+      Namespace: CS361/Backup
+      MetricName: BackupSuccess
+      Statistic: Minimum
+      Unit: Count
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref BackupTopic
+
+Outputs:
+  TopicArn:
+    Description: SNS topic ARN for backup alerts.
+    Value: !Ref BackupTopic
+  BackupDocumentName:
+    Description: SSM Command document that runs the backup.
+    Value: !Ref BackupDocument
+  ScheduleName:
+    Description: EventBridge Scheduler schedule that runs the backup.
+    Value: !Ref BackupScheduleResource
