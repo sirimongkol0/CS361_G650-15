@@ -41,6 +41,8 @@ jobs:
     name: Lint templates and policy rules
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The nightly schedule only needs the drift job; lint unchanged code daily.
+    if: github.event_name != 'schedule'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -94,10 +96,13 @@ jobs:
     timeout-minutes: 30
     # The self-hosted runner is the lab EC2 instance. A PR can change this
     # workflow, so only add the infra-plan label after reviewing the PR.
+    # Set repository variable ENABLE_SELF_HOSTED_CI=true after installing the
+    # runner; otherwise this job is skipped instead of queuing forever.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.labels.*.name, 'infra-plan'))
+      vars.ENABLE_SELF_HOSTED_CI == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'infra-plan')))
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -206,7 +211,10 @@ jobs:
     name: Detect stack drift
     runs-on: [self-hosted, cs361]
     timeout-minutes: 30
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # Requires the self-hosted runner; see the ENABLE_SELF_HOSTED_CI note above.
+    if: >-
+      vars.ENABLE_SELF_HOSTED_CI == 'true' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -365,6 +365,16 @@ sudo ./svc.sh start
 `RUNNER_TOKEN` เอามาจาก GitHub → Settings → Actions → Runners → New self-hosted runner
 (token อายุสั้น; ไม่เก็บใน repo) ตรวจว่า runner ออนไลน์ใน GitHub
 
+หลัง runner ออนไลน์ ให้ตั้ง repository variable:
+
+```text
+Settings → Secrets and variables → Actions → Variables
+ENABLE_SELF_HOSTED_CI = true
+```
+
+ถ้าไม่ตั้ง `plan`/`drift` จะถูก skip (กันไม่ให้ scheduled job ค้าง/FAIL
+ตอนที่ยังไม่มี runner)
+
 ### 6.3 Workflow ตัวอย่าง (ยังไม่อยู่ใน repo)
 
 ใช้ `workflow_dispatch` เพื่อไม่ให้ deploy ทุก push โดยไม่ตั้งใจ:

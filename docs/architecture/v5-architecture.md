@@ -315,7 +315,8 @@ sequenceDiagram
 CI ไม่ deploy อัตโนมัติ; การ apply ยังเป็นคำสั่งของคนหรือ runner ที่ได้รับอนุญาต
 runner ใช้ `LabInstanceProfile`; ไม่มี OIDC หรือ AWS secret ใน workflow
 
-CI เป็นด่านตรวจก่อน merge ไม่ใช่ตัวแทนการทดสอบใน Lab
+- `plan`/`drift` ต้องมี self-hosted runner `cs361` และ repository variable `ENABLE_SELF_HOSTED_CI=true`; ถ้าไม่ตั้งจะถูก skip
+- CI เป็นด่านตรวจก่อน merge ไม่ใช่ตัวแทนการทดสอบใน Lab
 ผลรันจริงต้องบันทึกใน [v5-validation.md](../evidence/v5-validation.md)
 
 ## ค่าใช้จ่ายโดยประมาณ
