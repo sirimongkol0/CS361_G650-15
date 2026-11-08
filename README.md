@@ -82,8 +82,6 @@ Secrets Manager, backup ทำงานตาม schedule และ CI ตรว
 | ไฟล์ | ใช้กับ | วิธีสร้าง |
 |---|---|---|
 | `.env` | `docker-compose.yml` (ไม่บังคับ) | `cp .env.example .env` แล้วแก้เฉพาะค่าที่ต้องการ |
-| `.env.cstu` | `docker-compose.cstu.yml` | `cp .env.cstu.example .env.cstu` แล้วตั้ง `CSTU_DATABASE_PASSWORD` |
-| `.env.demo-s3` | `docker-compose.demo-s3.yml` | ดู [เดโมบน S3](docs/demo-s3.md) |
 
 ค่าที่ต้องตั้งเพื่อให้ล็อกอินได้ (ไม่ใช่ความลับ สร้างได้ด้วย `infra/provision_cognito.py`):
 
@@ -116,16 +114,7 @@ docker compose -f docker-compose.demo.yml up --build -d --wait
 ```
 
 เปิด http://localhost:3100/dashboard/public ทุกหน้ามีป้ายบอกว่าเป็นข้อมูลสมมติ
-ดู [คู่มือเดโมข้อมูลสมมติ](docs/demo-fictional.md) และถ้าต้องการอ่านไฟล์จาก S3 ให้เพิ่ม `-f docker-compose.demo-s3.yml`
-
-### Docker: ฐานข้อมูล CSTU จริง
-
-```bash
-docker compose --env-file .env.cstu -f docker-compose.cstu.yml up --build -d --wait
-python scripts/smoke_test.py --api http://localhost:3000/api/v1
-```
-
-ดูการตั้งรหัสผ่าน การเก็บข้อมูลถาวร และการสลับไปใช้ RDS ที่ [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
+ดู [คู่มือเดโมข้อมูลสมมติ](docs/demo-fictional.md)
 
 ### Local: ไม่ใช้ Docker
 
@@ -169,9 +158,9 @@ cd frontend && npm run lint && npm run test:display && npm run build
 - [ขอบเขตหลักสูตร CSTU และแผนพัฒนา](docs/decisions/cstu-program-scope.md)
 - [คู่มือคำศัพท์และน้ำเสียงหน้าเว็บ](docs/ui-writing-guide-th.md)
 - [การ deploy V5: CloudFormation + EC2 + SSM/Secrets + fallback frontend](docs/architecture/v5-architecture.md#ลำดับการ-deploy) · [การ deploy V4: Amplify + EC2 (API + PostgreSQL) + S3](docs/architecture/v4-architecture.md#การ-deploy-v4) · [การ deploy V2–V3: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
-- [คู่มือติดตั้ง](docs/setup/README-th.md) · [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
+- [คู่มือติดตั้ง](docs/setup/README-th.md)
 - [สัญญา field ของ API](docs/api/v2-field-contract.md)
-- [เดโมข้อมูลสมมติ](docs/demo-fictional.md) · [เดโมบน S3](docs/demo-s3.md) · [ฐานเดโมบน RDS](docs/demo-rds.md)
+- [เดโมข้อมูลสมมติ](docs/demo-fictional.md)
 
 **ประวัติ V1:** [สถาปัตยกรรม](docs/architecture/v1-architecture-th.md) ·
 [สัญญา API](docs/api/v1-api-contract-th.md) ·
