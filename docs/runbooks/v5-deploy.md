@@ -182,6 +182,39 @@ curl -fsS "$FRONT/dashboard/public" >/dev/null && echo "frontend OK: $FRONT"
 เครื่อง t3.micro มี RAM 1 GB; build frontend อาจช้า ให้รอหรือเพิ่ม `INSTANCE_TYPE`
 ระหว่าง build ควรหลีกเลี่ยงการ build frontend พร้อม backend
 
+### 4.4.1 HTTPS ด้วย Caddy (sslip.io)
+
+ต้องมี frontend container รันอยู่ก่อน (ข้อ 4.4) และ security group เปิด 80/443
+(`stack.yaml` เปิดไว้แล้ว)
+
+```bash
+# ไม่ต้องตั้ง SITE_DOMAIN ก็ได้: ค่าเริ่มต้นคือ <Elastic-IP>.sslip.io
+./deploy.sh tls
+```
+
+ค่าเริ่มต้นจะได้:
+
+```text
+https://<Elastic-IP>.sslip.io/dashboard/public
+```
+
+ถ้ามีโดเมนจริง ให้ชี้ A record มาที่ Elastic IP แล้วรัน:
+
+```bash
+SITE_DOMAIN=cs361.example.com ./deploy.sh tls
+```
+
+Caddy จะขอ certificate จาก Let's Encrypt อัตโนมัติ และเก็บ cert ไว้ที่
+`/opt/cs361/caddy` บน EBS (อยู่ต่อหลัง restart)
+Caddy reverse proxy ไปที่ `cs361-frontend:3000`; frontend proxy `/api/v1`
+ไป backend ภายใน Docker network เดิม
+
+ข้อจำกัด:
+- ต้องเปิด 80/443 และ DNS ต้องชี้มาที่ EIP
+- ถ้า EIP เปลี่ยน ต้องรัน `tls` ใหม่ (ปกติ EIP คงที่)
+- API port 8000 ยังเปิดแบบ HTTP สำหรับ fallback/Amplify path; ถ้าต้องการปิด
+  ให้ทำเป็น hardening แยก (ต้องแก้ `ApiBaseUrl`/health check ด้วย)
+
 ### 4.5 Backend
 
 ```bash
@@ -489,6 +522,7 @@ aws cloudformation continue-update-rollback --stack-name cs361   # ถ้า UPD
 | Local auth (fallback) | `AUTH_BACKEND=local ./deploy.sh infra --apply` → `AUTH_BACKEND=local ./deploy.sh backend` (auto local-auth) |
 | Amplify | `GITHUB_TOKEN_SECRET_ARN=... ./deploy.sh amplify --apply` |
 | Fallback frontend | `./deploy.sh frontend --apply` |
+| HTTPS (Caddy) | `./deploy.sh tls` (หรือ `SITE_DOMAIN=... ./deploy.sh tls`) |
 | Backend | `./deploy.sh backend` |
 | Seed | `./deploy.sh seed --yes` |
 | Schedule | `ALERT_EMAIL=... ./deploy.sh schedule --apply` |

@@ -96,8 +96,12 @@ flowchart TB
 ### Base stack
 
 - **Network**: VPC `10.40.0.0/16`, public subnet เดียว, internet gateway, route table
-- **Security group**: เปิด `8000` (API) และ `3000` (fallback frontend) จาก `0.0.0.0/0`
+- **Security group**: เปิด `80`/`443` (Caddy HTTPS), `8000` (API) และ `3000`
+  (fallback frontend) จาก `0.0.0.0/0`
   **ไม่เปิดพอร์ต 22**; PostgreSQL ไม่ถูก publish ออกนอก Docker network
+- **HTTPS edge (optional)**: `deploy.sh tls` รัน Caddy บน instance (พอร์ต 80/443)
+  ขอ certificate จาก Let's Encrypt สำหรับ `<Elastic-IP>.sslip.io` หรือ `SITE_DOMAIN`
+  แล้ว reverse proxy ไป `cs361-frontend:3000`; cert/data อยู่ใต้ `/opt/cs361/caddy`
 - **EC2**: `t3.micro`, Amazon Linux 2023, EBS gp3 20 GB เข้ารหัส, swap 2 GB สำหรับ build
   และ IMDSv2 บังคับ (`HttpTokens: required`)
 - **Elastic IP**: ทำให้ `ApiBaseUrl` และ `API_PROXY_TARGET` ไม่เปลี่ยนเมื่อ stop/start
@@ -157,6 +161,7 @@ sequenceDiagram
 | 2 | `./deploy.sh infra --apply` | stack `cs361` CREATE/UPDATE_COMPLETE และ outputs ครบ | เป็นฐานของทุก stack; ให้ instance, bucket, secret, SSM |
 | 3 | `./deploy.sh cognito --apply` | stack `cs361-cognito` และ pool/client/group | backend ต้องใช้ pool ID/client ID |
 | 4 | `./deploy.sh amplify --apply` หรือ `./deploy.sh frontend --apply` | Amplify app/branch หรือ frontend container :3000 | ให้ URL สำหรับ CORS และหน้าเว็บ |
+| 4.1 | `./deploy.sh tls` | Caddy 80/443 + certificate + `https://<domain>` | ต้องมี frontend container ก่อน; SG เปิด 80/443 |
 | 5 | `./deploy.sh backend` | `/api/v1/health` ผ่าน | อ่าน secret/SSM และเริ่ม DB/API |
 | 6 | `./deploy.sh seed --yes` | ข้อมูลสมมติใน `cstu_demo` | ต้องมี backend image และ DB ก่อน |
 | 7 | `./deploy.sh schedule --apply` | backup stack และ schedule ENABLED | ต้องมี instance ID, bucket และ topic ก่อน |
@@ -363,7 +368,9 @@ V5 ไม่ได้เพิ่ม load balancer, Multi-AZ หรือ RDS �
   (แต่ schedule `cs361-backup` ถูกทดสอบแล้วว่า ENABLED และรันสำเร็จใน session ที่เปิดอยู่)
 - **Runner ยังไม่ผูก workflow backend**: V5-5 ปิด; CI `plan`/`drift` ใช้ runner
   แต่ workflow deploy backend เป็นขั้นถัดไป
-- **ไม่มี HTTPS ระหว่าง frontend กับ API**: fallback ใช้ HTTP :8000/:3000
+- **HTTPS ถึง browser แล้ว** ผ่าน Caddy; แต่ Caddy → frontend/backend เป็น HTTP
+  ภายใน Docker และ API `:8000` ยังเปิด HTTP สำหรับ fallback/Amplify path
+  (ถ้าต้องการปิด 8000 ต้องแก้ `ApiBaseUrl`/health check และทดสอบ path อื่น)
 - **ไม่มี Multi-AZ/load balancer**: EC2 เครื่องเดียวและ PostgreSQL container เดียว
 - **CI workflow**: lint/cfn-guard ผ่านในเครื่องแล้ว; GitHub Actions ยังไม่รันใน session นี้
   เพราะไม่ push; ต้องตรวจผล Actions เมื่อเปิด PR

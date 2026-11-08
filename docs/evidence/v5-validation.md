@@ -66,6 +66,9 @@ cd infra/new-account
 > Auth: `cs361` ใช้ Cognito (login 200 role=admin); local auth fallback มี tests
 > ผ่าน 7 tests และ wiring `AUTH_BACKEND=local` พร้อมใช้ แต่ยังไม่เปิดใน run นี้
 > (ดู `v5/v5-auth-fallback.txt`)
+>
+> HTTPS: `https://32.189.5.234.sslip.io/dashboard/public` ผ่าน Caddy +
+> Let's Encrypt; page/API 200 (ดู `v5/v5-tls.txt`)
 
 ## รายละเอียดคำสั่ง
 

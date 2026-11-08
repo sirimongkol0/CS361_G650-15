@@ -24,6 +24,7 @@ infra/new-account/deploy.sh check
 infra/new-account/deploy.sh infra --apply
 infra/new-account/deploy.sh cognito --apply
 infra/new-account/deploy.sh frontend --apply   # หรือ amplify --apply เมื่อมี token
+infra/new-account/deploy.sh tls                # HTTPS ด้วย Caddy + sslip.io
 infra/new-account/deploy.sh backend
 infra/new-account/deploy.sh seed --yes
 infra/new-account/deploy.sh schedule --apply

@@ -1,0 +1,14 @@
+# HTTPS edge for the V5 EC2 fallback frontend.
+# Caddy obtains a Let's Encrypt certificate for SITE_DOMAIN automatically.
+# The Next.js container already proxies /api/v1 to the backend on the Docker
+# network, so Caddy only needs to expose the frontend.
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy cs361-frontend:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}

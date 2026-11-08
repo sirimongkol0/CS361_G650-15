@@ -12,6 +12,7 @@
 #   cognito    User Pool, app client and role groups as CloudFormation (plan; --apply)
 #   amplify    Amplify app + branch as CloudFormation (needs GITHUB_TOKEN_SECRET_ARN)
 #   frontend   build and start the EC2/Docker fallback frontend on port 3000
+#   tls        run Caddy on the instance and issue an HTTPS certificate
 #   backend    upload backend/ and (re)start PostgreSQL + the API over SSM
 #   local-auth create/reset local demo accounts (fallback; needs AUTH_BACKEND=local)
 #   seed       load fictional demo data into cstu_demo (DELETES its data; needs --yes)
@@ -32,6 +33,7 @@
 # CONFIG_PREFIX (default /<project>/config), INSTANCE_PROFILE, INSTANCE_TYPE,
 # CORS_ORIGINS, GITHUB_TOKEN_SECRET_ARN, AMPLIFY_SERVICE_ROLE_ARN,
 # AUTH_BACKEND (cognito default; local is the offline/demo fallback),
+# SITE_DOMAIN (default <EIP>.sslip.io for the Caddy HTTPS step),
 # ALERT_EMAIL, BACKUP_SCHEDULE, BACKUP_RETENTION_DAYS.
 set -euo pipefail
 
@@ -337,6 +339,41 @@ EOF
   log "Fallback frontend: $(output FrontendUrl)"
 }
 
+# HTTPS edge: Caddy terminates TLS for the fallback frontend. The frontend
+# already proxies /api/v1 to the backend on the Docker network, so the API port
+# does not need to be exposed to the browser.
+step_tls() {
+  local api host site caddyfile
+  api=$(output ApiBaseUrl); need "$api" "ApiBaseUrl"
+  host=$(printf '%s' "$api" | sed -E 's#^https?://##; s#:[0-9]+$##')
+  site="${SITE_DOMAIN:-$host.sslip.io}"
+  [[ "$site" =~ ^[A-Za-z0-9.-]+$ ]] || die "SITE_DOMAIN must be a hostname"
+  caddyfile=$(base64 -w0 "$ROOT/infra/new-account/Caddyfile" 2>/dev/null || base64 "$ROOT/infra/new-account/Caddyfile" | tr -d '\n')
+  log "Starting Caddy for https://$site"
+  run_remote "$(cat <<EOF
+set -euo pipefail
+docker inspect cs361-frontend >/dev/null 2>&1 || { echo "cs361-frontend container not found; run frontend --apply first" >&2; exit 1; }
+mkdir -p /opt/cs361/caddy/data /opt/cs361/caddy/config
+echo '$caddyfile' | base64 -d > /opt/cs361/Caddyfile
+docker rm -f cs361-caddy 2>/dev/null || true
+docker run -d --name cs361-caddy --network cs361 --restart unless-stopped \
+  -p 80:80 -p 443:443 \
+  -e SITE_DOMAIN='$site' \
+  -v /opt/cs361/caddy/data:/data \
+  -v /opt/cs361/caddy/config:/config \
+  -v /opt/cs361/Caddyfile:/etc/caddy/Caddyfile:ro \
+  caddy:2-alpine
+for i in \$(seq 1 60); do
+  curl -fsS "https://$site/dashboard/public" >/dev/null && echo "HTTPS ready: https://$site" && exit 0
+  sleep 5
+done
+docker logs --tail 80 cs361-caddy
+exit 1
+EOF
+)" "start Caddy TLS"
+  echo "HTTPS URL: https://$site/dashboard/public"
+}
+
 step_backend() {
   [[ -n "${CORS_ORIGINS:-}" ]] || echo "WARNING: CORS_ORIGINS is not set; the backend will use the Amplify URL, the EC2 frontend URL, or the SSM default."
   if [[ "$AUTH_BACKEND" == local ]]; then
@@ -554,7 +591,7 @@ step_teardown() {
 }
 
 case "$STEP" in
-  check|infra|cognito|amplify|frontend|backend|seed|schedule|backup|restore|status|teardown) "step_$STEP" ;;
+  check|infra|cognito|amplify|frontend|tls|backend|seed|schedule|backup|restore|status|teardown) "step_$STEP" ;;
   local-auth) step_local_auth ;;
-  *) sed -n '2,35p' "$0"; exit 2 ;;
+  *) sed -n '2,36p' "$0"; exit 2 ;;
 esac
