@@ -31,7 +31,7 @@ Security group:
 Notes:
 - Caddy stores certificates under /opt/cs361/caddy on the instance EBS.
 - The frontend proxies /api/v1 to cs361-backend:8000 inside Docker.
-- API port 8000 remains open over HTTP for the Amplify/fallback path; closing
+- API port 8000 remains open over HTTP for the fallback path; closing
   it is a separate hardening step.
 - For a real domain: point an A record at the Elastic IP and run
   SITE_DOMAIN=cs361.example.com deploy.sh tls

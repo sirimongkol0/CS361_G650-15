@@ -5,344 +5,189 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>V5 Deploy Architecture</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --ink: #232f3e;
-      --muted: #545b64;
-      --rule: #d5dbdb;
-      --badge: #1a73e8;
-      --v5: #0f766e;
-      --v5-tint: #e6f4f1;
-      --lab: #8c4fff;
-      --lab-tint: #f3edff;
-      --font: 'Helvetica Neue', Arial, 'Noto Sans Thai', sans-serif;
-      --mono: Consolas, Menlo, monospace;
+      --mute: #545b64;
+      --line: #d5dbdb;
+      --paper: #ffffff;
+      --soft: #f4f7f8;
+      --aws: #ff9900;
+      --crimson: #8a1538;
+      --blue: #2f6fb3;
+      --green: #2e7d5b;
     }
-    body { font-family: var(--font); background: #ffffff; color: var(--ink); padding: 2rem 1rem; }
-    .frame { max-width: 1120px; margin: 0 auto; }
-    h1 { font-size: 1.45rem; font-weight: 600; margin-bottom: 0.35rem; }
-    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.5; }
-    .scroll { overflow-x: auto; }
-    svg { width: 100%; min-width: 900px; display: block; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1.25rem; font-size: 0.85rem; }
-    th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
-    th { color: var(--muted); font-weight: 600; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    code { font-family: var(--mono); font-size: 0.8rem; background: #f2f3f3; padding: 0 0.25rem; border-radius: 3px; }
-    .n { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: var(--badge); color: #fff; font-weight: 700; font-size: 0.75rem; align-items: center; justify-content: center; }
-    .cards { display: grid; grid-template-columns: 1.1fr 1fr 0.95fr; gap: 1rem; margin-top: 1.25rem; font-size: 0.85rem; line-height: 1.6; }
-    .card { border: 1px solid var(--rule); border-radius: 5px; padding: 0.95rem 1rem; }
-    .card.v5 { border-color: var(--v5); background: var(--v5-tint); }
-    .card.lab { border-color: var(--lab); background: var(--lab-tint); }
-    .card h3 { font-size: 0.85rem; margin-bottom: 0.35rem; }
-    .card ul { padding-left: 1.1rem; color: var(--muted); }
-    .note { color: var(--muted); font-size: 0.8rem; margin-top: 1rem; line-height: 1.6; }
-    @media (max-width: 820px) { .cards { grid-template-columns: 1fr; } }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--soft);
+      color: var(--ink);
+      font-family: "Noto Sans Thai", "Segoe UI", Tahoma, sans-serif;
+      line-height: 1.55;
+    }
+    .page { max-width: 1180px; margin: 0 auto; }
+    header { margin-bottom: 22px; }
+    h1 { margin: 0 0 6px; font-size: 28px; color: var(--crimson); }
+    .sub { margin: 0; color: var(--mute); font-size: 14px; }
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    h3 { margin: 0 0 6px; font-size: 14px; }
+    p, li { font-size: 14px; }
+    .flow { display: grid; grid-template-columns: 1fr 46px 1.4fr; gap: 12px; align-items: center; }
+    .flow + .flow { margin-top: 12px; }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #fbfcfd;
+    }
+    .box.aws { border-top: 4px solid var(--aws); }
+    .box.cfn { border-top: 4px solid var(--blue); }
+    .box.edge { border-top: 4px solid var(--green); }
+    .box.auth { border-top: 4px solid var(--crimson); }
+    .arrow { text-align: center; color: var(--mute); font-size: 22px; }
+    .tag {
+      display: inline-block; padding: 1px 7px; border-radius: 999px;
+      background: #eef2f5; color: var(--mute); font-size: 11px; margin-left: 6px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .muted { color: var(--mute); font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: #eef2f5; }
+    code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+    .note { border-left: 4px solid var(--crimson); background: #fff6f8; padding: 10px 12px; border-radius: 6px; }
+    @media (max-width: 760px) {
+      body { padding: 14px; }
+      .flow { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <div class="frame">
-    <h1>สถาปัตยกรรมการ deploy ระบบ V5</h1>
-    <p class="subtitle">
-      CS361 G650-15 · automation / IaC · CloudFormation 4 stacks + Cognito + Amplify หรือ fallback บน EC2
-      · Learner Lab <code>us-west-2</code> · บัญชีปกติ <code>ap-southeast-2</code>
-    </p>
+<div class="page">
+  <header>
+    <h1>สถาปัตยกรรม V5 — Automation / IaC</h1>
+    <p class="sub">CloudFormation 3 stacks + EC2 backend/PostgreSQL + Next.js บน EC2 + Caddy HTTPS + SSM/Secrets + backup</p>
+  </header>
 
-    <div class="scroll">
-    <svg viewBox="0 0 1120 830" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="v5-deploy-title v5-deploy-desc" font-family="'Helvetica Neue', Arial, 'Noto Sans Thai', sans-serif">
-      <title id="v5-deploy-title">สถาปัตยกรรมการ deploy ระบบ V5</title>
-      <desc id="v5-deploy-desc">ผู้ดูแลรัน deploy.sh จาก CloudShell หรือเครื่องตัวเองเพื่อสร้าง CloudFormation stack สี่ชุด คือ base cs361, Cognito cs361-cognito, Amplify cs361-amplify และ backup cs361-backup จากนั้น deploy backend ผ่าน SSM Run Command ไปยัง EC2 ที่รัน FastAPI และ PostgreSQL พร้อม frontend fallback บนพอร์ต 3000 ระบบใช้ SSM Parameter Store และ Secrets Manager สำหรับ config, S3 สำหรับไฟล์และ backup, EventBridge Scheduler และ SNS สำหรับ backup และแจ้งเตือน GitHub Actions ตรวจ template ด้วย cfn-lint และ cfn-guard พร้อม self-hosted runner สำหรับ job plan และ drift</desc>
-      <defs>
-        <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#232f3e"/></marker>
-        <marker id="arr-soft" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#545b64"/></marker>
-        <marker id="arr-v5" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0f766e"/></marker>
-        <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
-          <path d="M16 0H0V16" fill="none" stroke="#eef0f2" stroke-width="1"/>
-        </pattern>
-      </defs>
-
-      <rect width="1120" height="830" fill="#ffffff"/>
-      <rect width="1120" height="830" fill="url(#grid)"/>
-
-      <!-- ===== GitHub ===== -->
-      <rect x="20" y="20" width="340" height="160" fill="#f7f8f8" stroke="#232f3e" stroke-width="1.1"/>
-      <text x="36" y="42" fill="#232f3e" font-size="11" font-weight="700">GitHub</text>
-      <rect x="40" y="60" width="130" height="50" rx="3" fill="#ffffff" stroke="#545b64"/>
-      <text x="52" y="80" fill="#232f3e" font-size="10" font-weight="700">Repository</text>
-      <text x="52" y="94" fill="#545b64" font-size="9">main · backend/ · infra/</text>
-      <rect x="185" y="60" width="155" height="50" rx="3" fill="#ffffff" stroke="#0f766e"/>
-      <text x="197" y="80" fill="#0f766e" font-size="10" font-weight="700">Actions infra.yml</text>
-      <text x="197" y="94" fill="#545b64" font-size="8.5">cfn-lint · cfn-guard · drift</text>
-      <rect x="185" y="120" width="155" height="45" rx="3" fill="#ffffff" stroke="#8c4fff" stroke-dasharray="4,3"/>
-      <text x="197" y="139" fill="#6b2fd6" font-size="10" font-weight="700">Self-hosted runner</text>
-      <text x="197" y="153" fill="#545b64" font-size="9">CI plan/drift · EC2 · LabRole</text>
-      <line x1="170" y1="85" x2="185" y2="85" stroke="#545b64" stroke-width="1.1" marker-end="url(#arr-soft)"/>
-      <text x="40" y="132" fill="#545b64" font-size="9">push main → Amplify build</text>
-      <text x="40" y="146" fill="#545b64" font-size="9">(ถ้ามี token)</text>
-
-      <!-- ===== Operator ===== -->
-      <rect x="760" y="20" width="340" height="160" fill="#f7f8f8" stroke="#232f3e" stroke-width="1.1"/>
-      <text x="776" y="42" fill="#232f3e" font-size="11" font-weight="700">Operator</text>
-      <rect x="780" y="60" width="140" height="50" rx="3" fill="#ffffff" stroke="#545b64"/>
-      <text x="792" y="80" fill="#232f3e" font-size="10" font-weight="700">CloudShell / laptop</text>
-      <text x="792" y="94" fill="#545b64" font-size="9">AWS CLI v2 · boto3</text>
-      <rect x="940" y="60" width="140" height="50" rx="3" fill="#ffffff" stroke="#0f766e"/>
-      <text x="952" y="80" fill="#0f766e" font-size="10" font-weight="700">deploy.sh</text>
-      <text x="952" y="94" fill="#545b64" font-size="9">plan / apply / status</text>
-      <line x1="920" y1="85" x2="940" y2="85" stroke="#232f3e" stroke-width="1.1" marker-end="url(#arr)"/>
-      <text x="780" y="132" fill="#545b64" font-size="9">manual bootstrap: GitHub PAT, SNS email,</text>
-      <text x="780" y="146" fill="#545b64" font-size="9">runner (ถ้าใช้), seed --yes, restore --yes</text>
-
-      <!-- ===== AWS Cloud ===== -->
-      <rect x="20" y="200" width="1080" height="590" fill="#ffffff" stroke="#232f3e" stroke-width="1.2"/>
-      <rect x="20" y="200" width="40" height="32" fill="#232f3e"/>
-      <text x="40" y="221" fill="#ffffff" font-size="13" font-weight="700" text-anchor="middle">aws</text>
-      <path d="M29 225 q11 5 22 0" fill="none" stroke="#ff9900" stroke-width="1.6"/>
-      <text x="70" y="220" fill="#232f3e" font-size="12" font-weight="700">AWS Cloud</text>
-
-      <!-- ===== CloudFormation stacks ===== -->
-      <rect x="40" y="240" width="1040" height="150" fill="#f7f8f8" stroke="#147eba" stroke-width="1.1" stroke-dasharray="6,4"/>
-      <text x="80" y="260" fill="#232f3e" font-size="10" font-weight="700">CloudFormation stacks</text>
-      <text x="760" y="254" fill="#545b64" font-size="10">Region us-west-2 (Lab) / ap-southeast-2</text>
-
-      <rect x="55" y="272" width="235" height="100" rx="3" fill="#e6f4f1" stroke="#0f766e" stroke-width="1.2"/>
-      <text x="68" y="292" fill="#0f5f5a" font-size="11" font-weight="700">cs361</text>
-      <text x="68" y="306" fill="#545b64" font-size="9" font-family="Consolas, Menlo, monospace">stack.yaml</text>
-      <text x="68" y="324" fill="#232f3e" font-size="9">VPC · EC2 · EIP · S3 · secret</text>
-      <text x="68" y="337" fill="#232f3e" font-size="9">SSM params · IAM (conditional)</text>
-      <text x="68" y="350" fill="#545b64" font-size="9">outputs: InstanceId, ApiBaseUrl, ...</text>
-
-      <rect x="310" y="272" width="235" height="100" rx="3" fill="#ffffff" stroke="#545b64" stroke-width="1.1"/>
-      <text x="323" y="292" fill="#232f3e" font-size="11" font-weight="700">cs361-cognito</text>
-      <text x="323" y="306" fill="#545b64" font-size="9" font-family="Consolas, Menlo, monospace">cognito.yaml</text>
-      <text x="323" y="324" fill="#232f3e" font-size="9">pool cstu-v5-auth · client</text>
-      <text x="323" y="337" fill="#232f3e" font-size="9">groups: public/student/.../admin</text>
-      <text x="323" y="350" fill="#545b64" font-size="9">SSM: pool id · client id</text>
-
-      <rect x="565" y="272" width="235" height="100" rx="3" fill="#ffffff" stroke="#8c4fff" stroke-width="1.2" stroke-dasharray="5,3"/>
-      <text x="578" y="292" fill="#6b2fd6" font-size="11" font-weight="700">cs361-amplify</text>
-      <text x="578" y="306" fill="#545b64" font-size="9" font-family="Consolas, Menlo, monospace">amplify.yaml</text>
-      <text x="578" y="324" fill="#232f3e" font-size="9">app WEB_COMPUTE · branch main</text>
-      <text x="578" y="337" fill="#232f3e" font-size="9">สร้างเมื่อมี OauthTokenSecretArn</text>
-      <text x="578" y="350" fill="#545b64" font-size="9">SSM: amplify_url · outputs</text>
-
-      <rect x="820" y="272" width="235" height="100" rx="3" fill="#ffffff" stroke="#0f766e" stroke-width="1.1"/>
-      <text x="833" y="292" fill="#0f5f5a" font-size="11" font-weight="700">cs361-backup</text>
-      <text x="833" y="306" fill="#545b64" font-size="9" font-family="Consolas, Menlo, monospace">backup.yaml</text>
-      <text x="833" y="324" fill="#232f3e" font-size="9">SNS topic · SSM document</text>
-      <text x="833" y="337" fill="#232f3e" font-size="9">Scheduler rate(1 day) · alarm</text>
-      <text x="833" y="350" fill="#545b64" font-size="9">reads InstanceId/Bucket/RoleArn</text>
-
-      <!-- ===== EC2 ===== -->
-      <rect x="40" y="430" width="470" height="300" fill="#ffffff" stroke="#ed7100" stroke-width="1.2"/>
-      <rect x="40" y="430" width="32" height="32" fill="#ed7100"/>
-      <rect x="49" y="439" width="14" height="14" fill="none" stroke="#fff" stroke-width="1.6"/>
-      <path d="M53 435v4M59 435v4M53 453v4M59 453v4M45 443h4M45 449h4M63 443h4M63 449h4" stroke="#fff" stroke-width="1.3"/>
-      <text x="80" y="444" fill="#232f3e" font-size="11" font-weight="700">EC2 cs361-backend</text>
-      <text x="80" y="458" fill="#545b64" font-size="9">t3.micro · Amazon Linux 2023 · no SSH · IMDSv2</text>
-
-      <rect x="60" y="475" width="200" height="95" rx="4" fill="#f4f8fe" stroke="#1d63ed" stroke-width="1"/>
-      <text x="72" y="494" fill="#232f3e" font-size="10" font-weight="700">cs361-backend</text>
-      <text x="72" y="508" fill="#545b64" font-size="9">FastAPI · :8000</text>
-      <text x="72" y="524" fill="#232f3e" font-size="9">reads SSM + Secrets Manager</text>
-      <text x="72" y="537" fill="#232f3e" font-size="9">health /api/v1/health</text>
-
-      <rect x="275" y="475" width="215" height="95" rx="4" fill="#ffffff" stroke="#545b64" stroke-width="1"/>
-      <text x="287" y="494" fill="#232f3e" font-size="10" font-weight="700">cs361-db</text>
-      <text x="287" y="508" fill="#545b64" font-size="9">PostgreSQL 16 · :5432</text>
-      <text x="287" y="524" fill="#232f3e" font-size="9">Docker network cs361</text>
-      <text x="287" y="537" fill="#232f3e" font-size="9">pgdata on EBS gp3</text>
-
-      <line x1="260" y1="522" x2="275" y2="522" stroke="#232f3e" stroke-width="1.1" marker-end="url(#arr)"/>
-      <text x="266" y="516" fill="#545b64" font-size="8" text-anchor="middle">SQL</text>
-
-      <rect x="60" y="595" width="430" height="80" rx="4" fill="#f3edff" stroke="#8c4fff" stroke-width="1.1"/>
-      <text x="72" y="614" fill="#6b2fd6" font-size="10" font-weight="700">cs361-frontend (fallback)</text>
-      <text x="72" y="628" fill="#545b64" font-size="9">Next.js · :3000 · proxy /api/v1 → http://cs361-backend:8000</text>
-      <text x="72" y="644" fill="#232f3e" font-size="9">ใช้เมื่อไม่มี GitHub token หรือ Amplify build ไม่ผ่าน</text>
-      <text x="72" y="660" fill="#545b64" font-size="9">CORS: ใช้ same-origin proxy หรือตั้ง CORS_ORIGINS</text>
-
-      <!-- frontend proxy -->
-      <text x="282" y="586" fill="#545b64" font-size="8">proxy</text>
-
-      <!-- ===== Runtime services ===== -->
-      <rect x="535" y="430" width="160" height="90" rx="3" fill="#ffffff" stroke="#3f8624" stroke-width="1.1"/>
-      <text x="547" y="449" fill="#232f3e" font-size="10" font-weight="700">S3</text>
-      <text x="547" y="463" fill="#545b64" font-size="9">cs361-docs-ACCOUNT</text>
-      <text x="547" y="479" fill="#232f3e" font-size="9">PDF · imports</text>
-      <text x="547" y="493" fill="#232f3e" font-size="9">backups/ (30 days)</text>
-      <text x="547" y="507" fill="#545b64" font-size="8">versioning · SSE · private</text>
-
-      <rect x="715" y="430" width="160" height="90" rx="3" fill="#ffffff" stroke="#dd344c" stroke-width="1.1"/>
-      <text x="727" y="449" fill="#232f3e" font-size="10" font-weight="700">Cognito</text>
-      <text x="727" y="463" fill="#545b64" font-size="9">cstu-v5-auth</text>
-      <text x="727" y="479" fill="#232f3e" font-size="9">user pool + client</text>
-      <text x="727" y="493" fill="#232f3e" font-size="9">groups ตามบทบาท</text>
-      <text x="727" y="507" fill="#545b64" font-size="8">JWKS ตรวจ token</text>
-
-      <rect x="895" y="430" width="185" height="90" rx="3" fill="#f3edff" stroke="#8c4fff" stroke-width="1.1" stroke-dasharray="5,3"/>
-      <text x="907" y="449" fill="#6b2fd6" font-size="10" font-weight="700">Amplify Hosting</text>
-      <text x="907" y="463" fill="#545b64" font-size="9">app + branch main</text>
-      <text x="907" y="479" fill="#232f3e" font-size="9">WEB_COMPUTE</text>
-      <text x="907" y="493" fill="#232f3e" font-size="9">API_PROXY_TARGET → EIP:8000</text>
-      <text x="907" y="507" fill="#545b64" font-size="8">build ยังไม่ยืนยันใน Lab</text>
-
-      <rect x="535" y="550" width="160" height="80" rx="3" fill="#ffffff" stroke="#0f766e" stroke-width="1.1"/>
-      <text x="547" y="569" fill="#232f3e" font-size="10" font-weight="700">SSM Parameter Store</text>
-      <text x="547" y="583" fill="#545b64" font-size="9">/cs361/config/*</text>
-      <text x="547" y="599" fill="#232f3e" font-size="9">bucket · region · CORS</text>
-      <text x="547" y="613" fill="#232f3e" font-size="9">secret ARN · IDs · URLs</text>
-
-      <rect x="715" y="550" width="160" height="80" rx="3" fill="#ffffff" stroke="#dd344c" stroke-width="1.1"/>
-      <text x="727" y="569" fill="#232f3e" font-size="10" font-weight="700">Secrets Manager</text>
-      <text x="727" y="583" fill="#545b64" font-size="9">DB secret JSON</text>
-      <text x="727" y="599" fill="#232f3e" font-size="9">username · dbname</text>
-      <text x="727" y="613" fill="#232f3e" font-size="9">password (generated)</text>
-
-      <rect x="895" y="550" width="90" height="80" rx="3" fill="#ffffff" stroke="#545b64" stroke-width="1.1"/>
-      <text x="907" y="569" fill="#232f3e" font-size="10" font-weight="700">Scheduler</text>
-      <text x="907" y="583" fill="#545b64" font-size="9">rate(1 day)</text>
-      <text x="907" y="599" fill="#232f3e" font-size="9">SendCommand</text>
-
-      <rect x="1000" y="550" width="80" height="80" rx="3" fill="#ffffff" stroke="#dd344c" stroke-width="1.1"/>
-      <text x="1012" y="569" fill="#232f3e" font-size="10" font-weight="700">SNS</text>
-      <text x="1012" y="583" fill="#545b64" font-size="8">backup-alerts</text>
-      <text x="1012" y="599" fill="#232f3e" font-size="8">email</text>
-
-      <rect x="895" y="665" width="185" height="60" rx="3" fill="#ffffff" stroke="#545b64" stroke-width="1.1"/>
-      <text x="907" y="684" fill="#232f3e" font-size="10" font-weight="700">CloudWatch</text>
-      <text x="907" y="698" fill="#545b64" font-size="9">CS361/Backup · BackupSuccess</text>
-      <text x="907" y="712" fill="#545b64" font-size="8">missing = breaching</text>
-
-      <!-- ===== Connectors ===== -->
-      <!-- GitHub CI validates stacks -->
-      <path d="M262 110 V240" fill="none" stroke="#545b64" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
-      <text x="270" y="180" fill="#545b64" font-size="9">validate / drift</text>
-
-      <!-- deploy.sh -> CloudFormation group -->
-      <path d="M1010 110 V230 H560 V240" fill="none" stroke="#0f766e" stroke-width="1.3" marker-end="url(#arr-v5)"/>
-      <text x="620" y="214" fill="#0f766e" font-size="9">cloudformation deploy / change set</text>
-
-      <!-- deploy.sh -> EC2 via SSM Run Command -->
-      <path d="M1010 110 V190 H300 V430" fill="none" stroke="#8c4fff" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
-      <text x="440" y="186" fill="#6b2fd6" font-size="9">SSM Run Command (backend/frontend/seed)</text>
-
-      <!-- base -> EC2 -->
-      <line x1="170" y1="372" x2="170" y2="430" stroke="#0f766e" stroke-width="1.2" marker-end="url(#arr-v5)"/>
-      <text x="178" y="405" fill="#0f766e" font-size="9">creates</text>
-
-      <!-- base -> S3 (route above EC2) -->
-      <path d="M160 372 V415 H615 V430" fill="none" stroke="#3f8624" stroke-width="1.1" stroke-dasharray="4,3" marker-end="url(#arr-soft)"/>
-      <text x="390" y="410" fill="#3f8624" font-size="9">S3 bucket + lifecycle</text>
-
-      <!-- backend -> S3 files -->
-      <path d="M260 490 H535" fill="none" stroke="#232f3e" stroke-width="1.1" marker-end="url(#arr)"/>
-      <text x="390" y="484" fill="#545b64" font-size="8">files / backups</text>
-
-      <!-- backend -> Cognito (JWKS) -->
-      <path d="M260 545 H715 V520" fill="none" stroke="#dd344c" stroke-width="1.1" stroke-dasharray="4,3" marker-end="url(#arr-soft)"/>
-      <text x="500" y="540" fill="#dd344c" font-size="8">JWKS / token</text>
-
-      <!-- Amplify -> backend proxy (route via top) -->
-      <path d="M895 445 H820 V398 H260 V475" fill="none" stroke="#8c4fff" stroke-width="1.1" stroke-dasharray="4,3" marker-end="url(#arr-soft)"/>
-      <text x="620" y="394" fill="#6b2fd6" font-size="8">proxy /api/v1</text>
-
-      <!-- frontend fallback -> backend -->
-      <line x1="275" y1="595" x2="275" y2="570" stroke="#232f3e" stroke-width="1.1" marker-end="url(#arr)"/>
-
-      <!-- backup stack -> Scheduler / SNS / CW (right edge) -->
-      <!-- Scheduler -> EC2 via SSM document -->
-      <path d="M895 630 V720 H510 V700" fill="none" stroke="#545b64" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
-      <text x="650" y="714" fill="#545b64" font-size="8">SSM document cs361-backup</text>
-
-      <!-- CloudWatch -> SNS -->
-      <path d="M1000 665 V630" fill="none" stroke="#dd344c" stroke-width="1.1" marker-end="url(#arr-soft)"/>
-      <text x="1008" y="652" fill="#dd344c" font-size="8">alarm</text>
-
-      <!-- ===== Step badges ===== -->
-      <g font-size="11" font-weight="700" text-anchor="middle" fill="#ffffff">
-        <circle cx="1058" cy="45" r="10" fill="#1a73e8"/><text x="1058" y="49">1</text>
-        <circle cx="62" cy="262" r="10" fill="#1a73e8"/><text x="62" y="266">2</text>
-        <circle cx="317" cy="262" r="10" fill="#1a73e8"/><text x="317" y="266">3</text>
-        <circle cx="572" cy="262" r="10" fill="#1a73e8"/><text x="572" y="266">4</text>
-        <circle cx="55" cy="462" r="10" fill="#1a73e8"/><text x="55" y="466">5</text>
-        <circle cx="497" cy="610" r="10" fill="#1a73e8"/><text x="497" y="614">6</text>
-        <circle cx="1060" cy="262" r="10" fill="#1a73e8"/><text x="1060" y="266">7</text>
-      </g>
-
-      <!-- ===== Legend ===== -->
-      <line x1="20" y1="800" x2="1100" y2="800" stroke="#d5dbdb" stroke-width="0.8"/>
-      <text x="20" y="816" fill="#545b64" font-size="9" font-weight="700" letter-spacing="0.08em">LEGEND</text>
-      <line x1="88" y1="813" x2="116" y2="813" stroke="#232f3e" stroke-width="1.2" marker-end="url(#arr)"/>
-      <text x="124" y="816" fill="#545b64" font-size="9">คำขอ / อ่านเขียนข้อมูล</text>
-      <line x1="270" y1="813" x2="298" y2="813" stroke="#545b64" stroke-width="1.1" stroke-dasharray="5,4" marker-end="url(#arr-soft)"/>
-      <text x="306" y="816" fill="#545b64" font-size="9">สร้าง / deploy / config</text>
-      <rect x="465" y="807" width="14" height="10" rx="2" fill="#e6f4f1" stroke="#0f766e" stroke-width="1.1"/>
-      <text x="487" y="816" fill="#545b64" font-size="9">V5 stack / automation</text>
-      <rect x="640" y="807" width="14" height="10" rx="2" fill="#f3edff" stroke="#8c4fff" stroke-width="1.1" stroke-dasharray="3,2"/>
-      <text x="662" y="816" fill="#545b64" font-size="9">ทางเลือก fallback / Amplify</text>
-      <circle cx="865" cy="812" r="7" fill="#1a73e8"/>
-      <text x="879" y="816" fill="#545b64" font-size="9">ลำดับขั้นในตารางด้านล่าง</text>
-    </svg>
+  <section class="panel">
+    <h2>ภาพรวมการ deploy</h2>
+    <div class="flow">
+      <div class="box">
+        <h3>Operator</h3>
+        <p>CloudShell หรือเครื่องผู้ดูแลรัน <code>infra/new-account/deploy.sh</code></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box cfn">
+        <h3>CloudFormation <span class="tag">AWS</span></h3>
+        <p><code>cs361</code> (VPC/EC2/S3/SSM/Secrets) · <code>cs361-cognito</code> · <code>cs361-backup</code></p>
+      </div>
     </div>
 
+    <div class="flow">
+      <div class="box aws">
+        <h3>EC2 · cs361-backend</h3>
+        <p>FastAPI <code>:8000</code> + PostgreSQL <code>:5432</code> ใน Docker network <code>cs361</code></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box edge">
+        <h3>Frontend + HTTPS</h3>
+        <p>Next.js container <code>cs361-frontend:3000</code> · Caddy <code>:80/:443</code> · Let's Encrypt</p>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="box">
+        <h3>S3</h3>
+        <p><code>cs361-docs-&lt;account&gt;</code> · ไฟล์แนบ · <code>backups/</code> 30 วัน</p>
+      </div>
+      <div class="box">
+        <h3>SSM Parameter Store</h3>
+        <p><code>/cs361/config/*</code> · bucket, region, CORS, Cognito IDs, secret ARN, instance ID</p>
+      </div>
+      <div class="box">
+        <h3>Secrets Manager</h3>
+        <p>DB password JSON · <code>LocalAuthSecret</code> (เฉพาะ fallback)</p>
+      </div>
+      <div class="box">
+        <h3>Cognito</h3>
+        <p><code>cstu-v5-auth</code> · app client · กลุ่ม public/student/coordinator/staff/admin</p>
+      </div>
+      <div class="box">
+        <h3>EventBridge Scheduler</h3>
+        <p><code>cs361-backup</code> → SSM Run Command → <code>backup.sh</code></p>
+      </div>
+      <div class="box">
+        <h3>SNS + CloudWatch</h3>
+        <p>แจ้งเตือนเมื่อ backup ล้มเหลว · metric <code>CS361/Backup</code></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>ลำดับ deploy</h2>
     <table>
-      <thead><tr><th>#</th><th>ขั้นตอน</th><th>รายละเอียด</th></tr></thead>
+      <thead><tr><th>#</th><th>คำสั่ง</th><th>ผลที่ได้</th></tr></thead>
       <tbody>
-        <tr><td><span class="n">1</span></td><td>ตรวจและวางแผน</td><td><code>deploy.sh check</code> ตรวจ identity, region, mode และ service probes จากนั้น <code>deploy.sh</code> สร้าง change set ด้วย <code>cloudformation deploy --no-execute-changeset</code> ให้ตรวจก่อน <code>--apply</code></td></tr>
-        <tr><td><span class="n">2</span></td><td>Base stack <code>cs361</code></td><td><code>stack.yaml</code> สร้าง VPC, public subnet, security group เปิด 8000/3000 (ไม่เปิด 22), EC2, Elastic IP, S3, Secrets Manager secret, SSM parameter และ IAM ตาม <code>LabMode</code></td></tr>
-        <tr><td><span class="n">3</span></td><td>Cognito stack</td><td><code>cognito.yaml</code> สร้าง user pool <code>cstu-v5-auth</code>, app client และกลุ่มบทบาท 5 กลุ่ม; เขียน pool/client ID ลง SSM; <code>provision_cognito.py</code> สร้างผู้ใช้ทดสอบ</td></tr>
-        <tr><td><span class="n">4</span></td><td>Amplify หรือ fallback</td><td>ถ้ามี <code>GITHUB_TOKEN_SECRET_ARN</code> ให้ <code>amplify.yaml</code> สร้าง app <code>WEB_COMPUTE</code> และ branch <code>main</code>; ถ้าไม่มีให้ <code>deploy.sh frontend --apply</code> สร้าง Next.js container บน EC2 พอร์ต 3000</td></tr>
-        <tr><td><span class="n">5</span></td><td>Backend</td><td><code>deploy.sh backend</code> อัปโหลด tarball ขึ้น S3, อ่าน SSM + Secrets Manager, เขียน <code>.env</code> สิทธิ์ 600, build/restart container และตรวจ <code>/api/v1/health</code></td></tr>
-        <tr><td><span class="n">6</span></td><td>Seed</td><td><code>deploy.sh seed --yes</code> ลบข้อมูลใน <code>cstu_demo</code> แล้วใส่ข้อมูลสมมติ; ต้อง backup ก่อนถ้ามีข้อมูลเดิม</td></tr>
-        <tr><td><span class="n">7</span></td><td>Backup stack</td><td><code>backup.yaml</code> สร้าง SNS topic, SSM document, EventBridge Scheduler <code>rate(1 day)</code> และ CloudWatch alarm; backup รัน <code>pg_dump</code> ขึ้น S3 และ publish metric</td></tr>
-        <tr><td><span class="n">8</span></td><td>ตรวจผล</td><td><code>deploy.sh status</code> ตรวจ API health และ frontend; เก็บ SSM command ID, stack outputs และผล backup เป็นหลักฐาน</td></tr>
+        <tr><td>1</td><td><code>deploy.sh check</code></td><td>identity, region, Lab mode และ service probes</td></tr>
+        <tr><td>2</td><td><code>deploy.sh infra --apply</code></td><td>VPC, EC2, EIP, S3, SSM, Secrets, security group 80/443/3000/8000</td></tr>
+        <tr><td>3</td><td><code>deploy.sh cognito --apply</code></td><td>user pool, app client, 5 role groups, test users</td></tr>
+        <tr><td>4</td><td><code>deploy.sh frontend --apply</code></td><td>Next.js container บน EC2 <code>:3000</code></td></tr>
+        <tr><td>5</td><td><code>deploy.sh tls</code></td><td>Caddy <code>:80/:443</code> + Let's Encrypt + <code>https://&lt;EIP&gt;.sslip.io</code></td></tr>
+        <tr><td>6</td><td><code>deploy.sh backend</code></td><td>อ่าน SSM/Secrets → build/start FastAPI + PostgreSQL → health 200</td></tr>
+        <tr><td>7</td><td><code>deploy.sh seed --yes</code></td><td>ข้อมูลเดโมใน <code>cstu_demo</code></td></tr>
+        <tr><td>8</td><td><code>deploy.sh schedule --apply</code></td><td>EventBridge Scheduler + SSM document + SNS + CloudWatch alarm</td></tr>
+        <tr><td>9</td><td><code>deploy.sh status</code></td><td>ตรวจ API/frontend และ HTTPS</td></tr>
       </tbody>
     </table>
+  </section>
 
-    <div class="cards">
-      <div class="card v5">
-        <h3>เปลี่ยนใน V5</h3>
-        <ul>
-          <li>CloudFormation 4 stack + change set + drift</li>
-          <li>Cognito เป็น IaC (pool/client/groups)</li>
-          <li>SSM Parameter Store + Secrets Manager</li>
-          <li>Amplify ถ้ามี token; fallback frontend บน EC2</li>
-          <li>Backup อัตโนมัติ + SNS + CloudWatch alarm</li>
-          <li>CI ตรวจ cfn-lint/cfn-guard</li>
-        </ul>
+  <section class="panel">
+    <h2>การไหลของ config / secrets / backup</h2>
+    <div class="flow">
+      <div class="box cfn">
+        <h3>CloudFormation</h3>
+        <p>สร้าง SSM parameters, Secrets Manager และ S3</p>
       </div>
-      <div class="card lab">
-        <h3>ข้อจำกัด Learner Lab</h3>
-        <ul>
-          <li>เฉพาะ us-east-1 / us-west-2</li>
-          <li>สร้าง IAM role/user/policy ไม่ได้</li>
-          <li>ใช้ LabRole + LabInstanceProfile</li>
-          <li>GitHub OIDC ถูกปฏิเสธ (#122 ปิด)</li>
-          <li>Amplify build SSR ยังไม่ยืนยัน</li>
-          <li>session หมดอายุ → EC2 หยุด</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>ยังไม่ทำใน V5</h3>
-        <ul>
-          <li>Multi-AZ, load balancer, Auto Scaling</li>
-          <li>HTTPS ระหว่าง frontend กับ API</li>
-          <li>rollback อัตโนมัติของ backend</li>
-          <li>secret rotation อัตโนมัติ</li>
-          <li>workflow deploy backend ใน repo</li>
-          <li>production SLA / load test</li>
-        </ul>
+      <div class="arrow">→</div>
+      <div class="box aws">
+        <h3>deploy.sh backend</h3>
+        <p>อ่าน <code>db_secret_arn</code> → Secrets Manager → เขียน <code>.env</code> บน EC2 → SSM Run Command</p>
       </div>
     </div>
+    <div class="flow">
+      <div class="box aws">
+        <h3>EventBridge Scheduler</h3>
+        <p>ทุกวัน → SSM Run Command <code>cs361-backup</code></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box edge">
+        <h3>backup.sh</h3>
+        <p><code>pg_dump</code> → gzip → S3 <code>backups/</code> · metric 1 · SNS เมื่อล้มเหลว</p>
+      </div>
+    </div>
+  </section>
 
-    <p class="note">
-      Base stack, Cognito, backend, fallback frontend, backup/restore/alert และ drift
-      ถูกทดสอบใน Learner Lab เมื่อ 8 พฤศจิกายน 2026; Amplify stack/build ยัง N/A
-      เพราะไม่มี token และ teardown + recreate ยัง TBD.
-      หลักฐานอยู่ใน <code>docs/evidence/v5-validation.md</code>.
-      คำสั่งทั้งหมดใช้ <code>infra/new-account/deploy.sh</code> และไม่ใช้ SSH;
-      <code>teardown --yes --purge</code> ใช้เมื่อต้องการลบ S3/Cognito ที่ retain เพื่อ recreate.
-    </p>
-  </div>
+  <section class="panel">
+    <h2>ข้อจำกัด / สถานะ</h2>
+    <ul>
+      <li>Learner Lab ใช้ได้เฉพาะ <code>us-east-1</code>/<code>us-west-2</code>; V5 ใช้ <code>us-west-2</code></li>
+      <li>IAM ถูกจำกัด: ใช้ <code>LabMode=true</code>, <code>LabInstanceProfile</code>/<code>LabRole</code>; ไม่สร้าง role</li>
+      <li>Amplify ถูกนำออกจาก V5; frontend ใช้ EC2/Docker + Caddy HTTPS</li>
+      <li>Cognito เป็น auth หลัก; local auth เป็น fallback ผ่าน <code>AUTH_BACKEND=local</code></li>
+      <li>GitHub Actions ยังไม่รันเพราะไม่ push; cfn-lint/cfn-guard/drift ผ่านในเครื่องและ Lab</li>
+    </ul>
+    <p class="note">หลักฐานการรันและตัวเลข before/after อยู่ใน <code>docs/evidence/v5/</code>; runbook อยู่ใน <code>docs/runbooks/v5-deploy.md</code></p>
+  </section>
+</div>
 </body>
 </html>

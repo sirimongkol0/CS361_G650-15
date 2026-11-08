@@ -33,8 +33,7 @@ V5 ตั้งใจให้สร้าง infrastructure ซ้ำได้�
 | SNS | ใช้ได้ | topic สำหรับแจ้งเตือน backup |
 | EventBridge Scheduler | ใช้ได้; schedule `cs361-backup` เป็น ENABLED และรันสำเร็จ | schedule สำหรับ backup (ยืนยันกับ `LabRole` แล้ว) |
 | EC2 | ใช้ได้ (รวม stop/start) | backend, PostgreSQL และ fallback frontend |
-| Amplify CreateApp/CreateBranch | ใช้ได้ | สร้าง app/branch ผ่าน stack ได้ |
-| Amplify build Next.js SSR | **ยังไม่ยืนยัน**; Amplify ไม่อยู่ใน supported services list | ต้องมี EC2/Docker fallback; ห้ามถือว่า build ผ่านจนมีหลักฐาน |
+| Amplify | **ถูกนำออกจาก V5**; ใช้ไม่ได้/ไม่รองรับใน Lab | frontend ใช้ EC2/Docker + Caddy HTTPS แทน |
 | อายุ credentials | หมดอายุเมื่อจบ session | ต้องรัน `check` ใหม่ทุก session และไม่เก็บ key ลงเครื่อง |
 | สถานะ EC2 | ถูกหยุดเมื่อ session จบ | scheduled backup/งานประจำไม่ทำงานขณะ Lab ไม่ active |
 
@@ -54,11 +53,11 @@ aws iam list-open-id-connect-providers
 
 ## สิ่งที่อยู่ในขอบเขต V5
 
-- CloudFormation template 4 ชุด: `stack.yaml`, `cognito.yaml`, `amplify.yaml`, `backup.yaml`
+- CloudFormation template 3 ชุด: `stack.yaml`, `cognito.yaml`, `backup.yaml`
 - `deploy.sh` ที่สั่งงานแบบ plan/apply และจัดการ stack ตามลำดับ
 - Cognito user pool `cstu-v5-auth`, app client `cstu-backend` และกลุ่มบทบาท 5 กลุ่ม
 - SSM parameter ใต้ `/cs361/config/*` และ Secrets Manager secret สำหรับรหัสผ่านฐานข้อมูล
-- Amplify app/branch เมื่อมี GitHub token; fallback frontend บน EC2 เมื่อไม่มี
+- frontend บน EC2/Docker และ HTTPS ผ่าน Caddy (ไม่มี Amplify)
 - Backup อัตโนมัติผ่าน EventBridge Scheduler → SSM Run Command → S3
 - SNS แจ้งเตือน และ CloudWatch alarm เมื่อ backup ไม่สำเร็จ
 - CI ตรวจ template ด้วย `cfn-lint`/`cfn-guard` และตรวจ drift
@@ -70,8 +69,8 @@ aws iam list-open-id-connect-providers
 ## สิ่งที่อยู่นอกขอบเขต V5
 
 - การสร้าง IAM user/group/role/policy หรือ OIDC provider ใน Learner Lab
-- การรับประกันว่า Amplify build Next.js 16 SSR จะสำเร็จใน Lab
-- custom domain, HTTPS ระหว่าง Amplify กับ EC2, load balancer, Auto Scaling, Multi-AZ
+- Amplify Hosting (ถูกนำออกจาก V5)
+- custom domain ที่ไม่ใช่ Caddy/sslip.io, load balancer, Auto Scaling, Multi-AZ
 - backup ข้าม region, point-in-time recovery, RDS snapshot
 - การหมุน secret อัตโนมัติ (V5 ทำ manual ผ่าน Secrets Manager + `deploy.sh backend`)
 - MFA, password reset และ federation ของ local auth (fallback นี้ใช้ demo/lab เท่านั้น)
@@ -85,8 +84,8 @@ aws iam list-open-id-connect-providers
 |---|---|---|---|
 | **#118 V5-1** ขอบเขต, ADR, baseline | ADR เลือก CloudFormation, ADR ช่องทาง deploy backend, ขอบเขต Lab, baseline ก่อน–หลัง, architecture, validation, runbook | การแก้ template หรือ code | เอกสารชุดนี้; baseline มีผล Lab บางส่วนและ TBD สำหรับเวลาที่ไม่ได้จับ |
 | **#119 V5-2** Cognito as IaC | `cognito.yaml`: pool, client, กลุ่ม `public/student/coordinator/staff/admin`, SSM parameter, outputs; `provision_cognito.py --pool-id` สำหรับผู้ใช้ทดสอบ | สร้าง IAM role, custom domain, social IdP, MFA policy ใหม่, migration pool เดิม | ผ่านใน Lab (`cs361-cognito` CREATE_COMPLETE, pool `cstu-v5-auth`) |
-| **#120 V5-3** Amplify + CORS as IaC | `amplify.yaml`: app `WEB_COMPUTE`, branch `main`, env vars, SSM `amplify_url`, outputs; fallback `deploy.sh frontend --apply` บน EC2 :3000; CORS จาก SSM/output | รับประกันว่า Amplify build ผ่าน, จัดการ GitHub token แทนผู้ใช้, สร้าง IAM service role ใน Lab | fallback + CORS ผ่าน; Amplify stack/build N/A เพราะไม่มี token (API probe สร้าง app/branch ได้) |
-| **#121 V5-4** SSM/Secrets | SSM parameter 6 ตัวใน base stack, Cognito 2 ตัว, Amplify 1 ตัว; Secrets Manager secret JSON `{username, dbname, password}`; `deploy.sh backend` อ่าน secret ไปสร้าง `.env` | rotation อัตโนมัติ, cross-account secret, CMK ที่จัดการเอง | ยุบเข้า base stack (`stack.yaml`); ผ่านใน Lab (parameter/secret/health) |
+| **#120 V5-3** Frontend + CORS | `deploy.sh frontend --apply` บน EC2 :3000; Caddy HTTPS; CORS จาก SSM/output | Amplify (ถูกนำออก), GitHub token, IAM service role | **Amplify removed**; EC2 fallback + CORS ผ่าน |
+| **#121 V5-4** SSM/Secrets | SSM parameter 6 ตัวใน base stack, Cognito 2 ตัว; Secrets Manager secret JSON `{username, dbname, password}`; `deploy.sh backend` อ่าน secret ไปสร้าง `.env` | rotation อัตโนมัติ, cross-account secret, CMK ที่จัดการเอง | ยุบเข้า base stack (`stack.yaml`); ผ่านใน Lab (parameter/secret/health) |
 | **#122 V5-5** GitHub OIDC | ไม่มี; บันทึกเหตุผลและทางเลือกใน [v5-backend-deploy.md](v5-backend-deploy.md) | OIDC provider, IAM role สำหรับ GitHub, access key ระยะยาว | **ปิดเป็น not planned** เพราะ Lab ปฏิเสธ `CreateOpenIDConnectProvider`; ใช้ self-hosted runner + SSM เป็นแนวทางแทน |
 | **#123 V5-6** Backup/restore/alerts | `backup.yaml`: SNS topic, SSM document, EventBridge Scheduler, CloudWatch alarm; `backup.sh`; `deploy.sh backup/restore` | PITR, cross-region copy, RDS snapshot, รับประกันขณะ Lab ปิด | ผ่าน: schedule รันจริง, backup/restore สำเร็จ, failure alert เป็น ALARM |
 | **#124 V5-7** CI + drift | `.github/workflows/infra.yml` ตรวจ `cfn-lint`/`cfn-guard`; drift detection ด้วย CloudFormation | auto-remediation, runtime compliance, security scanning ทั้งระบบ | lint/guard ผ่านในเครื่อง; drift ตรวจพบ `MODIFIED`; GitHub Actions ยังไม่รันเพราะไม่ push; IN_SYNC รอ session ถัดไป |
@@ -96,9 +95,8 @@ aws iam list-open-id-connect-providers
 
 1. **#122 V5-5 ปิดเป็น not planned** — GitHub OIDC เป็นไปไม่ได้ในบัญชีนี้
    ไม่มี OIDC provider และไม่มี IAM role สำหรับ GitHub ใน V5
-2. **#120 V5-3 เปลี่ยนขอบเขต** — จาก “Amplify เป็น frontend หลัก” เป็น
-   “Amplify ถ้าสร้างและ build ได้ + EC2 fallback ที่ใช้ได้จริง”
-   เพราะ Amplify ไม่อยู่ใน supported list และ build SSR ยังไม่ยืนยัน
+2. **#120 V5-3 เปลี่ยนขอบเขต** — Amplify ถูกนำออกจาก V5 เพราะใช้ไม่ได้ใน Lab;
+   frontend ใช้ EC2/Docker + Caddy HTTPS เป็นทางเดียว
 3. **#121 V5-4 ยุบเข้า base stack** — ไม่มี stack `cs361-config` แยก
    SSM parameter และ secret ถูกสร้างใน `stack.yaml` เพื่อลดจำนวน stack และ dependency
 4. **#118/#125 ขยายเอกสาร** — เพิ่ม baseline, validation matrix และ runbook
@@ -110,7 +108,7 @@ aws iam list-open-id-connect-providers
 - base stack ต้องมี `LabMode` และเงื่อนไข IAM; ค่าเริ่มต้นคือ `false` สำหรับบัญชีปกติ
 - `deploy.sh` ต้องตรวจ `voclabs` หรือ `LAB_MODE=true` และตั้ง region `us-west-2`
 - ห้ามใช้ `AWS::IAM::Role` ใน Lab แม้จะเป็น role เล็ก ๆ; ใช้ `LabRole`/`LabInstanceProfile`
-- Amplify ต้องมีเงื่อนไข `HasToken`; ถ้าไม่มี token ต้องไม่สร้าง resource และไป fallback
+- ไม่มี Amplify stack/resource ใน V5; frontend ใช้ EC2/Docker + Caddy
 - backup ต้องไม่ถือว่า schedule ทำงานแน่นอน; ต้องมี `deploy.sh backup` สำหรับ manual
 - CI ต้องไม่พึ่ง service ที่ Lab ไม่รองรับ; ใช้ static lint เป็นหลัก
 
@@ -118,11 +116,10 @@ aws iam list-open-id-connect-providers
 
 | ความเสี่ยง | ผลกระทบ | การรับมือ |
 |---|---|---|
-| Lab เปลี่ยน supported services โดยไม่แจ้ง | Amplify/SSM/Scheduler อาจใช้ไม่ได้ | fallback frontend; เก็บ backup แบบ manual; ตรวจ `check` ทุก session |
+| Lab เปลี่ยน supported services โดยไม่แจ้ง | SSM/Scheduler อาจใช้ไม่ได้ | เก็บ backup แบบ manual; ตรวจ `check` ทุก session |
 | Session หมดอายุระหว่าง deploy | stack ค้างสถานะกลางทาง | รัน `check` ก่อน, ทำทีละ stack, เก็บ log; ใช้ `continue-update-rollback` หรือ deploy ซ้ำ |
 | `LabRole` กว้างเกินไป | runner/เครื่อง EC2 มีสิทธิ์มาก | จำกัด repo/branch, ไม่รัน PR จาก fork, ไม่ทำ production |
 | `LabRole` ไม่มีสิทธิ์ที่ต้องการบางอย่าง | คำสั่งบางขั้นอาจถูกปฏิเสธ | ตรวจด้วย `deploy.sh check` และบันทึกข้อจำกัด; V5 ใช้ backup manual ได้ |
-| ไม่มี IAM role สำหรับ Amplify | build ไม่ผ่าน | ใช้ fallback และบันทึกว่า build ยังไม่ยืนยัน |
 | ค่าใช้จ่ายเมื่อเปิด runner ตลอด | เกินเครดิต | หยุด runner เมื่อไม่ใช้; ใช้ `deploy.sh backend` จาก CloudShell แทน |
 | เวลาบางช่วงยังไม่ได้จับ | before/after ไม่ครบทุกตัวเลข | ใช้ TBD พร้อมหมายเหตุและวิธีวัดใน [v5-baseline.md](../evidence/v5-baseline.md) |
 

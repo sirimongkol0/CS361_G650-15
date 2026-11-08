@@ -16,7 +16,7 @@ Secrets Manager, backup ทำงานตาม schedule และ CI ตรว
 [คู่มือ deploy V5](docs/runbooks/v5-deploy.md)
 
 > Learner Lab ใช้ได้เฉพาะ `us-east-1`/`us-west-2` และสร้าง IAM role/OIDC ไม่ได้
-> V5 จึงใช้ `LabRole`/`LabInstanceProfile` และมี frontend fallback บน EC2 เมื่อ Amplify ใช้ไม่ได้
+> V5 จึงใช้ `LabRole`/`LabInstanceProfile` และ frontend บน EC2/Docker + Caddy HTTPS (Amplify ถูกนำออก)
 > ดู [ขอบเขต Learner Lab](docs/decisions/v5-learner-lab-scope.md)
 
 สร้างด้วย **Next.js + FastAPI + PostgreSQL** ล็อกอินผ่าน **Amazon Cognito** และเก็บไฟล์บน **S3** (หรือดิสก์ในเครื่องตอนพัฒนา)
@@ -47,13 +47,13 @@ Secrets Manager, backup ทำงานตาม schedule และ CI ตรว
 - `frontend/` Next.js App Router หน้าเว็บทุกหน้าอ่านข้อมูลจาก API ไม่มีข้อมูลตัวอย่างสำรองในตัว
 - `backend/` FastAPI + SQLAlchemy ตรวจสิทธิ์ที่ server ทุก endpoint (`auth.require_role`, `auth.optional_user`)
 - `database/` สคริปต์ฐานข้อมูล ส่วน `backend/migrate_v*.py` ปรับ schema ของฐานข้อมูลเดิมทีละเวอร์ชัน
-- `infra/new-account/` CloudFormation 4 ชุด (`stack.yaml`, `cognito.yaml`, `amplify.yaml`, `backup.yaml`)
+- `infra/new-account/` CloudFormation 3 ชุด (`stack.yaml`, `cognito.yaml`, `backup.yaml`)
   และ `deploy.sh` สำหรับ plan/apply, backend, frontend fallback, seed, backup, restore และ teardown
 - `scripts/` smoke test และสคริปต์เตรียมข้อมูลทดสอบ
 
-เว็บที่ deploy แล้ว: **https://main.d1vzv59tpxqtoa.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต, AWS Sydney)
-หน้าเว็บอยู่บน AWS Amplify (push เข้า `main` แล้วอัปเดตเอง) ส่วน API และ PostgreSQL อยู่ใน Docker บน EC2 เครื่องเดียวกัน
-และไฟล์กับไฟล์สำรองอยู่บน S3
+เว็บที่ deploy ล่าสุด: **https://32.189.5.234.sslip.io** (V5 Learner Lab, ข้อมูลสมมติ)
+หน้าเว็บเป็น Next.js บน EC2 และ HTTPS ผ่าน Caddy; API และ PostgreSQL อยู่ใน Docker บนเครื่องเดียวกัน
+ไฟล์กับไฟล์สำรองอยู่บน S3 (Amplify ถูกนำออกจาก V5)
 ดูรายละเอียดที่ [สถาปัตยกรรมระบบ V4](docs/architecture/v4-architecture.md)
 
 ## สิทธิ์ตามบทบาท

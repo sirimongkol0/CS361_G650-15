@@ -3,15 +3,14 @@
 > สถานะ: ทดสอบใน Learner Lab 8 พฤศจิกายน 2026 (base stack, Cognito, backend,
 > fallback frontend, backup/restore/alert, drift) · วันที่: 8 พฤศจิกายน 2026
 > ใช้กับ V5 — สร้างและปรับใช้ infrastructure/deployment ซ้ำด้วย automation หรือ IaC
-> Amplify stack/build ยัง N/A เพราะไม่มี token; teardown + recreate ยัง TBD
+> Amplify ถูกนำออกจาก V5; frontend ใช้ EC2/Docker + Caddy HTTPS; teardown + recreate ผ่านแล้ว
 > ผลการรันจริงและหลักฐานอยู่ใน [แผนทดสอบ V5](../evidence/v5-validation.md)
 
 V5 ไม่ได้เพิ่มความสามารถทางธุรกิจใหม่ในหน้าเว็บ
 แต่เปลี่ยนวิธีสร้างและ deploy ให้ตรวจซ้ำได้: แยก infrastructure เป็น stack ย่อย
 ย้าย config ไป SSM Parameter Store, ย้ายรหัสผ่านฐานข้อมูลไป Secrets Manager
 เพิ่ม backup อัตโนมัติ และตรวจ template ใน CI
-ข้อจำกัดของ Learner Lab ทำให้ frontend ต้องมีทางเลือกสำรองบน EC2
-เมื่อ Amplify ใช้ไม่ได้
+Learner Lab ไม่รองรับ Amplify จึงใช้ frontend บน EC2/Docker + Caddy HTTPS
 
 เปิด [v5-deploy-architecture.html](v5-deploy-architecture.html) เพื่อดู diagram พร้อมตารางขั้นตอน
 
@@ -31,7 +30,6 @@ flowchart TB
     subgraph CFN["CloudFormation stacks"]
       Base["cs361<br/>stack.yaml"]
       CogStack["cs361-cognito<br/>cognito.yaml"]
-      AmpStack["cs361-amplify<br/>amplify.yaml"]
       BackupStack["cs361-backup<br/>backup.yaml"]
     end
 
@@ -39,7 +37,7 @@ flowchart TB
     Front["Fallback frontend<br/>Next.js :3000"]
     S3["S3 cs361-docs-account"]
     Pool["Cognito<br/>cstu-v5-auth"]
-    Amp["Amplify app + branch<br/>(ถ้ามี token)"]
+    Edge["Caddy HTTPS<br/>:80/:443"]
     Param["SSM Parameter Store<br/>/cs361/config/*"]
     Secret["Secrets Manager<br/>DB password"]
     Sched["EventBridge Scheduler"]
@@ -50,7 +48,6 @@ flowchart TB
   Repo --> CI
   CI -.->|validate| Base
   CI -.->|validate| CogStack
-  CI -.->|validate| AmpStack
   CI -.->|validate| BackupStack
   Runner -.->|plan / drift| Base
   Runner -.->|future deploy| EC2
@@ -63,9 +60,6 @@ flowchart TB
   Base --> Param
   CogStack --> Pool
   CogStack --> Param
-  AmpStack --> Amp
-  AmpStack --> Param
-  AmpStack -.->|no token| Front
   BackupStack --> Sched
   BackupStack --> SNS
   BackupStack --> CW
@@ -75,7 +69,7 @@ flowchart TB
   EC2 -->|read DB password| Secret
   EC2 -->|verify token| Pool
   Front -->|proxy /api/v1| EC2
-  Amp -->|proxy /api/v1| EC2
+  Edge -->|reverse proxy| Front
   Sched -->|SendCommand| EC2
   CW -->|alarm| SNS
 ```
@@ -86,7 +80,7 @@ flowchart TB
 |---|---|---|
 | Base stack | `infra/new-account/stack.yaml` (stack `cs361`) | VPC, public subnet, security group, EC2, Elastic IP, S3, Secrets Manager secret, SSM parameter และ IAM แบบมีเงื่อนไข |
 | Cognito stack | `infra/new-account/cognito.yaml` (stack `cs361-cognito`) | User pool `cstu-v5-auth`, app client `cstu-backend`, กลุ่มบทบาท 5 กลุ่ม, SSM parameter |
-| Amplify stack | `infra/new-account/amplify.yaml` (stack `cs361-amplify`) | Amplify app `WEB_COMPUTE`, branch `main`, environment variables, SSM `amplify_url`; สร้างเฉพาะเมื่อมี token |
+| HTTPS edge | `infra/new-account/Caddyfile` | Caddy 80/443, Let's Encrypt, reverse proxy ไป `cs361-frontend:3000` |
 | Backup stack | `infra/new-account/backup.yaml` (stack `cs361-backup`) | SNS topic, SSM Command document, EventBridge Scheduler, CloudWatch alarm |
 | Deploy script | `infra/new-account/deploy.sh` | plan/apply ทีละ stack, deploy backend/frontend ผ่าน SSM, seed, backup, restore, status, teardown (`--purge` ลบ S3/Cognito ที่ retain) |
 | Backup helper | `infra/new-account/backup.sh` | `pg_dump` ขึ้น S3, publish metric, restore จาก S3 |
@@ -125,7 +119,6 @@ sequenceDiagram
   participant CFN as CloudFormation
   participant Base as cs361 base
   participant Cog as cs361-cognito
-  participant Amp as cs361-amplify
   participant EC2 as EC2 backend
   participant S3 as S3
   participant SSM as SSM Parameter Store
@@ -140,10 +133,8 @@ sequenceDiagram
   Op->>CFN: cognito --apply (cognito.yaml)
   CFN-->>Cog: user pool, client, groups
   Cog-->>SSM: cognito_user_pool_id, cognito_app_client_id
-  Op->>CFN: amplify --apply (amplify.yaml)
-  CFN-->>Amp: app + branch (เมื่อมี token)
-  Amp-->>SSM: amplify_url
-  Note over Op,Amp: ไม่มี token → deploy.sh frontend --apply (EC2 :3000)
+  Op->>EC2: deploy.sh frontend --apply (EC2 :3000)
+  Op->>EC2: deploy.sh tls (Caddy HTTPS)
   Op->>S3: upload backend tarball
   Op->>EC2: deploy.sh backend (SSM Run Command)
   EC2-->>SSM: read config
@@ -160,7 +151,7 @@ sequenceDiagram
 | 1 | `./deploy.sh check` | identity, region, mode และ service probes ผ่าน | ตรวจ session/region ก่อนสร้าง resource |
 | 2 | `./deploy.sh infra --apply` | stack `cs361` CREATE/UPDATE_COMPLETE และ outputs ครบ | เป็นฐานของทุก stack; ให้ instance, bucket, secret, SSM |
 | 3 | `./deploy.sh cognito --apply` | stack `cs361-cognito` และ pool/client/group | backend ต้องใช้ pool ID/client ID |
-| 4 | `./deploy.sh amplify --apply` หรือ `./deploy.sh frontend --apply` | Amplify app/branch หรือ frontend container :3000 | ให้ URL สำหรับ CORS และหน้าเว็บ |
+| 4 | `./deploy.sh frontend --apply` | frontend container :3000 | ให้ URL สำหรับ CORS และหน้าเว็บ |
 | 4.1 | `./deploy.sh tls` | Caddy 80/443 + certificate + `https://<domain>` | ต้องมี frontend container ก่อน; SG เปิด 80/443 |
 | 5 | `./deploy.sh backend` | `/api/v1/health` ผ่าน | อ่าน secret/SSM และเริ่ม DB/API |
 | 6 | `./deploy.sh seed --yes` | ข้อมูลสมมติใน `cstu_demo` | ต้องมี backend image และ DB ก่อน |
@@ -184,7 +175,7 @@ sequenceDiagram
 V5 แยก “ค่าที่ไม่ลับ” กับ “ความลับ” ออกจากกัน:
 
 - **SSM Parameter Store** เก็บชื่อ bucket, region, CORS origin, secret ARN, instance ID,
-  API URL, Cognito IDs, Amplify URL และค่าของ backup
+  API URL, Cognito IDs และค่าของ backup
 - **Secrets Manager** เก็บ JSON ที่มีรหัสผ่านฐานข้อมูลเพียงแห่งเดียว
 - **ไม่มีความลับใน Git, GitHub Secrets หรือ template output**
 - `deploy.sh backend` อ่านค่าทั้งสองแหล่งแล้วเขียน `/opt/cs361/.env` สิทธิ์ `600` บน EC2
@@ -195,7 +186,6 @@ flowchart LR
   Base["cs361 (base)"] -->|6 parameters| SSM["SSM /cs361/config/*"]
   Base -->|DB JSON| SM["Secrets Manager"]
   Cog["cs361-cognito"] -->|pool + client| SSM
-  Amp["cs361-amplify"] -->|amplify_url| SSM
   Backup["cs361-backup"] -->|topic + retention| SSM
 
   Deploy["deploy.sh backend"] -->|GetParameter| SSM
@@ -218,7 +208,6 @@ flowchart LR
 | `/cs361/config/api_base_url` | base stack | `http://<Elastic IP>:8000` |
 | `/cs361/config/cognito_user_pool_id` | Cognito stack | ตรวจ token |
 | `/cs361/config/cognito_app_client_id` | Cognito stack | client ที่ออก token |
-| `/cs361/config/amplify_url` | Amplify stack | URL สำหรับ CORS (มีเฉพาะเมื่อสร้าง app) |
 | `/cs361/config/backup_topic_arn` | backup stack | topic สำหรับแจ้งเตือน |
 | `/cs361/config/backup_retention_days` | backup stack | จำนวนวันเก็บ backup (ตรงกับ lifecycle) |
 
@@ -302,16 +291,14 @@ sequenceDiagram
 |---|---|---|---|
 | `infra/new-account/stack.yaml` | `cs361` | VPC, subnet, SG, EC2, EIP, S3, secret, SSM, IAM (conditional) | `InstanceId`, `ApiBaseUrl`, `BucketName`, `DbSecretArn`, `ConfigPrefix`, `InstanceProfileName`, `SecurityGroupId`, `FrontendUrl`, `SchedulerRoleArn` |
 | `infra/new-account/cognito.yaml` | `cs361-cognito` | User pool, app client, กลุ่ม `public/student/coordinator/staff/admin`, SSM IDs | `UserPoolId`, `AppClientId`, `UserPoolName` |
-| `infra/new-account/amplify.yaml` | `cs361-amplify` | Amplify app `WEB_COMPUTE`, branch `main`, SSM `amplify_url` (conditional) | `AppId`, `DefaultDomain`, `BranchUrl`, `CorsOrigin` |
+| `infra/new-account/Caddyfile` | — (container) | HTTPS edge: Caddy 80/443 + Let's Encrypt → `cs361-frontend:3000` | — |
 | `infra/new-account/backup.yaml` | `cs361-backup` | SNS topic, SSM document, Scheduler, CloudWatch alarm, SSM backup params | `TopicArn`, `BackupDocumentName`, `ScheduleName` |
 
 ### Output ที่ใช้ต่อกัน
 
-- `cs361` → `ApiBaseUrl` ถูกส่งเป็น parameter ให้ `cs361-amplify`
 - `cs361` → `InstanceId`, `BucketName`, `SchedulerRoleArn` ถูกส่งให้ `cs361-backup`
 - `cs361-cognito` → `UserPoolId`, `AppClientId` ถูกอ่านโดย `deploy.sh backend`
-- `cs361-amplify` → `BranchUrl` ถูกอ่านโดย `deploy.sh status`
-- ถ้าไม่มี Amplify stack ให้ใช้ `cs361` → `FrontendUrl` แทน
+- `cs361` → `FrontendUrl` ถูกอ่านโดย `deploy.sh status`
 
 ## CI และ drift
 
@@ -342,7 +329,6 @@ CI เป็นด่านตรวจก่อน merge ไม่ใช่ต�
 | SSM Parameter Store (standard) | ฟรี |
 | EventBridge Scheduler 1 schedule/วัน | แทบไม่มีค่าใช้จ่าย |
 | SNS email แจ้งเตือนไม่กี่ฉบับ | แทบไม่มีค่าใช้จ่าย |
-| Amplify build | ขึ้นกับจำนวน build; อาจมีค่าใช้จ่ายถ้าเกิน free tier |
 | Self-hosted runner (ถ้าเปิดตลอด) | ~$12/เดือน; หยุดเมื่อไม่ใช้ |
 
 ตัวเลขเป็นค่าประมาณและยังไม่รวมเครดิต Learner Lab
@@ -355,21 +341,21 @@ V5 ไม่ได้เพิ่ม load balancer, Multi-AZ หรือ RDS �
 | Infrastructure | CloudFormation ไฟล์เดียว + Console | 4 stack ย่อย, change set, drift |
 | Config | `.env` ที่เขียนจากสคริปต์ | SSM Parameter Store + Secrets Manager |
 | Cognito | `provision_cognito.py` สร้าง pool | `cognito.yaml` เป็นเจ้าของ pool/client/group |
-| Amplify | สร้างใน Console | `amplify.yaml` เมื่อมี token, fallback EC2 |
+| Frontend | Amplify (V4) | EC2/Docker + Caddy HTTPS (Amplify removed) |
 | Backup | `deploy.sh backup` ด้วยมือ | Scheduler + SNS + CloudWatch alarm + restore |
 | CI | tests/build | เพิ่ม `cfn-lint`/`cfn-guard` และ drift |
 | Backend deploy | CloudShell + SSM | เหมือนเดิม; มี ADR/runbook สำหรับ self-hosted runner; V5-5 (OIDC) ปิดเป็น not planned |
 
 ## ข้อจำกัดและความเสี่ยง
 
-- **Amplify build ยังไม่ยืนยัน** ใน Learner Lab; fallback frontend บน EC2 เป็นทางที่ใช้ได้
+- **Amplify ถูกนำออกจาก V5**; frontend ใช้ EC2/Docker + Caddy HTTPS
 - **IAM ถูกจำกัด**: `LabMode=true` ต้องไม่สร้าง role; `LabRole` กว้างและใช้ร่วมกับ runner
 - **Schedule ทำงานเฉพาะ Lab active**: backup อัตโนมัติไม่ใช่การรับประกันใน Lab
   (แต่ schedule `cs361-backup` ถูกทดสอบแล้วว่า ENABLED และรันสำเร็จใน session ที่เปิดอยู่)
 - **Runner ยังไม่ผูก workflow backend**: V5-5 ปิด; CI `plan`/`drift` ใช้ runner
   แต่ workflow deploy backend เป็นขั้นถัดไป
 - **HTTPS ถึง browser แล้ว** ผ่าน Caddy; แต่ Caddy → frontend/backend เป็น HTTP
-  ภายใน Docker และ API `:8000` ยังเปิด HTTP สำหรับ fallback/Amplify path
+  ภายใน Docker และ API `:8000` ยังเปิด HTTP สำหรับ fallback path
   (ถ้าต้องการปิด 8000 ต้องแก้ `ApiBaseUrl`/health check และทดสอบ path อื่น)
 - **ไม่มี Multi-AZ/load balancer**: EC2 เครื่องเดียวและ PostgreSQL container เดียว
 - **CI workflow**: lint/cfn-guard ผ่านในเครื่องแล้ว; GitHub Actions ยังไม่รันใน session นี้
@@ -385,5 +371,4 @@ V5 ไม่ได้เพิ่ม load balancer, Multi-AZ หรือ RDS �
 - [Baseline V5](../evidence/v5-baseline.md)
 - [แผนทดสอบ V5](../evidence/v5-validation.md)
 - [คู่มือ deploy V5](../runbooks/v5-deploy.md)
-- [บันทึก Amplify spike](../notes/v5-amplify-spike.md)
 - [สถาปัตยกรรม V4](v4-architecture.md)

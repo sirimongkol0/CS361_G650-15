@@ -21,7 +21,7 @@ V5 ต้องทำให้ทั้งระบบสร้างซ้ำ�
 
 เลือก **AWS CloudFormation (YAML)** เป็นเครื่องมือ IaC หลักของ V5
 
-- แยก stack ตามอายุการเปลี่ยนแปลง: `cs361` (base), `cs361-cognito`, `cs361-amplify`, `cs361-backup`
+- แยก stack ตามอายุการเปลี่ยนแปลง: `cs361` (base), `cs361-cognito`, `cs361-backup`
 - ทุก stack อยู่ใน `infra/new-account/` และ deploy ผ่าน `deploy.sh` ที่ห่อ `aws cloudformation deploy`
 - ก่อน apply ให้สร้าง change set ด้วย `--no-execute-changeset` แล้วแสดง `Changes[]` ให้ตรวจ
 - ใช้ output ของ stack เป็น interface ระหว่าง stack แทนการอ่านค่าจาก Console
@@ -79,7 +79,7 @@ CloudFormation ให้ change set ที่บอก action, resource type, lo
 
 `infra/new-account/stack.yaml` เป็น CloudFormation อยู่แล้ว
 การย้ายไป CDK/Terraform จะต้องแปลง resource เดิมทั้งหมดและเสี่ยงทำให้ VPC/EC2/S3 ถูกสร้างใหม่
-ซึ่งมีผลกับ Elastic IP, ข้อมูลใน EBS และ URL ที่ Amplify ใช้
+ซึ่งมีผลกับ Elastic IP, ข้อมูลใน EBS และ URL ที่ frontend ใช้
 การคง CloudFormation จึงเป็นการเปลี่ยนแปลงที่เล็กที่สุด
 
 ## ทางเลือกที่พิจารณา
@@ -108,7 +108,7 @@ CloudFormation ให้ change set ที่บอก action, resource type, lo
 |---|---|
 | YAML ยาวและไม่มี type checking | ใช้ `cfn-lint` + `cfn-guard` ใน CI และ `validate-template` ก่อน deploy |
 | reuse ข้าม stack ทำได้จำกัด | ใช้ output/parameter เป็น interface ที่ชัดเจน และแยก stack ตามขอบเขต |
-| CloudFormation สร้าง resource บางอย่างช้ากว่าหรือไม่รองรับ | ตรวจ template ใน CI และมี fallback สำหรับ Amplify |
+| CloudFormation สร้าง resource บางอย่างช้ากว่าหรือไม่รองรับ | ตรวจ template ใน CI; frontend ใช้ EC2/Docker fallback |
 | drift detection ต้องสั่งเอง | เพิ่มขั้นใน CI หรือ runbook ตามรอบ |
 | การเปลี่ยนแปลง resource บางชนิดทำให้ถูก replace | ดู `Replacement` ใน change set ก่อน apply และ backup ก่อนเปลี่ยน stack |
 
@@ -117,7 +117,7 @@ CloudFormation ให้ change set ที่บอก action, resource type, lo
 - **IAM ใน Learner Lab**: template ต้องมีเงื่อนไข `LabMode` เพื่อไม่สร้าง `AppRole`,
   `AppInstanceProfile` และ `BackupSchedulerRole` มิฉะนั้น stack จะล้มเหลว
 - **CloudFormation resource coverage**: บริการที่ Lab อนุญาตอาจไม่ครบทุก property
-  โดยเฉพาะ Amplify ที่อยู่นอก supported list; ต้องมี fallback
+  frontend ใช้ EC2/Docker + Caddy แทน Amplify ที่ถูกนำออก
 - **State ไม่ได้อยู่ใน Git**: ผู้ดูแลต้องใช้ stack name/region ให้ตรงกันทุกครั้ง
   เอกสารและ `deploy.sh` จึงกำหนด `STACK`, `AWS_REGION` และ `CONFIG_PREFIX` เป็นค่ากลาง
 - **Terraform/CDK ในอนาคต**: ถ้ามีหลาย environment หรือหลาย cloud ค่อยประเมินใหม่

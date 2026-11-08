@@ -11,7 +11,6 @@ V5 ใช้ `infra/new-account/deploy.sh` เป็นหลัก และแ
 |---|---|---|
 | `stack.yaml` | `cs361` | VPC, EC2, EIP, S3, SSM parameter, Secrets Manager, IAM (conditional) |
 | `cognito.yaml` | `cs361-cognito` | User pool, app client, กลุ่มบทบาท |
-| `amplify.yaml` | `cs361-amplify` | Amplify app/branch (เฉพาะเมื่อมี GitHub token) |
 | `backup.yaml` | `cs361-backup` | SNS, SSM document, EventBridge Scheduler, CloudWatch alarm |
 
 Learner Lab:
@@ -23,7 +22,7 @@ export LAB_MODE=true
 infra/new-account/deploy.sh check
 infra/new-account/deploy.sh infra --apply
 infra/new-account/deploy.sh cognito --apply
-infra/new-account/deploy.sh frontend --apply   # หรือ amplify --apply เมื่อมี token
+infra/new-account/deploy.sh frontend --apply
 infra/new-account/deploy.sh tls                # HTTPS ด้วย Caddy + sslip.io
 infra/new-account/deploy.sh backend
 infra/new-account/deploy.sh seed --yes
@@ -36,7 +35,7 @@ infra/new-account/deploy.sh status
 และข้อจำกัดของ Lab อยู่ใน [คู่มือ deploy V5](../docs/runbooks/v5-deploy.md)
 
 > ใน Learner Lab ห้ามสร้าง IAM role/OIDC และใช้ได้เฉพาะ `us-east-1`/`us-west-2`
-> ถ้า Amplify build ไม่ผ่าน ให้ใช้ fallback frontend บน EC2 พอร์ต 3000
+> frontend รันบน EC2/Docker พอร์ต 3000 และ HTTPS ผ่าน Caddy; Amplify ถูกนำออกจาก V5
 
 ## ต้องมีอะไรก่อน
 
@@ -167,4 +166,4 @@ npm run build
 ```
 
 ถ้า build ใน Docker บนเครื่องที่ RAM น้อย (เช่น EC2 t2.micro) เครื่องอาจค้าง
-ควร build บนเครื่องอื่นหรือใช้ Amplify แทน (ดู[การ deploy V2](../docs/decisions/v2-deployment-amplify-ec2.md))
+ควร build บนเครื่องอื่นหรือใช้ EC2 ที่มี RAM มากพอ

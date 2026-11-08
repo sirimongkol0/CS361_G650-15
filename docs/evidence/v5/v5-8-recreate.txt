@@ -8,7 +8,7 @@ Stack names:
   base      cs361-v5r
   Cognito   cs361-v5r-cognito
   backup    cs361-v5r-backup
-  Amplify   not created (no GitHub token; EC2 fallback used)
+  Amplify   removed from V5; EC2 fallback used
 Config prefix: /cs361-v5r/config
 Instance type: t3.small (frontend build on EC2)
 

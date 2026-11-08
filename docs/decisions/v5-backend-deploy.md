@@ -152,4 +152,3 @@ V5 ต้องการให้ backend deploy ซ้ำได้จาก Git
 - [เครื่องมือ IaC V5](v5-iac-tooling.md)
 - [สถาปัตยกรรม V5](../architecture/v5-architecture.md)
 - [คู่มือ deploy V5](../runbooks/v5-deploy.md)
-- [บันทึก Amplify spike](../notes/v5-amplify-spike.md)

@@ -7,7 +7,7 @@ Sequence actually run:
   2. deploy.sh infra --apply
   3. deploy.sh cognito --apply
   4. deploy.sh backend
-  5. deploy.sh frontend --apply    (fallback; Amplify skipped — no token)
+  5. deploy.sh frontend --apply    (EC2 fallback)
   6. deploy.sh seed --yes
   7. deploy.sh schedule --apply
   8. deploy.sh status
@@ -29,7 +29,7 @@ Stack results:
   cs361          CREATE_COMPLETE
   cs361-cognito  CREATE_COMPLETE
   cs361-backup   CREATE_COMPLETE
-  cs361-amplify  not created (no GitHub token; fallback used)
+  cs361-amplify  removed from V5; EC2 fallback used
 
 Service checks:
   API health                       200 {"status":"healthy"}

@@ -16,7 +16,6 @@
 | `git` | สร้าง tarball ของ `backend/`/`frontend/` |
 | สิทธิ์ใน Learner Lab หรือบัญชี AWS | ใช้ `LabRole`/`LabInstanceProfile` ใน Lab |
 | เครือข่ายออกไปยัง AWS | จาก CloudShell หรือเครื่องตัวเอง |
-| (ถ้าใช้ Amplify) GitHub PAT | สิทธิ์อ่าน repository; เก็บใน Secrets Manager |
 
 ไม่ต้องมี Docker บนเครื่องที่รัน `deploy.sh` เพราะ build เกิดบน EC2
 ไม่ต้องมี SSH key และไม่ต้องเปิดพอร์ต 22
@@ -62,7 +61,7 @@ cd infra/new-account
 
 - identity ของบัญชี/role
 - `Mode: true` และ `Region: us-west-2` ใน Lab
-- service probes ผ่าน (CloudFormation, EC2, S3, Cognito, SSM, Secrets Manager, Scheduler, Amplify, IAM read)
+- service probes ผ่าน (CloudFormation, EC2, S3, Cognito, SSM, Secrets Manager, Scheduler, IAM read)
 
 ถ้า probe ใดล้มเหลว ให้แก้ก่อน อย่าข้ามไปสร้าง stack
 ใน Lab การสร้าง IAM role/OIDC ถูกปฏิเสธโดยเจตนา; `check` จะไม่ probe สิ่งเหล่านั้นเมื่อ `LAB_MODE=true`
@@ -81,7 +80,7 @@ cd infra/new-account
 | Output | ใช้ต่อ |
 |---|---|
 | `InstanceId` | SSM Run Command, backup stack |
-| `ApiBaseUrl` | Amplify `API_PROXY_TARGET`, status |
+| `ApiBaseUrl` | API URL และ status |
 | `BucketName` | backend, backup |
 | `DbSecretArn` | backend |
 | `ConfigPrefix` | ทุก stack |
@@ -141,27 +140,6 @@ export AUTH_BACKEND=local
   เพราะ `users.email` เป็น unique และ local users ใช้ `cognito_sub=local:<email>`;
   ใช้ stack/DB ใหม่ หรือลบ users ที่ขึ้นต้นด้วย `local:` ก่อน
 
-### 4.3 Amplify (ถ้ามี token)
-
-```bash
-aws secretsmanager create-secret \
-  --name cs361/github-token \
-  --secret-string '{"token":"github_pat_..."}' \
-  --region "$AWS_REGION"
-
-export GITHUB_TOKEN_SECRET_ARN=$(aws secretsmanager describe-secret \
-  --secret-id cs361/github-token --query ARN --output text)
-
-./deploy.sh amplify
-./deploy.sh amplify --apply
-```
-
-ต้องได้ stack `cs361-amplify` ที่มี app `WEB_COMPUTE`, branch `main` และ SSM `amplify_url`
-ถ้าไม่มี token หรือ stack ล้มเหลว ให้ใช้ fallback ในข้อ 4.4
-
-> Amplify build Next.js 16 SSR ยังไม่ยืนยันใน Learner Lab
-> ถ้า build FAIL ให้บันทึก error แล้วใช้ fallback; อย่าถือว่า deploy ผ่าน
-
 ### 4.4 Fallback frontend บน EC2
 
 ```bash
@@ -212,7 +190,7 @@ Caddy reverse proxy ไปที่ `cs361-frontend:3000`; frontend proxy `/api/
 ข้อจำกัด:
 - ต้องเปิด 80/443 และ DNS ต้องชี้มาที่ EIP
 - ถ้า EIP เปลี่ยน ต้องรัน `tls` ใหม่ (ปกติ EIP คงที่)
-- API port 8000 ยังเปิดแบบ HTTP สำหรับ fallback/Amplify path; ถ้าต้องการปิด
+- API port 8000 ยังเปิดแบบ HTTP สำหรับ fallback path; ถ้าต้องการปิด
   ให้ทำเป็น hardening แยก (ต้องแก้ `ApiBaseUrl`/health check ด้วย)
 
 ### 4.5 Backend
@@ -229,12 +207,12 @@ Caddy reverse proxy ไปที่ `cs361-frontend:3000`; frontend proxy `/api/
 4. เปิด container ใหม่และตรวจ `/api/v1/health` 30 ครั้ง (ทุก 2 วินาที)
 5. ถ้าไม่ผ่าน พิมพ์ log และ exit ไม่เป็นศูนย์
 
-CORS ถูกเลือกตามลำดับ: `CORS_ORIGINS` (ถ้าตั้ง) → `amplify_url` → `FrontendUrl` → SSM
-จึง **ไม่ต้อง deploy backend ซ้ำ** หลังสร้าง Amplify/fallback เหมือน V4
+CORS ถูกเลือกตามลำดับ: `CORS_ORIGINS` (ถ้าตั้ง) → `FrontendUrl` → SSM
+จึง **ไม่ต้อง deploy backend ซ้ำ** หลังสร้าง frontend เหมือน V4
 ถ้าต้องการกำหนดเอง:
 
 ```bash
-CORS_ORIGINS="https://main.xxxxx.amplifyapp.com,http://<EIP>:3000" ./deploy.sh backend
+CORS_ORIGINS="https://<domain>,http://<EIP>:3000" ./deploy.sh backend
 ```
 
 ### 4.6 Seed
@@ -281,7 +259,7 @@ aws cloudwatch describe-alarms --alarm-names cs361-backup-failed \
 ./deploy.sh status
 ```
 
-ต้องเห็น API health และ frontend (Amplify `BranchUrl` หรือ `FrontendUrl`) ตอบสนอง
+ต้องเห็น API health และ frontend (`FrontendUrl` หรือ HTTPS domain) ตอบสนอง
 
 ## 5. งานประจำ
 
@@ -436,8 +414,7 @@ AWS_REGION=us-west-2 LAB_MODE=true ./deploy.sh backend
 ### 7.2 Frontend
 
 - **Fallback**: revert commit แล้ว `./deploy.sh frontend --apply`
-- **Amplify**: revert commit บน `main` แล้วให้ Amplify build ใหม่
-  หรือเลือก redeploy job/version ก่อนหน้าใน Amplify Console
+- ถ้าใช้ HTTPS/Caddy: restart container `cs361-caddy` หรือรัน `./deploy.sh tls` ใหม่
 
 ### 7.3 CloudFormation
 
@@ -471,7 +448,7 @@ aws cloudformation continue-update-rollback --stack-name cs361   # ถ้า UPD
 ./deploy.sh teardown --yes --purge
 ```
 
-ลำดับที่สคริปต์ลบ: backup → amplify → cognito → base
+ลำดับที่สคริปต์ลบ: backup → cognito → base
 สิ่งที่ถูกลบทุกกรณี: EC2, EBS/ฐานข้อมูล, secret, SSM parameter ของ stack, schedule/alarm
 สิ่งที่ถูก Retain เมื่อไม่มี `--purge`: S3 bucket (รวม `backups/`) และ Cognito user pool
 `--purge` จะลบ S3 bucket (ทุก object/version) และ Cognito user pool ด้วย
@@ -487,9 +464,6 @@ aws cloudformation continue-update-rollback --stack-name cs361   # ถ้า UPD
 | `cognito` สร้าง pool ไม่ได้/ชื่อซ้ำ | pool ชื่อเดิมมีอยู่ | เปลี่ยน `POOL_NAME`/`COGNITO_STACK` หรือลบ stack เดิม |
 | `backend` ค้างที่ SSM | EC2 stopped, SSM agent ไม่ทำงาน, หรือ profile ผิด | start instance; ตรวจ `aws ssm describe-instance-information`; ดู `get-command-invocation` |
 | backend health ไม่ผ่าน | secret ผิด, DB ยังไม่พร้อม, CORS/env ผิด | `docker logs cs361-backend`; ตรวจ `db.env`/`.env`; อย่าพิมพ์รหัสผ่าน |
-| frontend build บน EC2 ช้า/OOM | RAM 1 GB | รอ swap; หยุด backend ระหว่าง build; เพิ่ม `INSTANCE_TYPE`; ใช้ Amplify |
-| `amplify` stack ล้มเหลว | ไม่มี service role/token ผิดรูปแบบ | ปล่อย `AMPLIFY_SERVICE_ROLE_ARN` ว่าง; ตรวจ secret key `token`; ถ้า `CreateApp` ปฏิเสธ `OauthToken` ให้สลับเป็น `AccessToken` ตามบันทึก spike; ใช้ fallback |
-| Amplify build FAIL | SSR ต้องใช้ service role ที่ Lab สร้างไม่ได้ | ใช้ fallback; บันทึกเป็นข้อจำกัด |
 | backup ไม่ขึ้น S3 | schedule ไม่ทำงาน/สิทธิ์ S3/สคริปต์ไม่ถูกอัปโหลด | รัน `./deploy.sh backup`; ตรวจ `backup.sh` บนเครื่อง; ดู SSM command |
 | ไม่มีอีเมลแจ้งเตือน | ยังไม่ยืนยัน SNS subscription | กดยืนยันในอีเมล; ตรวจ `list-subscriptions-by-topic` |
 | restore ล้มเหลว | key ผิด, gzip เสีย, พื้นที่ดิสก์ | ตรวจ `aws s3 ls`; `gzip -t`; ตรวจ disk บน EC2 |
@@ -508,7 +482,6 @@ aws cloudformation continue-update-rollback --stack-name cs361   # ถ้า UPD
 - **`teardown --purge` ลบ S3 และ Cognito ถาวร**; ใช้เฉพาะเมื่อต้องการ recreate
 - **ห้ามใช้ region อื่น** ใน Lab นอก `us-east-1`/`us-west-2`
 - **ห้ามรัน workflow จาก fork/PR** บน self-hosted runner ที่ใช้ `LabRole`
-- **ห้ามถือว่า Amplify build ผ่าน** จนมีหลักฐาน; ใช้ fallback เมื่อจำเป็น
 - **ห้ามแก้ shared interface** (ชื่อ stack, `ConfigPrefix`, output, secret JSON)
   โดยไม่แจ้ง lead
 
@@ -520,7 +493,6 @@ aws cloudformation continue-update-rollback --stack-name cs361   # ถ้า UPD
 | สร้าง base | `./deploy.sh infra --apply` |
 | Cognito | `./deploy.sh cognito --apply` |
 | Local auth (fallback) | `AUTH_BACKEND=local ./deploy.sh infra --apply` → `AUTH_BACKEND=local ./deploy.sh backend` (auto local-auth) |
-| Amplify | `GITHUB_TOKEN_SECRET_ARN=... ./deploy.sh amplify --apply` |
 | Fallback frontend | `./deploy.sh frontend --apply` |
 | HTTPS (Caddy) | `./deploy.sh tls` (หรือ `SITE_DOMAIN=... ./deploy.sh tls`) |
 | Backend | `./deploy.sh backend` |

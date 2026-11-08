@@ -8,9 +8,7 @@
 |---|---|
 | `v5-lab-constraints.txt` | ข้อจำกัด Learner Lab ที่ตรวจซ้ำได้ |
 | `v5-2-cognito.txt` | #119 Cognito เป็น IaC |
-| `v5-3-amplify.txt` | #120 Amplify (N/A: ไม่มี token) |
-| `v5-3-fallback.txt` | #120 fallback frontend + CORS |
-| `v5-3-build.txt` | #120 Amplify build (N/A) |
+| `v5-3-fallback.txt` | #120 frontend EC2 fallback + CORS |
 | `v5-3-cors.txt` | #120 CORS preflight |
 | `v5-4-config.txt` | #121 SSM/Secrets |
 | `v5-5-oidc.txt` | #122 ปิดเป็น not planned |

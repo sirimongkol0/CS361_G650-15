@@ -1,13 +1,11 @@
-V5-3 Amplify/CORS — EC2 fallback evidence
+V5-3 Frontend/CORS — EC2 fallback evidence
 Date: 2026-11-08 (UTC)
 Region: us-west-2
 
-Amplify path:
-  GITHUB_TOKEN_SECRET_ARN was not set, so `deploy.sh amplify` skipped the
-  Amplify stack and printed the fallback instruction.
+Amplify was removed from V5; the EC2/Docker frontend is the only frontend.
 
 Fallback path:
-  LAB_MODE=true AWS_REGION=us-west-2 infra/new-account/deploy.sh frontend
+  LAB_MODE=true AWS_REGION=us-west-2 infra/new-account/deploy.sh frontend --apply
 
   Uploaded frontend to:
     s3://cs361-docs-073362813452/deploy/frontend-20261108153617.tgz
@@ -33,11 +31,9 @@ Container:
   API_PROXY_TARGET=http://cs361-backend:8000
   NEXT_PUBLIC_API_URL=/api/v1
 
-Amplify spike (separate API probe, not the stack):
-  aws amplify create-app     -> OK (probe app, deleted)
-  aws amplify create-branch  -> OK (probe branch, deleted)
-  Amplify build              -> not tested (no GitHub token / service role)
+HTTPS:
+  Caddy terminates TLS in front of the same container; see v5-tls.txt.
 
 Conclusion:
-  The EC2 fallback is a working frontend for V5 in Learner Lab. The Amplify
-  stack remains a spike until a GitHub token and a build-success run exist.
+  The EC2/Docker frontend is the working V5 frontend. Amplify templates,
+  stage/build evidence and the spike notes were deleted from the repository.

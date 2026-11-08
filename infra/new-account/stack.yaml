@@ -3,7 +3,7 @@ Description: >-
   CS361 low-cost layout for a fresh account: one EC2 instance (Docker, SSM, no
   SSH) runs both the API and PostgreSQL, plus a private S3 bucket for files.
   Runtime configuration is published to SSM Parameter Store and the database
-  password lives in Secrets Manager. The frontend (Amplify) and Cognito are
+  password lives in Secrets Manager. The frontend runs on this instance and Cognito is
   set up by deploy.sh, not here.
 
 Parameters:
@@ -40,7 +40,7 @@ Parameters:
   ConfigPrefix:
     Type: String
     Default: /cs361/config
-    Description: SSM Parameter Store prefix shared by the Cognito/Amplify/backup stacks.
+    Description: SSM Parameter Store prefix shared by the Cognito/backup stacks.
   CorsOrigins:
     Type: String
     Default: http://localhost:3000
@@ -102,7 +102,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties: { SubnetId: !Ref Subnet, RouteTableId: !Ref RouteTable }
 
-  # Amplify has no fixed source IP, so the API port stays open (same as V2).
+  # The frontend and API are reached from the internet; the API port stays open.
   # Port 3000 is the fallback frontend served from this instance.
   # PostgreSQL is never published: it is reachable only on the Docker network.
   # No SSH: the instance is managed through SSM Session Manager / Run Command.
@@ -261,7 +261,7 @@ Resources:
       Tags: [{ Key: Name, Value: !Sub '${ProjectName}-backend' }]
 
   # A public IPv4 address costs the same with or without an Elastic IP, and the
-  # Elastic IP keeps Amplify's API_PROXY_TARGET valid across stop/start.
+  # Elastic IP keeps the API/frontend URL stable across stop/start.
   AppAddress:
     Type: AWS::EC2::EIP
     Properties:

@@ -29,10 +29,8 @@ PASS  aws scheduler create-schedule with RoleArn=arn:aws:iam::073362813452:role/
 PASS  aws cloudformation create-stack / detect-stack-drift / delete-stack
       (probe stack; deleted immediately)
 PASS  aws ec2 run-instances --dry-run (t3.micro, Amazon Linux 2023 AMI)
-PASS  aws amplify create-app / create-branch
-      (probe app; deleted immediately; Amplify build not tested)
 
 Conclusion:
 - V5 uses us-west-2 and LabMode=true.
 - No IAM user/group/role/policy/OIDC is created by V5.
-- Amplify is created only if a GitHub token exists; EC2 fallback is used otherwise.
+- Amplify was removed from V5; the EC2/Docker frontend is the only frontend.

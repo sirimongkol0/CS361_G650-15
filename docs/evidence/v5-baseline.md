@@ -1,5 +1,8 @@
 # Baseline และการเปรียบเทียบก่อน–หลังของ V5
 
+> **หมายเหตุ:** V4 baseline ด้านล่างยังกล่าวถึง Amplify เพราะเป็นสถาปัตยกรรม V4;
+> V5 นำ Amplify ออกและใช้ EC2/Docker + Caddy HTTPS แทน
+
 > วันที่: 8 พฤศจิกายน 2026 · ใช้กับ #118 (V5-1) และ #125 (V5-8)
 > เอกสารนี้เป็น baseline ของ V4 และผลที่วัดได้จาก V5 ใน Learner Lab
 > ตัวเลขที่ยังไม่ได้จับจะถูกทำเครื่องหมาย **TBD** พร้อมวิธีวัด
@@ -55,7 +58,7 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 1. `./deploy.sh check`
 2. `./deploy.sh infra --apply`
 3. `./deploy.sh cognito --apply`
-4. `./deploy.sh amplify --apply` (มี token) หรือ `./deploy.sh frontend --apply` (fallback)
+4. `./deploy.sh frontend --apply` (EC2 fallback)
 5. `./deploy.sh backend`
 6. `./deploy.sh seed --yes`
 7. `./deploy.sh schedule --apply`
@@ -64,8 +67,7 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 
 รวม **7 commands** สำหรับการสร้างครั้งแรก + 1 คำสั่งตรวจสถานะ (ถ้านับ)
 และ **0 AWS Console interactions** ที่บังคับ
-ถ้าใช้ Amplify ยังต้องสร้าง GitHub PAT หนึ่งครั้งใน GitHub UI
-(ไม่ใช่ AWS Console) และถ้าใช้ fallback ไม่ต้องใช้ token เลย
+frontend ใช้ EC2 fallback จึงไม่ต้องใช้ GitHub PAT หรือ token ของ AWS
 
 สำหรับการ recreate จากศูนย์ ให้ใช้ `./deploy.sh teardown --yes --purge`
 หลัง backup; `--purge` จะลบ S3 bucket และ Cognito pool ที่ปกติถูก Retain
@@ -82,7 +84,7 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 
 | ตัวชี้วัด | V4 (ก่อน) | V5 (หลัง, ผล Lab 8 พ.ย. 2026) |
 |---|---|---|
-| **Manual steps** | 8 commands + 8 Console interactions = **16 manual actions** ในการ deploy ครั้งแรก; รอบอัปเดต backend = 2 commands | **7 commands + 0 AWS Console interactions** ในการ deploy ครั้งแรก (ยืนยันจาก `v5-8-full-run.txt`); รอบอัปเดต backend = 1 command ตามการออกแบบ แต่ยังไม่ได้ทดสอบรอบอัปเดตจริง; ถ้าใช้ Amplify มี GitHub PAT 1 ครั้ง (อยู่นอก AWS) |
+| **Manual steps** | 8 commands + 8 Console interactions = **16 manual actions** ในการ deploy ครั้งแรก; รอบอัปเดต backend = 2 commands | **7 commands + 0 AWS Console interactions** ในการ deploy ครั้งแรก (ยืนยันจาก `v5-8-full-run.txt`); รอบอัปเดต backend = 1 command ตามการออกแบบ แต่ยังไม่ได้ทดสอบรอบอัปเดตจริง |
 | **System create time** | ประมาณ **13–15 นาที** (infra ~3 + Cognito ~1–2 + Amplify ~8–10) | **3m38s** — infra 72s + Cognito 57s + frontend fallback 89s (cs361-v5r, 16:17:34–16:23:10Z); ไม่รวม backend/seed/schedule |
 | **Full first deploy (end-to-end)** | **~25–32 นาที** (8 commands + 8 Console interactions; backend รัน 2 ครั้งเพื่อ CORS) | **7m59s** — cs361-v5r run 1 (16:17:15–16:25:14Z); teardown/recreate run 2 = **6m35s** (16:31:20–16:37:55Z); ไม่มี Console interaction และไม่มี backend รอบสอง |
 | **Backend deploy time** | ประมาณ **5–7 นาทีต่อครั้ง**; deploy ครั้งแรก **2 ครั้ง** (backend + CORS) = 10–14 นาที | **64s** — cs361-v5r backend step (16:20:27–16:21:31Z); CORS มาจาก SSM/output จึงไม่ต้อง deploy ซ้ำ (ยืนยันจาก `v5-3-cors.txt`) |
@@ -91,7 +93,7 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 ### สมมติฐานและผล
 
 > **H1 (ยืนยัน):** V5 ใช้ 7 commands + 0 AWS Console interactions ใน fallback
-> (Amplify มี GitHub PAT 1 ครั้งนอก AWS)
+> (frontend ใช้ EC2 fallback)
 > **H2 (ยืนยัน):** CORS มาจาก SSM/output; ไม่ต้อง deploy backend ซ้ำ
 > **H3 (บางส่วน):** รอบนี้ deploy backend 1 ครั้งและ backup ทำงานตาม schedule;
 > ยังไม่ได้ทดสอบรอบอัปเดต backend ปกติใน stack เดียวกัน
@@ -109,7 +111,6 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 | Stack `cs361` | CREATE_COMPLETE | `v5-8-full-run.txt`, `v5-4-config.txt` |
 | Stack `cs361-cognito` | CREATE_COMPLETE; pool `us-west-2_91XZumUyS`, client `19k8vib1vf3d586cqvppbp4ntu`; 5 groups | `v5-2-cognito.txt` |
 | Stack `cs361-backup` | CREATE_COMPLETE; schedule `cs361-backup` ENABLED; first run Success 15:43:22Z | `v5-6-backup-stack.txt`, `v5-6-backup-run.txt` |
-| Amplify stack/build | N/A — ไม่มี GitHub token; API probe สร้าง app/branch ได้แล้วลบ | `v5-3-amplify.txt`, `v5-3-build.txt` |
 | Fallback frontend | ผ่าน; `http://32.189.5.234:3000/dashboard/public` 200 (30,435 bytes) | `v5-3-fallback.txt` |
 | Backend/API | health 200; login ผ่าน fallback proxy 200 role=admin | `v5-4-config.txt`, `v5-3-fallback.txt` |
 | CORS | origin `http://32.189.5.234:3000` ผ่าน; origin อื่น 400 | `v5-3-cors.txt` |
@@ -157,7 +158,7 @@ start=$(date +%s)
 ./deploy.sh check
 ./deploy.sh infra --apply
 ./deploy.sh cognito --apply
-./deploy.sh frontend --apply       # หรือ amplify --apply เมื่อมี token
+./deploy.sh frontend --apply       # EC2 fallback
 ./deploy.sh backend
 ./deploy.sh seed --yes
 ./deploy.sh schedule --apply
@@ -176,8 +177,6 @@ aws cloudformation describe-stacks --stack-name cs361 \
   --query 'Stacks[0].CreationTime' --output text
 aws cloudformation describe-stacks --stack-name cs361-cognito \
   --query 'Stacks[0].CreationTime' --output text
-aws cloudformation describe-stacks --stack-name cs361-amplify \
-  --query 'Stacks[0].CreationTime' --output text 2>/dev/null || true
 aws cloudformation describe-stacks --stack-name cs361-backup \
   --query 'Stacks[0].CreationTime' --output text
 ```
@@ -191,13 +190,7 @@ aws ssm list-commands --instance-id "$INSTANCE_ID" \
   --output table
 ```
 
-```bash
-# เวลา Amplify build (ถ้าใช้)
-APP_ID=$(aws cloudformation describe-stacks --stack-name cs361-amplify \
-  --query "Stacks[0].Outputs[?OutputKey=='AppId'].OutputValue" --output text 2>/dev/null || true)
-aws amplify list-jobs --app-id "$APP_ID" --branch-name main \
-  --query 'jobSummaries[].[jobId,status,startTime,endTime]' --output table
-```
+
 
 ### วิธีนับ manual steps
 
@@ -213,7 +206,7 @@ aws amplify list-jobs --app-id "$APP_ID" --branch-name main \
 
 | # | สถานการณ์ที่จำลอง | กลไกที่ควรจับ | ผ่านเมื่อ |
 |---|---|---|---|
-| 1 | ตั้ง `CORS_ORIGINS` ไม่ตรงกับ frontend | `deploy.sh backend` อ่าน `amplify_url`/`FrontendUrl` ให้ | ไม่ต้อง deploy backend ซ้ำ |
+| 1 | ตั้ง `CORS_ORIGINS` ไม่ตรงกับ frontend | `deploy.sh backend` อ่าน `FrontendUrl` ให้ | ไม่ต้อง deploy backend ซ้ำ |
 | 2 | เปลี่ยน secret ให้ผิด | health check/DB connection ล้มเหลวและรายงาน | มี error ชัดเจน ไม่เงียบ |
 | 3 | ลบ SSM parameter ที่ backend ใช้ | `deploy.sh backend` อ่านไม่ครบและหยุด | ไม่เขียน `.env` ครึ่งชุด |
 | 4 | ไม่ได้รัน backup | Scheduler/CloudWatch alarm | มี backup object หรือ alarm |
@@ -226,13 +219,11 @@ aws amplify list-jobs --app-id "$APP_ID" --branch-name main \
 
 ## สิ่งที่ยัง manual ใน V5
 
-- สร้าง GitHub PAT และ secret `GITHUB_TOKEN_SECRET_ARN` ถ้าจะใช้ Amplify
 - ยืนยันอีเมล SNS subscription ครั้งแรก
 - `seed --yes` และ `restore --yes` เป็นคำสั่งที่ต้องยืนยันเพราะทำลายข้อมูล
 - การหมุนรหัสผ่านฐานข้อมูล (update secret แล้วรัน `deploy.sh backend`)
 - การติดตั้ง/เปิด self-hosted runner (ถ้าใช้ automation)
 - การตรวจ drift ตามรอบ (CI หรือคำสั่ง manual)
-- การตัดสินใจใช้ fallback เมื่อ Amplify build ไม่ผ่าน
 - `teardown --yes --purge` เมื่อต้อง recreate จากศูนย์
 - การจับเวลา exact ของ `check`/`infra`/`backend` ใน session ใหม่
 

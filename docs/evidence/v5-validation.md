@@ -28,10 +28,8 @@ cd infra/new-account
 | ID | สิ่งที่ทดสอบ | คำสั่ง/วิธีการ | ผลที่คาดหวัง | หลักฐาน | ผล |
 |---|---|---|---|---|---|
 | **V5-2** | Cognito เป็น IaC | `./deploy.sh cognito --apply` แล้วตรวจ stack/pool/group/SSM | stack `cs361-cognito` CREATE_COMPLETE; pool `cstu-v5-auth`; client `cstu-backend`; กลุ่ม 5 กลุ่ม; SSM 2 ตัว; output ครบ | `docs/evidence/v5/v5-2-cognito.txt` | PASS |
-| **V5-3a** | Amplify app/branch จาก stack | สร้าง secret token, `GITHUB_TOKEN_SECRET_ARN=... ./deploy.sh amplify --apply` | stack `cs361-amplify` CREATE_COMPLETE; app `WEB_COMPUTE`; branch `main`; SSM `amplify_url`; output `AppId`/`BranchUrl` | `docs/evidence/v5/v5-3-amplify.txt` | N/A — no token; template lint PASS; API probe PASS |
-| **V5-3b** | Amplify build Next.js SSR | `aws amplify start-job` แล้ว `get-job`/`list-jobs` | สร้าง job ได้; **สถานะ build ยังไม่ยืนยัน**; ถ้า FAIL ต้องบันทึก error และใช้ fallback | `docs/evidence/v5/v5-3-build.txt` | N/A — not tested |
 | **V5-3c** | Fallback frontend | `./deploy.sh frontend --apply`; เปิด `FrontendUrl/dashboard/public` | container `cs361-frontend` รันบน :3000; หน้าเว็บ 200; proxy `/api/v1` ไป backend ได้ | `docs/evidence/v5/v5-3-fallback.txt` | PASS |
-| **V5-3d** | CORS | หลัง backend: `curl -i -X OPTIONS` จาก origin ของ Amplify/fallback; ตรวจ `CORS_ORIGINS` | `Access-Control-Allow-Origin` ตรงกับ origin ที่ใช้; ไม่ต้อง deploy backend ซ้ำ | `docs/evidence/v5/v5-3-cors.txt` | PASS |
+| **V5-3d** | CORS | หลัง backend: `curl -i -X OPTIONS` จาก origin ของ frontend; ตรวจ `CORS_ORIGINS` | `Access-Control-Allow-Origin` ตรงกับ origin ที่ใช้; ไม่ต้อง deploy backend ซ้ำ | `docs/evidence/v5/v5-3-cors.txt` | PASS |
 | **V5-4** | SSM/Secrets | `aws ssm describe-parameters`; `secretsmanager get-secret-value` แล้วแสดงเฉพาะ key; `./deploy.sh backend` | parameter ครบ; secret มี key `username`, `dbname`, `password`; backend health ผ่าน; ไม่มี secret ใน log/git | `docs/evidence/v5/v5-4-config.txt` | PASS |
 | **V5-5** | GitHub OIDC (ปิดแล้ว) | `aws iam list-open-id-connect-providers` | ไม่มี provider ที่ V5 สร้าง; ไม่มี IAM role สำหรับ GitHub; ตรงกับ #122 not planned | `docs/evidence/v5/v5-5-oidc.txt` | N/A (closed) |
 | **V5-6a** | Backup stack | `ALERT_EMAIL=... ./deploy.sh schedule --apply`; `aws scheduler get-schedule --name cs361-backup` | stack `cs361-backup` CREATE_COMPLETE; schedule ENABLED; document `cs361-backup`; topic `cs361-backup-alerts`; alarm `cs361-backup-failed` | `docs/evidence/v5/v5-6-backup-stack.txt` | PASS |
@@ -98,26 +96,9 @@ aws ssm get-parameter --name /cs361/config/cognito_app_client_id
 > หลักฐาน `v5-2-cognito.txt` ถูกเก็บก่อนเปลี่ยนมาใช้ชื่อไฟล์แยกตาม pool
 > การรันครั้งถัดไปต้องใช้ไฟล์ `cognito-test-users-<pool-id>.txt`
 
-### V5-3 Amplify และ fallback
+### V5-3 Frontend fallback
 
-**เส้นทางมี token:**
-
-```bash
-aws secretsmanager create-secret --name cs361/github-token \
-  --secret-string '{"token":"github_pat_..."}' --region "$AWS_REGION"
-
-export GITHUB_TOKEN_SECRET_ARN=$(aws secretsmanager describe-secret \
-  --secret-id cs361/github-token --query ARN --output text)
-
-./deploy.sh amplify
-./deploy.sh amplify --apply
-
-aws cloudformation describe-stacks --stack-name cs361-amplify \
-  --query 'Stacks[0].[StackStatus,Outputs]' --output json
-aws ssm get-parameter --name /cs361/config/amplify_url
-```
-
-**เส้นทาง fallback (ไม่มี token หรือ Amplify build ไม่ผ่าน):**
+Amplify ถูกนำออกจาก V5 แล้ว (ใช้ไม่ได้ใน Learner Lab); frontend ใช้ EC2/Docker fallback:
 
 ```bash
 ./deploy.sh frontend --apply
@@ -130,14 +111,6 @@ curl -fsS "$FRONT/dashboard/public" >/dev/null && echo "fallback OK: $FRONT"
 > `./deploy.sh frontend` โดยไม่มี `--apply` เป็นเพียง plan (ไม่ build/start container)
 
 CORS: ถ้าเบราว์เซอร์เรียก API ตรง ให้ตั้ง `CORS_ORIGINS` แล้วรัน `./deploy.sh backend`
-ถ้าใช้ proxy same-origin ไม่ต้องเพิ่ม origin
-ตรวจ preflight:
-
-```bash
-curl -i -X OPTIONS "$API/api/v1/health" \
-  -H "Origin: $FRONT" \
-  -H "Access-Control-Request-Method: GET"
-```
 
 ### V5-4 SSM/Secrets
 
@@ -242,8 +215,6 @@ aws ec2 revoke-security-group-ingress --group-id "$SG" \
 | SSM/Secrets | ตาม V5-4 | parameter/secret ครบ | PASS |
 | Scheduler | `aws scheduler get-schedule --name cs361-backup` | ENABLED และ target ถูกต้อง | PASS |
 | CFN drift | ตาม V5-7b | ตรวจพบ/กลับเป็น IN_SYNC | PASS (MODIFIED + IN_SYNC) |
-| Amplify create/branch | `aws amplify get-app`; `aws amplify list-branches` | app/branch มีจริง (ถ้ามี token) | PASS (API probe, no stack) |
-| Amplify build | `aws amplify get-job` | อาจ FAIL; ต้องบันทึกและใช้ fallback | N/A — not tested |
 | Fallback frontend | `curl "$FRONT/dashboard/public"` | 200 และ proxy API ได้ | PASS |
 | Lab session หมดอายุ | ปล่อยให้ session จบแล้วกลับมา | EC2 stopped; credentials ใช้ไม่ได้; ต้อง start/check ใหม่ | PASS (credentials expired) |
 
@@ -255,14 +226,14 @@ aws ec2 revoke-security-group-ingress --group-id "$SG" \
 - SSM command ID/status และ log ท้ายที่ไม่มีความลับ
 - S3 key ของ backup และ `head-object` (ขนาด/เวลา)
 - CloudWatch metric และ alarm state
-- ภาพหน้าจอ Amplify job/fallback frontend (ถ้ามี)
+- ภาพหน้าจอ fallback frontend
 - URL ของ GitHub Actions run และผล cfn-lint/cfn-guard
 - ผล drift ก่อน/หลังแก้
 
 ## เกณฑ์ผ่าน
 
 - ทุกข้อ V5-2 ถึง V5-8 มีผล PASS หรือมีเหตุผลที่ระบุชัดว่า N/A
-- V5-3 ผ่านได้ด้วย fallback แม้ Amplify build ไม่ผ่าน แต่ต้องบันทึกว่า build ยังไม่ยืนยัน
+- V5-3 ผ่านด้วย EC2 fallback; Amplify ถูกนำออกจาก V5
 - V5-5 เป็น N/A เพราะปิดเป็น not planned; ต้องยืนยันว่าไม่มี OIDC provider
 - V5-6 ต้องมีหลักฐาน backup จริงและ restore จริงอย่างน้อยหนึ่งครั้ง
 - V5-7 ต้องมีหลักฐาน lint/guard ผ่าน และ drift กลับเป็น IN_SYNC; GitHub Actions
@@ -277,7 +248,7 @@ aws ec2 revoke-security-group-ingress --group-id "$SG" \
 - อย่าเปิดพอร์ต 22 หรือใช้ SSH; ใช้ SSM เท่านั้น
 - อย่า commit token, secret, `.env` หรือ output ที่มีรหัสผ่าน
 - การทดสอบ drift โดยเพิ่ม ingress ต้อง revoke ทันทีและใช้ CIDR TEST-NET
-- Amplify อยู่นอก supported list; ถ้าถูกบล็อกให้ใช้ fallback และบันทึกเป็นความเสี่ยง
+- Amplify ถูกนำออกจาก V5; frontend ใช้ EC2 fallback
 
 ## เอกสารที่เกี่ยวข้อง
 

@@ -9,7 +9,6 @@ Local reproduction of the lint job:
   uvx --quiet cfn-lint \
     infra/new-account/stack.yaml \
     infra/new-account/cognito.yaml \
-    infra/new-account/amplify.yaml \
     infra/new-account/backup.yaml
   -> exit 0 (no findings)
 
