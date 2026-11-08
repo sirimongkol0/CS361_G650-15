@@ -1,0 +1,38 @@
+Learner Lab constraints check
+Date: 2026-11-08 (UTC)
+Account: 073362813452
+Role: arn:aws:sts::073362813452:assumed-role/voclabs/user3690255=Sirimongkol_Dornsrikhot
+Region: us-west-2
+
+PASS  aws sts get-caller-identity
+PASS  aws ec2 describe-vpcs --region us-west-2
+DENY  aws s3api create-bucket --region ap-southeast-2
+      AccessDenied: s3:CreateBucket ... explicit deny in an identity-based policy
+DENY  aws cognito-idp create-user-pool --region ap-southeast-2
+      AccessDeniedException: cognito-idp:CreateUserPool ... no identity-based policy allows
+PASS  aws iam get-role --role-name LabRole
+PASS  aws iam get-instance-profile --instance-profile-name LabInstanceProfile
+      -> LabInstanceProfile contains LabRole
+DENY  aws iam create-role
+      AccessDenied: iam:CreateRole ... no identity-based policy allows
+DENY  aws iam create-open-id-connect-provider
+      AccessDenied: iam:CreateOpenIDConnectProvider ... no identity-based policy allows
+PASS  aws cognito-idp create-user-pool / create-user-pool-client / create-group
+      (probe resources; deleted immediately)
+PASS  aws ssm put-parameter --type SecureString / get-parameter --with-decryption
+      (probe parameter; deleted immediately)
+PASS  aws secretsmanager create-secret / delete-secret
+      (probe secret; deleted immediately)
+PASS  aws sns create-topic / delete-topic
+PASS  aws scheduler create-schedule with RoleArn=arn:aws:iam::073362813452:role/LabRole
+      (probe schedule; deleted immediately)
+PASS  aws cloudformation create-stack / detect-stack-drift / delete-stack
+      (probe stack; deleted immediately)
+PASS  aws ec2 run-instances --dry-run (t3.micro, Amazon Linux 2023 AMI)
+PASS  aws amplify create-app / create-branch
+      (probe app; deleted immediately; Amplify build not tested)
+
+Conclusion:
+- V5 uses us-west-2 and LabMode=true.
+- No IAM user/group/role/policy/OIDC is created by V5.
+- Amplify is created only if a GitHub token exists; EC2 fallback is used otherwise.

@@ -1,0 +1,38 @@
+V5-4 SSM Parameter Store / Secrets Manager evidence
+Date: 2026-11-08 (UTC)
+Region: us-west-2
+
+SSM parameters (names only):
+  /cs361/config/s3_bucket
+  /cs361/config/aws_region
+  /cs361/config/cors_origins
+  /cs361/config/db_secret_arn
+  /cs361/config/instance_id
+  /cs361/config/api_base_url
+  /cs361/config/cognito_user_pool_id
+  /cs361/config/cognito_app_client_id
+  /cs361/config/backup_topic_arn
+  /cs361/config/backup_retention_days
+
+Secret JSON keys (values not printed):
+  ['dbname', 'password', 'username']
+
+Backend configuration check on the instance (non-secret values only):
+  S3_BUCKET=cs361-docs-073362813452
+  AWS_REGION=us-west-2
+  COGNITO_REGION=us-west-2
+  COGNITO_USER_POOL_ID=us-west-2_91XZumUyS
+  COGNITO_APP_CLIENT_ID=19k8vib1vf3d586cqvppbp4ntu
+  CORS_ORIGINS=http://32.189.5.234:3000
+
+Backend health:
+  GET http://32.189.5.234:8000/api/v1/health
+  200 {"status":"healthy"}
+
+Notes:
+- The DB password is read from Secrets Manager by the SSM command and written
+  to /opt/cs361/db.env and /opt/cs361/.env with umask 077; the value is not
+  printed in the deploy output.
+- `deploy.sh backend` fetches the secret each deploy and can ALTER USER when the
+  secret password differs from the old db.env password.
+- No secret, token, or .env is stored in this evidence folder.

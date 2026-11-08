@@ -1,0 +1,47 @@
+V5-2 Cognito as IaC — run evidence
+Date: 2026-11-08 (UTC)
+Stack: cs361-cognito
+Region: us-west-2
+
+Command:
+  LAB_MODE=true AWS_REGION=us-west-2 infra/new-account/deploy.sh cognito --apply
+
+Result:
+  Successfully created/updated stack - cs361-cognito
+
+Outputs:
+  UserPoolId    us-west-2_91XZumUyS
+  AppClientId   19k8vib1vf3d586cqvppbp4ntu
+  UserPoolName  cstu-v5-auth
+
+Groups (5):
+  public
+  student
+  coordinator
+  staff
+  admin
+
+SSM parameters created:
+  /cs361/config/cognito_user_pool_id
+  /cs361/config/cognito_app_client_id
+
+Test users (passwords stored outside the repo; not shown):
+  public@example.test
+  student@example.test
+  coordinator@example.test
+  staff@example.test
+  admin@example.test
+
+Login check through the API:
+  POST http://32.189.5.234:8000/api/v1/auth/login
+  HTTP 200
+  role: admin
+  access_token: <redacted>
+
+Notes:
+- The UserPool has DeletionPolicy: Retain.
+- The app client has no secret and allows USER_PASSWORD_AUTH.
+- `provision_cognito.py` was changed to store passwords per pool in
+  ~/.config/cstu/cognito-test-users-<pool-id>.txt so an older pool cannot
+  shadow the current password. The run above predates the per-pool filename;
+  the new filename applies to the next run.

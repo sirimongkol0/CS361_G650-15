@@ -1,7 +1,41 @@
 # คู่มือ Infrastructure
 
 คู่มือนี้บอกวิธีรันระบบบนเครื่องตัวเอง วิธีตรวจว่าระบบทำงาน และวิธีแก้ปัญหาที่เจอบ่อย
-ส่วนการ deploy ขึ้น AWS ดูที่ [การ deploy V2](../docs/decisions/v2-deployment-amplify-ec2.md)
+ส่วนการ deploy ขึ้น AWS ดูที่ [คู่มือ deploy V5](../docs/runbooks/v5-deploy.md)
+
+## Deploy V5 ขึ้น AWS (CloudFormation)
+
+V5 ใช้ `infra/new-account/deploy.sh` เป็นหลัก และแยก stack เป็น 4 ชุด:
+
+| ไฟล์ | Stack | หน้าที่ |
+|---|---|---|
+| `stack.yaml` | `cs361` | VPC, EC2, EIP, S3, SSM parameter, Secrets Manager, IAM (conditional) |
+| `cognito.yaml` | `cs361-cognito` | User pool, app client, กลุ่มบทบาท |
+| `amplify.yaml` | `cs361-amplify` | Amplify app/branch (เฉพาะเมื่อมี GitHub token) |
+| `backup.yaml` | `cs361-backup` | SNS, SSM document, EventBridge Scheduler, CloudWatch alarm |
+
+Learner Lab:
+
+```bash
+export AWS_REGION=us-west-2
+export LAB_MODE=true
+
+infra/new-account/deploy.sh check
+infra/new-account/deploy.sh infra --apply
+infra/new-account/deploy.sh cognito --apply
+infra/new-account/deploy.sh frontend --apply   # หรือ amplify --apply เมื่อมี token
+infra/new-account/deploy.sh backend
+infra/new-account/deploy.sh seed --yes
+infra/new-account/deploy.sh schedule --apply
+infra/new-account/deploy.sh status
+```
+
+บัญชีปกติใช้ `LAB_MODE=false` และ region `ap-southeast-2` (หรือ region ที่ต้องการ)
+รายละเอียดการตั้งค่า secret, backup/restore, การหมุนรหัสผ่าน, self-hosted runner
+และข้อจำกัดของ Lab อยู่ใน [คู่มือ deploy V5](../docs/runbooks/v5-deploy.md)
+
+> ใน Learner Lab ห้ามสร้าง IAM role/OIDC และใช้ได้เฉพาะ `us-east-1`/`us-west-2`
+> ถ้า Amplify build ไม่ผ่าน ให้ใช้ fallback frontend บน EC2 พอร์ต 3000
 
 ## ต้องมีอะไรก่อน
 

@@ -1,0 +1,16 @@
+V5-3 Amplify build evidence
+Date: 2026-11-08 (UTC)
+Status: NOT TESTED
+
+Reason:
+- No GitHub token was stored in Secrets Manager for this run.
+- Amplify is outside the Learner Lab supported-services list.
+- Next.js 16 SSR needs an Amplify service role, and `iam:CreateRole` is denied.
+
+What would be tested next:
+1. Put a GitHub PAT in Secrets Manager as JSON {"token":"..."}.
+2. Run `GITHUB_TOKEN_SECRET_ARN=<arn> deploy.sh amplify --apply`.
+3. Start a release job and read `aws amplify get-job`.
+4. If the job fails, capture the build log and use the EC2 fallback.
+
+Do not mark Amplify build as passing until a real job reaches SUCCEED.

@@ -7,7 +7,17 @@
 เกณฑ์ว่าข้อมูลแบบไหนนับเป็นของหลักสูตร และแผนพัฒนา V1–V7
 ดูที่ [ขอบเขตหลักสูตร CSTU](docs/decisions/cstu-program-scope.md)
 
-## เวอร์ชันปัจจุบัน: V4 – วงจรความร่วมมือและการปรับปรุง
+## เวอร์ชันปัจจุบัน: V5 – Automation
+
+V5 ไม่เปลี่ยนฟีเจอร์ผู้ใช้จาก V4 แต่เปลี่ยน infrastructure และ deployment ให้สร้างซ้ำได้:
+CloudFormation แยกเป็น stack ย่อย, config อยู่ใน SSM Parameter Store, รหัสผ่านฐานข้อมูลอยู่ใน
+Secrets Manager, backup ทำงานตาม schedule และ CI ตรวจ template ด้วย `cfn-lint`/`cfn-guard`
+รายละเอียดอยู่ที่ [สถาปัตยกรรม V5](docs/architecture/v5-architecture.md) และ
+[คู่มือ deploy V5](docs/runbooks/v5-deploy.md)
+
+> Learner Lab ใช้ได้เฉพาะ `us-east-1`/`us-west-2` และสร้าง IAM role/OIDC ไม่ได้
+> V5 จึงใช้ `LabRole`/`LabInstanceProfile` และมี frontend fallback บน EC2 เมื่อ Amplify ใช้ไม่ได้
+> ดู [ขอบเขต Learner Lab](docs/decisions/v5-learner-lab-scope.md)
 
 สร้างด้วย **Next.js + FastAPI + PostgreSQL** ล็อกอินผ่าน **Amazon Cognito** และเก็บไฟล์บน **S3** (หรือดิสก์ในเครื่องตอนพัฒนา)
 
@@ -37,7 +47,8 @@
 - `frontend/` Next.js App Router หน้าเว็บทุกหน้าอ่านข้อมูลจาก API ไม่มีข้อมูลตัวอย่างสำรองในตัว
 - `backend/` FastAPI + SQLAlchemy ตรวจสิทธิ์ที่ server ทุก endpoint (`auth.require_role`, `auth.optional_user`)
 - `database/` สคริปต์ฐานข้อมูล ส่วน `backend/migrate_v*.py` ปรับ schema ของฐานข้อมูลเดิมทีละเวอร์ชัน
-- `infra/` สคริปต์ตั้งค่า Cognito ฐานเดโมบน RDS และ deploy ลงบัญชีใหม่ (`infra/new-account/`)
+- `infra/new-account/` CloudFormation 4 ชุด (`stack.yaml`, `cognito.yaml`, `amplify.yaml`, `backup.yaml`)
+  และ `deploy.sh` สำหรับ plan/apply, backend, frontend fallback, seed, backup, restore และ teardown
 - `scripts/` smoke test และสคริปต์เตรียมข้อมูลทดสอบ
 
 เว็บที่ deploy แล้ว: **https://main.d1vzv59tpxqtoa.amplifyapp.com** (ข้อมูลสมมติสำหรับสาธิต, AWS Sydney)
@@ -151,11 +162,13 @@ cd frontend && npm run lint && npm run test:display && npm run build
 
 ## เอกสาร
 
-- [สถาปัตยกรรมระบบ V4](docs/architecture/v4-architecture.md) · [V3](docs/architecture/v3-architecture.md) · [V2](docs/architecture/v2-architecture.md)
+- [สถาปัตยกรรมระบบ V5](docs/architecture/v5-architecture.md) · [V4](docs/architecture/v4-architecture.md) · [V3](docs/architecture/v3-architecture.md) · [V2](docs/architecture/v2-architecture.md)
+- [คู่มือ deploy V5](docs/runbooks/v5-deploy.md) · [Baseline before–after](docs/evidence/v5-baseline.md) · [ผลทดสอบ V5](docs/evidence/v5-validation.md)
+- [ขอบเขต Learner Lab](docs/decisions/v5-learner-lab-scope.md) · [ADR เครื่องมือ IaC](docs/decisions/v5-iac-tooling.md) · [ADR ช่องทาง deploy backend](docs/decisions/v5-backend-deploy.md)
 - [สิทธิ์ตามบทบาท](docs/decisions/v3-role-permissions.md)
 - [ขอบเขตหลักสูตร CSTU และแผนพัฒนา](docs/decisions/cstu-program-scope.md)
 - [คู่มือคำศัพท์และน้ำเสียงหน้าเว็บ](docs/ui-writing-guide-th.md)
-- [การ deploy V4: Amplify + EC2 (API + PostgreSQL) + S3](docs/architecture/v4-architecture.md#การ-deploy-v4) · [การ deploy V2–V3: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
+- [การ deploy V5: CloudFormation + EC2 + SSM/Secrets + fallback frontend](docs/architecture/v5-architecture.md#ลำดับการ-deploy) · [การ deploy V4: Amplify + EC2 (API + PostgreSQL) + S3](docs/architecture/v4-architecture.md#การ-deploy-v4) · [การ deploy V2–V3: Amplify + EC2 + RDS + S3](docs/decisions/v2-deployment-amplify-ec2.md) · [คู่มือ infrastructure](infra/README.md)
 - [คู่มือติดตั้ง](docs/setup/README-th.md) · [ฐานข้อมูล CSTU](docs/setup/cstu-database.md)
 - [สัญญา field ของ API](docs/api/v2-field-contract.md)
 - [เดโมข้อมูลสมมติ](docs/demo-fictional.md) · [เดโมบน S3](docs/demo-s3.md) · [ฐานเดโมบน RDS](docs/demo-rds.md)
