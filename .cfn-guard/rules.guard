@@ -1,0 +1,91 @@
+# cfn-guard rules for the CS361 CloudFormation templates under infra/.
+#
+# Run locally (after scripts/install_cfn_guard.sh):
+#   cfn-guard validate --data infra --rules .cfn-guard/rules.guard --type CFNTemplate
+#
+# These use the Guard 1.0 rule syntax supported by cfn-guard 3.x. Every rule is
+# guarded by `when %query !empty`, so a template that has no resource of that
+# type (for example a Cognito-only template) does not fail the check.
+#
+# Note: despite looking natural, `and` is not allowed inside a `[...]` query
+# filter in this syntax; separate lines in the filter already mean AND.
+
+# --- S3: block public access and encrypt at rest -----------------------------
+
+let s3_buckets = Resources.*[ Type == 'AWS::S3::Bucket' ]
+
+rule s3_bucket_public_access_block_configured when %s3_buckets !empty {
+  %s3_buckets.Properties.PublicAccessBlockConfiguration exists
+  %s3_buckets.Properties.PublicAccessBlockConfiguration.BlockPublicAcls == true
+  %s3_buckets.Properties.PublicAccessBlockConfiguration.BlockPublicPolicy == true
+  %s3_buckets.Properties.PublicAccessBlockConfiguration.IgnorePublicAcls == true
+  %s3_buckets.Properties.PublicAccessBlockConfiguration.RestrictPublicBuckets == true
+  <<S3 buckets must set all four PublicAccessBlockConfiguration flags to true>>
+}
+
+rule s3_bucket_encryption_enabled when %s3_buckets !empty {
+  %s3_buckets.Properties.BucketEncryption exists
+  %s3_buckets.Properties.BucketEncryption.ServerSideEncryptionConfiguration[*].ServerSideEncryptionByDefault.SSEAlgorithm in ["AES256", "aws:kms"]
+  <<S3 buckets must enable default encryption with AES256 or aws:kms>>
+}
+
+# --- Security groups: never expose SSH (port 22) to the internet -------------
+
+let security_groups = Resources.*[ Type == 'AWS::EC2::SecurityGroup' ]
+
+rule security_group_no_public_ssh when %security_groups !empty {
+  let ssh_ingress = %security_groups.Properties.SecurityGroupIngress[
+    IpProtocol == 'tcp'
+    CidrIp == '0.0.0.0/0'
+    FromPort <= 22
+    ToPort >= 22
+  ]
+  %ssh_ingress empty <<Security groups must not allow TCP port 22 from 0.0.0.0/0>>
+}
+
+# The same check for standalone ingress resources (the base stack uses inline
+# ingress, but this keeps the rule honest if a template is refactored).
+let security_group_ingress_rules = Resources.*[ Type == 'AWS::EC2::SecurityGroupIngress' ]
+
+rule security_group_ingress_no_public_ssh when %security_group_ingress_rules !empty {
+  let ssh_ingress = %security_group_ingress_rules[
+    Properties.IpProtocol == 'tcp'
+    Properties.CidrIp == '0.0.0.0/0'
+    Properties.FromPort <= 22
+    Properties.ToPort >= 22
+  ]
+  %ssh_ingress empty <<Standalone security group ingress rules must not allow TCP port 22 from 0.0.0.0/0>>
+}
+
+# --- IAM: refuse Allow + Action "*" -----------------------------------------
+# Action can be a scalar ("*") or a list (["s3:GetObject", "*"]), so both
+# shapes are checked.
+
+let iam_roles = Resources.*[ Type == 'AWS::IAM::Role' ]
+let iam_policies = Resources.*[ Type == 'AWS::IAM::Policy' ]
+
+rule iam_role_no_allow_all_actions when %iam_roles !empty {
+  let allow_all_scalar = %iam_roles.Properties.Policies[*].PolicyDocument.Statement[
+    Effect == 'Allow'
+    Action == '*'
+  ]
+  let allow_all_list = %iam_roles.Properties.Policies[*].PolicyDocument.Statement[
+    Effect == 'Allow'
+    some Action[*] == '*'
+  ]
+  %allow_all_scalar empty <<IAM role inline policies must not pair Effect Allow with Action "*">>
+  %allow_all_list empty <<IAM role inline policies must not pair Effect Allow with Action "*">>
+}
+
+rule iam_policy_no_allow_all_actions when %iam_policies !empty {
+  let allow_all_scalar = %iam_policies.Properties.PolicyDocument.Statement[
+    Effect == 'Allow'
+    Action == '*'
+  ]
+  let allow_all_list = %iam_policies.Properties.PolicyDocument.Statement[
+    Effect == 'Allow'
+    some Action[*] == '*'
+  ]
+  %allow_all_scalar empty <<IAM policies must not pair Effect Allow with Action "*">>
+  %allow_all_list empty <<IAM policies must not pair Effect Allow with Action "*">>
+}
