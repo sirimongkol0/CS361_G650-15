@@ -291,7 +291,7 @@ def summary_csv(
     rows += [("กิจกรรมรายเดือน", r["month"], r["month"], r["count"], "") for r in data["activitiesByMonth"]]
     rows += [("ผลลัพธ์ตามประเภท", r["key"], r["label"], r["count"], r["totalValue"]) for r in data["outcomesByType"]]
     rows += [("Feedback ตามแหล่ง", r["key"], r["label"], r["count"], "") for r in data["feedbackBySource"]]
-    rows += [("Feedback ตามประเภทผู้ส่ง", r["key"], r["label"], r["count"], "") for r in data["feedbackByRespondentType"]]
+    rows += [("Feedback ตามประเภทผู้ให้ความคิดเห็น", r["key"], r["label"], r["count"], "") for r in data["feedbackByRespondentType"]]
     rows += [("Feedback ตามคะแนน", r["key"], r["key"], r["count"], "") for r in data["feedbackByRating"]]
     rows += [("Feedback ตามสถานะ", r["key"], r["key"], r["count"], "") for r in data["feedbackByStatus"]]
     improvements = data["improvements"]

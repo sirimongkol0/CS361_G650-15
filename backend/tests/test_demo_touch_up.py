@@ -118,6 +118,89 @@ def test_naturalize_demo_gives_people_names_and_is_idempotent(db_session):
     assert demo_expansion.naturalize_demo(db_session) == 0
 
 
+def test_demo_partners_get_realistic_contact_details_and_puns_are_renamed(db_session):
+    partner = models.Partner(name="Dr. Lin Firewall-Tan", contact_name="ผู้ประสานงานสมมติ 9",
+                             website_url="https://stakeholder-9.example.test",
+                             contact_email="contact-9@example.test")
+    db_session.add(partner)
+    db_session.commit()
+    assert demo_expansion.naturalize_demo(db_session) == 1  # one row, four fields
+    db_session.commit()
+    assert partner.name == "Dr. Lin Tan"
+    assert (partner.contact_name, partner.contact_email) == ("Dr. Lin Tan", "lin.tan@lin-tan.test")
+    assert partner.website_url == "https://lin-tan.test"
+    assert demo_expansion.naturalize_demo(db_session) == 0
+
+
+def test_generated_activity_and_feedback_read_like_normal_records(db_session):
+    partner = models.Partner(name="มหาวิทยาลัยรุ่งอรุณวิทยา")
+    activity = models.Activity(
+        name="ค่าย เกมและกราฟิก #1", activity_type="engineering_camp",
+        date=date(2025, 3, 10), date_kind="event", status="วางแผน", partner=partner,
+        description="กิจกรรมสมมติหัวข้อ เกมและกราฟิก สำหรับทดสอบการแสดงผลและสถิติ")
+    feedback = models.Feedback(
+        title="ความคิดเห็นที่ 1 ต่อ ค่าย เกมและกราฟิก #1", rating=5,
+        comment="เนื้อหาตรงกับงานจริง อยากให้จัดต่อเนื่องทุกภาคการศึกษา",
+        date=date(2025, 3, 15), partner=partner, activity=activity)
+    raw_feedback = models.Feedback(
+        title="ความคิดเห็นสมมติ #2: ค่าย เกมและกราฟิก #1", rating=3,
+        comment="เนื้อหาดี แต่การประชาสัมพันธ์ล่วงหน้าน้อยเกินไป",
+        date=date(2025, 3, 16), partner=partner, activity=activity)
+    db_session.add_all([activity, feedback, raw_feedback])
+    db_session.commit()
+
+    demo_expansion.naturalize_demo(db_session, today=date(2026, 11, 4))
+    db_session.commit()
+
+    assert activity.name == "ค่ายเกมและกราฟิก (มีนาคม 2568)"
+    assert activity.status == "เสร็จสิ้น" and activity.participants is not None
+    assert feedback.title in [title for title, _ in demo_expansion.FEEDBACK_VOICES[5]]
+    assert feedback.comment in [comment for _, comment in demo_expansion.FEEDBACK_VOICES[5]]
+    assert raw_feedback.title in [title for title, _ in demo_expansion.FEEDBACK_VOICES[3]]
+    assert demo_expansion.naturalize_demo(db_session, today=date(2026, 11, 4)) == 0
+
+
+def test_exchange_students_get_unique_names_and_statuses_follow_dates(db_session):
+    user = models.User(cognito_sub="s", email="student@example.test", role="student",
+                       created_at=datetime.now(timezone.utc))
+    db_session.add(user)
+    db_session.commit()
+    rows = [
+        models.ExchangeStudent(name="นักศึกษาสมมติ ฟ้า ทดสอบชัย (1)", type="outbound", status="เสร็จสิ้น",
+                               start_date=date(2025, 6, 1), end_date=date(2025, 8, 30), user_id=user.id),
+        models.ExchangeStudent(name="นักศึกษาสมมติ ฟ้า เดโมสกุล (2)", type="outbound", status="เสร็จสิ้น",
+                               start_date=date(2026, 6, 1), end_date=date(2026, 10, 29), user_id=user.id),
+        models.ExchangeStudent(name="นักศึกษาสมมติ ใบเฟิร์น ตัวอย่างกุล (3)", type="inbound",
+                               start_date=date(2025, 8, 1), end_date=date(2025, 12, 29)),
+    ]
+    db_session.add_all(rows)
+    db_session.commit()
+
+    demo_expansion.naturalize_demo(db_session, today=date(2026, 11, 4))
+    db_session.commit()
+
+    assert rows[0].name == rows[1].name  # one student, two exchange records
+    assert rows[2].name != rows[0].name
+    assert [row.status for row in rows] == ["เสร็จสิ้น", "กำลังดำเนินการ", "เสร็จสิ้น"]
+    assert rows[1].end_date == date(2026, 12, 31)  # the current exchange stays current
+    assert demo_expansion.naturalize_demo(db_session, today=date(2026, 11, 4)) == 0
+
+
+def test_test_outcomes_are_rewritten_as_demo_results(db_session):
+    activity = models.Activity(name="ปฐมนิเทศ", participants=20)
+    outcome = models.Outcome(outcome_type_id=1, title="ผู้เข้าร่วมกิจกรรม (ข้อมูลทดสอบ V4-2)",
+                             value=35, activity=activity)
+    db_session.add(outcome)
+    db_session.commit()
+
+    demo_expansion.naturalize_demo(db_session)
+    db_session.commit()
+
+    assert outcome.title == "ผู้เข้าร่วมปฐมนิเทศนักศึกษาแลกเปลี่ยน รุ่น 1"
+    assert float(outcome.value) == 20
+    assert "ข้อมูลทดสอบ" not in (outcome.description or "")
+
+
 def test_demo_source_label_loses_the_word_but_other_sources_keep_theirs(db_session):
     demo = models.Source(source_url="https://cstu-demo.example.test/dataset/v1", source_type="demo_fixture",
                          source_title="ชุดข้อมูลสมมติ CSTU สำหรับสาธิต V2", source_publisher="ชุดสาธิตรายวิชา CS361 (ข้อมูลสมมติ)",
@@ -129,4 +212,6 @@ def test_demo_source_label_loses_the_word_but_other_sources_keep_theirs(db_sessi
     db_session.commit()
     assert demo_expansion.naturalize_demo(db_session) == 1
     assert (demo.source_title, demo.source_publisher) == (demo_expansion.SOURCE_TITLE, demo_expansion.SOURCE_PUBLISHER)
+    assert (demo.source_url, demo.source_locator) == (demo_expansion.SOURCE_URL, demo_expansion.SOURCE_LOCATOR)
     assert other.source_title == "ข้อมูลสมมติจากหน่วยงาน"
+    assert demo_expansion.naturalize_demo(db_session) == 0

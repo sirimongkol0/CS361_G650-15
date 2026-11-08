@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, ArrowRight, Shield, Globe, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { ApiError } from '@/lib/api';
 import { ROLES, useRole, getRoleConfig } from '@/lib/role-context';
 
@@ -72,9 +72,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E]">
-              <Globe className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/tu-emblem.png"
+              alt="ตรามหาวิทยาลัยธรรมศาสตร์"
+              width={44}
+              height={44}
+              className="h-11 w-11 shrink-0"
+              draggable={false}
+            />
             <div>
               <div className="font-display font-extrabold text-lg leading-snug text-ink">
                 PCSMS
@@ -170,7 +175,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right: Illustration ──────────────────────── */}
-      <div className="hidden lg:flex flex-1 relative flex-col items-center justify-center p-14" style={{ background: '#111827' }}>
+      <div className="hidden lg:flex flex-1 relative overflow-hidden flex-col items-center justify-center p-14" style={{ background: '#111827' }}>
         {/* TU stripe top */}
         <div className="absolute top-0 left-0 right-0 h-1 tu-stripe" />
 
@@ -203,7 +208,7 @@ export default function LoginPage() {
 
           {/* Role preview chips */}
           <div>
-            <div className="text-xs font-semibold mb-2.5 text-faint">
+            <div className="text-xs font-semibold mb-2.5" style={{ color: '#D1D5DB' }}>
               ผู้ใช้ 5 บทบาท
             </div>
             <div className="flex flex-wrap gap-2">

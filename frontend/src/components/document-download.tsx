@@ -16,7 +16,7 @@ export function DocumentDownload({ id, fileName, className = "btn btn-outline ga
       const base = (process.env.NEXT_PUBLIC_API_BROWSER_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace(/\/$/, "");
       const response = await fetch(`${base}/documents/${id}/download`, { signal: controller.signal, cache: "no-store" });
       if (!response.ok) {
-        setError(response.status === 404 ? "ไม่พบไฟล์ข้อตกลง" : "ดาวน์โหลดไม่สำเร็จ กรุณาลองอีกครั้ง");
+        setError(response.status === 404 ? "ไม่พบไฟล์เอกสาร" : "ดาวน์โหลดไม่สำเร็จ กรุณาลองอีกครั้ง");
         return;
       }
       const url = URL.createObjectURL(await response.blob());
@@ -29,7 +29,7 @@ export function DocumentDownload({ id, fileName, className = "btn btn-outline ga
     } finally { clearTimeout(timer); setBusy(false); }
   }
   return <div>
-    <button type="button" disabled={busy} onClick={download} className={className} aria-label={`ดาวน์โหลดไฟล์ข้อตกลง ${id}`}>
+    <button type="button" disabled={busy} onClick={download} className={className} aria-label={`ดาวน์โหลดไฟล์เอกสาร ${id}`}>
       <Download className="w-4 h-4" />{busy ? "กำลังดาวน์โหลด…" : error ? "ลองดาวน์โหลดอีกครั้ง" : "ดาวน์โหลด"}
     </button>
     {error && <p role="alert" className="text-xs text-crimson mt-2">{error}</p>}

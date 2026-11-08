@@ -62,16 +62,24 @@ function AppSidebar({ navItems }: { navItems: NavItem[] }) {
 
       {/* Logo */}
       <SidebarHeader className="flex-row items-center gap-3 border-b border-sidebar-border px-4 py-4 group-data-[collapsible=icon]:px-2">
-        <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-linear-to-br from-crimson to-[#B8243E] group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
-          <Globe className="w-5 h-5 text-white" />
-        </div>
-        <div className="overflow-hidden group-data-[collapsible=icon]:hidden">
+        <img
+          src="/tu-emblem.png"
+          alt="ตรามหาวิทยาลัยธรรมศาสตร์"
+          width={36}
+          height={36}
+          className="h-9 w-9 shrink-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+          title="CSTU · PCSMS"
+          draggable={false}
+        />
+        <div
+          className="overflow-hidden group-data-[collapsible=icon]:hidden"
+          title="ระบบบริหารความร่วมมือและผู้มีส่วนได้ส่วนเสีย · CSTU ธรรมศาสตร์"
+        >
           <div className="font-display font-extrabold text-sm leading-snug text-ink">
-            CSTU • PCSMS
+            CSTU · PCSMS
           </div>
           <div className="text-xs leading-snug text-faint">
-            ความร่วมมือของหลักสูตร<br />
-            วิทยาการคอมพิวเตอร์ ธรรมศาสตร์
+            ระบบบริหารความร่วมมือ
           </div>
         </div>
       </SidebarHeader>
@@ -250,12 +258,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         >
           <SidebarToggleButton />
 
-          {/* System name */}
-          <div className="font-display font-extrabold text-sm text-ink hidden sm:block">
-            CSTU • PCSMS
-            <span className="hidden lg:inline text-xs font-medium text-faint ml-2">
-              ปริญญาตรี • ธรรมศาสตร์ ศูนย์รังสิต
-            </span>
+          {/* The sidebar owns the brand on desktop; keep a compact mark on mobile. */}
+          <div className="font-display font-extrabold text-sm text-ink sm:hidden">
+            PCSMS
           </div>
 
           <div className="flex-1" />
@@ -330,7 +335,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {showTop && (
           <button
             type="button"
-            className="fixed bottom-5 right-5 z-30 rounded-full bg-crimson p-2.5 text-white shadow-card hover:opacity-90 animate-scale-in"
+            className="fixed bottom-5 right-5 z-30 rounded-full bg-crimson p-2.5 text-white shadow-card hover:opacity-90 animate-scale-in print:hidden"
             onClick={() => mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
             aria-label="กลับขึ้นด้านบน"
             title="กลับขึ้นด้านบน"

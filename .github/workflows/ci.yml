@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Validate Compose configuration
         run: docker compose config --quiet
@@ -54,6 +56,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -87,6 +91,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -184,6 +190,9 @@ jobs:
           node frontend/tests/v3-auth.cjs
           node frontend/tests/v3-agreements.cjs
           node frontend/tests/v3-forms.cjs
+          node frontend/tests/imports.cjs
+          node frontend/tests/admin-lookups.cjs
+          node frontend/tests/feedback-triage.cjs
       - name: Upload commit/environment, API transcript and role-free screenshots
         if: always()
         uses: actions/upload-artifact@v4

@@ -295,6 +295,7 @@ def test_staff_partner_with_source_and_publish_appears_publicly(client, db_sessi
     created = client.post("/api/v1/partners/", headers=staff, json=_public_partner_body(
         is_published=True, source_url="https://partner.example.test/mou"))
     assert created.status_code == 201, created.text
+    assert created.json()["publiclyVisible"] is True
     public = client.get("/api/v1/partners/").json()
     assert [p["name"] for p in public] == ["Web Partner University"]
     log = db_session.query(models.AuditLog).filter_by(entity="partners", entity_id=created.json()["id"]).one()
@@ -303,10 +304,13 @@ def test_staff_partner_with_source_and_publish_appears_publicly(client, db_sessi
 
 def test_partner_source_can_be_added_later_by_update(client, db_session, cognito):
     staff = bearer(token_for(client, "staff"))
-    partner_id = client.post("/api/v1/partners/", headers=staff, json=_public_partner_body(is_published=True)).json()["id"]
-    assert client.get("/api/v1/partners/").json() == []  # no verified source yet
+    created = client.post("/api/v1/partners/", headers=staff, json=_public_partner_body(is_published=True))
+    partner_id = created.json()["id"]
+    assert created.json()["publiclyVisible"] is False  # no verified source yet
+    assert client.get("/api/v1/partners/").json() == []
     updated = client.put(f"/api/v1/partners/{partner_id}", headers=staff, json={"source_url": "https://partner.example.test/later"})
     assert updated.status_code == 200, updated.text
+    assert updated.json()["publiclyVisible"] is True
     assert [p["id"] for p in client.get("/api/v1/partners/").json()] == [partner_id]
 
 

@@ -1,7 +1,8 @@
 "use client";
 
 // Calls to the V3 login API (/auth/*). Passwords go to the backend, which checks
-// them with Amazon Cognito; the browser only ever holds the short-lived access token.
+// them with Cognito or the local-auth backend; the browser only ever holds the
+// short-lived access token.
 
 import { ApiError, apiBase } from "@/lib/api";
 

@@ -12,6 +12,25 @@ export const activityTypeLabels: Record<string, string> = {
   international_conference: "ประชุมวิชาการนานาชาติ",
 };
 
+/* What an activity date means, when it is not simply the event day. */
+export const activityDateKindLabels: Record<string, string> = {
+  event: "วันจัดกิจกรรม",
+  announcement: "วันประกาศ",
+  deadline: "กำหนดส่ง / สมัคร",
+  application_open: "วันเปิดรับสมัคร",
+  application_close: "วันปิดรับสมัคร",
+  period_start: "เริ่มช่วงเวลา",
+  period_end: "สิ้นสุดช่วงเวลา",
+};
+
+/* How precise the activity date is (day/month/year or approximate). */
+export const datePrecisionLabels: Record<string, string> = {
+  day: "ระบุวัน",
+  month: "ระบุเดือน",
+  year: "ระบุปี",
+  approximate: "ประมาณ",
+};
+
 export const partnerTypeLabels: Record<string, string> = {
   alumni: "ศิษย์เก่า",
   expert: "ผู้เชี่ยวชาญ",
@@ -28,7 +47,7 @@ export const partnerTypeLabels: Record<string, string> = {
 export const feedbackSourceLabels: Record<string, string> = {
   participant: "ผู้เข้าร่วมกิจกรรม",
   alumni: "ศิษย์เก่า",
-  partner: "หน่วยงานคู่ความร่วมมือ",
+  partner: "หน่วยงานความร่วมมือ",
   student: "นักศึกษา",
   coop_system: "ระบบสหกิจศึกษา",
   web_form: "ฟอร์มบนเว็บ",
@@ -79,7 +98,7 @@ export const activityTypeColors: Record<string, string> = {
 export type ScopeLevel = "program" | "faculty" | "university";
 
 export const scopeLevelLabels: Record<ScopeLevel, string> = {
-  program: "หลักสูตร CSTU",
+  program: "ระดับหลักสูตร (CSTU)",
   faculty: "ระดับคณะ",
   university: "ระดับมหาวิทยาลัย",
 };
@@ -100,6 +119,22 @@ export const documentTypeLabels: Record<string, string> = {
   MOU: "MoU",
   MOA: "MoA",
   TEMPLATE: "แบบฟอร์ม",
+};
+
+/* What the document is (API field documentKind), independent of the MoU/MoA type. */
+export const documentKindLabels: Record<string, string> = {
+  agreement: "ข้อตกลง / MoU-MoA",
+  template: "แบบฟอร์ม",
+  procedure: "ขั้นตอนปฏิบัติ",
+  announcement: "ประกาศ",
+  other: "อื่น ๆ",
+};
+
+/* Whether the document itself can be opened, only described, or is unavailable. */
+export const fileAvailabilityLabels: Record<string, string> = {
+  available: "มีไฟล์พร้อมใช้",
+  metadata_only: "มีข้อมูล แต่ยังไม่มีไฟล์",
+  unavailable: "ไม่พร้อมใช้",
 };
 
 /** Human-readable file size (KB/MB). */
@@ -131,7 +166,7 @@ export const importStatusLabels: Record<string, string> = {
 
 export const cstuStatusLabels: Record<string, string> = {
   keep: "เกี่ยวข้องกับ CSTU",
-  review: "รอตรวจ",
+  review: "รอตรวจสอบ",
   out_of_scope: "ไม่เกี่ยวข้องกับ CSTU",
 };
 

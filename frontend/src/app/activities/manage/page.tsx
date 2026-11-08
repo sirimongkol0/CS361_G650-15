@@ -9,10 +9,12 @@ import {
   apiDelete, apiGetList, apiPatch, apiPost, formatThaiDate, loadAgreementOptions, loadManagePartners, useApiResource,
   type AgreementOption, type PartnerView,
 } from "@/lib/api";
-import { activityTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
+import { activityDateKindLabels, activityTypeLabels, datePrecisionLabels, partnerTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
+import { FormActions, FormSection } from "@/components/form-layout";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -25,10 +27,13 @@ interface ManagedActivity {
   endDate: string | null;
   description: string | null;
   activity_type: string | null;
+  dateKind: string | null;
+  datePrecision: string | null;
   location: string | null;
   time: string | null;
   participants: number | null;
   status: string | null;
+  isOpen: boolean | null;
   scopeLevel: ScopeLevel | null;
   partner: { id: number; name: string } | null;
   partnerId: number | null;
@@ -206,11 +211,14 @@ function ActivityForm({
     name: activity?.name ?? "",
     activity_type: activity?.activity_type ?? "",
     date: activity?.date ?? "",
+    date_kind: activity?.dateKind ?? "",
+    date_precision: activity?.datePrecision ?? "",
     end_date: activity?.endDate ?? "",
     time: activity?.time ?? "",
     location: activity?.location ?? "",
     participants: activity?.participants != null ? String(activity.participants) : "",
     status: activity?.status ?? "วางแผน",
+    is_open: activity?.isOpen == null ? "" : activity.isOpen ? "true" : "false",
     partner_id: activity?.partnerId ? String(activity.partnerId) : "",
     mou_document_id: activity?.mouDocId ? String(activity.mouDocId) : "",
     scope_level: activity?.scopeLevel ?? "",
@@ -219,30 +227,65 @@ function ActivityForm({
   });
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
+  // The backend forbids date_kind/date_precision when there is no date.
+  const setDate = (e: { target: { value: string } }) => setForm({
+    ...form,
+    date: e.target.value,
+    ...(e.target.value ? {} : { date_kind: "", date_precision: "" }),
+  });
   // Agreements of the chosen partner (all when none is chosen); the current link always stays listed.
   const agreementChoices = agreements.filter((d) =>
     !form.partner_id || d.partnerId === Number(form.partner_id) || String(d.id) === form.mou_document_id);
-  const pickAgreement = (e: { target: { value: string } }) => {
-    const chosen = agreements.find((d) => String(d.id) === e.target.value);
+  const partnerOptions: ComboboxOption[] = partners.map((partner) => ({
+    value: String(partner.id),
+    label: partner.name,
+    description: [partner.country, partner.type ? partnerTypeLabels[partner.type] : null].filter(Boolean).join(' · ') || undefined,
+    group: partner.type ? partnerTypeLabels[partner.type] ?? 'อื่น ๆ' : 'อื่น ๆ',
+  }));
+  const agreementOptions: ComboboxOption[] = agreementChoices.map((agreement) => ({
+    value: String(agreement.id),
+    label: agreement.name,
+    description: partners.find((partner) => partner.id === agreement.partnerId)?.name,
+  }));
+  if (form.mou_document_id && !agreementOptions.some((option) => option.value === form.mou_document_id)) {
+    agreementOptions.push({
+      value: form.mou_document_id,
+      label: `ข้อตกลง #${form.mou_document_id}`,
+    });
+  }
+  const pickPartner = (next: string) => {
+    const current = agreements.find((agreement) => String(agreement.id) === form.mou_document_id);
+    const keepAgreement = !next || !current || current.partnerId == null || current.partnerId === Number(next);
     setForm({
       ...form,
-      mou_document_id: e.target.value,
+      partner_id: next,
+      mou_document_id: keepAgreement ? form.mou_document_id : '',
+    });
+  };
+  const pickAgreement = (next: string) => {
+    const chosen = agreements.find((d) => String(d.id) === next);
+    setForm({
+      ...form,
+      mou_document_id: next,
       // Choosing an agreement also fills in its partner when none is set yet.
       partner_id: form.partner_id || (chosen?.partnerId ? String(chosen.partnerId) : ""),
     });
   };
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  async function submit(e?: FormEvent) {
+    e?.preventDefault();
     const body: Record<string, unknown> = {
       name: form.name.trim(),
       activity_type: orNull(form.activity_type),
       date: orNull(form.date),
+      date_kind: form.date ? orNull(form.date_kind) : null,
+      date_precision: form.date ? orNull(form.date_precision) : null,
       end_date: orNull(form.end_date),
       time: orNull(form.time),
       location: orNull(form.location),
       participants: form.participants === "" ? null : Number(form.participants),
       status: orNull(form.status),
+      is_open: form.is_open === "" ? null : form.is_open === "true",
       partner_id: form.partner_id ? Number(form.partner_id) : null,
       mou_document_id: form.mou_document_id ? Number(form.mou_document_id) : null,
       scope_level: orNull(form.scope_level),
@@ -262,75 +305,114 @@ function ActivityForm({
   return (
     <form onSubmit={submit}>
       <FormError error={action.error} />
-      <Field label="ชื่อกิจกรรม *">
-        <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
-      </Field>
-      <div className="grid gap-x-4 sm:grid-cols-2">
-        <Field label="ประเภทกิจกรรม">
-          <select className={inputCls} value={form.activity_type} onChange={set("activity_type")}>
-            <option value="">— ไม่ระบุ —</option>
-            {Object.entries(activityTypeLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-          </select>
+
+      <FormSection title="ข้อมูลกิจกรรม" description="ข้อมูลหลักที่ใช้แสดงในหน้าสาธารณะ">
+        <Field label="ชื่อกิจกรรม *">
+          <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
         </Field>
-        <Field label="สถานะ">
-          <select className={inputCls} value={form.status} onChange={set("status")}>
-            {ACTIVITY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="ประเภทกิจกรรม">
+            <select className={inputCls} value={form.activity_type} onChange={set("activity_type")}>
+              <option value="">— ไม่ระบุ —</option>
+              {Object.entries(activityTypeLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+          <Field label="สถานะ">
+            <select className={inputCls} value={form.status} onChange={set("status")}>
+              {ACTIVITY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+          <Field label="เปิดรับสมัคร" hint="ใช้กับกิจกรรมที่ยังเปิดให้ลงทะเบียน">
+            <select className={inputCls} value={form.is_open} onChange={set("is_open")}>
+              <option value="">— ไม่ระบุ —</option>
+              <option value="true">เปิด</option>
+              <option value="false">ปิด</option>
+            </select>
+          </Field>
+          <Field label="วันที่เริ่ม">
+            <DateInput className={inputCls} value={form.date} onChange={setDate} />
+          </Field>
+          <Field label="วันที่สิ้นสุด">
+            <DateInput className={inputCls} value={form.end_date} min={form.date || undefined} onChange={set("end_date")} />
+          </Field>
+          <Field label="ลักษณะวันที่" hint="ระบุว่าวันที่นี้คือวันจัดกิจกรรม ประกาศ หรือช่วงรับสมัคร">
+            <select className={inputCls} value={form.date_kind} onChange={set("date_kind")} disabled={!form.date}>
+              <option value="">— ไม่ระบุ —</option>
+              {Object.entries(activityDateKindLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+          <Field label="ความละเอียดวันที่" hint="ใช้เมื่อไม่ทราบวันจริง เช่น ระบุเฉพาะเดือนหรือปี">
+            <select className={inputCls} value={form.date_precision} onChange={set("date_precision")} disabled={!form.date}>
+              <option value="">— ไม่ระบุ —</option>
+              {Object.entries(datePrecisionLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+          <Field label="เวลา">
+            <input className={inputCls} value={form.time} onChange={set("time")} placeholder="09:00 - 16:00" />
+          </Field>
+          <Field label="สถานที่">
+            <input className={inputCls} value={form.location} onChange={set("location")} />
+          </Field>
+          <Field label="จำนวนผู้เข้าร่วม">
+            <input className={inputCls} type="number" min={0} value={form.participants} onChange={set("participants")} />
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="ความสัมพันธ์" description="เชื่อมกิจกรรมกับหน่วยงานและข้อตกลงที่เกี่ยวข้อง">
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="หน่วยงานความร่วมมือ">
+            <Combobox
+              options={partnerOptions}
+              value={form.partner_id}
+              onChange={pickPartner}
+              placeholder="เลือกหน่วยงาน"
+              emptyMessage="ไม่พบหน่วยงาน"
+              aria-label="หน่วยงานความร่วมมือ"
+            />
+          </Field>
+          <Field label="ข้อตกลงที่เกี่ยวข้อง">
+            <Combobox
+              options={agreementOptions}
+              value={form.mou_document_id}
+              onChange={pickAgreement}
+              placeholder="เลือกข้อตกลง"
+              emptyMessage="ไม่พบข้อตกลง"
+              aria-label="ข้อตกลงที่เกี่ยวข้อง"
+            />
+          </Field>
+          <Field label="ขอบเขตความร่วมมือ">
+            <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
+              <option value="">— ยังไม่ระบุ —</option>
+              {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+        </div>
+        {form.partner_id && agreementOptions.length === 0 && (
+          <p className="text-xs text-faint">หน่วยงานนี้ยังไม่มีข้อตกลงที่เชื่อมได้</p>
+        )}
+      </FormSection>
+
+      <FormSection title="รายละเอียดและการเผยแพร่">
+        <Field label="รายละเอียด">
+          <textarea className={inputCls} rows={3} value={form.description} onChange={set("description")} />
         </Field>
-        <Field label="วันที่เริ่ม">
-          <DateInput className={inputCls} value={form.date} onChange={set("date")} />
-        </Field>
-        <Field label="วันที่สิ้นสุด">
-          <DateInput className={inputCls} value={form.end_date} min={form.date || undefined} onChange={set("end_date")} />
-        </Field>
-        <Field label="เวลา">
-          <input className={inputCls} value={form.time} onChange={set("time")} placeholder="09:00 - 16:00" />
-        </Field>
-        <Field label="สถานที่">
-          <input className={inputCls} value={form.location} onChange={set("location")} />
-        </Field>
-        <Field label="จำนวนผู้เข้าร่วม">
-          <input className={inputCls} type="number" min={0} value={form.participants} onChange={set("participants")} />
-        </Field>
-        <Field label="หน่วยงานคู่ความร่วมมือ">
-          <select className={inputCls} value={form.partner_id} onChange={set("partner_id")}>
-            <option value="">— ไม่ระบุ —</option>
-            {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </Field>
-        <Field label="ข้อตกลงที่เกี่ยวข้อง">
-          <select className={inputCls} value={form.mou_document_id} onChange={pickAgreement}>
-            <option value="">— ไม่ระบุ —</option>
-            {agreementChoices.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-            {form.mou_document_id && !agreements.some((d) => String(d.id) === form.mou_document_id) && (
-              <option value={form.mou_document_id}>ข้อตกลง #{form.mou_document_id}</option>
-            )}
-          </select>
-        </Field>
-        <Field label="ระดับความร่วมมือ">
-          <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
-            <option value="">— ยังไม่ระบุ —</option>
-            {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-          </select>
-        </Field>
-      </div>
-      <Field label="รายละเอียด">
-        <textarea className={inputCls} rows={3} value={form.description} onChange={set("description")} />
-      </Field>
-      {isStaff ? (
-        <label className="mb-3 flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
-          เผยแพร่ในหน้าสาธารณะ
-        </label>
-      ) : (
-        <p className="mb-3 text-xs text-faint">กิจกรรมใหม่จะแสดงในหน้าสาธารณะเมื่อเจ้าหน้าที่เผยแพร่</p>
-      )}
-      <div className="flex justify-end gap-2">
-        <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
-        <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : activity ? "บันทึก" : "เพิ่ม"}
-        </button>
-      </div>
+        {isStaff ? (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
+            เผยแพร่ในหน้าสาธารณะ
+          </label>
+        ) : (
+          <p className="text-xs text-faint">กิจกรรมใหม่จะแสดงในหน้าสาธารณะเมื่อเจ้าหน้าที่เผยแพร่</p>
+        )}
+      </FormSection>
+
+      <FormActions
+        onCancel={onCancel}
+        onSave={() => { void submit(); }}
+        saveLabel={activity ? "บันทึก" : "เพิ่ม"}
+        busy={action.busy}
+      />
     </form>
   );
 }

@@ -35,9 +35,11 @@ const activities = [
     });
     await page.goto(`${base}/documents`);
     await page.getByRole('link', {name: 'Alpha Agreement', exact: true}).waitFor();
-    await page.getByPlaceholder('ค้นหาชื่อข้อตกลงหรือหน่วยงาน').fill('Distinctive');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Distinctive');
-    await page.getByLabel('ประเภทข้อตกลง').selectOption('MOU');
-    await page.getByLabel('สถานะข้อตกลง').selectOption('active');
+    await page.locator('label').filter({hasText: 'ตั้งแต่วันที่'}).first().waitFor();
+    await page.locator('label').filter({hasText: 'ถึงวันที่'}).first().waitFor();
+    await page.getByPlaceholder('ค้นหาชื่อเอกสารหรือหน่วยงาน').fill('Distinctive');await page.waitForFunction(v=>(new URLSearchParams(location.search).get('q')??'')===v,'Distinctive');
+    await page.getByLabel('รูปแบบเอกสาร').selectOption('MOU');
+    await page.getByLabel('สถานะเอกสาร').selectOption('active');
     await page.getByLabel('มีผลตั้งแต่วันที่').fill('2026-12-31');
     await page.getByLabel('มีผลถึงวันที่').fill('2026-12-31');
     assert.equal(await page.locator('tbody tr').count(), 1);
@@ -45,27 +47,27 @@ const activities = [
     assert.equal(new URL(filteredUrl).searchParams.get('status'), 'active');
     await page.reload();
     await page.getByRole('link', {name: 'Alpha Agreement', exact: true}).waitFor();
-    await page.waitForFunction(() => document.querySelector('input[placeholder="ค้นหาชื่อข้อตกลงหรือหน่วยงาน"]').value === 'Distinctive');
-    assert.equal(await page.getByLabel('สถานะข้อตกลง').inputValue(), 'active');
+    await page.waitForFunction(() => document.querySelector('input[placeholder="ค้นหาชื่อเอกสารหรือหน่วยงาน"]').value === 'Distinctive');
+    assert.equal(await page.getByLabel('สถานะเอกสาร').inputValue(), 'active');
     assert.equal(await page.locator('tbody tr').count(), 1);
     await page.getByRole('link', {name: 'Alpha Agreement', exact: true}).click();
     await page.getByRole('heading', {name: 'Alpha Agreement', exact: true}).waitFor();
     await page.goBack();
     await page.getByRole('link', {name: 'Alpha Agreement', exact: true}).waitFor();
     assert.equal(page.url(), filteredUrl);
-    assert.equal(await page.getByLabel('สถานะข้อตกลง').inputValue(), 'active');
+    assert.equal(await page.getByLabel('สถานะเอกสาร').inputValue(), 'active');
     await page.screenshot({path: path.join(output, 'documents-filtered-desktop.png'), fullPage: true});
     await page.getByRole('button', {name: 'ล้างตัวกรอง', exact: true}).click();
     assert.equal(new URL(page.url()).search, '');
     assert.equal(await page.locator('tbody tr').count(), 3);
-    await page.getByLabel('สถานะข้อตกลง').selectOption('unknown');
+    await page.getByLabel('สถานะเอกสาร').selectOption('unknown');
     assert.equal(await page.locator('tbody tr').count(), 1);
     assert.match(await page.locator('tbody').innerText(), /Application template/);
     await page.evaluate(() => {
       window.history.pushState(window.history.state, '', '/documents?status=expired');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
-    await page.waitForFunction(() => document.querySelector('select[aria-label="สถานะข้อตกลง"]').value === 'expired');
+    await page.waitForFunction(() => document.querySelector('select[aria-label="สถานะเอกสาร"]').value === 'expired');
     assert.match(await page.locator('tbody').innerText(), /Beta Agreement/);
     checks.push('document partner search, combined status/type/date, refresh/back, reset, unknown and popstate');
 
@@ -82,6 +84,8 @@ const activities = [
     await page.getByText('2569', {exact: true}).waitFor();
     await page.goto(`${base}/activities`);
     await page.getByRole('link', {name: 'Undated record', exact: true}).waitFor();
+    await page.locator('label').filter({hasText: 'ตั้งแต่วันที่'}).first().waitFor();
+    await page.locator('label').filter({hasText: 'ถึงวันที่'}).first().waitFor();
     await page.getByLabel('สถานะกิจกรรม').selectOption('ไม่ระบุ');
     assert.equal(await page.locator('tbody tr').count(), 2);
     checks.push('unknown status/date/enrollment and announcement/month/year precision');

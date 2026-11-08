@@ -97,7 +97,7 @@ function annualSummary(summary: InsightsSummary, previous: InsightsSummary | nul
     ? ` เพิ่มขึ้นจาก ${before} ครั้งในปี ${beYear(year - 1)}` : ` ลดลงจาก ${before} ครั้งในปี ${beYear(year - 1)}`;
   const partners = new Set(summary.topPartners.map((p) => p.id)).size;
   const sentences = [
-    `ปี ${beYear(year)} หลักสูตรมีหน่วยงานคู่ความร่วมมือ ${sum(summary.partnersByType)} แห่ง และจัดกิจกรรมร่วมกัน ${activities} ครั้ง${trend}`,
+    `ปี ${beYear(year)} หลักสูตรมีหน่วยงานความร่วมมือ ${sum(summary.partnersByType)} แห่ง และจัดกิจกรรมร่วมกัน ${activities} ครั้ง${trend}`,
   ];
   if (summary.outcomesByType.length) {
     sentences.push(`ผลลัพธ์ที่บันทึกได้ ${summary.outcomesByType.map((o) => `${o.label} ${o.totalValue.toLocaleString("th-TH")}${o.unit ? ` ${o.unit}` : ""}`).join(", ")}`);
@@ -285,7 +285,7 @@ function Report({ summary, previous, year, onChanged }: {
           <h2 className="font-bold mb-4 text-ink">ความคิดเห็น</h2>
           <div className="grid gap-5 sm:grid-cols-2">
             <CountList title="ตามแหล่งที่มา" rows={summary.feedbackBySource} />
-            <CountList title="ตามประเภทผู้ส่ง" rows={summary.feedbackByRespondentType} />
+            <CountList title="ตามประเภทผู้ให้ความคิดเห็น" rows={summary.feedbackByRespondentType} />
             <CountList title="ตามคะแนน" rows={ratings} />
             <CountList title="ตามสถานะ" rows={feedbackStatus} />
           </div>

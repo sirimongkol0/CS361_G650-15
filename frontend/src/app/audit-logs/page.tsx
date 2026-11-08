@@ -13,6 +13,7 @@ import { useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Pagination } from "@/components/list-ui";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { DateInput } from "@/components/form-ui";
 import { fieldLabel, valueLabels } from "@/lib/field-labels";
 
 const PAGE_SIZE = 25;
@@ -20,7 +21,7 @@ const MANAGER_ROLES = ["staff", "admin"];
 
 const ENTITY_LABELS: Record<string, string> = {
   partners: "หน่วยงาน",
-  documents: "ข้อตกลง",
+  documents: "เอกสาร",
   activities: "กิจกรรม",
   exchange_students: "นักศึกษาแลกเปลี่ยน",
   feedbacks: "ความคิดเห็น",
@@ -166,10 +167,10 @@ export default function AuditLogPage() {
           </select>
         </label>
         <label className="text-xs text-faint">ตั้งแต่วันที่
-          <input type="date" className={`${inputClass} mt-1 block`} value={dateFrom} onChange={(e) => setFilter(setDateFrom)(e.target.value)} />
+          <DateInput aria-label="ตั้งแต่วันที่" value={dateFrom} onChange={(e) => setFilter(setDateFrom)(e.target.value)} className={`${inputClass} mt-1`} />
         </label>
         <label className="text-xs text-faint">ถึงวันที่
-          <input type="date" className={`${inputClass} mt-1 block`} value={dateTo} onChange={(e) => setFilter(setDateTo)(e.target.value)} />
+          <DateInput aria-label="ถึงวันที่" value={dateTo} onChange={(e) => setFilter(setDateTo)(e.target.value)} className={`${inputClass} mt-1`} />
         </label>
       </div>
       {invalidRange && <p role="alert" className="mb-4 text-sm text-crimson">วันที่เริ่มต้องไม่อยู่หลังวันที่สิ้นสุด</p>}

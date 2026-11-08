@@ -60,7 +60,8 @@ const statusLabels: Record<ImportStatus, string> = importStatusLabels;
 /* Stages of an import, shown for the selected batch: after upload the batch is checked
    (ตรวจข้อมูล) until someone confirms it; a rolled-back or failed batch stops there. */
 const IMPORT_STEPS = ["เลือกไฟล์", "ตรวจข้อมูล", "ยืนยันนำเข้า"];
-const importStep = (status: ImportStatus) => (status === "committed" ? IMPORT_STEPS.length : 1);
+const importStep = (status: ImportStatus) =>
+  status === "committed" ? IMPORT_STEPS.length : status === "previewed" ? 2 : 1;
 
 const kindLabels: Record<ImportKind, string> = {
   feedback: "ความคิดเห็น",
@@ -261,6 +262,9 @@ export default function ImportSection() {
     }
   };
 
+  const topStep = selected ? importStep(selected.status) : busy ? 1 : 0;
+  const stopped = selected?.status === "rolled_back" || selected?.status === "failed";
+
   return (
     <div className="space-y-5">
 
@@ -281,6 +285,18 @@ export default function ImportSection() {
           {notice}
         </div>
       )}
+
+      {/* Step guide */}
+      <section className={card}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-ink">ขั้นตอนการนำเข้า</h2>
+          <span className="text-xs text-faint">CSV / XLSX</span>
+        </div>
+        <StepProgress label="ขั้นตอนการนำเข้า" steps={IMPORT_STEPS} current={topStep} stopped={stopped} />
+        <p className="mt-3 text-xs text-faint">
+          1. ดาวน์โหลดไฟล์ตัวอย่างหรือเตรียมไฟล์ &nbsp;→&nbsp; 2. อัปโหลดเพื่อให้ระบบตรวจทุกแถว &nbsp;→&nbsp; 3. ตรวจผลและยืนยันนำเข้า
+        </p>
+      </section>
 
       {/* Upload and Template */}
       <section className={`${card}`}>
@@ -331,19 +347,27 @@ export default function ImportSection() {
             </select>
           </label>
 
-          <label className="grid gap-1 text-sm text-mute">
-            เลือกไฟล์ CSV หรือ XLSX
-
-            <input
-              id="import-file"
-              className={control}
-              type="file"
-              accept=".csv,.xlsx"
-              onChange={(event) =>
-                setFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </label>
+          <div className="grid gap-1 text-sm text-mute">
+            <span>เลือกไฟล์ CSV หรือ XLSX</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id="import-file"
+                className="sr-only"
+                type="file"
+                accept=".csv,.xlsx"
+                onChange={(event) =>
+                  setFile(event.target.files?.[0] ?? null)
+                }
+              />
+              <label htmlFor="import-file" className="btn btn-outline cursor-pointer gap-2">
+                <Upload className="h-4 w-4" />
+                เลือกไฟล์
+              </label>
+              <span className="text-xs text-faint">
+                {file ? file.name : "ยังไม่ได้เลือกไฟล์"}
+              </span>
+            </div>
+          </div>
 
           <button
             type="button"
@@ -358,8 +382,11 @@ export default function ImportSection() {
         </div>
 
         <p className="mt-2 text-xs text-faint">
+          {file ? `พร้อมอัปโหลด: ${file.name}` : "เลือกไฟล์ .csv หรือ .xlsx ก่อน แล้วปุ่มอัปโหลดจะเปิดใช้งาน"}
+        </p>
+        <p className="mt-1 text-xs text-faint">
           ไฟล์ไม่เกิน 10 MB • ระบบจะตรวจทุกแถวก่อนบันทึกจริง
-          และไม่เก็บชื่อ อีเมล หรือรหัสนักศึกษาไว้ใน Preview
+          และไม่เก็บชื่อ อีเมล หรือรหัสนักศึกษาไว้ในตัวอย่าง
         </p>
 
         <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
@@ -388,7 +415,7 @@ export default function ImportSection() {
                   }
                 >
                   <Download className="mr-1 inline h-3 w-3" />
-                  Template {format.toUpperCase()}
+                  ไฟล์ตัวอย่าง {format.toUpperCase()}
                 </button>
               ))}
 
@@ -513,15 +540,6 @@ export default function ImportSection() {
                     </button>
                   )}
                 </div>
-              </div>
-
-              <div className="mb-4">
-                <StepProgress
-                  label="ขั้นตอนการนำเข้า"
-                  steps={IMPORT_STEPS}
-                  current={importStep(selected.status)}
-                  stopped={selected.status === "rolled_back" || selected.status === "failed"}
-                />
               </div>
 
               {selected.status === "processing" ? (

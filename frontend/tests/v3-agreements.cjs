@@ -31,7 +31,7 @@ function fakeApi(role, userId) {
   const blank = (values) => ({
     docType: 'mou', documentKind: 'agreement', fileAvailability: 'metadata_only', fileName: null, sizeBytes: null,
     uploadedAt: null, effectiveDate: null, expiryDate: null, partnerId: null, partner: null, responsible: null,
-    status: 'draft', signerOur: null, signerPartner: null, scopeLevel: null, isPublished: false,
+    status: 'draft', signerOur: null, signerPartner: null, scopeLevel: null, isPublished: false, publiclyVisible: false,
     cstuStatus: 'review', cstuEvidence: null, ownerUserId: userId, sources: [], ...values,
   });
   const seed = (values) => { const d = blank({ id: nextId++, ...values }); docs.set(d.id, d); return d; };
@@ -74,7 +74,12 @@ function fakeApi(role, userId) {
       if (body.source_url) doc.sources.push({ id: doc.sources.length + 1, sourceUrl: body.source_url });
       doc.cstuStatus = body.cstu_status; doc.cstuEvidence = body.cstu_evidence; return reply(route, 200, doc);
     }
-    if (req.method() === 'POST' && sub === '/publish') { doc.isPublished = true; return reply(route, 200, doc); }
+    if (req.method() === 'POST' && sub === '/publish') {
+      doc.isPublished = true;
+      doc.publiclyVisible = doc.cstuStatus === 'keep' && Boolean(doc.documentKind) && Boolean(doc.fileAvailability)
+        && (doc.fileAvailability !== 'available' || Boolean(doc.fileName)) && doc.sources.length > 0;
+      return reply(route, 200, doc);
+    }
     if (req.method() === 'POST' && sub === '/unpublish') { doc.isPublished = false; return reply(route, 200, doc); }
     if (req.method() === 'DELETE' && sub === '') { docs.delete(doc.id); return reply(route, 204); }
     return reply(route, 405, { detail: 'Method Not Allowed' });
@@ -115,7 +120,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
         await p.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
         await p.getByText('ไม่มีสิทธิ์เข้าถึง').waitFor();
         await p.goto(`${base}/documents`, { waitUntil: 'networkidle' });
-        assert.equal(await p.getByRole('link', { name: 'จัดการข้อตกลง' }).count(), 0, `${role} sees no manage link`);
+        assert.equal(await p.getByRole('link', { name: 'จัดการเอกสาร' }).count(), 0, `${role} sees no manage link`);
         await context.close();
       }
     });
@@ -125,26 +130,32 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       const page = await context.newPage();
       page.on('dialog', (d) => d.accept());
       await page.goto(`${base}/documents`, { waitUntil: 'networkidle' });
-      await page.getByRole('link', { name: 'จัดการข้อตกลง' }).first().click();
+      await page.getByRole('link', { name: 'จัดการเอกสาร' }).first().click();
       await page.waitForURL(/\/documents\/manage$/);
       await page.getByRole('button', { name: 'สร้างฉบับร่าง' }).click();
-      await page.getByLabel('ชื่อข้อตกลง *').fill('MoU ทดสอบ V3-7');
+      await page.getByLabel('ชื่อเอกสาร *').fill('MoU ทดสอบ V3-7');
+      await page.getByLabel('ชนิดเอกสาร').selectOption('procedure');
+      await page.getByLabel('สถานะไฟล์').selectOption('unavailable');
       await page.getByLabel('วันที่เริ่มมีผล').fill('2026-11-01');
       await page.getByLabel('วันหมดอายุ').fill('2029-10-31');
       await page.getByRole('dialog').getByRole('button', { name: 'สร้างฉบับร่าง', exact: true }).click();
       await page.getByText('สร้างฉบับร่าง “MoU ทดสอบ V3-7” แล้ว').waitFor();
       const created = api.calls.find((c) => c.method === 'POST' && c.path === '/');
       assert.equal(created.body.name, 'MoU ทดสอบ V3-7');
+      assert.equal(created.body.document_kind, 'procedure');
+      assert.equal(created.body.file_availability, 'unavailable');
       assert.equal(created.body.effective_date, '2026-11-01');
       assert.equal(created.auth, 'Bearer test-token');
 
       // The manage dialog opens on the new draft.
       const dialog = page.getByRole('dialog');
       await dialog.getByText('เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ').waitFor();
+      await dialog.getByText('ขั้นตอนปฏิบัติ').waitFor();
       assert.equal(await dialog.getByRole('button', { name: 'อนุมัติ' }).count(), 0, 'no approve button');
       assert.equal(await dialog.getByRole('button', { name: 'เผยแพร่' }).count(), 0, 'no publish button');
       assert.equal(await dialog.getByText('ความเกี่ยวข้องกับ CSTU').count(), 0, 'no CSTU review');
 
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       await dialog.getByLabel('เลือกไฟล์ PDF').setInputFiles({ name: 'mou.pdf', mimeType: 'application/pdf', buffer: PDF });
       await dialog.getByRole('button', { name: 'อัปโหลด' }).click();
       await page.getByText('อัปโหลดไฟล์แล้ว').waitFor();
@@ -160,6 +171,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: 'จัดการ' }).click();
       const dialog = page.getByRole('dialog');
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       await dialog.getByLabel('เลือกไฟล์ PDF').setInputFiles({ name: 'note.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') });
       await dialog.getByText('เลือกได้เฉพาะไฟล์ PDF').waitFor();
       assert.ok(await dialog.getByRole('button', { name: 'อัปโหลด' }).isDisabled());
@@ -178,6 +190,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.getByRole('button', { name: 'จัดการ' }).click();
       const dialog = page.getByRole('dialog');
 
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       await dialog.getByLabel('ความเกี่ยวข้องกับ CSTU').selectOption('keep');
       assert.ok(await dialog.getByRole('button', { name: 'บันทึก', exact: true }).isDisabled(), 'evidence required');
       await dialog.getByLabel('เหตุผล').fill('CSTU เป็นคู่สัญญาตามข้อ 1');
@@ -186,12 +199,13 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await dialog.getByRole('button', { name: 'บันทึก', exact: true }).click();
       await page.getByText('บันทึกความเกี่ยวข้องกับ CSTU แล้ว').waitFor();
 
-      for (const [button, label] of [['อนุมัติ', 'อนุมัติข้อตกลงแล้ว'], ['เริ่มมีผล', 'ข้อตกลงมีผลแล้ว']]) {
+      await dialog.getByRole('tab', { name: 'สถานะ' }).click();
+      for (const [button, label] of [['อนุมัติ', 'อนุมัติเอกสารแล้ว'], ['เริ่มมีผล', 'เอกสารมีผลแล้ว']]) {
         await dialog.getByRole('button', { name: button, exact: true }).click();
         await page.getByText(label).waitFor();
       }
       await dialog.getByRole('button', { name: 'เผยแพร่', exact: true }).click();
-      await page.getByText('เผยแพร่ข้อตกลงแล้ว', { exact: true }).waitFor();
+      await page.getByText('เผยแพร่เอกสารแล้ว', { exact: true }).waitFor();
       assert.deepEqual(
         { status: doc.status, cstu: doc.cstuStatus, published: doc.isPublished },
         { status: 'active', cstu: 'keep', published: true },
@@ -199,18 +213,29 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.screenshot({ path: path.join(output, 'staff-manage.png'), fullPage: true });
 
       // The new tab fetches the signed link (headless Chromium downloads PDFs rather than showing them).
+      await dialog.getByRole('tab', { name: 'ไฟล์และแหล่งที่มา' }).click();
       const signedFetch = context.waitForEvent('request', (r) => r.url().endsWith('/fake-signed.pdf'));
       await dialog.getByRole('button', { name: /เปิดไฟล์/ }).click();
       await signedFetch;
 
-      await dialog.getByRole('button', { name: 'ลบข้อตกลง' }).click();
-      await page.getByRole('alertdialog').getByRole('button', { name: 'ลบข้อตกลง' }).click();
+      await dialog.getByRole('button', { name: 'ลบเอกสาร' }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'ลบเอกสาร' }).click();
       await page.getByText('ลบ “MoU รออนุมัติ” แล้ว').waitFor();
       assert.equal(api.docs.size, 0);
       const sent = api.calls.map((c) => `${c.method} ${c.path}`);
       for (const expected of ['PUT /' + doc.id + '/cstu-status', 'POST /' + doc.id + '/transition', 'POST /' + doc.id + '/publish', 'GET /' + doc.id + '/internal-url', 'DELETE /' + doc.id]) {
         assert.ok(sent.includes(expected), `sent ${expected}`);
       }
+      await context.close();
+    });
+
+    await check('published but not yet public is explained', async () => {
+      const { context, api } = await session(browser, 'staff');
+      api.seed({ name: 'MoU เผยแพร่บางส่วน', isPublished: true, publiclyVisible: false });
+      const page = await context.newPage();
+      await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
+      await page.getByRole('button', { name: 'จัดการ' }).click();
+      await page.getByText('เผยแพร่แล้ว · ยังไม่แสดงสาธารณะ').waitFor();
       await context.close();
     });
 
@@ -221,6 +246,7 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.goto(`${base}/documents/manage`, { waitUntil: 'networkidle' });
       doc.status = 'cancelled'; // someone else cancelled it after the page loaded
       await page.getByRole('button', { name: 'จัดการ' }).click();
+      await page.getByRole('dialog').getByRole('tab', { name: 'สถานะ' }).click();
       await page.getByRole('dialog').getByRole('button', { name: 'เริ่มมีผล' }).click();
       await page.getByText('ทำรายการนี้ไม่ได้ในสถานะปัจจุบัน').waitFor();
       await context.close();

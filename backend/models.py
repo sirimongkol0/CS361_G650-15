@@ -417,7 +417,7 @@ LOOKUP_SEEDS = {
         {"code": "student", "name_th": "นักศึกษา"},
         {"code": "participant", "name_th": "ผู้เข้าร่วมกิจกรรม"},
         {"code": "alumni", "name_th": "ศิษย์เก่า"},
-        {"code": "partner", "name_th": "คู่ความร่วมมือ"},
+        {"code": "partner", "name_th": "หน่วยงานความร่วมมือ"},
         {"code": "coordinator", "name_th": "อาจารย์หรือผู้ประสานงาน"},
         {"code": "staff", "name_th": "เจ้าหน้าที่"},
     ],

@@ -26,7 +26,7 @@ export default function StakeholderDetailPage() {
         : Promise.reject(new ApiError("Invalid partner id", 404)),
     [id]
   );
-  useDocumentTitle(partner.status === "success" ? partner.data.name : "หน่วยงานคู่ความร่วมมือ");
+  useDocumentTitle(partner.status === "success" ? partner.data.name : "หน่วยงานความร่วมมือ");
 
   if (partner.status === "loading") {
     return <div className="p-6 max-w-(--breakpoint-xl) mx-auto"><LoadingState title="กำลังโหลดหน่วยงาน…" /></div>;
@@ -47,7 +47,7 @@ export default function StakeholderDetailPage() {
 
   return (
     <div className="p-6 max-w-(--breakpoint-xl) mx-auto">
-      <Breadcrumb className="mb-5" items={[{ label: "หน้าหลัก", href: "/" }, { label: "หน่วยงานคู่ความร่วมมือ", href: "/stakeholders" }, { label: item.name }]} />
+      <Breadcrumb className="mb-5" items={[{ label: "หน้าหลัก", href: "/" }, { label: "หน่วยงานความร่วมมือ", href: "/stakeholders" }, { label: item.name }]} />
       <DetailToolbar kind="stakeholders" id={item.id} title={item.name} />
 
       <section className="bg-white rounded-base shadow-card p-6 mb-5">

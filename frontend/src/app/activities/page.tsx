@@ -177,24 +177,30 @@ export default function ActivitiesPage() {
                 <option value="วางแผน">วางแผน</option>
                 <option value="ไม่ระบุ">ไม่ระบุ</option>
               </select>
-              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ระดับความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
+              <select className={`${inputCls} cursor-pointer w-auto! min-w-40`} aria-label="ขอบเขตความร่วมมือ" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}>
                 <ScopeLevelOptions />
               </select>
-              <DateInput wrapperClassName="inline-block"
-                className={`${inputCls} w-auto!`}
-                aria-label="ตั้งแต่วันที่"
-                value={dateFrom}
-                max={dateTo || undefined}
-                onChange={(event) => setDateFrom(event.target.value)}
-              />
+              <label className="flex items-center gap-2 text-xs text-faint">
+                ตั้งแต่วันที่
+                <DateInput wrapperClassName="inline-block"
+                  className={`${inputCls} w-auto!`}
+                  aria-label="ตั้งแต่วันที่"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(event) => setDateFrom(event.target.value)}
+                />
+              </label>
 
-              <DateInput wrapperClassName="inline-block"
-                className={`${inputCls} w-auto!`}
-                aria-label="ถึงวันที่"
-                value={dateTo}
-                min={dateFrom || undefined}
-                onChange={(event) => setDateTo(event.target.value)}
-              />
+              <label className="flex items-center gap-2 text-xs text-faint">
+                ถึงวันที่
+                <DateInput wrapperClassName="inline-block"
+                  className={`${inputCls} w-auto!`}
+                  aria-label="ถึงวันที่"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(event) => setDateTo(event.target.value)}
+                />
+              </label>
 
               <button
                 type="button"

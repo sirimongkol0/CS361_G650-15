@@ -797,6 +797,8 @@ export interface ManagedDocument {
   signerPartner: string | null;
   scopeLevel: ScopeLevel | null;
   isPublished: boolean;
+  /** Published, but still missing fields/source needed by the public page. */
+  publiclyVisible: boolean;
   cstuStatus: "keep" | "review" | "out_of_scope";
   cstuEvidence: string | null;
   ownerUserId: number | null;

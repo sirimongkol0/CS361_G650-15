@@ -71,6 +71,35 @@ def test_create_ignores_status_and_publication_fields(client, db_session, cognit
     assert (doc.status, doc.is_published, doc.cstu_status) == ("draft", False, "review")
 
 
+def test_create_and_update_document_kind_and_file_availability(client, db_session, cognito):
+    headers = bearer(token_for(client, "staff"))
+    created = client.post("/api/v1/documents/", headers=headers,
+                          json={"name": "ขั้นตอนปฏิบัติ", "document_kind": "procedure",
+                                "file_availability": "unavailable"})
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert (body["documentKind"], body["fileAvailability"]) == ("procedure", "unavailable")
+
+    doc_id = body["id"]
+    updated = client.patch(f"/api/v1/documents/{doc_id}", headers=headers,
+                           json={"document_kind": "template", "file_availability": "metadata_only"})
+    assert updated.status_code == 200, updated.text
+    assert (updated.json()["documentKind"], updated.json()["fileAvailability"]) == ("template", "metadata_only")
+
+    # Available means a PDF exists; the upload endpoint is the only writer of that pair.
+    assert client.patch(f"/api/v1/documents/{doc_id}", headers=headers,
+                        json={"file_availability": "available"}).status_code == 422
+
+    doc = db_session.get(models.Document, doc_id)
+    doc.storage_key = "documents/test.pdf"
+    doc.file_availability = "available"
+    db_session.commit()
+    assert client.patch(f"/api/v1/documents/{doc_id}", headers=headers,
+                        json={"file_availability": "metadata_only"}).status_code == 422
+    assert client.patch(f"/api/v1/documents/{doc_id}", headers=headers,
+                        json={"file_availability": "available"}).status_code == 200
+
+
 @pytest.mark.parametrize("body", [{"name": "  "}, {"name": "x", "partner_id": 999},
                                   {"name": "x", "effective_date": "2026-05-01", "expiry_date": "2026-01-01"}])
 def test_create_rejects_invalid_fields(client, db_session, cognito, body):
@@ -204,15 +233,34 @@ def test_public_only_when_published_and_cstu_keep(client, db_session, cognito):
     def public_ids():
         return [d["id"] for d in client.get("/api/v1/documents/").json()]
 
+    def manage_row():
+        rows = client.get("/api/v1/documents/manage", headers=headers).json()
+        return next(r for r in rows if r["id"] == doc.id)
+
     client.post(f"/api/v1/documents/{doc.id}/publish", headers=headers)
     assert doc.id not in public_ids()  # published but still "review"
+    assert (manage_row()["isPublished"], manage_row()["publiclyVisible"]) == (True, False)
     client.put(f"/api/v1/documents/{doc.id}/cstu-status", json={"cstu_status": "keep", "cstu_evidence": "e"},
                headers=headers)
     assert doc.id in public_ids()
+    assert manage_row()["publiclyVisible"] is True
     client.put(f"/api/v1/documents/{doc.id}/cstu-status", json={"cstu_status": "out_of_scope", "cstu_evidence": "e"},
                headers=headers)
     assert doc.id not in public_ids()
+    assert manage_row()["publiclyVisible"] is False
     assert client.get(f"/api/v1/documents/{doc.id}").status_code == 404
+
+
+def test_manage_list_exposes_only_verified_sources(client, db_session, cognito):
+    doc = make_doc(db_session, sources=[
+        models.Source(source_url="https://example.test/verified", source_type="official_document",
+                      source_checked_at=datetime.now(timezone.utc), verification_status="verified"),
+        models.Source(source_url="https://example.test/pending", source_type="official_document",
+                      source_checked_at=datetime.now(timezone.utc), verification_status="pending"),
+    ])
+    rows = client.get("/api/v1/documents/manage", headers=bearer(token_for(client, "staff"))).json()
+    row = next(r for r in rows if r["id"] == doc.id)
+    assert [s["sourceUrl"] for s in row["sources"]] == ["https://example.test/verified"]
 
 
 def test_manage_list_scopes_coordinators_to_their_own(client, db_session, cognito):

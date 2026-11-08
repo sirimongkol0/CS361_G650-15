@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session, joinedload, selectinload, with_loader_criteria
 from typing import List, Literal, Optional
 from sqlalchemy import and_, or_
-from public_visibility import attach_verified_source, document_criteria, has_verified_source, partner_criteria
+from public_visibility import attach_verified_source, document_criteria, document_is_publicly_visible, has_verified_source, partner_criteria
 
 import audit
 import auth
@@ -103,7 +103,13 @@ def _managed_document(db, document_id: int, user: models.User) -> models.Documen
 
 
 def _manage_response(doc: models.Document) -> schemas.DocumentManageResponse:
-    return schemas.DocumentManageResponse.model_validate(doc)
+    response = schemas.DocumentManageResponse.model_validate(doc)
+    # The readiness checklist and "needs a source" rule use the same population
+    # as the public page: only a verified source makes a document eligible.
+    response.sources = [schemas.SourceResponse.model_validate(source)
+                        for source in doc.sources if source.verification_status == "verified"]
+    response.publiclyVisible = document_is_publicly_visible(doc)
+    return response
 
 
 @router.get("/manage", response_model=List[schemas.DocumentManageResponse])
@@ -223,6 +229,11 @@ def update_document(
         raise HTTPException(status_code=409, detail="Only draft documents can be edited")
     before = audit.snapshot(doc)
     data = body.model_dump(exclude_unset=True)
+    if "file_availability" in data:
+        if data["file_availability"] == "available" and not doc.storage_key:
+            raise HTTPException(status_code=422, detail="Upload a file before marking it available")
+        if doc.storage_key and data["file_availability"] != "available":
+            raise HTTPException(status_code=422, detail="An uploaded document must stay available")
     if "scope_items" in data:
         doc.scope_items = _scope_items(data.pop("scope_items"))
     for key, value in data.items():

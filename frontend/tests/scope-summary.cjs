@@ -25,7 +25,7 @@ assert.equal(parseScopeLevel('department'), null);
 assert.equal(parseScopeLevel(null), null);
 assert.equal(parseScopeLevel(undefined), null);
 assert.deepEqual(Object.keys(scopeLevelLabels), ['program', 'faculty', 'university']);
-assert.equal(scopeLevelLabels.program, 'หลักสูตร CSTU');
+assert.equal(scopeLevelLabels.program, 'ระดับหลักสูตร (CSTU)');
 assert.equal(scopeLevelLabels.faculty, 'ระดับคณะ');
 assert.equal(scopeLevelLabels.university, 'ระดับมหาวิทยาลัย');
 assert.deepEqual(Object.keys(scopeLevelColors), Object.keys(scopeLevelLabels));

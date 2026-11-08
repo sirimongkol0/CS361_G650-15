@@ -12,7 +12,9 @@ import { apiGetList, apiPatch, apiPost, formatThaiDateTime, loadExchangeStudents
 import { averageRating } from "@/lib/dashboard-data";
 import { useRole } from "@/lib/role-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/data-states";
-import { Field, FormError, Notice, inputCls, useAction } from "@/components/form-ui";
+import { Field, FormError, Notice, inputCls, useAction, DateInput } from "@/components/form-ui";
+import { FormSection } from "@/components/form-layout";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { matchesQuery, useDocumentTitle } from "@/lib/list-tools";
 import { feedbackStatusLabels, label } from "@/lib/labels";
 import { ImprovementSection } from "@/components/improvement-section";
@@ -23,7 +25,7 @@ const FEEDBACK_STATUSES = ["pending", "reviewed"] as const;
 
 function StarRow({ rating }: { rating: number }) {
   return (
-    <div className="flex gap-0.5" aria-label={rating ? `${rating} จาก 5 ดาว` : "ไม่มีคะแนน"}>
+    <div className="flex gap-0.5" role="img" aria-label={rating ? `${rating} จาก 5 ดาว` : "ไม่มีคะแนน"}>
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
@@ -39,7 +41,7 @@ function StarRow({ rating }: { rating: number }) {
 const sourceColors: Record<string, string> = {
   "ผู้เข้าร่วมกิจกรรม": "badge-blue",
   "ศิษย์เก่า": "badge-purple",
-  "หน่วยงานคู่ความร่วมมือ": "badge-crimson",
+  "หน่วยงานความร่วมมือ": "badge-crimson",
   "ระบบสหกิจศึกษา": "badge-gold",
   "นักศึกษา": "badge-green",
 };
@@ -65,7 +67,7 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
   const [respondentTypeId, setRespondentTypeId] = useState("");
   const [contextType, setContextType] = useState<ContextType>("activity");
   const [contextId, setContextId] = useState("");
-  const [rating, setRating] = useState("5");
+  const [rating, setRating] = useState(NO_RATING);
   const action = useAction();
 
   useEffect(() => {
@@ -87,7 +89,8 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
         loaded[type].some((row) => String(row.id) === params.get(param)));
       const initial = preset?.type ?? CONTEXTS.find(({ type }) => loaded[type].length)?.type ?? "activity";
       setContextType(initial);
-      setContextId(preset ? String(params.get(preset.param)) : String(loaded[initial][0]?.id ?? ""));
+      // No implicit first context: the sender must choose what the feedback is about.
+      setContextId(preset ? String(params.get(preset.param)) : "");
     }).catch(() => undefined);
   }, [role, canPickSender]);
 
@@ -107,36 +110,66 @@ function FeedbackSubmitForm({ role, onCreated }: { role: string; onCreated: () =
   };
 
   const current = CONTEXTS.find((c) => c.type === contextType)!;
+  const contextOptions: ComboboxOption[] = choices[contextType].map((item) => ({
+    value: String(item.id),
+    label: item.name,
+  }));
   return (
     <form onSubmit={submit} className="rounded-lg bg-white shadow-card p-4 mb-5">
       <h2 className="font-semibold text-ink mb-3">ส่งความคิดเห็น</h2>
       <FormError error={action.error} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-        {canPickSender && (
-          <Field label="ประเภทผู้ส่ง" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
-            <select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
-              {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
-            </select>
+
+      <FormSection title="ความคิดเห็น" description="หัวข้อ ผู้ส่ง และคะแนน">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="หัวข้อ *"><input className={inputCls} required maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+          {canPickSender && (
+            <Field label="ประเภทผู้ให้ความคิดเห็น" hint="เลือกประเภทอื่นเมื่อบันทึกแทนบุคคลภายนอก ระบบจะบันทึกแหล่งที่มาเป็นการบันทึกโดยเจ้าหน้าที่">
+              <select className={inputCls} required value={respondentTypeId} onChange={(e) => setRespondentTypeId(e.target.value)}>
+                {types.map((type) => <option key={type.id} value={type.id}>{type.name_th || type.code}</option>)}
+              </select>
+            </Field>
+          )}
+          <Field label="คะแนน"><select className={inputCls} value={rating} onChange={(e) => setRating(e.target.value)}>
+            {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} / 5</option>)}
+            <option value={NO_RATING}>ไม่ระบุคะแนน</option>
+          </select></Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="บริบท" description="ความคิดเห็นนี้เกี่ยวกับกิจกรรม การแลกเปลี่ยน หน่วยงาน หรือข้อตกลงใด">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
+            setContextType(e.target.value as ContextType);
+            setContextId("");
+          }}>
+            {CONTEXTS.map((c) => <option key={c.type} value={c.type}>{c.label}</option>)}
+          </select></Field>
+          <Field label={`${current.pick} *`}>
+            <Combobox
+              options={contextOptions}
+              value={contextId}
+              onChange={setContextId}
+              placeholder={current.pick}
+              emptyMessage={`ไม่พบ${current.label}`}
+              aria-label={current.pick}
+            />
           </Field>
+        </div>
+        {choices[contextType].length === 0 && (
+          <p className="text-xs text-faint">ยังไม่มี{current.label}ให้เลือก</p>
         )}
-        <Field label="ประเภทบริบท"><select className={inputCls} value={contextType} onChange={(e) => {
-          const next = e.target.value as ContextType;
-          setContextType(next);
-          setContextId(String(choices[next][0]?.id ?? ""));
-        }}>
-          {CONTEXTS.map((c) => <option key={c.type} value={c.type}>{c.label}</option>)}
-        </select></Field>
-        <Field label={current.pick}><select className={inputCls} required value={contextId} onChange={(e) => setContextId(e.target.value)}>
-          {choices[contextType].map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-        </select></Field>
-        <Field label="คะแนน"><select className={inputCls} value={rating} onChange={(e) => setRating(e.target.value)}>
-          {[5, 4, 3, 2, 1].map((score) => <option key={score} value={score}>{score} / 5</option>)}
-          <option value={NO_RATING}>ไม่ระบุคะแนน</option>
-        </select></Field>
+        {choices[contextType].length > 0 && !contextId && (
+          <p className="text-xs text-faint">เลือก{current.label}ก่อนส่งความคิดเห็น</p>
+        )}
+      </FormSection>
+
+      <FormSection title="ข้อความ">
+        <Field label="ความคิดเห็น *"><textarea className={`${inputCls} resize-y`} rows={3} required maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
+      </FormSection>
+
+      <div className="flex justify-end">
+        <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length || !contextId || !comment.trim()}>ส่งความคิดเห็น</button>
       </div>
-      <Field label="ความคิดเห็น *"><textarea className={`${inputCls} resize-y`} rows={3} required maxLength={4000} value={comment} onChange={(e) => setComment(e.target.value)} /></Field>
-      <button className="btn btn-primary" disabled={action.busy || !choices[contextType].length}>ส่งความคิดเห็น</button>
     </form>
   );
 }
@@ -266,6 +299,14 @@ export default function FeedbackPage() {
   // Until the user picks an entry, show the first one in the list.
   const selected = entries.find((f) => f.id === (selectedId ?? filtered[0]?.id));
   const avg = averageRating(entries);
+  const statusTabs = [
+    { value: "all", label: "ทั้งหมด", count: entries.length },
+    ...FEEDBACK_STATUSES.map((status) => ({
+      value: status,
+      label: label(feedbackStatusLabels, status),
+      count: entries.filter((entry) => entry.status === status).length,
+    })),
+  ];
 
   const saved = (message: string) => {
     setNotice(message);
@@ -320,8 +361,29 @@ export default function FeedbackPage() {
       <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
         {/* List */}
         <div>
+          <div role="group" aria-label="สถานะความคิดเห็น" className="mb-3 flex flex-wrap items-center gap-1">
+            {statusTabs.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                aria-pressed={statusFilter === tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  statusFilter === tab.value
+                    ? "border-crimson bg-crimson text-white"
+                    : "border-line bg-white text-faint hover:text-ink"
+                }`}
+              >
+                {tab.label}
+                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === tab.value ? "bg-white/20" : "bg-soft"}`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           <div className="rounded-lg bg-white shadow-card p-4 mb-4">
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-48">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
                 <input
@@ -332,50 +394,68 @@ export default function FeedbackPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
-                style={{ width: "auto", minWidth: 180 }}
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                aria-label="ช่องทาง"
-              >
-                <option value="all">ช่องทาง: ทั้งหมด</option>
-                {sources.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              {isManager && <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ส่ง">
-                <option value="all">ทุกประเภทผู้ส่ง</option>
-                {respondentTypes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-              </select>}
-              <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={contextFilter} onChange={(e) => setContextFilter(e.target.value)} aria-label="บริบท">
-                <option value="all">ทุกบริบท</option>
-                {contexts.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-              </select>
-              <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="สถานะ">
-                <option value="all">ทุกสถานะ</option>
-                {FEEDBACK_STATUSES.map((s) => <option key={s} value={s}>{label(feedbackStatusLabels, s)}</option>)}
-              </select>
-              <label className="text-xs text-faint flex items-center gap-2">ตั้งแต่ <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></label>
-              <label className="text-xs text-faint flex items-center gap-2">ถึง <input type="date" className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></label>
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
-                style={{ width: "auto", minWidth: 140 }}
-                value={ratingFilter}
-                onChange={(e) => setRatingFilter(e.target.value)}
-                aria-label="คะแนน"
-              >
-                <option value="all">คะแนน: ทั้งหมด</option>
-                {[5, 4, 3, 2, 1].map((r) => (
-                  <option key={r} value={r}>
-                    {r} ดาว
-                  </option>
-                ))}
-              </select>
+
+              <details className="w-full">
+                <summary className="cursor-pointer select-none text-sm font-medium text-crimson">
+                  ตัวกรองเพิ่มเติม
+                </summary>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <select
+                    className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
+                    style={{ width: "auto", minWidth: 180 }}
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value)}
+                    aria-label="ช่องทาง"
+                  >
+                    <option value="all">ช่องทาง: ทั้งหมด</option>
+                    {sources.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {isManager && (
+                    <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={respondentFilter} onChange={(e) => setRespondentFilter(e.target.value)} aria-label="ประเภทผู้ให้ความคิดเห็น">
+                      <option value="all">ทุกประเภทผู้ให้ความคิดเห็น</option>
+                      {respondentTypes.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                    </select>
+                  )}
+                  <select className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink" value={contextFilter} onChange={(e) => setContextFilter(e.target.value)} aria-label="บริบท">
+                    <option value="all">ทุกบริบท</option>
+                    {contexts.map(([key, name]) => <option key={key} value={key}>{name}</option>)}
+                  </select>
+                  <select
+                    className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:outline-hidden focus:ring-1 focus:ring-crimson"
+                    style={{ width: "auto", minWidth: 140 }}
+                    value={ratingFilter}
+                    onChange={(e) => setRatingFilter(e.target.value)}
+                    aria-label="คะแนน"
+                  >
+                    <option value="all">คะแนน: ทั้งหมด</option>
+                    {[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{r} ดาว</option>)}
+                  </select>
+                  <label className="flex items-center gap-2 text-xs text-faint">
+                    ตั้งแต่
+                    <DateInput
+                      aria-label="ตั้งแต่วันที่"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink"
+                      wrapperClassName="inline-block"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-faint">
+                    ถึง
+                    <DateInput
+                      aria-label="ถึงวันที่"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="rounded-md border border-line bg-white px-2 py-2 text-sm text-ink"
+                      wrapperClassName="inline-block"
+                    />
+                  </label>
+                </div>
+              </details>
             </div>
           </div>
+
+          <p className="mb-2 text-xs text-faint">แสดง {filtered.length} จาก {entries.length} รายการ</p>
 
           <div className="space-y-3">
             {filtered.length === 0 && (

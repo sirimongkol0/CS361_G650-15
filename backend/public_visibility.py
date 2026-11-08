@@ -50,3 +50,31 @@ def document_criteria():
         or_(models.Document.file_availability != "available", models.Document.storage_key.is_not(None)),
         models.Document.sources.any(models.Source.verification_status == "verified"),
     )
+
+
+def partner_is_publicly_visible(partner) -> bool:
+    """Python mirror of partner_criteria(), for manage responses and warnings."""
+    return bool(
+        partner.is_published
+        and not partner.is_deleted
+        and (partner.name or "").strip()
+        and (partner.type or "").strip()
+        and (partner.description or "").strip()
+        and (partner.website_url or "").strip()
+        and partner.country_code
+        and has_verified_source(partner)
+    )
+
+
+def document_is_publicly_visible(document) -> bool:
+    """Python mirror of document_criteria(), for manage responses and warnings."""
+    return bool(
+        document.is_published
+        and not document.is_deleted
+        and document.cstu_status == "keep"
+        and (document.name or "").strip()
+        and document.document_kind
+        and document.file_availability
+        and (document.file_availability != "available" or document.storage_key)
+        and has_verified_source(document)
+    )

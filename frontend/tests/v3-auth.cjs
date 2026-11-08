@@ -58,6 +58,34 @@ async function check(name, work) { await work(); cases.push(name); console.log('
       await page.close();
     });
 
+    await check('login desktop fits the viewport and the role label has enough contrast', async () => {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+      await page.goto(`${base}/login`, { waitUntil: 'networkidle' });
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      assert.ok(overflow <= 0, `login has ${overflow}px horizontal overflow`);
+      const ratio = await page.getByText('ผู้ใช้ 5 บทบาท', { exact: true }).evaluate((el) => {
+        const channel = (value) => {
+          const v = value / 255;
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+        };
+        const luminance = ([r, g, b]) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+        const rgb = (value) => value.match(/\d+/g).slice(0, 3).map(Number);
+        let node = el;
+        let background = 'rgb(255, 255, 255)';
+        while (node) {
+          const candidate = getComputedStyle(node).backgroundColor;
+          if (candidate && candidate !== 'rgba(0, 0, 0, 0)') { background = candidate; break; }
+          node = node.parentElement;
+        }
+        const foreground = getComputedStyle(el).color;
+        const [light, dark] = [luminance(rgb(foreground)), luminance(rgb(background))].sort((a, b) => b - a);
+        return (light + 0.05) / (dark + 0.05);
+      });
+      assert.ok(ratio >= 4.5, `role label contrast is ${ratio.toFixed(2)}:1`);
+      await page.screenshot({ path: path.join(output, 'login-desktop.png'), fullPage: true });
+      await page.close();
+    });
+
     await check('anonymous: /exchange reads the published list GET /exchange/', async () => {
       const page = await browser.newPage();
       const paths = new Set();

@@ -11,13 +11,16 @@ import {
   apiBase, apiDelete, apiGetFresh, apiGetList, apiPatch, apiPost, apiPut, apiUpload, formatThaiDate, loadManagedDocuments,
   loadManagePartners, useApiResource, type ManagedDocument, type PartnerView,
 } from "@/lib/api";
-import { cstuStatusLabels, documentStatusLabels, documentTypeLabels, label, scopeLevelLabels } from "@/lib/labels";
+import { cstuStatusLabels, documentKindLabels, documentStatusLabels, documentTypeLabels, fileAvailabilityLabels, label, partnerTypeLabels, scopeLevelLabels } from "@/lib/labels";
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction, DateInput } from "@/components/form-ui";
+import { FormActions, FormSection } from "@/components/form-layout";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { StatusBadge } from "@/components/status-badge";
 import { LifecycleProgress } from "@/components/lifecycle-progress";
+import { PublishChecklist } from "@/components/publish-checklist";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -36,19 +39,19 @@ const transitionLabels: Record<string, string> = {
   approved: "อนุมัติ",
   active: "เริ่มมีผล",
   expired: "บันทึกว่าหมดอายุ",
-  cancelled: "ยกเลิกข้อตกลง",
+  cancelled: "ยกเลิกเอกสาร",
 };
 const transitionDone: Record<string, string> = {
-  approved: "อนุมัติข้อตกลงแล้ว",
-  active: "ข้อตกลงมีผลแล้ว",
+  approved: "อนุมัติเอกสารแล้ว",
+  active: "เอกสารมีผลแล้ว",
   expired: "บันทึกว่าหมดอายุแล้ว",
-  cancelled: "ยกเลิกข้อตกลงแล้ว",
+  cancelled: "ยกเลิกเอกสารแล้ว",
 };
 
 const currentStatus = (doc: ManagedDocument) => doc.status ?? "draft";
 
 export default function ManageDocumentsPage() {
-  useDocumentTitle("จัดการข้อตกลง");
+  useDocumentTitle("จัดการเอกสาร");
   const { role, user, status: session } = useRole();
   const [reload, setReload] = useState(0);
   const [creating, setCreating] = useState(false);
@@ -78,7 +81,7 @@ export default function ManageDocumentsPage() {
   }, [documents.status, documents.data]);
   const selected = rows?.find((d) => d.id === selectedId) ?? null;
 
-  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "เปิดข้อตกลง").
+  // /documents/manage?open=<id> opens that agreement (from the staff dashboard's "เปิดเอกสาร").
   useEffect(() => {
     const id = Number(new URLSearchParams(window.location.search).get("open"));
     if (id && rows) {
@@ -102,11 +105,11 @@ export default function ManageDocumentsPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Breadcrumb items={[{ label: "ข้อตกลง", href: "/documents" }, { label: "จัดการข้อตกลง" }]} />
-          <h1 className="font-display text-2xl font-bold text-ink">จัดการข้อตกลง</h1>
+          <Breadcrumb items={[{ label: "เอกสาร", href: "/documents" }, { label: "จัดการเอกสาร" }]} />
+          <h1 className="font-display text-2xl font-bold text-ink">จัดการเอกสาร</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff
-              ? "ข้อตกลงทั้งหมด รวมฉบับร่างและรายการที่ยังไม่เผยแพร่"
+              ? "เอกสารทั้งหมด รวมฉบับร่างและรายการที่ยังไม่เผยแพร่"
               : "สร้างฉบับร่างและแนบไฟล์ได้ เจ้าหน้าที่เป็นผู้อนุมัติและเผยแพร่"}
           </p>
         </div>
@@ -121,7 +124,7 @@ export default function ManageDocumentsPage() {
       {rows === null && documents.status === "loading" && <LoadingState />}
       {documents.status === "error" && <ErrorState error={documents.error} onRetry={documents.retry} />}
       {rows !== null && rows.length === 0 && (
-        <EmptyState title="ยังไม่มีข้อตกลง" message="กด “สร้างฉบับร่าง” เพื่อเริ่ม" />
+        <EmptyState title="ยังไม่มีเอกสาร" message="กด “สร้างฉบับร่าง” เพื่อเริ่ม" />
       )}
       {rows !== null && rows.length > 0 && (
         <div className="overflow-hidden rounded-lg bg-white shadow-card">
@@ -129,7 +132,7 @@ export default function ManageDocumentsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line bg-soft text-left text-xs font-semibold text-faint">
-                  <th className="px-5 py-3">ชื่อข้อตกลง</th>
+                  <th className="px-5 py-3">ชื่อเอกสาร</th>
                   <th className="px-4 py-3">หน่วยงาน</th>
                   <th className="px-4 py-3">สถานะ</th>
                   <th className="px-4 py-3">CSTU</th>
@@ -192,6 +195,7 @@ export default function ManageDocumentsPage() {
             isOwner={selected.ownerUserId === user?.id}
             onChanged={(message) => refresh(message)}
             onDeleted={(message) => { setSelectedId(null); refresh(message); }}
+            onClose={() => setSelectedId(null)}
           />
         )}
       </Dialog>
@@ -212,6 +216,8 @@ function DocumentForm({
   const [form, setForm] = useState({
     name: doc?.name ?? "",
     doc_type: doc?.docType ?? "mou",
+    document_kind: doc?.documentKind ?? "agreement",
+    file_availability: doc?.fileAvailability === "unavailable" ? "unavailable" : "metadata_only",
     partner_id: doc?.partnerId ? String(doc.partnerId) : "",
     effective_date: doc?.effectiveDate ?? "",
     expiry_date: doc?.expiryDate ?? "",
@@ -221,14 +227,24 @@ function DocumentForm({
     scope_level: doc?.scopeLevel ?? "",
     scope_items: (doc?.scopeItems ?? []).map((item) => item.text).join("\n"),
   });
+  // Uploading a PDF is the only way to reach "available", so an existing file locks the select.
+  const hasFile = Boolean(doc?.fileName);
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
+  const partnerOptions: ComboboxOption[] = partners.map((partner) => ({
+    value: String(partner.id),
+    label: partner.name,
+    description: [partner.country, partner.type ? partnerTypeLabels[partner.type] : null].filter(Boolean).join(' · ') || undefined,
+    group: partner.type ? partnerTypeLabels[partner.type] ?? 'อื่น ๆ' : 'อื่น ๆ',
+  }));
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  async function submit(e?: FormEvent) {
+    e?.preventDefault();
     const body = {
       name: form.name.trim(),
       doc_type: form.doc_type,
+      document_kind: form.document_kind,
+      ...(hasFile ? {} : { file_availability: form.file_availability }),
       partner_id: form.partner_id ? Number(form.partner_id) : null,
       effective_date: orNull(form.effective_date),
       expiry_date: orNull(form.expiry_date),
@@ -250,53 +266,85 @@ function DocumentForm({
   return (
     <form onSubmit={submit}>
       <FormError error={action.error} />
-      <Field label="ชื่อข้อตกลง *">
-        <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
-      </Field>
-      <div className="grid gap-x-4 sm:grid-cols-2">
-        <Field label="ประเภท">
-          <select className={inputCls} value={form.doc_type} onChange={set("doc_type")}>
-            <option value="mou">MoU</option>
-            <option value="moa">MoA</option>
-          </select>
+
+      <FormSection title="ข้อมูลพื้นฐาน" description="ชื่อ รูปแบบ และหน่วยงานความร่วมมือ">
+        <Field label="ชื่อเอกสาร *">
+          <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
         </Field>
-        <Field label="หน่วยงานคู่ความร่วมมือ">
-          <select className={inputCls} value={form.partner_id} onChange={set("partner_id")}>
-            <option value="">— ไม่ระบุ —</option>
-            {partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="รูปแบบ">
+            <select className={inputCls} value={form.doc_type} onChange={set("doc_type")}>
+              <option value="mou">MoU</option>
+              <option value="moa">MoA</option>
+              <option value="template">แบบฟอร์ม</option>
+            </select>
+          </Field>
+          <Field label="ชนิดเอกสาร" hint="ข้อตกลง แบบฟอร์ม ขั้นตอนปฏิบัติ หรือประกาศ">
+            <select className={inputCls} value={form.document_kind} onChange={set("document_kind")}>
+              {Object.entries(documentKindLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+          <Field label="สถานะไฟล์" hint={hasFile ? "มีไฟล์ PDF แล้ว สถานะไฟล์จะเปลี่ยนอัตโนมัติเมื่ออัปโหลด" : "ระบุว่ามีไฟล์ให้เปิดหรือมีเฉพาะข้อมูล"}>
+            <select className={inputCls} value={hasFile ? "available" : form.file_availability} disabled={hasFile}
+              onChange={set("file_availability")}>
+              {hasFile && <option value="available">{fileAvailabilityLabels.available}</option>}
+              <option value="metadata_only">{fileAvailabilityLabels.metadata_only}</option>
+              <option value="unavailable">{fileAvailabilityLabels.unavailable}</option>
+            </select>
+          </Field>
+          <Field label="หน่วยงานความร่วมมือ">
+            <Combobox
+              options={partnerOptions}
+              value={form.partner_id}
+              onChange={(next) => setForm({ ...form, partner_id: next })}
+              placeholder="เลือกหน่วยงาน"
+              emptyMessage="ไม่พบหน่วยงาน"
+              aria-label="หน่วยงานความร่วมมือ"
+            />
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="วันที่และผู้รับผิดชอบ">
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="วันที่เริ่มมีผล">
+            <DateInput className={inputCls} value={form.effective_date} onChange={set("effective_date")} />
+          </Field>
+          <Field label="วันหมดอายุ" hint="ต้องไม่ก่อนวันที่เริ่มมีผล">
+            <DateInput className={inputCls} value={form.expiry_date} min={form.effective_date || undefined} onChange={set("expiry_date")} />
+          </Field>
+          <Field label="ผู้รับผิดชอบ">
+            <input className={inputCls} value={form.responsible} onChange={set("responsible")} />
+          </Field>
+          <Field label="ขอบเขตความร่วมมือ">
+            <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
+              <option value="">— ยังไม่ระบุ —</option>
+              {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="ผู้ลงนามและขอบเขต">
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="ผู้ลงนาม (ฝ่ายเรา)">
+            <input className={inputCls} value={form.signer_our} onChange={set("signer_our")} />
+          </Field>
+          <Field label="ผู้ลงนาม (หน่วยงาน)">
+            <input className={inputCls} value={form.signer_partner} onChange={set("signer_partner")} />
+          </Field>
+        </div>
+        <Field label="ขอบเขตความร่วมมือ" hint="หนึ่งรายการต่อบรรทัด จำเป็นสำหรับข้อตกลง MoU ที่จะแสดงในหน้าสาธารณะ">
+          <textarea className={inputCls} rows={4} value={form.scope_items} onChange={set("scope_items")} />
         </Field>
-        <Field label="วันที่เริ่มมีผล">
-          <DateInput className={inputCls} value={form.effective_date} onChange={set("effective_date")} />
-        </Field>
-        <Field label="วันหมดอายุ" hint="ต้องไม่ก่อนวันที่เริ่มมีผล">
-          <DateInput className={inputCls} value={form.expiry_date} min={form.effective_date || undefined} onChange={set("expiry_date")} />
-        </Field>
-        <Field label="ผู้รับผิดชอบ">
-          <input className={inputCls} value={form.responsible} onChange={set("responsible")} />
-        </Field>
-        <Field label="ระดับความร่วมมือ">
-          <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
-            <option value="">— ยังไม่ระบุ —</option>
-            {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-          </select>
-        </Field>
-        <Field label="ผู้ลงนาม (ฝ่ายเรา)">
-          <input className={inputCls} value={form.signer_our} onChange={set("signer_our")} />
-        </Field>
-        <Field label="ผู้ลงนาม (หน่วยงาน)">
-          <input className={inputCls} value={form.signer_partner} onChange={set("signer_partner")} />
-        </Field>
-      </div>
-      <Field label="ขอบเขตความร่วมมือ" hint="หนึ่งรายการต่อบรรทัด จำเป็นสำหรับข้อตกลง MoU ที่จะแสดงในหน้าสาธารณะ">
-        <textarea className={inputCls} rows={4} value={form.scope_items} onChange={set("scope_items")} />
-      </Field>
-      <div className="mt-2 flex justify-end gap-2">
-        <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
-        <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : doc ? "บันทึก" : "สร้างฉบับร่าง"}
-        </button>
-      </div>
+      </FormSection>
+
+      <FormActions
+        onCancel={onCancel}
+        onSave={() => { void submit(); }}
+        saveLabel={doc ? "บันทึก" : "สร้างฉบับร่าง"}
+        busy={action.busy}
+      />
     </form>
   );
 }
@@ -313,7 +361,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function ManagePanel({
-  doc, partners, relatedActivities, isStaff, isOwner, onChanged, onDeleted,
+  doc, partners, relatedActivities, isStaff, isOwner, onChanged, onDeleted, onClose,
 }: {
   doc: ManagedDocument;
   partners: PartnerView[];
@@ -322,11 +370,21 @@ function ManagePanel({
   isOwner: boolean;
   onChanged: (message: string) => void;
   onDeleted: (message: string) => void;
+  onClose: () => void;
 }) {
   const status = currentStatus(doc);
   // Coordinators edit only their own drafts; staff/admin edit any status.
   const canEdit = isStaff || (isOwner && status === "draft");
+  const readiness = [
+    { label: "ชื่อเอกสาร", done: doc.name.trim().length > 0 },
+    { label: "ชนิดเอกสาร", done: Boolean(doc.documentKind) },
+    { label: "สถานะ CSTU = เกี่ยวข้อง", done: doc.cstuStatus === "keep" },
+    { label: "สถานะไฟล์", done: Boolean(doc.fileAvailability) },
+    { label: "ไฟล์พร้อมใช้งาน", done: doc.fileAvailability !== "available" || Boolean(doc.fileName) },
+    { label: "แหล่งที่มา", done: doc.sources.length > 0 },
+  ];
   const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState<"info" | "status" | "files">("info");
   const [file, setFile] = useState<File | null>(null);
   const [fileProblem, setFileProblem] = useState<string | null>(null);
   const [cstu, setCstu] = useState<string>(doc.cstuStatus);
@@ -380,156 +438,211 @@ function ManagePanel({
     <div>
       <FormError error={action.error} />
 
-      <Section title="ข้อมูลข้อตกลง">
-        <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
-          <div><dt className="inline text-faint">หน่วยงาน: </dt><dd className="inline">{doc.partner?.name ?? "—"}</dd></div>
-          <div><dt className="inline text-faint">ประเภท: </dt><dd className="inline">{doc.docType ? label(documentTypeLabels, doc.docType.toUpperCase()) : "—"}</dd></div>
-          <div><dt className="inline text-faint">ช่วงเวลา: </dt><dd className="inline">{formatThaiDate(doc.effectiveDate)} – {formatThaiDate(doc.expiryDate)}</dd></div>
-          <div><dt className="inline text-faint">ผู้รับผิดชอบ: </dt><dd className="inline">{doc.responsible ?? "—"}</dd></div>
-        </dl>
-        {canEdit ? (
-          <button className="btn btn-outline mt-3 text-sm" type="button" onClick={() => setEditing(true)}>แก้ไขข้อมูล</button>
-        ) : (
-          <p className="mt-3 text-xs text-faint">ผู้สร้างแก้ไขได้เฉพาะตอนเป็นฉบับร่าง หลังจากนั้นเจ้าหน้าที่เป็นผู้แก้ไข</p>
-        )}
-      </Section>
+      <div
+        role="tablist"
+        aria-label="ส่วนจัดการเอกสาร"
+        className="sticky top-0 z-10 -mx-5 -mt-4 mb-4 flex gap-1 border-b border-line bg-paper/95 px-5 pt-2 backdrop-blur"
+      >
+        {([
+          ["info", "ข้อมูล"],
+          ["status", "สถานะ"],
+          ["files", "ไฟล์และแหล่งที่มา"],
+        ] as const).map(([id, text]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`tab-${id}`}
+            aria-selected={tab === id}
+            aria-controls={tab === id ? `panel-${id}` : undefined}
+            onClick={() => setTab(id)}
+            className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              tab === id ? "border-crimson text-crimson" : "border-transparent text-faint hover:text-ink"
+            }`}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
 
-      <Section title="กิจกรรมที่เกี่ยวข้อง">
-        {relatedActivities.length === 0 ? (
-          <p className="text-sm text-faint">ยังไม่มีกิจกรรมที่เกี่ยวข้อง</p>
-        ) : (
-          <ul className="space-y-1.5 text-sm">
-            {relatedActivities.map((a) => (
-              <li key={a.id} className="flex items-center justify-between gap-3">
-                <Link href={`/activities/manage?edit=${a.id}`} className="font-medium text-ink hover:text-crimson">{a.name}</Link>
-                <span className="text-xs text-faint">{formatThaiDate(a.date)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Section>
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === "info" && (
+          <>
+            <Section title="ข้อมูลเอกสาร">
+              <dl className="grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+                <div><dt className="inline text-faint">หน่วยงาน: </dt><dd className="inline">{doc.partner?.name ?? "—"}</dd></div>
+                <div><dt className="inline text-faint">รูปแบบ: </dt><dd className="inline">{doc.docType ? label(documentTypeLabels, doc.docType.toUpperCase()) : "—"}</dd></div>
+                <div><dt className="inline text-faint">ชนิดเอกสาร: </dt><dd className="inline">{label(documentKindLabels, doc.documentKind)}</dd></div>
+                <div><dt className="inline text-faint">สถานะไฟล์: </dt><dd className="inline">{label(fileAvailabilityLabels, doc.fileAvailability)}</dd></div>
+                <div><dt className="inline text-faint">ช่วงเวลา: </dt><dd className="inline">{formatThaiDate(doc.effectiveDate)} – {formatThaiDate(doc.expiryDate)}</dd></div>
+                <div><dt className="inline text-faint">ผู้รับผิดชอบ: </dt><dd className="inline">{doc.responsible ?? "—"}</dd></div>
+              </dl>
+              {canEdit ? (
+                <button className="btn btn-outline mt-3 text-sm" type="button" onClick={() => setEditing(true)}>แก้ไขข้อมูล</button>
+              ) : (
+                <p className="mt-3 text-xs text-faint">ผู้สร้างแก้ไขได้เฉพาะตอนเป็นฉบับร่าง หลังจากนั้นเจ้าหน้าที่เป็นผู้แก้ไข</p>
+              )}
+              {isStaff && <PublishChecklist items={readiness} className="mt-3" />}
+            </Section>
 
-      <Section title="ไฟล์ข้อตกลง">
-        <p className="mb-2 text-sm">
-          {doc.fileName ? <>ไฟล์ปัจจุบัน: <span className="font-medium">{doc.fileName}</span></> : "ยังไม่มีไฟล์"}
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {doc.fileName && (
-            <button className="btn btn-outline gap-1.5 text-sm" type="button" onClick={openInternalFile} disabled={action.busy}>
-              <Download className="h-4 w-4" />
-              เปิดไฟล์
+            <Section title="กิจกรรมที่เกี่ยวข้อง">
+              {relatedActivities.length === 0 ? (
+                <p className="text-sm text-faint">ยังไม่มีกิจกรรมที่เกี่ยวข้อง</p>
+              ) : (
+                <ul className="space-y-1.5 text-sm">
+                  {relatedActivities.map((a) => (
+                    <li key={a.id} className="flex items-center justify-between gap-3">
+                      <Link href={`/activities/manage?edit=${a.id}`} className="font-medium text-ink hover:text-crimson">{a.name}</Link>
+                      <span className="text-xs text-faint">{formatThaiDate(a.date)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+
+            {!isStaff && (
+              <p className="mb-4 text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างเอกสารอนุมัติเองไม่ได้</p>
+            )}
+          </>
+        )}
+
+        {tab === "status" && (
+          <Section title="สถานะเอกสาร">
+            <p className="mb-2 text-sm">
+              สถานะ: <StatusBadge kind="document" status={status}>{label(documentStatusLabels, status)}</StatusBadge>
+            </p>
+            <LifecycleProgress status={status} />
+            {isStaff ? (
+              TRANSITIONS[status]?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {TRANSITIONS[status].map((next) => (
+                    <button key={next} type="button" disabled={action.busy}
+                      className={`btn text-sm ${next === "cancelled" ? "btn-outline" : "btn-primary"}`}
+                      onClick={async () => {
+                        if (next === "cancelled" && !(await confirm({
+                          title: `ยกเลิกเอกสาร “${doc.name}” ใช่ไหม`,
+                          description: "การยกเลิกย้อนกลับไม่ได้",
+                          action: "ยกเลิกเอกสาร",
+                          destructive: true,
+                        }))) return;
+                        act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next]);
+                      }}>
+                      {transitionLabels[next]}
+                    </button>
+                  ))}
+                </div>
+              ) : <p className="text-xs text-faint">เอกสารนี้ปิดแล้ว เปลี่ยนสถานะไม่ได้อีก</p>
+            ) : (
+              <p className="text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างเอกสารอนุมัติเองไม่ได้</p>
+            )}
+          </Section>
+        )}
+
+        {tab === "files" && (
+          <>
+            <Section title="ไฟล์เอกสาร">
+              <p className="mb-2 text-sm">
+                {doc.fileName ? <>ไฟล์ปัจจุบัน: <span className="font-medium">{doc.fileName}</span></> : "ยังไม่มีไฟล์"}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {doc.fileName && (
+                  <button className="btn btn-outline gap-1.5 text-sm" type="button" onClick={openInternalFile} disabled={action.busy}>
+                    <Download className="h-4 w-4" />
+                    เปิดไฟล์
+                  </button>
+                )}
+                {canEdit && (
+                  <>
+                    <input type="file" accept="application/pdf" className="text-sm"
+                      onChange={(e) => pickFile(e.target.files?.[0] ?? null)} aria-label="เลือกไฟล์ PDF" />
+                    <button className="btn btn-primary gap-1.5 text-sm" type="button" disabled={!file || action.busy}
+                      onClick={() => file && act(() => apiUpload(`/documents/${doc.id}/file`, file), doc.fileName ? "เปลี่ยนไฟล์แล้ว" : "อัปโหลดไฟล์แล้ว")}>
+                      <Upload className="h-4 w-4" />
+                      {doc.fileName ? "เปลี่ยนไฟล์" : "อัปโหลด"}
+                    </button>
+                  </>
+                )}
+              </div>
+              {fileProblem && <p className="mt-2 text-sm text-red-700">{fileProblem}</p>}
+              <p className="mt-2 text-xs text-faint">ไฟล์ PDF ขนาดไม่เกิน 10 MB{doc.fileName ? " · ลิงก์เปิดไฟล์ใช้ได้ 5 นาที" : ""}</p>
+            </Section>
+
+            {isStaff && (
+              <Section title="ความเกี่ยวข้องกับ CSTU">
+                <div className="grid gap-x-4 sm:grid-cols-[200px_1fr]">
+                  <Field label="ความเกี่ยวข้องกับ CSTU">
+                    <select className={inputCls} value={cstu} onChange={(e) => setCstu(e.target.value)}>
+                      {Object.entries(cstuStatusLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="เหตุผล" hint="จำเป็นเมื่อระบุว่าเกี่ยวข้องหรือไม่เกี่ยวข้องกับ CSTU">
+                    <textarea className={inputCls} rows={2} value={evidence} onChange={(e) => setEvidence(e.target.value)} />
+                  </Field>
+                </div>
+                <Field
+                  label="ลิงก์แหล่งที่มา"
+                  hint={doc.sources.length
+                    ? `มีแหล่งที่มาแล้ว ${doc.sources.length} รายการ จะเพิ่มอีกก็ได้`
+                    : "ลิงก์ที่ตรวจแล้วว่ายืนยันเอกสารนี้ได้ ขึ้นต้นด้วย https:// จำเป็นเมื่อระบุว่าเกี่ยวข้องกับ CSTU"}
+                >
+                  <input className={inputCls} type="url" pattern="https://.*" value={sourceUrl}
+                    onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" />
+                </Field>
+                <button className="btn btn-primary text-sm" type="button"
+                  disabled={action.busy || (cstu !== "review" && !evidence.trim()) || needsSource}
+                  onClick={() => act(() => apiPut(`/documents/${doc.id}/cstu-status`, {
+                    cstu_status: cstu, cstu_evidence: orNull(evidence), source_url: orNull(sourceUrl),
+                  }), "บันทึกความเกี่ยวข้องกับ CSTU แล้ว")}>
+                  บันทึก
+                </button>
+              </Section>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="sticky bottom-0 z-10 -mx-5 -mb-4 mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line bg-paper/95 px-5 py-3 backdrop-blur">
+        <div>
+          {isStaff && (
+            <button className="btn gap-1.5 text-sm text-red-700 hover:bg-red-50" type="button" disabled={action.busy}
+              onClick={async () => {
+                if (!(await confirm({
+                  title: `ลบเอกสาร “${doc.name}” ใช่ไหม`,
+                  description: "เอกสารนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
+                  action: "ลบเอกสาร",
+                  destructive: true,
+                }))) return;
+                if (await action.run(() => apiDelete(`/documents/${doc.id}`))) onDeleted(`ลบ “${doc.name}” แล้ว`);
+              }}>
+              <Trash2 className="h-4 w-4" />
+              ลบเอกสาร
             </button>
           )}
-          {canEdit && (
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {isStaff && (
             <>
-              <input type="file" accept="application/pdf" className="text-sm"
-                onChange={(e) => pickFile(e.target.files?.[0] ?? null)} aria-label="เลือกไฟล์ PDF" />
-              <button className="btn btn-primary gap-1.5 text-sm" type="button" disabled={!file || action.busy}
-                onClick={() => file && act(() => apiUpload(`/documents/${doc.id}/file`, file), doc.fileName ? "เปลี่ยนไฟล์แล้ว" : "อัปโหลดไฟล์แล้ว")}>
-                <Upload className="h-4 w-4" />
-                {doc.fileName ? "เปลี่ยนไฟล์" : "อัปโหลด"}
+              <span className="text-xs text-faint">
+                {doc.isPublished
+                  ? (doc.publiclyVisible ? "เผยแพร่แล้ว" : "เผยแพร่แล้ว · ยังไม่แสดงสาธารณะ")
+                  : "ยังไม่เผยแพร่"}
+                {doc.isPublished && doc.cstuStatus !== "keep" && (
+                  <span className="ml-1 text-gold-dark">· แสดงเมื่อระบุว่าเกี่ยวข้องกับ CSTU</span>
+                )}
+                {doc.isPublished && doc.cstuStatus === "keep" && !doc.publiclyVisible && (
+                  <span className="ml-1 text-gold-dark">· ตรวจรายการที่ยังไม่ครบในรายการตรวจสอบ</span>
+                )}
+              </span>
+              <button className="btn btn-outline text-sm" type="button" disabled={action.busy}
+                onClick={() => act(() => apiPost(`/documents/${doc.id}/${doc.isPublished ? "unpublish" : "publish"}`),
+                  doc.isPublished ? "หยุดเผยแพร่เอกสารแล้ว" : "เผยแพร่เอกสารแล้ว")}>
+                {doc.isPublished ? "หยุดเผยแพร่" : "เผยแพร่"}
               </button>
             </>
           )}
+          <button className="btn btn-outline text-sm" type="button" onClick={onClose}>ปิด</button>
         </div>
-        {fileProblem && <p className="mt-2 text-sm text-red-700">{fileProblem}</p>}
-        <p className="mt-2 text-xs text-faint">ไฟล์ PDF ขนาดไม่เกิน 10 MB{doc.fileName ? " · ลิงก์เปิดไฟล์ใช้ได้ 5 นาที" : ""}</p>
-      </Section>
-
-      <Section title="สถานะข้อตกลง">
-        <p className="mb-2 text-sm">
-          สถานะ: <StatusBadge kind="document" status={status}>{label(documentStatusLabels, status)}</StatusBadge>
-        </p>
-        <LifecycleProgress status={status} />
-        {isStaff ? (
-          TRANSITIONS[status]?.length ? (
-            <div className="flex flex-wrap gap-2">
-              {TRANSITIONS[status].map((next) => (
-                <button key={next} type="button" disabled={action.busy}
-                  className={`btn text-sm ${next === "cancelled" ? "btn-outline" : "btn-primary"}`}
-                  onClick={async () => {
-                    if (next === "cancelled" && !(await confirm({
-                      title: `ยกเลิกข้อตกลง “${doc.name}” ใช่ไหม`,
-                      description: "การยกเลิกย้อนกลับไม่ได้",
-                      action: "ยกเลิกข้อตกลง",
-                      destructive: true,
-                    }))) return;
-                    act(() => apiPost(`/documents/${doc.id}/transition`, { status: next }), transitionDone[next]);
-                  }}>
-                  {transitionLabels[next]}
-                </button>
-              ))}
-            </div>
-          ) : <p className="text-xs text-faint">ข้อตกลงนี้ปิดแล้ว เปลี่ยนสถานะไม่ได้อีก</p>
-        ) : (
-          <p className="text-xs text-faint">เจ้าหน้าที่เป็นผู้อนุมัติและเปลี่ยนสถานะ ผู้สร้างข้อตกลงอนุมัติเองไม่ได้</p>
-        )}
-      </Section>
-
-      {isStaff && (
-        <Section title="ความเกี่ยวข้องกับ CSTU">
-          <div className="grid gap-x-4 sm:grid-cols-[200px_1fr]">
-            <Field label="ความเกี่ยวข้องกับ CSTU">
-              <select className={inputCls} value={cstu} onChange={(e) => setCstu(e.target.value)}>
-                {Object.entries(cstuStatusLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-              </select>
-            </Field>
-            <Field label="เหตุผล" hint="จำเป็นเมื่อระบุว่าเกี่ยวข้องหรือไม่เกี่ยวข้องกับ CSTU">
-              <textarea className={inputCls} rows={2} value={evidence} onChange={(e) => setEvidence(e.target.value)} />
-            </Field>
-          </div>
-          <Field
-            label="ลิงก์แหล่งที่มา"
-            hint={doc.sources.length
-              ? `มีแหล่งที่มาแล้ว ${doc.sources.length} รายการ จะเพิ่มอีกก็ได้`
-              : "ลิงก์ที่ตรวจแล้วว่ายืนยันข้อตกลงนี้ได้ ขึ้นต้นด้วย https:// จำเป็นเมื่อระบุว่าเกี่ยวข้องกับ CSTU"}
-          >
-            <input className={inputCls} type="url" pattern="https://.*" value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://" />
-          </Field>
-          <button className="btn btn-primary text-sm" type="button"
-            disabled={action.busy || (cstu !== "review" && !evidence.trim()) || needsSource}
-            onClick={() => act(() => apiPut(`/documents/${doc.id}/cstu-status`, {
-              cstu_status: cstu, cstu_evidence: orNull(evidence), source_url: orNull(sourceUrl),
-            }), "บันทึกความเกี่ยวข้องกับ CSTU แล้ว")}>
-            บันทึก
-          </button>
-        </Section>
-      )}
-
-      {isStaff && (
-        <Section title="การเผยแพร่">
-          <p className="mb-2 text-sm">
-            {doc.isPublished ? "เผยแพร่แล้ว" : "ยังไม่เผยแพร่"}
-            {doc.isPublished && doc.cstuStatus !== "keep" && (
-              <span className="ml-2 text-xs text-gold-dark">จะแสดงในหน้าสาธารณะเมื่อระบุว่าเกี่ยวข้องกับ CSTU</span>
-            )}
-          </p>
-          <button className="btn btn-outline text-sm" type="button" disabled={action.busy}
-            onClick={() => act(() => apiPost(`/documents/${doc.id}/${doc.isPublished ? "unpublish" : "publish"}`),
-              doc.isPublished ? "หยุดเผยแพร่ข้อตกลงแล้ว" : "เผยแพร่ข้อตกลงแล้ว")}>
-            {doc.isPublished ? "หยุดเผยแพร่" : "เผยแพร่"}
-          </button>
-        </Section>
-      )}
-
-      {isStaff && (
-        <div className="flex justify-end">
-          <button className="btn gap-1.5 text-sm text-red-700 hover:bg-red-50" type="button" disabled={action.busy}
-            onClick={async () => {
-              if (!(await confirm({
-                title: `ลบข้อตกลง “${doc.name}” ใช่ไหม`,
-                description: "ข้อตกลงนี้จะไม่แสดงอีก แต่ยังดูได้ในประวัติการแก้ไข",
-                action: "ลบข้อตกลง",
-                destructive: true,
-              }))) return;
-              if (await action.run(() => apiDelete(`/documents/${doc.id}`))) onDeleted(`ลบ “${doc.name}” แล้ว`);
-            }}>
-            <Trash2 className="h-4 w-4" />
-            ลบข้อตกลง
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

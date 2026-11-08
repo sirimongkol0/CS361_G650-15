@@ -11,6 +11,8 @@ import { label, partnerTypeLabels, scopeLevelLabels, type ScopeLevel } from "@/l
 import { canManage, useRole } from "@/lib/role-context";
 import { AccessState, EmptyState, ErrorState, LoadingState } from "@/components/data-states";
 import { Dialog, Field, FormError, Notice, inputCls, orNull, useAction } from "@/components/form-ui";
+import { FormActions, FormSection } from "@/components/form-layout";
+import { PublishChecklist } from "@/components/publish-checklist";
 import { useDocumentTitle } from "@/lib/list-tools";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -30,7 +32,9 @@ interface ManagedPartner {
   scopeLevel: ScopeLevel | null;
   organizationId: number | null;
   isPublished: boolean;
+  publiclyVisible?: boolean;
   ownerUserId: number | null;
+  sources?: { id: number; sourceUrl: string }[];
 }
 
 const TYPE_OPTIONS: Record<string, string> = { ...partnerTypeLabels, coordinator: "ผู้ประสานงาน" };
@@ -78,7 +82,7 @@ export default function ManageStakeholdersPage() {
     <div className="mx-auto max-w-(--breakpoint-xl) p-6">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Breadcrumb items={[{ label: "หน่วยงานคู่ความร่วมมือ", href: "/stakeholders" }, { label: "จัดการหน่วยงาน" }]} />
+          <Breadcrumb items={[{ label: "หน่วยงานความร่วมมือ", href: "/stakeholders" }, { label: "จัดการหน่วยงาน" }]} />
           <h1 className="font-display text-2xl font-bold text-ink">จัดการหน่วยงานและผู้ประสานงาน</h1>
           <p className="mt-0.5 text-sm text-faint">
             {isStaff ? "ทุกรายการ รวมฉบับร่าง" : "รายการที่เผยแพร่แล้วและฉบับร่างของตัวเอง แก้ไขได้เฉพาะรายการของตัวเอง"}
@@ -119,7 +123,11 @@ export default function ManageStakeholdersPage() {
                     <td className="px-4 py-3 text-faint">{label(TYPE_OPTIONS, p.type)}</td>
                     <td className="px-4 py-3 text-faint">{orgName(p.organizationId) ?? countryLabel(p.countryCode, p.country) ?? "—"}</td>
                     <td className="px-4 py-3">
-                      {p.isPublished ? <span className="badge badge-green">เผยแพร่แล้ว</span> : <span className="badge badge-gray">ฉบับร่าง</span>}
+                      {p.isPublished
+                        ? (p.publiclyVisible === false
+                          ? <span className="badge badge-gold">เผยแพร่แล้ว · ยังไม่แสดงสาธารณะ</span>
+                          : <span className="badge badge-green">เผยแพร่แล้ว</span>)
+                        : <span className="badge badge-gray">ฉบับร่าง</span>}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       {canEdit(p) && (
@@ -197,9 +205,18 @@ function PartnerForm({
   const action = useAction();
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [key]: e.target.value });
   const isPerson = form.type === "coordinator" || form.type === "alumni" || form.type === "expert";
+  const hasSource = (partner?.sources?.length ?? 0) > 0 || form.source_url.trim().length > 0;
+  const publishItems = [
+    { label: "ชื่อ", done: form.name.trim().length > 0 },
+    { label: "ประเภท", done: form.type.trim().length > 0 },
+    { label: "รายละเอียด", done: form.description.trim().length > 0 },
+    { label: "เว็บไซต์", done: form.website_url.trim().length > 0 },
+    { label: "รหัสประเทศ 2 ตัว", done: /^[A-Za-z]{2}$/.test(form.country_code.trim()) },
+    { label: "แหล่งที่มา (https)", done: hasSource },
+  ];
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  async function submit(e?: FormEvent) {
+    e?.preventDefault();
     const body: Record<string, unknown> = {
       name: form.name.trim(),
       type: form.type,
@@ -229,75 +246,88 @@ function PartnerForm({
   return (
     <form onSubmit={submit}>
       <FormError error={action.error} />
-      <div className="grid gap-x-4 sm:grid-cols-2">
-        <Field label="ชื่อ *">
-          <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
-        </Field>
-        <Field label="ประเภท">
-          <select className={inputCls} value={form.type} onChange={set("type")}>
-            {Object.entries(TYPE_OPTIONS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-          </select>
-        </Field>
-        {isPerson && (
-          <Field label="หน่วยงานที่สังกัด">
-            <select className={inputCls} value={form.organization_id} onChange={set("organization_id")}>
-              <option value="">— ไม่ระบุ —</option>
-              {organisations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+
+      <FormSection title="ข้อมูลหลัก" description="ชื่อ ประเภท และข้อมูลที่ใช้แสดงในหน้าสาธารณะ">
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="ชื่อ *">
+            <input className={inputCls} value={form.name} onChange={set("name")} required maxLength={255} />
+          </Field>
+          <Field label="ประเภท">
+            <select className={inputCls} value={form.type} onChange={set("type")}>
+              {Object.entries(TYPE_OPTIONS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
             </select>
           </Field>
-        )}
-        <Field label="ประเทศ">
-          <input className={inputCls} value={form.country} onChange={set("country")} placeholder="Thailand" />
-        </Field>
-        <Field label="รหัสประเทศ" hint="2 ตัวอักษร เช่น TH">
-          <input className={inputCls} value={form.country_code} onChange={set("country_code")} maxLength={2} pattern="[A-Za-z]{2}" />
-        </Field>
-        <Field label="เว็บไซต์">
-          <input className={inputCls} type="url" value={form.website_url} onChange={set("website_url")} placeholder="https://" />
-        </Field>
-        <Field label="ระดับความร่วมมือ">
-          <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
-            <option value="">— ยังไม่ระบุ —</option>
-            {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
-          </select>
-        </Field>
-        <Field label="ชื่อผู้ติดต่อ">
-          <input className={inputCls} value={form.contact_name} onChange={set("contact_name")} />
-        </Field>
-        <Field label="อีเมลผู้ติดต่อ">
-          <input className={inputCls} type="email" value={form.contact_email} onChange={set("contact_email")} />
-        </Field>
-      </div>
-      <Field label="รายละเอียด">
-        <textarea className={inputCls} rows={3} value={form.description} onChange={set("description")} />
-      </Field>
-      <label className="mb-2 flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={form.contact_is_public} onChange={(e) => setForm({ ...form, contact_is_public: e.target.checked })} />
-        แสดงชื่อและอีเมลผู้ติดต่อในหน้าสาธารณะ (ต้องได้รับความยินยอมจากเจ้าของข้อมูลก่อน)
-      </label>
-      {isStaff ? (
-        <>
-          <Field label="ลิงก์แหล่งที่มา" hint="ลิงก์ที่ตรวจแล้วว่ายืนยันข้อมูลนี้ได้ ขึ้นต้นด้วย https:// ต้องมีก่อนแสดงในหน้าสาธารณะ">
-            <input className={inputCls} type="url" pattern="https://.*" value={form.source_url}
-              onChange={(e) => setForm({ ...form, source_url: e.target.value })} placeholder="https://" />
+          {isPerson && (
+            <Field label="หน่วยงานที่สังกัด">
+              <select className={inputCls} value={form.organization_id} onChange={set("organization_id")}>
+                <option value="">— ไม่ระบุ —</option>
+                {organisations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            </Field>
+          )}
+          <Field label="ประเทศ">
+            <input className={inputCls} value={form.country} onChange={set("country")} placeholder="Thailand" />
           </Field>
-          <label className="mb-1 flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
-            เผยแพร่ในหน้าสาธารณะ
-          </label>
-          <p className="mb-3 text-xs text-faint">
-            จะแสดงในหน้าสาธารณะเมื่อกรอกประเภท รายละเอียด เว็บไซต์ รหัสประเทศ และลิงก์แหล่งที่มาครบ
-          </p>
-        </>
-      ) : (
-        <p className="mb-3 text-xs text-faint">รายการใหม่จะเป็นฉบับร่างจนกว่าเจ้าหน้าที่จะเผยแพร่</p>
-      )}
-      <div className="flex justify-end gap-2">
-        <button className="btn btn-outline" type="button" onClick={onCancel}>ยกเลิก</button>
-        <button className="btn btn-primary" type="submit" disabled={action.busy}>
-          {action.busy ? "กำลังบันทึก…" : partner ? "บันทึก" : "เพิ่ม"}
-        </button>
-      </div>
+          <Field label="รหัสประเทศ" hint="2 ตัวอักษร เช่น TH">
+            <input className={inputCls} value={form.country_code} onChange={set("country_code")} maxLength={2} pattern="[A-Za-z]{2}" />
+          </Field>
+          <Field label="เว็บไซต์">
+            <input className={inputCls} type="url" value={form.website_url} onChange={set("website_url")} placeholder="https://" />
+          </Field>
+          <Field label="ขอบเขตความร่วมมือ">
+            <select className={inputCls} value={form.scope_level} onChange={set("scope_level")}>
+              <option value="">— ยังไม่ระบุ —</option>
+              {Object.entries(scopeLevelLabels).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            </select>
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="ผู้ติดต่อ">
+        <div className="grid gap-x-4 sm:grid-cols-2">
+          <Field label="ชื่อผู้ติดต่อ">
+            <input className={inputCls} value={form.contact_name} onChange={set("contact_name")} />
+          </Field>
+          <Field label="อีเมลผู้ติดต่อ">
+            <input className={inputCls} type="email" value={form.contact_email} onChange={set("contact_email")} />
+          </Field>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={form.contact_is_public} onChange={(e) => setForm({ ...form, contact_is_public: e.target.checked })} />
+          แสดงชื่อและอีเมลผู้ติดต่อในหน้าสาธารณะ (ต้องได้รับความยินยอมจากเจ้าของข้อมูลก่อน)
+        </label>
+      </FormSection>
+
+      <FormSection title="รายละเอียด">
+        <Field label="รายละเอียด">
+          <textarea className={inputCls} rows={3} value={form.description} onChange={set("description")} />
+        </Field>
+      </FormSection>
+
+      <FormSection title="การเผยแพร่">
+        {isStaff ? (
+          <>
+            <Field label="ลิงก์แหล่งที่มา" hint="ลิงก์ที่ตรวจแล้วว่ายืนยันข้อมูลนี้ได้ ขึ้นต้นด้วย https:// ต้องมีก่อนแสดงในหน้าสาธารณะ">
+              <input className={inputCls} type="url" pattern="https://.*" value={form.source_url}
+                onChange={(e) => setForm({ ...form, source_url: e.target.value })} placeholder="https://" />
+            </Field>
+            <PublishChecklist items={publishItems} />
+            <label className="mt-3 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.is_published} onChange={(e) => setForm({ ...form, is_published: e.target.checked })} />
+              เผยแพร่ในหน้าสาธารณะ
+            </label>
+          </>
+        ) : (
+          <p className="text-xs text-faint">รายการใหม่จะเป็นฉบับร่างจนกว่าเจ้าหน้าที่จะเผยแพร่</p>
+        )}
+      </FormSection>
+
+      <FormActions
+        onCancel={onCancel}
+        onSave={() => { void submit(); }}
+        saveLabel={partner ? "บันทึก" : "เพิ่ม"}
+        busy={action.busy}
+      />
     </form>
   );
 }

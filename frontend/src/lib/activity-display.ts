@@ -1,4 +1,5 @@
 // Date-only values are calendar dates, independent of the browser timezone.
+// Keep this utility self-contained: tests load the file directly without the app import map.
 const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 
 const kindLabels: Record<string, string> = {
@@ -16,7 +17,8 @@ export function activityDateLabel(iso: string | null | undefined, kind?: string 
   const date = precision === "year" ? `${year}`
     : precision === "month" ? `${month} ${year}`
     : `${parsed.getUTCDate()} ${month} ${year}`;
-  const prefix = kind && kindLabels[kind] ? `${kindLabels[kind]}: ` : "";
+  // "event" is the default meaning, so the page does not need to spell it out.
+  const prefix = kind && kind !== "event" && kindLabels[kind] ? `${kindLabels[kind]}: ` : "";
   return `${prefix}${precision === "approximate" ? "ประมาณ " : ""}${date}`;
 }
 

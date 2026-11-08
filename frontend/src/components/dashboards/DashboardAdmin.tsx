@@ -50,7 +50,7 @@ export default function DashboardAdmin() {
   const exportMonthly = () => { downloadFile(`/insights/summary.csv${insightsQuery({ year })}`).catch(() => {}); };
 
   const kpis = [
-    { icon: Building2, label: "หน่วยงานคู่ความร่วมมือ", value: shown(loaded, partnerTotal), tone: "crimson" as const },
+    { icon: Building2, label: "หน่วยงานความร่วมมือ", value: shown(loaded, partnerTotal), tone: "crimson" as const },
     { icon: TrendingUp, label: `ผลลัพธ์ปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.outcomesByType)), tone: "green" as const },
     { icon: FileText, label: "ข้อตกลง MoU/MoA ที่มีผล", value: shown(loaded, activeAgreements), warn: adminWatchMOU.length ? `ใกล้หมดอายุ ${adminWatchMOU.length} ฉบับ` : null, tone: "amber" as const },
     { icon: CalendarDays, label: `กิจกรรมปี ${beYear(year)}`, value: shown(loaded, sumCounts(summary?.activitiesByMonth)), tone: "blue" as const },
@@ -133,7 +133,7 @@ export default function DashboardAdmin() {
 
         {/* Stakeholder types: one labelled bar per type, largest first */}
         <div className={`${contentCard} p-5`}>
-          <h2 className="font-bold mb-1 text-ink">หน่วยงานคู่ความร่วมมือ</h2>
+          <h2 className="font-bold mb-1 text-ink">หน่วยงานความร่วมมือ</h2>
           <p className="text-xs mb-3 text-faint">ตามประเภท • {shown(loaded, partnerTotal)} หน่วยงาน</p>
           {loaded && adminStakeholderTypes.length === 0 && <p className="text-xs text-faint">ยังไม่มีหน่วยงาน</p>}
           <ul className="space-y-2">
