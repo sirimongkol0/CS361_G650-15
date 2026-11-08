@@ -45,7 +45,7 @@ export CONFIG_PREFIX=/cs361/config
 ```bash
 export AWS_REGION=ap-southeast-2
 export LAB_MODE=false
-export AWS_PROFILE=cstu-new
+export AWS_PROFILE=cstu-new   # เฉพาะเมื่อใช้โปรไฟล์นี้; ถ้าใช้ credential chain ปกติไม่ต้องตั้ง
 ```
 
 ## 3. ตรวจก่อนเริ่ม

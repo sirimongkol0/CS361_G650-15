@@ -2,7 +2,7 @@
 
 > วันที่: 8 พฤศจิกายน 2026 · ใช้กับ #125 (V5-8) และตรวจงาน #119–#124
 > **ผลทดสอบหลักรันใน Learner Lab เมื่อ 8 พ.ย. 2026** — หลักฐานอยู่ใน `docs/evidence/v5/`
-> ช่องที่ยังต้องรันซ้ำใน session ใหม่จะระบุว่า PENDING
+> ช่องที่ยังต้องรันซ้ำใน session ใหม่จะระบุว่า TBD
 > เอกสารนี้บอกคำสั่ง ผลที่คาดหวัง และลิงก์หลักฐานของแต่ละข้อ
 
 ## วิธีบันทึกผล
@@ -38,9 +38,9 @@ cd infra/new-account
 | **V5-6b** | Backup manual/automated | `./deploy.sh backup`; ตรวจ `s3://<bucket>/backups/`; `cloudwatch get-metric-statistics` | ไฟล์ `.sql.gz` ใหม่; metric `BackupSuccess=1`; ไม่มี alarm ถ้าสำเร็จ | `docs/evidence/v5/v5-6-backup-run.txt` | PASS |
 | **V5-6c** | Restore | `./deploy.sh backup`; `./deploy.sh restore <key> --yes` บน stack ทดสอบ | restore สำเร็จ; row counts กลับมา; backend กลับมา healthy | `docs/evidence/v5/v5-6-restore.txt` | PASS |
 | **V5-6d** | Alert failure | ทำให้ backup ล้มเหลวใน stack ทดสอบ หรือ publish metric 0; ตรวจ SNS | alarm เปลี่ยนเป็น ALARM; อีเมลถูกส่ง (ถ้าสมัคร); กลับมา OK เมื่อ backup สำเร็จ | `docs/evidence/v5/v5-6-alert.txt` | PASS — metric 0 + SNS publish + alarm ALARM; email not configured |
-| **V5-7a** | CI template lint | เปิด Actions run ของ `.github/workflows/infra.yml` หรือรัน `cfn-lint`/`cfn-guard` ตาม workflow | cfn-lint ผ่านทุก template; cfn-guard ผ่านกฎ; job สีเขียว | `docs/evidence/v5/v5-7-ci.txt` + URL ของ run | PASS locally; GitHub Actions not run (no push) |
-| **V5-7b** | Drift detection | เพิ่ม ingress ชั่วคราวพอร์ต 9999 (CIDR TEST-NET) → `detect-stack-drift` → `describe-stack-resource-drifts` → revoke | drift รายงาน `MODIFIED`; หลังแก้กลับเป็น `IN_SYNC` | `docs/evidence/v5/v5-7-drift.txt` | PASS for MODIFIED; IN_SYNC pending fresh session |
-| **V5-8** | เอกสาร/หลักฐานครบ | ทำตาม [runbook](../runbooks/v5-deploy.md) ตั้งแต่ stack ว่าง; เติมตัวเลขใน [baseline](v5-baseline.md) | deploy ครบ; before/after มีตัวเลขจริง; ลิงก์เอกสารไม่แตก | `docs/evidence/v5/v5-8-full-run.txt` | PARTIAL — first deploy PASS; recreate/timings pending fresh session |
+| **V5-7a** | CI template lint | เปิด Actions run ของ `.github/workflows/infra.yml` หรือรัน `cfn-lint`/`cfn-guard` ตาม workflow | cfn-lint ผ่านทุก template; cfn-guard ผ่านกฎ; job สีเขียว | `docs/evidence/v5/v5-7-ci.txt` + URL ของ run | PASS (local); GitHub Actions TBD |
+| **V5-7b** | Drift detection | เพิ่ม ingress ชั่วคราวพอร์ต 9999 (CIDR TEST-NET) → `detect-stack-drift` → `describe-stack-resource-drifts` → revoke | drift รายงาน `MODIFIED`; หลังแก้กลับเป็น `IN_SYNC` | `docs/evidence/v5/v5-7-drift.txt` | PASS (MODIFIED); IN_SYNC TBD |
+| **V5-8** | เอกสาร/หลักฐานครบ | ทำตาม [runbook](../runbooks/v5-deploy.md) ตั้งแต่ stack ว่าง; เติมตัวเลขใน [baseline](v5-baseline.md) | deploy ครบ; before/after มีตัวเลขจริง; ลิงก์เอกสารไม่แตก | `docs/evidence/v5/v5-8-full-run.txt` | PARTIAL — first deploy PASS; recreate/timings TBD |
 
 ## ผลที่วัดได้จาก Lab
 
@@ -48,16 +48,19 @@ cd infra/new-account
 |---|---|---|
 | Cognito pool / client | `us-west-2_91XZumUyS` / `19k8vib1vf3d586cqvppbp4ntu` | `v5-2-cognito.txt` |
 | API / fallback frontend | `http://32.189.5.234:8000` / `http://32.189.5.234:3000` | `v5-3-fallback.txt` |
-| fallback page | 200, 30,435 bytes, title `CSTU | PCSMS` | `v5-3-fallback.txt` |
+| fallback page | 200, 30,435 bytes, title `CSTU / PCSMS` | `v5-3-fallback.txt` |
 | CORS | origin ที่อนุญาต 200; origin อื่น 400 | `v5-3-cors.txt` |
 | Backup object | `backups/cstu_demo-20261108T154324Z.sql.gz` (25,847 bytes) | `v5-6-backup-run.txt` |
-| Backup metric | `BackupSuccess=2.0` ช่วง 15:40Z | `v5-6-backup-run.txt` |
+| Backup metric | `BackupSuccess` Sum=2.0 ช่วง 15:40Z (scheduled + manual) | `v5-6-backup-run.txt` |
 | Restore row counts | documents 25, feedbacks 45, outcomes 0; partners 29 | `v5-6-restore.txt` |
 | Failure alert | `BackupSuccess=0`, SNS publish 1, alarm ALARM | `v5-6-alert.txt` |
 | Drift | `AppSecurityGroup` MODIFIED (ingress 9999) | `v5-7-drift.txt` |
 
 > เวลารวมของ first deploy ไม่ได้จับจากจุดเริ่ม `check`; ดูรายละเอียดและค่าประมาณ
 > ใน [baseline](v5-baseline.md) — exact timing ยัง TBD
+>
+> Teardown + recreate จากศูนย์ยัง TBD; เมื่อทดสอบให้ใช้
+> `./deploy.sh teardown --yes --purge` เพื่อลบ S3/Cognito ที่ปกติ retain
 
 ## รายละเอียดคำสั่ง
 
@@ -230,7 +233,7 @@ aws ec2 revoke-security-group-ingress --group-id "$SG" \
 | Cognito | `aws cognito-idp list-user-pools --max-results 60` | เห็น `cstu-v5-auth` | PASS |
 | SSM/Secrets | ตาม V5-4 | parameter/secret ครบ | PASS |
 | Scheduler | `aws scheduler get-schedule --name cs361-backup` | ENABLED และ target ถูกต้อง | PASS |
-| CFN drift | ตาม V5-7b | ตรวจพบ/กลับเป็น IN_SYNC | PASS (MODIFIED); IN_SYNC pending |
+| CFN drift | ตาม V5-7b | ตรวจพบ/กลับเป็น IN_SYNC | PASS (MODIFIED); IN_SYNC TBD |
 | Amplify create/branch | `aws amplify get-app`; `aws amplify list-branches` | app/branch มีจริง (ถ้ามี token) | PASS (API probe, no stack) |
 | Amplify build | `aws amplify get-job` | อาจ FAIL; ต้องบันทึกและใช้ fallback | N/A — not tested |
 | Fallback frontend | `curl "$FRONT/dashboard/public"` | 200 และ proxy API ได้ | PASS |
