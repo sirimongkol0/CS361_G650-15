@@ -1,0 +1,24 @@
+V5-3 CORS preflight evidence
+Date: 2026-11-08 (UTC)
+API: http://32.189.5.234:8000
+Frontend origin: http://32.189.5.234:3000
+
+Allowed origin:
+  curl -X OPTIONS http://32.189.5.234:8000/api/v1/health \
+    -H 'Origin: http://32.189.5.234:3000' \
+    -H 'Access-Control-Request-Method: GET'
+  -> HTTP/1.1 200 OK
+     access-control-allow-origin: http://32.189.5.234:3000
+     access-control-allow-methods: GET, POST, PUT, PATCH, DELETE
+     access-control-allow-credentials: true
+
+Disallowed origin:
+  curl -X OPTIONS http://32.189.5.234:8000/api/v1/health \
+    -H 'Origin: http://evil.example' \
+    -H 'Access-Control-Request-Method: GET'
+  -> HTTP/1.1 400 Bad Request
+     (no access-control-allow-origin header)
+
+Conclusion:
+  CORS_ORIGINS was set from the base stack FrontendUrl automatically; no second
+  backend deploy was needed.

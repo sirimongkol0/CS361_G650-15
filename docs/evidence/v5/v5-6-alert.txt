@@ -1,0 +1,36 @@
+V5-6 Failure/alert evidence
+Date: 2026-11-08 (UTC)
+
+Simulation:
+  1. Temporarily changed /cs361/config/s3_bucket to a non-existent bucket.
+  2. Ran `deploy.sh backup`.
+
+Observed backup failure:
+  Backing up cstu_demo to s3://cs361-docs-000000000000-bad/backups/...
+  upload failed: NoSuchBucket
+  ERROR: pg_dump or the S3 upload failed (key: backups/cstu_demo-20261108T154527Z.sql.gz)
+  SSM command status: Failed
+  deploy.sh exit: 1
+
+Metrics after the failure:
+  CS361/Backup BackupSuccess
+    2026-11-08T15:45:00Z Sum=0.0
+
+SNS:
+  AWS/SNS NumberOfMessagesPublished (TopicName=cs361-backup-alerts)
+    2026-11-08T15:45:00Z Sum=1.0
+
+Alarm:
+  cs361-backup-failed
+  State: ALARM
+  StateReason: Threshold Crossed: 1 datapoint [0.0 (07/11/26 15:46:00)]
+               was less than the threshold (1.0).
+
+Recovery:
+  Restored /cs361/config/s3_bucket to cs361-docs-073362813452.
+  Ran `deploy.sh backup` again; it succeeded and published BackupSuccess=1.
+
+Conclusion:
+  A failed backup publishes metric 0, publishes an SNS alert, and transitions
+  the CloudWatch alarm to ALARM. An email is delivered only after the optional
+  SNS email subscription is confirmed.

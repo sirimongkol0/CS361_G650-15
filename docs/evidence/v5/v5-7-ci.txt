@@ -1,0 +1,44 @@
+V5-7 CI template checks — local evidence
+Date: 2026-11-08 (UTC)
+
+Workflow:
+  .github/workflows/infra.yml
+  jobs: lint (ubuntu-latest), plan (self-hosted, cs361), drift (self-hosted, cs361)
+
+Local reproduction of the lint job:
+  uvx --quiet cfn-lint \
+    infra/new-account/stack.yaml \
+    infra/new-account/cognito.yaml \
+    infra/new-account/backup.yaml
+  -> exit 0 (no findings)
+
+  cfn-guard validate --data infra --rules .cfn-guard/rules.guard --type CFNTemplate
+  -> exit 0 (no findings)
+
+  bash -n infra/new-account/deploy.sh
+  bash -n infra/new-account/backup.sh
+  bash -n scripts/install_cfn_guard.sh
+  -> exit 0
+
+  actionlint .github/workflows/infra.yml
+  -> exit 0 (run by the CI agent)
+
+Negative tests (temporary files under /tmp, not committed):
+  1. Invalid resource type AWS::S3::Bucketk
+     cfn-lint -> exit 2, E3006 resource type does not exist
+  2. Public S3 bucket + no encryption + SSH 0.0.0.0/0 + IAM Action "*"
+     cfn-guard -> exit 19 with S3/SSH/IAM policy violations
+
+GitHub Actions run:
+  Not run in this session because the user asked not to push or merge.
+  The workflow is ready to run on a PR/push after review. Local lint/guard
+  results above are the same commands the `lint` job runs.
+
+Drift job:
+  Uses a polling loop for `describe-stack-drift-detection-status`; the AWS CLI
+  has no `cloudformation wait stack-drift-detection-complete` waiter.
+
+Self-hosted guard:
+  plan/drift require repository variable ENABLE_SELF_HOSTED_CI=true.
+  Without the runner they are skipped instead of queuing/failing; the
+  scheduled drift job is a no-op until the variable is set.

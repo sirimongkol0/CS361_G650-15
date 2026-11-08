@@ -1,0 +1,7 @@
+participant_id,role,task_id,start_time,end_time,duration_sec,success,assistance_level,errors,hesitations,blockers,quotes,notes
+P01,student,TC1,,,,,,0,,,,,
+P01,student,TC2,,,,,,0,,,,,
+P02,student,TC1,,,,,,0,,,,,
+P02,student,TC2,,,,,,0,,,,,
+P03,staff,TC2,,,,,,0,,,,,
+P04,coordinator,TC2,,,,,,0,,,,,

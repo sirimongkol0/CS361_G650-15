@@ -1,0 +1,284 @@
+name: Infra checks
+
+on:
+  pull_request:
+    # `labeled` is needed so adding the infra-plan label starts the plan job;
+    # opened/synchronize/reopened keep the normal lint runs.
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+      - '.cfn-guard/**'
+      - 'scripts/install_cfn_guard.sh'
+  workflow_dispatch:
+  schedule:
+    # Daily drift check (UTC). The Learner Lab EC2 runner only exists while the
+    # lab session is running, so a missed schedule is expected when it is off.
+    - cron: '17 3 * * *'
+
+# The workflow only reads the repository. AWS access in the plan/drift jobs
+# comes from the self-hosted runner's EC2 instance profile (LabRole); there is
+# no OIDC role and no AWS secret in this workflow.
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-checks-${{ github.workflow }}-${{ github.ref }}
+  # Cancel superseded PR lint runs, but let a scheduled drift check finish so
+  # its report is complete.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # The Learner Lab account only allows us-east-1/us-west-2; the base stack is
+  # deployed in us-west-2. Override with repository variables if either moves.
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+  AWS_DEFAULT_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+  STACK_NAME: ${{ vars.STACK_NAME || 'cs361' }}
+  TEMPLATE: infra/new-account/stack.yaml
+
+jobs:
+  lint:
+    name: Lint templates and policy rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The nightly schedule only needs the drift job; lint unchanged code daily.
+    if: github.event_name != 'schedule'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install cfn-lint
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'cfn-lint>=1,<2'
+
+      - name: Run cfn-lint on every template under infra/
+        run: |
+          shopt -s globstar nullglob
+          templates=(infra/**/*.yaml)
+          if [ "${#templates[@]}" -eq 0 ]; then
+            echo "No CloudFormation templates found under infra/." >&2
+            exit 1
+          fi
+          printf 'Linting %d template(s):\n' "${#templates[@]}"
+          printf '  %s\n' "${templates[@]}"
+          cfn-lint "${templates[@]}"
+
+      - name: Install cfn-guard
+        run: |
+          bash scripts/install_cfn_guard.sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run cfn-guard policy checks
+        run: cfn-guard validate --data infra --rules .cfn-guard/rules.guard --type CFNTemplate
+
+      - name: Syntax-check infrastructure shell scripts
+        run: |
+          shopt -s nullglob
+          scripts=(infra/new-account/*.sh)
+          if [ "${#scripts[@]}" -eq 0 ]; then
+            echo "No infrastructure shell scripts found; nothing to check."
+            exit 0
+          fi
+          for script in "${scripts[@]}"; do
+            echo "bash -n $script"
+            bash -n "$script"
+          done
+
+  plan:
+    name: Plan change set (LabRole)
+    runs-on: [self-hosted, cs361]
+    timeout-minutes: 30
+    # The self-hosted runner is the lab EC2 instance. A PR can change this
+    # workflow, so only add the infra-plan label after reviewing the PR.
+    # Set repository variable ENABLE_SELF_HOSTED_CI=true after installing the
+    # runner; otherwise this job is skipped instead of queuing forever.
+    if: >-
+      vars.ENABLE_SELF_HOSTED_CI == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'infra-plan')))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Confirm the runner's AWS identity
+        run: aws sts get-caller-identity --output table
+
+      - name: Create the change set
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          change_set_name="${STACK_NAME}-plan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "CHANGE_SET_NAME=$change_set_name" >> "$GITHUB_ENV"
+
+          if aws cloudformation describe-stacks --stack-name "$STACK_NAME" >/dev/null 2>&1; then
+            change_set_type=UPDATE
+          else
+            change_set_type=CREATE
+          fi
+          echo "Creating $change_set_type change set: $change_set_name"
+
+          # UPDATE change sets keep the stack's deployed parameter values when
+          # --parameters is omitted. A CREATE change set (stack not deployed
+          # yet) uses the template defaults instead; pass the lab overrides to
+          # deploy.sh for the real first deployment.
+          set +e
+          create_output=$(aws cloudformation create-change-set \
+            --stack-name "$STACK_NAME" \
+            --change-set-name "$change_set_name" \
+            --change-set-type "$change_set_type" \
+            --template-body "file://$TEMPLATE" \
+            --capabilities CAPABILITY_IAM 2>&1)
+          create_status=$?
+          set -e
+          printf '%s\n' "$create_output" | tee artifacts/create-change-set.log
+
+          if [ "$create_status" -ne 0 ]; then
+            if grep -Eqi "didn't contain changes|did not contain changes|no updates are to be performed" <<<"$create_output"; then
+              echo "NO_CHANGES=true" >> "$GITHUB_ENV"
+              echo "Stack $STACK_NAME is already up to date (no changes)." | tee artifacts/change-set.txt
+              exit 0
+            fi
+            exit "$create_status"
+          fi
+
+          aws cloudformation wait change-set-create-complete \
+            --stack-name "$STACK_NAME" \
+            --change-set-name "$change_set_name"
+
+      - name: Describe the change set
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          if [ "${NO_CHANGES:-false}" = true ]; then
+            echo "Stack $STACK_NAME is already up to date (no changes)." | tee artifacts/change-set.txt
+            exit 0
+          fi
+          if [ -z "${CHANGE_SET_NAME:-}" ]; then
+            echo "No change set was created before the job stopped." | tee artifacts/change-set.txt
+            exit 0
+          fi
+          if aws cloudformation describe-change-set \
+              --stack-name "$STACK_NAME" \
+              --change-set-name "$CHANGE_SET_NAME" \
+              > artifacts/change-set.json 2> artifacts/change-set.err; then
+            aws cloudformation describe-change-set \
+              --stack-name "$STACK_NAME" \
+              --change-set-name "$CHANGE_SET_NAME" \
+              --query 'Changes[].ResourceChange.[Action,ResourceType,LogicalResourceId,Replacement]' \
+              --output table | tee artifacts/change-set.txt
+            status="$(python3 -c 'import json; print(json.load(open("artifacts/change-set.json"))["Status"])')"
+            echo "Change set status: $status" | tee -a artifacts/change-set.txt
+            if [ "$status" != "CREATE_COMPLETE" ]; then
+              echo "Change set did not reach CREATE_COMPLETE." >&2
+              exit 1
+            fi
+          else
+            echo "No change set found (see change-set.err)." | tee artifacts/change-set.txt
+            cat artifacts/change-set.err
+          fi
+
+      - name: Upload the change set report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Delete the change set
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ "${NO_CHANGES:-false}" = true ] || [ -z "${CHANGE_SET_NAME:-}" ]; then
+            echo "No change set to delete."
+            exit 0
+          fi
+          aws cloudformation delete-change-set \
+            --stack-name "$STACK_NAME" \
+            --change-set-name "$CHANGE_SET_NAME" || true
+
+  drift:
+    name: Detect stack drift
+    runs-on: [self-hosted, cs361]
+    timeout-minutes: 30
+    # Requires the self-hosted runner; see the ENABLE_SELF_HOSTED_CI note above.
+    if: >-
+      vars.ENABLE_SELF_HOSTED_CI == 'true' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Confirm the runner's AWS identity
+        run: aws sts get-caller-identity --output table
+
+      - name: Detect drift on the base stack
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          drift_id="$(aws cloudformation detect-stack-drift \
+            --stack-name "$STACK_NAME" \
+            --query StackDriftDetectionId --output text)"
+          echo "Stack drift detection id: $drift_id"
+          # There is no `cloudformation wait stack-drift-detection-complete`
+          # waiter in the AWS CLI, so poll the detection status explicitly.
+          for _ in $(seq 1 120); do
+            status="$(aws cloudformation describe-stack-drift-detection-status \
+              --stack-drift-detection-id "$drift_id" \
+              --query DetectionStatus --output text)"
+            case "$status" in
+              DETECTION_COMPLETE) break ;;
+              DETECTION_FAILED) echo "Drift detection failed: $status" >&2; exit 1 ;;
+            esac
+            sleep 5
+          done
+          if [ "${status:-}" != "DETECTION_COMPLETE" ]; then
+            echo "Timed out waiting for drift detection (last status: ${status:-unknown})" >&2
+            exit 1
+          fi
+          aws cloudformation describe-stack-drift-detection-status \
+            --stack-drift-detection-id "$drift_id" \
+            > artifacts/drift-detection-status.json
+          aws cloudformation describe-stack-resource-drifts \
+            --stack-name "$STACK_NAME" \
+            --stack-resource-drift-status-filters MODIFIED DELETED \
+            > artifacts/drifted-resources.json
+
+      - name: Fail if any resource drifted
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          status = json.loads(Path("artifacts/drift-detection-status.json").read_text())
+          drifted = json.loads(Path("artifacts/drifted-resources.json").read_text()).get("StackResourceDrifts", [])
+          print(f"Stack drift status: {status.get('StackDriftStatus')} ({status.get('DetectionStatus')})")
+
+          if drifted:
+              for item in drifted:
+                  print(f"  {item.get('StackResourceDriftStatus')}: {item.get('LogicalResourceId')} ({item.get('ResourceType')})")
+              raise SystemExit(f"FAIL: {len(drifted)} resource(s) drifted from the deployed template")
+          if status.get("StackDriftStatus") == "DRIFTED":
+              raise SystemExit("FAIL: CloudFormation reports the stack as DRIFTED but returned no resource details")
+          print("No MODIFIED or DELETED resources.")
+          PY
+
+      - name: Upload the drift report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-drift-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 14

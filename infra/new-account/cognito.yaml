@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  CS361 Cognito for V5: the user pool, the browser app client and one group per
+  role. The pool is retained when the stack is deleted. Groups and fictional
+  test users are added by infra/provision_cognito.py; this stack owns the pool
+  and client.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cs361
+    AllowedPattern: '[a-z0-9-]+'
+  PoolName:
+    Type: String
+    Default: cstu-v5-auth
+    MinLength: 1
+    MaxLength: 128
+  ClientName:
+    Type: String
+    Default: cstu-backend
+    MinLength: 1
+    MaxLength: 128
+  ConfigPrefix:
+    Type: String
+    Default: /cs361/config
+    MinLength: 1
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Ref PoolName
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      MfaConfiguration: 'OFF'
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UserPoolTags:
+        Project: CS361_G650-15
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Ref ClientName
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+
+  PublicGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: public
+      UserPoolId: !Ref UserPool
+      Description: 'CSTU V5 role: public'
+
+  StudentGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: student
+      UserPoolId: !Ref UserPool
+      Description: 'CSTU V5 role: student'
+
+  CoordinatorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: coordinator
+      UserPoolId: !Ref UserPool
+      Description: 'CSTU V5 role: coordinator'
+
+  StaffGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: staff
+      UserPoolId: !Ref UserPool
+      Description: 'CSTU V5 role: staff'
+
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      UserPoolId: !Ref UserPool
+      Description: 'CSTU V5 role: admin'
+
+  CognitoUserPoolIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '${ConfigPrefix}/cognito_user_pool_id'
+      Type: String
+      Value: !Ref UserPool
+      Description: Cognito User Pool ID used by the backend
+      Tags:
+        Project: !Ref ProjectName
+
+  CognitoAppClientIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '${ConfigPrefix}/cognito_app_client_id'
+      Type: String
+      Value: !Ref UserPoolClient
+      Description: Cognito app client ID used by the backend
+      Tags:
+        Project: !Ref ProjectName
+
+Outputs:
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+  AppClientId:
+    Description: App client ID for the backend
+    Value: !Ref UserPoolClient
+  UserPoolName:
+    Description: Cognito User Pool name
+    Value: !Ref PoolName

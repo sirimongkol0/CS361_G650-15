@@ -1,7 +1,41 @@
 # คู่มือ Infrastructure
 
 คู่มือนี้บอกวิธีรันระบบบนเครื่องตัวเอง วิธีตรวจว่าระบบทำงาน และวิธีแก้ปัญหาที่เจอบ่อย
-ส่วนการ deploy ขึ้น AWS ดูที่ [การ deploy V2](../docs/decisions/v2-deployment-amplify-ec2.md)
+ส่วนการ deploy ขึ้น AWS ดูที่ [คู่มือ deploy V5](../docs/runbooks/v5-deploy.md)
+
+## Deploy V5 ขึ้น AWS (CloudFormation)
+
+V5 ใช้ `infra/new-account/deploy.sh` เป็นหลัก และแยก stack เป็น 4 ชุด:
+
+| ไฟล์ | Stack | หน้าที่ |
+|---|---|---|
+| `stack.yaml` | `cs361` | VPC, EC2, EIP, S3, SSM parameter, Secrets Manager, IAM (conditional) |
+| `cognito.yaml` | `cs361-cognito` | User pool, app client, กลุ่มบทบาท |
+| `backup.yaml` | `cs361-backup` | SNS, SSM document, EventBridge Scheduler, CloudWatch alarm |
+
+Learner Lab:
+
+```bash
+export AWS_REGION=us-west-2
+export LAB_MODE=true
+
+infra/new-account/deploy.sh check
+infra/new-account/deploy.sh infra --apply
+infra/new-account/deploy.sh cognito --apply
+infra/new-account/deploy.sh frontend --apply
+infra/new-account/deploy.sh tls                # HTTPS ด้วย Caddy + sslip.io
+infra/new-account/deploy.sh backend
+infra/new-account/deploy.sh seed --yes
+infra/new-account/deploy.sh schedule --apply
+infra/new-account/deploy.sh status
+```
+
+บัญชีปกติใช้ `LAB_MODE=false` และ region `ap-southeast-2` (หรือ region ที่ต้องการ)
+รายละเอียดการตั้งค่า secret, backup/restore, การหมุนรหัสผ่าน, self-hosted runner
+และข้อจำกัดของ Lab อยู่ใน [คู่มือ deploy V5](../docs/runbooks/v5-deploy.md)
+
+> ใน Learner Lab ห้ามสร้าง IAM role/OIDC และใช้ได้เฉพาะ `us-east-1`/`us-west-2`
+> frontend รันบน EC2/Docker พอร์ต 3000 และ HTTPS ผ่าน Caddy; Amplify ถูกนำออกจาก V5
 
 ## ต้องมีอะไรก่อน
 
@@ -10,21 +44,14 @@
 
 ## เลือก Compose ให้ถูกไฟล์
 
-repo มี Compose หลายไฟล์ แต่ละไฟล์ใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
+repo มี Compose สองไฟล์ แต่ละไฟล์ใช้ฐานข้อมูลแยกกัน ข้อมูลไม่ปนกัน
 
 | ไฟล์ | ใช้ทำอะไร | ฐานข้อมูล | เปิดเว็บที่ |
 |---|---|---|---|
 | `docker-compose.yml` | พัฒนาบนเครื่อง | PostgreSQL ใน Docker (`pcsms`) เริ่มต้นว่าง | http://localhost:3000 |
 | `docker-compose.demo.yml` | สาธิตด้วยข้อมูลสมมติ (แนะนำตอนนำเสนอ) | PostgreSQL ใน Docker (`cstu_demo`) | http://localhost:3100 |
-| `docker-compose.demo.yml` + `docker-compose.demo-s3.yml` | เดโมที่อ่าน PDF จาก S3 | เหมือนด้านบน | http://localhost:3100 |
-| `docker-compose.demo-rds.yml` (ใช้ร่วมกับไฟล์เดโม) | เดโมที่ต่อ RDS จริง | RDS `cstu_demo` | http://localhost:3100 |
-| `docker-compose.cstu.yml` | ข้อมูล CSTU จริงที่รวบรวมไว้ | PostgreSQL ใน Docker (`cstu_collaboration`) | http://localhost:3000 |
 
-คู่มือของแต่ละแบบ:
-[เดโมข้อมูลสมมติ](../docs/demo-fictional.md) ·
-[เดโมบน S3](../docs/demo-s3.md) ·
-[เดโมบน RDS](../docs/demo-rds.md) ·
-[ฐานข้อมูล CSTU](../docs/setup/cstu-database.md)
+คู่มือเดโม: [เดโมข้อมูลสมมติ](../docs/demo-fictional.md)
 
 ## รันระบบสำหรับพัฒนา
 
@@ -132,4 +159,4 @@ npm run build
 ```
 
 ถ้า build ใน Docker บนเครื่องที่ RAM น้อย (เช่น EC2 t2.micro) เครื่องอาจค้าง
-ควร build บนเครื่องอื่นหรือใช้ Amplify แทน (ดู[การ deploy V2](../docs/decisions/v2-deployment-amplify-ec2.md))
+ควร build บนเครื่องอื่นหรือใช้ EC2 ที่มี RAM มากพอ

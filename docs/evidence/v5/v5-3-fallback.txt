@@ -1,0 +1,39 @@
+V5-3 Frontend/CORS — EC2 fallback evidence
+Date: 2026-11-08 (UTC)
+Region: us-west-2
+
+Amplify was removed from V5; the EC2/Docker frontend is the only frontend.
+
+Fallback path:
+  LAB_MODE=true AWS_REGION=us-west-2 infra/new-account/deploy.sh frontend --apply
+
+  Uploaded frontend to:
+    s3://cs361-docs-073362813452/deploy/frontend-20261108153617.tgz
+  SSM command:
+    e5190e70-c7ef-412d-a47c-ef8f1a04817d
+  Result:
+    frontend ready
+
+Checks:
+  GET http://32.189.5.234:3000/api/v1/health
+    200 {"status":"healthy"}
+
+  GET http://32.189.5.234:3000/dashboard/public
+    200, 30435 bytes, <title>CSTU | PCSMS
+
+  POST http://32.189.5.234:3000/api/v1/auth/login
+    200, role=admin, access_token=<redacted>
+
+Container:
+  name: cs361-frontend
+  network: cs361
+  port: 3000:3000
+  API_PROXY_TARGET=http://cs361-backend:8000
+  NEXT_PUBLIC_API_URL=/api/v1
+
+HTTPS:
+  Caddy terminates TLS in front of the same container; see v5-tls.txt.
+
+Conclusion:
+  The EC2/Docker frontend is the working V5 frontend. Amplify templates,
+  stage/build evidence and the spike notes were deleted from the repository.

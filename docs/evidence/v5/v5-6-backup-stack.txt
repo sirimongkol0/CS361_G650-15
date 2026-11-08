@@ -1,0 +1,48 @@
+V5-6 Backup stack evidence
+Date: 2026-11-08 (UTC)
+Stack: cs361-backup
+Region: us-west-2
+
+Command:
+  LAB_MODE=true AWS_REGION=us-west-2 infra/new-account/deploy.sh schedule --apply
+
+First attempt:
+  CREATE failed on BackupTopicPolicy:
+    "Invalid parameter: Policy statement action out of service scope!"
+  Cause: the custom SNS topic policy used `Action: sns:*`.
+  Fix: replaced it with explicit SNS actions and `SNS:Publish` for
+  cloudwatch.amazonaws.com.
+  The failed stack was deleted before redeploying.
+
+Second attempt:
+  Successfully created/updated stack - cs361-backup
+
+Outputs:
+  TopicArn            arn:aws:sns:us-west-2:073362813452:cs361-backup-alerts
+  BackupDocumentName  cs361-backup
+  ScheduleName        cs361-backup
+
+Schedule:
+  Name:              cs361-backup
+  State:             ENABLED
+  ScheduleExpression: rate(1 day)
+  Target.Arn:        arn:aws:scheduler:::aws-sdk:ssm:sendCommand
+  Target.RoleArn:    arn:aws:iam::073362813452:role/LabRole
+
+SSM document:
+  cs361-backup (Command document, runs /opt/cs361/backup.sh backup)
+
+CloudWatch alarm:
+  cs361-backup-failed
+  Namespace: CS361/Backup
+  Metric: BackupSuccess
+  Statistic: Minimum
+  Period: 86400
+  TreatMissingData: breaching
+
+Notes:
+- LabRole trust policy includes scheduler.amazonaws.com and the schedule was
+  created successfully.
+- The schedule's first run was observed at 2026-11-08T15:43:22Z.
+- No email subscription was configured in this run, so alert delivery was
+  verified through the SNS published-message metric and the alarm state.

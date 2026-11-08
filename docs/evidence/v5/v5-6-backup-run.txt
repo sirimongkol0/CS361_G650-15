@@ -1,0 +1,31 @@
+V5-6 Backup run evidence
+Date: 2026-11-08 (UTC)
+Bucket: cs361-docs-073362813452
+
+Scheduled run:
+  SSM command e4eba10a-da24-441f-84e5-79d368b3bed6
+  Requested at 2026-11-08T22:43:22+07:00 (15:43:22Z)
+  Status: Success
+  S3 object: backups/cstu_demo-20261108T154324Z.sql.gz (25,847 bytes)
+
+Manual run:
+  Command:
+    LAB_MODE=true AWS_REGION=us-west-2 infra/new-account/deploy.sh backup
+  Output:
+    Backing up cstu_demo to s3://cs361-docs-073362813452/backups/cstu_demo-20261108T154343Z.sql.gz
+    Backup complete: s3://cs361-docs-073362813452/backups/cstu_demo-20261108T154343Z.sql.gz
+  S3 object: 25,844 bytes
+
+Another successful manual run:
+  s3://cs361-docs-073362813452/backups/cstu_demo-20261108T154604Z.sql.gz
+
+CloudWatch metric:
+  aws cloudwatch get-metric-statistics \
+    --namespace CS361/Backup --metric-name BackupSuccess \
+    --start-time 2026-11-08T15:00:00Z --end-time 2026-11-08T16:00:00Z \
+    --period 300 --statistics Sum
+  -> 2026-11-08T15:40:00Z Sum=2.0
+
+Conclusion:
+  The EventBridge Scheduler invocation and the manual backup both produced
+  gzip SQL dumps in S3 and published BackupSuccess=1.

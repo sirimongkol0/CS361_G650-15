@@ -1,0 +1,122 @@
+V5-8 Clean recreate evidence — cs361-v5r
+Date: 2026-11-08 (UTC)
+Account: 073362813452 · role voclabs · region us-west-2
+Purpose: prove a second, clean system can be created from the repo without
+touching the demo stack cs361, then torn down to avoid ongoing cost.
+
+Stack names:
+  base      cs361-v5r
+  Cognito   cs361-v5r-cognito
+  backup    cs361-v5r-backup
+  Amplify   removed from V5; EC2 fallback used
+Config prefix: /cs361-v5r/config
+Instance type: t3.small (frontend build on EC2)
+
+## First clean create (run 1)
+
+Timeline (UTC, wall clock):
+  16:17:15  START (check)
+  16:17:27  check complete (12s)
+  16:17:34  infra start
+  16:18:46  infra complete (72s)
+  16:19:05  cognito start
+  16:20:02  cognito complete (57s)
+  16:20:27  backend start
+  16:21:31  backend complete (64s), API health 200
+  16:21:41  frontend start
+  16:23:10  frontend complete (89s), page served
+  16:23:16  seed start
+  16:23:27  seed complete (11s)
+  16:23:34  schedule start
+  16:25:01  schedule complete (87s)
+  16:25:10  status start
+  16:25:14  status complete (4s), API + frontend healthy
+  TOTAL first deploy: 16:17:15 -> 16:25:14 = 7m59s
+
+Outputs:
+  ApiBaseUrl    http://54.186.198.147:8000
+  FrontendUrl   http://54.186.198.147:3000
+  BucketName    cs361-v5r-docs-073362813452
+  UserPoolId    us-west-2_hExqWtKk0
+  AppClientId   26ssci357047tc7crtbv696kf8
+  ScheduleName  cs361-v5r-backup
+
+Checks:
+  POST /api/v1/auth/login through the fallback proxy
+    -> HTTP 200, role=admin, access_token=<redacted>
+  GET /dashboard/public
+    -> 200, 30,435 bytes, title "CSTU | PCSMS"
+  CORS preflight from http://54.186.198.147:3000
+    -> 200, access-control-allow-origin: http://54.186.198.147:3000
+  Scheduled backup
+    -> S3 object created at 16:25:15 before the manual run
+  Manual backup
+    -> backups/cstu_demo-20261108T162553Z.sql.gz (25,816 bytes)
+  Restore
+    -> 23s, documents 25 / feedbacks 45 / outcomes 0, backend healthy
+
+## Teardown and the versioned-bucket bug
+
+Command:
+  STACK=cs361-v5r ... deploy.sh teardown --yes --purge
+Elapsed: 171s
+
+Result:
+  All three stacks deleted; Cognito pool deleted; EC2/DB/EIP/secret deleted.
+  The retained S3 bucket could NOT be deleted by `aws s3 rb --force` because
+  versioning left noncurrent versions and delete markers:
+    BucketNotEmpty: You must delete all versions in the bucket.
+  Fix: `deploy.sh` now lists and deletes every object version and delete marker
+  (bounded loop) before calling delete-bucket. The leftover bucket was purged
+  manually with the same logic and then deleted successfully.
+
+## Second clean create (teardown -> recreate)
+
+Timeline (UTC, wall clock):
+  16:31:20  check start; 16:31:31 complete (11s)
+  16:31:31  infra start; 16:32:43 complete (72s)
+  16:32:43  cognito start; 16:33:40 complete (57s)
+  16:33:40  backend start; 16:34:43 complete (63s), API health 200
+  16:34:43  frontend start; 16:36:13 complete (90s), page served
+  16:36:13  seed start; 16:36:24 complete (11s)
+  16:36:24  schedule start; 16:37:51 complete (87s)
+  16:37:51  status start; 16:37:55 complete (4s), API + frontend healthy
+  TOTAL second deploy: 16:31:20 -> 16:37:55 = 6m35s
+
+Outputs:
+  ApiBaseUrl    http://44.246.172.229:8000
+  FrontendUrl   http://44.246.172.229:3000
+  BucketName    cs361-v5r-docs-073362813452
+  UserPoolId    us-west-2_gjbCZeT9m
+  AppClientId   1i8o0luesppc0js6k208e15lte
+  ScheduleName  cs361-v5r-backup
+
+Repeatability: run 2 produced the same stack set and healthy API/frontend as
+run 1; the only differences are the generated IDs/IPs and the shorter wall time
+(6m35s vs 7m59s, no gaps between steps).
+
+## Second teardown (fixed version purge)
+
+Command:
+  STACK=cs361-v5r ... deploy.sh teardown --yes --purge
+Elapsed: 16:38:08 -> 16:41:07 = 179s
+
+Result:
+  All three cs361-v5r stacks deleted.
+  S3 bucket deleted successfully after deleting all object versions and
+  delete markers (the fix above).
+  Cognito pool us-west-2_gjbCZeT9m deleted.
+  Both cs361-v5r EC2 instances are terminated.
+
+Final state after cleanup:
+  Active stacks: cs361, cs361-backup, cs361-cognito (the original demo system).
+  cs361-v5r stacks: deleted (list-stacks may show DELETE_COMPLETE summaries).
+  cs361-v5r bucket: absent (HeadBucket 404).
+  cs361-v5r Cognito pool: absent.
+  Only one system remains, as requested.
+
+## Cost note
+
+cs361-v5r is a test stack and was torn down after evidence collection.
+The original cs361 demo stack is left as-is (not touched by this test).
+The test stack's EC2/EIP/EBS/S3/Cognito/SNS/Scheduler are no longer running.

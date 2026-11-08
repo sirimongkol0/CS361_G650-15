@@ -1,0 +1,65 @@
+V5-8 Full run evidence (first deployment)
+Date: 2026-11-08 (UTC)
+Account: 073362813452 · role voclabs · region us-west-2
+
+Sequence actually run:
+  1. deploy.sh check
+  2. deploy.sh infra --apply
+  3. deploy.sh cognito --apply
+  4. deploy.sh backend
+  5. deploy.sh frontend --apply    (EC2 fallback)
+  6. deploy.sh seed --yes
+  7. deploy.sh schedule --apply
+  8. deploy.sh status
+  9. deploy.sh backup
+ 10. deploy.sh restore <key> --yes  (validation)
+ 11. failure simulation + recovery backup
+
+Observed timestamps (UTC):
+  15:33:10  Cognito test users created
+  15:33:25  backend tarball uploaded (deploy/backend-20261108153325.tgz)
+  15:36:17  frontend tarball uploaded (deploy/frontend-20261108153617.tgz)
+  15:39:28  backup stack creation started (cs361-backup)
+  15:43:22  EventBridge Scheduler first backup command (Success)
+  15:43:43  manual backup
+  15:45:27  simulated backup failure (bad bucket)
+  15:46:04  recovery backup succeeded
+
+Stack results:
+  cs361          CREATE_COMPLETE
+  cs361-cognito  CREATE_COMPLETE
+  cs361-backup   CREATE_COMPLETE
+  cs361-amplify  removed from V5; EC2 fallback used
+
+Service checks:
+  API health                       200 {"status":"healthy"}
+  fallback frontend /dashboard     200, 30435 bytes
+  login through fallback proxy     200, role=admin
+  backup object in S3              yes (gzip SQL)
+  restore                          yes (row counts reported)
+  failure alert                    metric 0, SNS publish, alarm ALARM
+
+Manual steps actually typed for the first deploy:
+  check, infra --apply, cognito --apply, backend, frontend --apply, seed --yes,
+  schedule --apply = 7 commands; status was an extra verification command.
+  No AWS Console interaction was required for the fallback path.
+
+Timing notes:
+  The exact wall-clock start of `check` was not captured in this session.
+  The measured segments above put the first deploy at roughly 10 minutes
+  (Cognito users at 15:33 to backup stack at 15:39, plus the earlier check and
+  infra creation). A fresh session should record `date -u` before/after and
+  `aws cloudformation describe-stacks --query Stacks[0].CreationTime` to
+  replace the "roughly 10 minutes" with an exact number.
+
+Follow-up in the same Lab session:
+  - Drift detection after revoking the temporary 9999 rule: IN_SYNC
+    (detection id d154d500-db8f-11f1-8bef-06f5d0a445c3)
+  - Clean recreate: cs361-v5r, run 1 = 7m59s, run 2 = 6m35s
+  - Teardown --purge: 179s; S3 bucket and Cognito pool removed
+  - Final state: only the original cs361 system remains
+  See v5-8-recreate.txt for the full timeline and outputs.
+
+Open item:
+  - exact CloudFormation CreationTime for the original cs361 stacks was not
+    captured; the cs361-v5r runs provide the measured end-to-end times.

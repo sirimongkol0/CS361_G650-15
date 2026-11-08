@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V5 Deploy Architecture</title>
+  <style>
+    :root {
+      --ink: #232f3e;
+      --mute: #545b64;
+      --line: #d5dbdb;
+      --paper: #ffffff;
+      --soft: #f4f7f8;
+      --aws: #ff9900;
+      --crimson: #8a1538;
+      --blue: #2f6fb3;
+      --green: #2e7d5b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--soft);
+      color: var(--ink);
+      font-family: "Noto Sans Thai", "Segoe UI", Tahoma, sans-serif;
+      line-height: 1.55;
+    }
+    .page { max-width: 1180px; margin: 0 auto; }
+    header { margin-bottom: 22px; }
+    h1 { margin: 0 0 6px; font-size: 28px; color: var(--crimson); }
+    .sub { margin: 0; color: var(--mute); font-size: 14px; }
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    h3 { margin: 0 0 6px; font-size: 14px; }
+    p, li { font-size: 14px; }
+    .flow { display: grid; grid-template-columns: 1fr 46px 1.4fr; gap: 12px; align-items: center; }
+    .flow + .flow { margin-top: 12px; }
+    .box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #fbfcfd;
+    }
+    .box.aws { border-top: 4px solid var(--aws); }
+    .box.cfn { border-top: 4px solid var(--blue); }
+    .box.edge { border-top: 4px solid var(--green); }
+    .box.auth { border-top: 4px solid var(--crimson); }
+    .arrow { text-align: center; color: var(--mute); font-size: 22px; }
+    .tag {
+      display: inline-block; padding: 1px 7px; border-radius: 999px;
+      background: #eef2f5; color: var(--mute); font-size: 11px; margin-left: 6px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .muted { color: var(--mute); font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: #eef2f5; }
+    code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+    .note { border-left: 4px solid var(--crimson); background: #fff6f8; padding: 10px 12px; border-radius: 6px; }
+    @media (max-width: 760px) {
+      body { padding: 14px; }
+      .flow { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>สถาปัตยกรรม V5 — Automation / IaC</h1>
+    <p class="sub">CloudFormation 3 stacks + EC2 backend/PostgreSQL + Next.js บน EC2 + Caddy HTTPS + SSM/Secrets + backup</p>
+  </header>
+
+  <section class="panel">
+    <h2>ภาพรวมการ deploy</h2>
+    <div class="flow">
+      <div class="box">
+        <h3>Operator</h3>
+        <p>CloudShell หรือเครื่องผู้ดูแลรัน <code>infra/new-account/deploy.sh</code></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box cfn">
+        <h3>CloudFormation <span class="tag">AWS</span></h3>
+        <p><code>cs361</code> (VPC/EC2/S3/SSM/Secrets) · <code>cs361-cognito</code> · <code>cs361-backup</code></p>
+      </div>
+    </div>
+
+    <div class="flow">
+      <div class="box aws">
+        <h3>EC2 · cs361-backend</h3>
+        <p>FastAPI <code>:8000</code> + PostgreSQL <code>:5432</code> ใน Docker network <code>cs361</code></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box edge">
+        <h3>Frontend + HTTPS</h3>
+        <p>Next.js container <code>cs361-frontend:3000</code> · Caddy <code>:80/:443</code> · Let's Encrypt</p>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="box">
+        <h3>S3</h3>
+        <p><code>cs361-docs-&lt;account&gt;</code> · ไฟล์แนบ · <code>backups/</code> 30 วัน</p>
+      </div>
+      <div class="box">
+        <h3>SSM Parameter Store</h3>
+        <p><code>/cs361/config/*</code> · bucket, region, CORS, Cognito IDs, secret ARN, instance ID</p>
+      </div>
+      <div class="box">
+        <h3>Secrets Manager</h3>
+        <p>DB password JSON · <code>LocalAuthSecret</code> (เฉพาะ fallback)</p>
+      </div>
+      <div class="box">
+        <h3>Cognito</h3>
+        <p><code>cstu-v5-auth</code> · app client · กลุ่ม public/student/coordinator/staff/admin</p>
+      </div>
+      <div class="box">
+        <h3>EventBridge Scheduler</h3>
+        <p><code>cs361-backup</code> → SSM Run Command → <code>backup.sh</code></p>
+      </div>
+      <div class="box">
+        <h3>SNS + CloudWatch</h3>
+        <p>แจ้งเตือนเมื่อ backup ล้มเหลว · metric <code>CS361/Backup</code></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>ลำดับ deploy</h2>
+    <table>
+      <thead><tr><th>#</th><th>คำสั่ง</th><th>ผลที่ได้</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>deploy.sh check</code></td><td>identity, region, Lab mode และ service probes</td></tr>
+        <tr><td>2</td><td><code>deploy.sh infra --apply</code></td><td>VPC, EC2, EIP, S3, SSM, Secrets, security group 80/443/3000/8000</td></tr>
+        <tr><td>3</td><td><code>deploy.sh cognito --apply</code></td><td>user pool, app client, 5 role groups, test users</td></tr>
+        <tr><td>4</td><td><code>deploy.sh frontend --apply</code></td><td>Next.js container บน EC2 <code>:3000</code></td></tr>
+        <tr><td>5</td><td><code>deploy.sh tls</code></td><td>Caddy <code>:80/:443</code> + Let's Encrypt + <code>https://&lt;EIP&gt;.sslip.io</code></td></tr>
+        <tr><td>6</td><td><code>deploy.sh backend</code></td><td>อ่าน SSM/Secrets → build/start FastAPI + PostgreSQL → health 200</td></tr>
+        <tr><td>7</td><td><code>deploy.sh seed --yes</code></td><td>ข้อมูลเดโมใน <code>cstu_demo</code></td></tr>
+        <tr><td>8</td><td><code>deploy.sh schedule --apply</code></td><td>EventBridge Scheduler + SSM document + SNS + CloudWatch alarm</td></tr>
+        <tr><td>9</td><td><code>deploy.sh status</code></td><td>ตรวจ API/frontend และ HTTPS</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>การไหลของ config / secrets / backup</h2>
+    <div class="flow">
+      <div class="box cfn">
+        <h3>CloudFormation</h3>
+        <p>สร้าง SSM parameters, Secrets Manager และ S3</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box aws">
+        <h3>deploy.sh backend</h3>
+        <p>อ่าน <code>db_secret_arn</code> → Secrets Manager → เขียน <code>.env</code> บน EC2 → SSM Run Command</p>
+      </div>
+    </div>
+    <div class="flow">
+      <div class="box aws">
+        <h3>EventBridge Scheduler</h3>
+        <p>ทุกวัน → SSM Run Command <code>cs361-backup</code></p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="box edge">
+        <h3>backup.sh</h3>
+        <p><code>pg_dump</code> → gzip → S3 <code>backups/</code> · metric 1 · SNS เมื่อล้มเหลว</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>ข้อจำกัด / สถานะ</h2>
+    <ul>
+      <li>Learner Lab ใช้ได้เฉพาะ <code>us-east-1</code>/<code>us-west-2</code>; V5 ใช้ <code>us-west-2</code></li>
+      <li>IAM ถูกจำกัด: ใช้ <code>LabMode=true</code>, <code>LabInstanceProfile</code>/<code>LabRole</code>; ไม่สร้าง role</li>
+      <li>Amplify ถูกนำออกจาก V5; frontend ใช้ EC2/Docker + Caddy HTTPS</li>
+      <li>Cognito เป็น auth หลัก; local auth เป็น fallback ผ่าน <code>AUTH_BACKEND=local</code></li>
+      <li>GitHub Actions ยังไม่รันเพราะไม่ push; cfn-lint/cfn-guard/drift ผ่านในเครื่องและ Lab</li>
+    </ul>
+    <p class="note">หลักฐานการรันและตัวเลข before/after อยู่ใน <code>docs/evidence/v5/</code>; runbook อยู่ใน <code>docs/runbooks/v5-deploy.md</code></p>
+  </section>
+</div>
+</body>
+</html>

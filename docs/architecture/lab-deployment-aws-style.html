@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Current lab architecture · AWS style · PCSMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper: #FFFFFF;
+      --page: #F2F3F3;
+      --ink: #232F3E;
+      --muted: #545B64;
+      --soft: #879596;
+      --accent: #FF9900;
+      --accent-tint: rgba(255, 153, 0, 0.10);
+      --link: #0073BB;
+      --rule: rgba(35, 47, 62, 0.12);
+      --font-sans: 'Geist', system-ui, sans-serif;
+      --font-serif: 'Instrument Serif', Georgia, serif;
+      --font-mono: 'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--page);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 3rem 2rem 4rem;
+    }
+
+    .frame { max-width: 1200px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 2.4vw + 0.75rem, 2.15rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 0.7rem;
+    }
+
+    .lede {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 1.05rem;
+      line-height: 1.45;
+      color: var(--muted);
+      max-width: 72ch;
+      margin-bottom: 1.6rem;
+    }
+
+    .diagram { overflow-x: auto; }
+    svg { width: 100%; min-width: 880px; display: block; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr 0.9fr;
+      gap: 1rem;
+      margin-top: 1.75rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 1.25rem;
+    }
+
+    .card-header { display: flex; align-items: center; gap: 0.45rem; }
+    .card-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .dot-coral { background: var(--accent); }
+    .dot-muted { background: var(--muted); }
+    .dot-link { background: var(--link); }
+
+    .card .eyebrow { margin: 0; font-size: 0.6rem; }
+    .card h3 { font-size: 0.98rem; font-weight: 600; margin: 0.45rem 0 0.55rem; }
+    .card ul { margin: 0; padding-left: 1rem; color: var(--muted); font-size: 0.82rem; line-height: 1.55; }
+    .card li + li { margin-top: 0.25rem; }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--soft);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      body { padding: 1.5rem 1rem 2.5rem; }
+      .cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <p class="eyebrow">Deployment · Lab environment · AWS style</p>
+    <h1>Current lab architecture</h1>
+    <p class="lede">One EC2 host, a Cloudflare tunnel, and local password auth, rendered in an AWS palette with service-style icons. Amplify, RDS, S3, and Cognito are still out of the request path.</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 1040 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="lab-deploy-title lab-deploy-desc">
+        <title id="lab-deploy-title">Current lab architecture</title>
+        <desc id="lab-deploy-desc">Deployment diagram of the temporary lab: a browser reaches a Cloudflare Quick Tunnel, which forwards to a Next.js frontend, a FastAPI backend, and PostgreSQL, all running in Docker on one EC2 instance. AWS-style icons mark the host, containers, and database; the backend uses local password authentication instead of Cognito.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#545B64"/>
+          </marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#FF9900"/>
+          </marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#0073BB"/>
+          </marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#FFFFFF"/>
+
+        <!-- Zones: drawn first so nodes and paths paint above them -->
+        <rect x="200" y="40" width="180" height="280" rx="8" fill="rgba(35,47,62,0.02)" stroke="rgba(35,47,62,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+        <rect x="210" y="44" width="120" height="12" fill="#FFFFFF"/>
+        <text x="270" y="53" fill="rgba(35,47,62,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CLOUDFLARE EDGE</text>
+
+        <rect x="420" y="40" width="580" height="380" rx="8" fill="rgba(35,47,62,0.02)" stroke="rgba(35,47,62,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+        <rect x="430" y="44" width="190" height="12" fill="#FFFFFF"/>
+        <text x="525" y="53" fill="rgba(35,47,62,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">AWS ACADEMY LAB · US-WEST-2</text>
+        <g transform="translate(430,42) scale(0.62)" color="#FF9900" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 18.5a15.198 15.198 0 0 1 -7.37 1.44a14.62 14.62 0 0 1 -6.63 -2.94" />
+        <path d="M19.5 21c.907 -1.411 1.451 -3.323 1.5 -5c-1.197 -.773 -2.577 -.935 -4 -1" />
+        <path d="M3 11v-4.5a1.5 1.5 0 0 1 3 0v4.5" />
+        <path d="M3 9h3" />
+        <path d="M9 5l1.2 6l1.8 -4l1.8 4l1.2 -6" />
+        <path d="M18 10.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75" />
+        </g>
+
+        <rect x="444" y="96" width="532" height="300" rx="8" fill="rgba(35,47,62,0.015)" stroke="rgba(35,47,62,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+        <rect x="454" y="100" width="230" height="12" fill="#FFFFFF"/>
+        <text x="569" y="109" fill="rgba(35,47,62,0.40)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">EC2 t3.medium · DOCKER NETWORK</text>
+        <g transform="translate(454,97) scale(0.66)" color="#232F3E" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 12.54c-1.804 -.345 -2.701 -1.08 -3.523 -2.94c-.487 .696 -1.102 1.568 -.92 2.4c.028 .238 -.32 1 -.557 1h-14c0 5.208 3.164 7 6.196 7c4.124 .022 7.828 -1.376 9.854 -5c1.146 -.101 2.296 -1.505 2.95 -2.46" />
+        <path d="M5 10h3v3h-3l0 -3" />
+        <path d="M8 10h3v3h-3l0 -3" />
+        <path d="M11 10h3v3h-3l0 -3" />
+        <path d="M8 7h3v3h-3l0 -3" />
+        <path d="M11 7h3v3h-3l0 -3" />
+        <path d="M11 4h3v3h-3l0 -3" />
+        <path d="M4.571 18c1.5 0 2.047 -.074 2.958 -.78" />
+        <path d="M10 16l0 .01" />
+        </g>
+
+        <!-- Network paths: drawn before labels and nodes -->
+        <path d="M 160,168 H 220" fill="none" stroke="#0073BB" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <path d="M 360,168 H 468" fill="none" stroke="#0073BB" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <path d="M 568,216 V 240" fill="none" stroke="#545B64" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 668,300 H 686 Q 694,300 694,292 V 240 Q 694,232 702,232 H 736" fill="none" stroke="#545B64" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+        <!-- Path labels: 6px clear of each stroke -->
+        <rect x="166" y="150" width="48" height="12" rx="2" fill="#FFFFFF"/>
+        <text x="190" y="159" fill="#0073BB" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTPS:443</text>
+
+        <rect x="382" y="150" width="64" height="12" rx="2" fill="#FFFFFF"/>
+        <text x="414" y="159" fill="#0073BB" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">QUIC TUNNEL</text>
+        <rect x="374" y="176" width="80" height="10" rx="2" fill="#FFFFFF"/>
+        <text x="414" y="184" fill="#879596" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.04em">cloudflared · host</text>
+
+        <rect x="580" y="222" width="56" height="12" rx="2" fill="#FFFFFF"/>
+        <text x="608" y="231" fill="#545B64" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTP:8000</text>
+
+        <rect x="670" y="214" width="46" height="12" rx="2" fill="#FFFFFF"/>
+        <text x="693" y="223" fill="#545B64" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SQL:5432</text>
+
+        <!-- Browser: input / user -->
+        <rect x="40" y="128" width="120" height="80" rx="6" fill="#FFFFFF"/>
+        <rect x="40" y="128" width="120" height="80" rx="6" fill="rgba(84,91,100,0.10)" stroke="#879596" stroke-width="1"/>
+        <rect x="48" y="134" width="32" height="12" rx="2" fill="transparent" stroke="rgba(135,149,150,0.50)" stroke-width="0.8"/>
+        <text x="64" y="143" fill="#879596" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">USER</text>
+        <text x="100" y="164" fill="#232F3E" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Browser</text>
+        <text x="100" y="180" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">client</text>
+
+        <!-- Cloudflare edge -->
+        <rect x="220" y="126" width="140" height="84" rx="6" fill="#FFFFFF"/>
+        <rect x="220" y="126" width="140" height="84" rx="6" fill="rgba(35,47,62,0.03)" stroke="rgba(35,47,62,0.30)" stroke-width="1"/>
+        <rect x="228" y="132" width="32" height="12" rx="2" fill="transparent" stroke="rgba(35,47,62,0.30)" stroke-width="0.8"/>
+        <text x="244" y="141" fill="#545B64" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CDN</text>
+        <text x="290" y="160" fill="#232F3E" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Cloudflare</text>
+        <text x="290" y="176" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Tunnel · TLS</text>
+
+        <!-- Frontend -->
+        <rect x="468" y="120" width="200" height="96" rx="6" fill="#FFFFFF"/>
+        <rect x="468" y="120" width="200" height="96" rx="6" fill="#ffffff" stroke="#232F3E" stroke-width="1"/>
+        <rect x="476" y="126" width="32" height="12" rx="2" fill="transparent" stroke="rgba(35,47,62,0.40)" stroke-width="0.8"/>
+        <text x="492" y="135" fill="#232F3E" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">POD</text>
+        <text x="568" y="154" fill="#232F3E" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Next.js frontend</text>
+        <text x="568" y="170" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">next:3000</text>
+        <rect x="476" y="178" width="184" height="24" rx="4" fill="rgba(35,47,62,0.05)" stroke="#545B64" stroke-width="0.8"/>
+        <text x="484" y="194" fill="#232F3E" font-size="12" font-family="'Geist', sans-serif">next</text>
+        <text x="652" y="194" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">16.4.3</text>
+
+        <!-- Backend: focal (local auth is the newly introduced piece) -->
+        <rect x="468" y="240" width="200" height="120" rx="6" fill="#FFFFFF"/>
+        <rect x="468" y="240" width="200" height="120" rx="6" fill="rgba(255,153,0,0.10)" stroke="#FF9900" stroke-width="1"/>
+        <rect x="476" y="246" width="32" height="12" rx="2" fill="transparent" stroke="rgba(255,153,0,0.50)" stroke-width="0.8"/>
+        <text x="492" y="255" fill="#FF9900" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">POD</text>
+        <text x="568" y="280" fill="#232F3E" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">FastAPI backend</text>
+        <text x="568" y="296" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">fastapi:8000</text>
+        <rect x="476" y="304" width="184" height="24" rx="4" fill="rgba(35,47,62,0.05)" stroke="#545B64" stroke-width="0.8"/>
+        <text x="484" y="320" fill="#232F3E" font-size="12" font-family="'Geist', sans-serif">fastapi</text>
+        <text x="652" y="320" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">0.136.1</text>
+        <rect x="476" y="332" width="184" height="24" rx="4" fill="rgba(35,47,62,0.05)" stroke="#545B64" stroke-width="0.8"/>
+        <text x="484" y="348" fill="#232F3E" font-size="12" font-family="'Geist', sans-serif">local-auth</text>
+        <text x="652" y="348" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">demo</text>
+
+        <!-- PostgreSQL: focal (single point of failure / data) -->
+        <rect x="736" y="168" width="184" height="128" rx="6" fill="#FFFFFF"/>
+        <rect x="736" y="168" width="184" height="128" rx="6" fill="rgba(255,153,0,0.10)" stroke="#FF9900" stroke-width="1"/>
+        <rect x="744" y="174" width="32" height="12" rx="2" fill="transparent" stroke="rgba(255,153,0,0.50)" stroke-width="0.8"/>
+        <text x="744" y="183" fill="#FF9900" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">POD</text>
+        <text x="828" y="208" fill="#232F3E" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PostgreSQL</text>
+        <text x="828" y="224" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">postgres:5432</text>
+        <rect x="744" y="232" width="168" height="24" rx="4" fill="rgba(35,47,62,0.05)" stroke="#545B64" stroke-width="0.8"/>
+        <text x="752" y="248" fill="#232F3E" font-size="12" font-family="'Geist', sans-serif">postgres</text>
+        <text x="904" y="248" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">16-alpine</text>
+        <rect x="744" y="260" width="168" height="24" rx="4" fill="rgba(35,47,62,0.05)" stroke="#545B64" stroke-width="0.8"/>
+        <text x="752" y="276" fill="#232F3E" font-size="12" font-family="'Geist', sans-serif">pgdata</text>
+        <text x="904" y="276" fill="#545B64" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end">gp3 · 24 GB</text>
+
+        <g transform="translate(138,134) scale(0.6)" color="#232F3E" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+        </g>
+        <g transform="translate(338,132) scale(0.6)" color="#232F3E" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19.5 7a9 9 0 0 0 -7.5 -4a8.991 8.991 0 0 0 -7.484 4" />
+        <path d="M11.5 3a16.989 16.989 0 0 0 -1.826 4" />
+        <path d="M12.5 3a16.989 16.989 0 0 1 1.828 4" />
+        <path d="M19.5 17a9 9 0 0 1 -7.5 4a8.991 8.991 0 0 1 -7.484 -4" />
+        <path d="M11.5 21a16.989 16.989 0 0 1 -1.826 -4" />
+        <path d="M12.5 21a16.989 16.989 0 0 0 1.828 -4" />
+        <path d="M2 10l1 4l1.5 -4l1.5 4l1 -4" />
+        <path d="M17 10l1 4l1.5 -4l1.5 4l1 -4" />
+        <path d="M9.5 10l1 4l1.5 -4l1.5 4l1 -4" />
+        </g>
+        <g transform="translate(646,126) scale(0.6)" color="#232F3E" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
+        <path d="M12 12l8 -4.5" />
+        <path d="M12 12l0 9" />
+        <path d="M12 12l-8 -4.5" />
+        <path d="M16 5.25l-8 4.5" />
+        </g>
+        <g transform="translate(646,246) scale(0.6)" color="#FF9900" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 7a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3" />
+        <path d="M3 15a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -2" />
+        <path d="M7 8l0 .01" />
+        <path d="M7 16l0 .01" />
+        </g>
+        <g transform="translate(898,174) scale(0.6)" color="#232F3E" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 6a8 3 0 1 0 16 0a8 3 0 1 0 -16 0" />
+        <path d="M4 6v6a8 3 0 0 0 16 0v-6" />
+        <path d="M4 12v6a8 3 0 0 0 16 0v-6" />
+        </g>
+
+        <!-- Legend: horizontal strip after all nodes -->
+        <line x1="40" y1="450" x2="1000" y2="450" stroke="rgba(35,47,62,0.10)" stroke-width="0.8"/>
+        <text x="40" y="468" fill="#545B64" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+        <rect x="110" y="460" width="14" height="10" rx="2" fill="rgba(255,153,0,0.10)" stroke="#FF9900" stroke-width="1"/>
+        <text x="130" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">Focal / new</text>
+
+        <rect x="210" y="460" width="14" height="10" rx="2" fill="rgba(84,91,100,0.10)" stroke="#879596" stroke-width="1"/>
+        <text x="230" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">Client</text>
+
+        <rect x="320" y="460" width="14" height="10" rx="2" fill="#ffffff" stroke="#232F3E" stroke-width="1"/>
+        <text x="340" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">Container</text>
+
+        <rect x="450" y="460" width="14" height="10" rx="2" fill="rgba(35,47,62,0.05)" stroke="#545B64" stroke-width="1"/>
+        <text x="470" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">Volume</text>
+
+        <line x1="570" y1="465" x2="598" y2="465" stroke="#0073BB" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="606" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">Cross-zone</text>
+
+        <line x1="730" y1="465" x2="758" y2="465" stroke="#545B64" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="766" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">In-zone</text>
+
+        <rect x="870" y="460" width="14" height="10" rx="2" fill="rgba(35,47,62,0.02)" stroke="rgba(35,47,62,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+        <text x="890" y="469" fill="#545B64" font-size="8.5" font-family="'Geist', sans-serif">Zone</text>
+      </svg>
+    </div>
+
+    <section class="cards" aria-label="Tradeoffs">
+      <div class="card">
+        <p class="eyebrow">Cost / lifetime</p>
+        <div class="card-header"><span class="card-dot dot-coral"></span><h3>$0 now, but temporary</h3></div>
+        <ul>
+          <li>Lab credits cover the EC2 host and its EBS volume.</li>
+          <li>A lab reset can wipe the instance, database, and files.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Security</p>
+        <div class="card-header"><span class="card-dot dot-muted"></span><h3>HTTPS only, demo auth</h3></div>
+        <ul>
+          <li>Cloudflare terminates TLS; the EC2 public HTTP port is closed.</li>
+          <li>Local auth has no MFA, password reset, or federation.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Data</p>
+        <div class="card-header"><span class="card-dot dot-link"></span><h3>One EBS volume</h3></div>
+        <ul>
+          <li>Postgres and uploaded files share the instance.</li>
+          <li>No RDS backups or S3 durability; the host is the single point of failure.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <span>AWS-inspired palette · monochrome icons (not official AWS Architecture Icons)</span>
+      <span>branch feature/local-auth · EC2 i-04e2d5ee8bfc3f902 · fictional demo</span>
+    </footer>
+  </main>
+</body>
+</html>

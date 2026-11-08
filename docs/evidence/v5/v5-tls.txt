@@ -1,0 +1,37 @@
+V5 HTTPS edge evidence (Caddy + sslip.io)
+Date: 2026-11-08 (UTC)
+Stack: cs361
+Domain: 32.189.5.234.sslip.io (resolves to the stack Elastic IP)
+Region: us-west-2
+
+Command:
+  LAB_MODE=true AWS_REGION=us-west-2 \
+    infra/new-account/deploy.sh tls
+
+Result:
+  Caddy container cs361-caddy started on the cs361 Docker network
+  Caddy listens on 80/443 and reverse-proxies to cs361-frontend:3000
+
+Checks:
+  GET https://32.189.5.234.sslip.io/dashboard/public
+    -> 200, 30,435 bytes, title "CSTU | PCSMS"
+  GET https://32.189.5.234.sslip.io/api/v1/health
+    -> 200 {"status":"healthy"}  (same-origin Next.js proxy to the backend)
+
+Certificate:
+  subject=CN=32.189.5.234.sslip.io
+  issuer=C=US, O=Let's Encrypt, CN=YE1
+  notBefore=Nov  8 17:57:53 2026 GMT
+  notAfter=Feb  6 17:57:52 2027 GMT
+
+Security group:
+  Added inbound TCP 80 and 443 from 0.0.0.0/0 (in-place update of
+  AppSecurityGroup; no instance replacement).
+
+Notes:
+- Caddy stores certificates under /opt/cs361/caddy on the instance EBS.
+- The frontend proxies /api/v1 to cs361-backend:8000 inside Docker.
+- API port 8000 remains open over HTTP for the fallback path; closing
+  it is a separate hardening step.
+- For a real domain: point an A record at the Elastic IP and run
+  SITE_DOMAIN=cs361.example.com deploy.sh tls

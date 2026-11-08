@@ -1,0 +1,28 @@
+V5-6 Restore evidence
+Date: 2026-11-08 (UTC)
+Key: backups/cstu_demo-20261108T154343Z.sql.gz
+
+Command:
+  LAB_MODE=true AWS_REGION=us-west-2 \
+    infra/new-account/deploy.sh restore \
+    backups/cstu_demo-20261108T154343Z.sql.gz --yes
+
+Result:
+  Downloaded the gzip backup and verified it.
+  Stopped cs361-backend.
+  Restored with gunzip | psql.
+  Started cs361-backend.
+  Row counts after restore:
+    documents    25
+    feedbacks    45
+    outcomes     0
+
+Post-restore checks:
+  GET http://32.189.5.234:8000/api/v1/health
+    200 {"status":"healthy"}
+  GET http://32.189.5.234:8000/api/v1/partners/?limit=1000
+    29 partners
+
+Conclusion:
+  Restore works end-to-end, the backend came back, and the row counts are
+  reported without printing any password.

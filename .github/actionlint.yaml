@@ -1,0 +1,4 @@
+self-hosted-runner:
+  # Custom label used by the EC2 self-hosted runner in .github/workflows/infra.yml.
+  labels:
+    - cs361

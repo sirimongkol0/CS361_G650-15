@@ -9,13 +9,27 @@ import auth
 import database
 import models
 import schemas
+from config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=schemas.LoginResponse)
 def login(body: schemas.LoginRequest, db: Session = Depends(database.get_db)):
-    """Exchange email + password (checked by Cognito) for a bearer access token."""
+    """Exchange email + password for a bearer access token.
+
+    Cognito is the default; ``AUTH_BACKEND=local`` checks a local password hash
+    and issues an HS256 token instead.
+    """
+    if settings.AUTH_BACKEND == "local":
+        user = auth.local_sign_in(db, body.email.lower(), body.password)
+        token, expires_in = auth.local_token(user)
+        user.last_login_at = auth.utcnow()
+        db.commit()
+        return schemas.LoginResponse(
+            access_token=token, expires_in=expires_in, role=user.role,
+        )
+
     result = auth.sign_in(body.email.lower(), body.password)
     identity = auth.decode_token(result["IdToken"], "id")
     access = auth.decode_token(result["AccessToken"], "access")
@@ -53,9 +67,14 @@ def change_password(
     user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ):
-    """Change the signed-in user's own password (checked by Cognito). Passwords are never stored or logged."""
+    """Change the signed-in user's own password (checked by Cognito or locally). Passwords are never stored or logged."""
     if body.new_password == body.current_password:
         raise HTTPException(status_code=422, detail="New password must differ from the current password")
+    if settings.AUTH_BACKEND == "local":
+        auth.local_change_password(db, user, body.current_password, body.new_password)
+        audit.record(db, user, "change_password", "users", user.id)
+        db.commit()
+        return Response(status_code=204)
     auth.change_password(credentials.credentials, body.current_password, body.new_password)
     audit.record(db, user, "change_password", "users", user.id)
     db.commit()

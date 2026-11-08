@@ -590,6 +590,20 @@ class User(Base):
     last_login_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class LocalCredential(Base):
+    """Hashed password for ``AUTH_BACKEND=local``; absent for Cognito users.
+
+    Kept in its own table so the Cognito-era ``users`` schema stays unchanged
+    and the local backend can be enabled for a lab without touching Cognito.
+    """
+
+    __tablename__ = "local_credentials"
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    password_hash = Column(String, nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False)
+
+
 class RevokedToken(Base):
     """Access tokens ended by logout before their natural expiry.
 
