@@ -474,7 +474,31 @@ step_teardown() {
   if $PURGE; then
     if [[ -n "$bucket" && "$bucket" != "None" ]]; then
       log "Purging retained S3 bucket s3://$bucket (all objects and versions)"
-      aws s3 rb "s3://$bucket" --force --region "$AWS_REGION" || true
+      # `s3 rb --force` removes current objects but not noncurrent versions or
+      # delete markers. Versioning is enabled on this bucket, so delete every
+      # version/marker explicitly before deleting the bucket.
+      aws s3 rb "s3://$bucket" --force --region "$AWS_REGION" >/dev/null 2>&1 || true
+      local kind tmp count attempts
+      for kind in Versions DeleteMarkers; do
+        attempts=0
+        while [[ "$attempts" -lt 10 ]]; do
+          tmp=$(mktemp)
+          aws s3api list-object-versions --bucket "$bucket" --region "$AWS_REGION" \
+            --query "{Objects: (${kind} || \`[]\`)[].{Key: Key, VersionId: VersionId}}" \
+            --output json > "$tmp" 2>/dev/null || true
+          count=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1])).get("Objects") or []))' "$tmp" 2>/dev/null || echo 0)
+          if [[ "$count" -eq 0 ]]; then rm -f "$tmp"; break; fi
+          aws s3api delete-objects --bucket "$bucket" --region "$AWS_REGION" \
+            --delete "file://$tmp" >/dev/null 2>&1 || true
+          rm -f "$tmp"
+          attempts=$((attempts + 1))
+        done
+      done
+      if aws s3api delete-bucket --bucket "$bucket" --region "$AWS_REGION" >/dev/null 2>&1; then
+        echo "S3 bucket deleted."
+      else
+        echo "WARNING: could not delete s3://$bucket; delete its versions and retry." >&2
+      fi
     fi
     if [[ -n "$pool_id" && "$pool_id" != "None" ]]; then
       log "Deleting retained Cognito User Pool $pool_id"
