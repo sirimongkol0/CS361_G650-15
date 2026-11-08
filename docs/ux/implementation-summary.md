@@ -1,5 +1,9 @@
 # UX implementation summary
 
+> **Port note:** this branch keeps `feature/local-auth` and deliberately excludes
+> TOTP MFA. The MFA rows below describe the original `ux-improvements` branch,
+> not this port.
+
 **Status:** all six capability modules implemented in the `ux-improvements` worktree.  
 **Git:** not pushed. **Live lab:** deployed by copying this worktree’s frontend source and rebuilding the frontend container on 3 Nov 2026; backend/local auth and database were left intact.
 

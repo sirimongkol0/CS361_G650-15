@@ -43,9 +43,6 @@ const ACTION_LABELS: Record<string, string> = {
   publish: "เผยแพร่", unpublish: "หยุดเผยแพร่", upload: "อัปโหลดไฟล์", replace_file: "เปลี่ยนไฟล์",
   renewal_decision: "พิจารณาต่ออายุ", commit_import: "ยืนยันนำเข้า", rollback_import: "ย้อนการนำเข้า",
   change_password: "เปลี่ยนรหัสผ่าน",
-  mfa_enable: "เปิดใช้การยืนยันสองขั้นตอน",
-  mfa_disable: "ปิดการยืนยันสองขั้นตอน",
-  mfa_backup_codes: "สร้างรหัสสำรองใหม่",
 };
 
 const inputClass =
