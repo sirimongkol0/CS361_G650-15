@@ -2,7 +2,7 @@
 
 > วันที่: 8 พฤศจิกายน 2026 · ใช้กับ #125 (V5-8) และตรวจงาน #119–#124
 > **ผลทดสอบหลักรันใน Learner Lab เมื่อ 8 พ.ย. 2026** — หลักฐานอยู่ใน `docs/evidence/v5/`
-> ช่องที่ยังต้องรันซ้ำใน session ใหม่จะระบุว่า TBD
+> ช่องที่ยังไม่ได้รัน (GitHub Actions เพราะไม่ push) จะระบุว่า TBD
 > เอกสารนี้บอกคำสั่ง ผลที่คาดหวัง และลิงก์หลักฐานของแต่ละข้อ
 
 ## วิธีบันทึกผล
@@ -39,8 +39,8 @@ cd infra/new-account
 | **V5-6c** | Restore | `./deploy.sh backup`; `./deploy.sh restore <key> --yes` บน stack ทดสอบ | restore สำเร็จ; row counts กลับมา; backend กลับมา healthy | `docs/evidence/v5/v5-6-restore.txt` | PASS |
 | **V5-6d** | Alert failure | ทำให้ backup ล้มเหลวใน stack ทดสอบ หรือ publish metric 0; ตรวจ SNS | alarm เปลี่ยนเป็น ALARM; อีเมลถูกส่ง (ถ้าสมัคร); กลับมา OK เมื่อ backup สำเร็จ | `docs/evidence/v5/v5-6-alert.txt` | PASS — metric 0 + SNS publish + alarm ALARM; email not configured |
 | **V5-7a** | CI template lint | เปิด Actions run ของ `.github/workflows/infra.yml` หรือรัน `cfn-lint`/`cfn-guard` ตาม workflow | cfn-lint ผ่านทุก template; cfn-guard ผ่านกฎ; job สีเขียว | `docs/evidence/v5/v5-7-ci.txt` + URL ของ run | PASS (local); GitHub Actions TBD |
-| **V5-7b** | Drift detection | เพิ่ม ingress ชั่วคราวพอร์ต 9999 (CIDR TEST-NET) → `detect-stack-drift` → `describe-stack-resource-drifts` → revoke | drift รายงาน `MODIFIED`; หลังแก้กลับเป็น `IN_SYNC` | `docs/evidence/v5/v5-7-drift.txt` | PASS (MODIFIED); IN_SYNC TBD |
-| **V5-8** | เอกสาร/หลักฐานครบ | ทำตาม [runbook](../runbooks/v5-deploy.md) ตั้งแต่ stack ว่าง; เติมตัวเลขใน [baseline](v5-baseline.md) | deploy ครบ; before/after มีตัวเลขจริง; ลิงก์เอกสารไม่แตก | `docs/evidence/v5/v5-8-full-run.txt` | PARTIAL — first deploy PASS; recreate/timings TBD |
+| **V5-7b** | Drift detection | เพิ่ม ingress ชั่วคราวพอร์ต 9999 (CIDR TEST-NET) → `detect-stack-drift` → `describe-stack-resource-drifts` → revoke | drift รายงาน `MODIFIED`; หลังแก้กลับเป็น `IN_SYNC` | `docs/evidence/v5/v5-7-drift.txt` | PASS — MODIFIED detected; IN_SYNC after revoke |
+| **V5-8** | เอกสาร/หลักฐานครบ | ทำตาม [runbook](../runbooks/v5-deploy.md) ตั้งแต่ stack ว่าง; เติมตัวเลขใน [baseline](v5-baseline.md) | deploy ครบ; before/after มีตัวเลขจริง; ลิงก์เอกสารไม่แตก | `docs/evidence/v5/v5-8-full-run.txt`, `v5-8-recreate.txt` | PASS — cs361-v5r 7m59s / 6m35s; teardown --purge OK; เหลือ cs361 ตัวเดียว |
 
 ## ผลที่วัดได้จาก Lab
 
@@ -59,8 +59,9 @@ cd infra/new-account
 > เวลารวมของ first deploy ไม่ได้จับจากจุดเริ่ม `check`; ดูรายละเอียดและค่าประมาณ
 > ใน [baseline](v5-baseline.md) — exact timing ยัง TBD
 >
-> Teardown + recreate จากศูนย์ยัง TBD; เมื่อทดสอบให้ใช้
-> `./deploy.sh teardown --yes --purge` เพื่อลบ S3/Cognito ที่ปกติ retain
+> Teardown + recreate ทดสอบแล้วด้วย `cs361-v5r`: run 1 = 7m59s, run 2 = 6m35s,
+> teardown `--purge` = 179s; หลัง cleanup เหลือเฉพาะ stack `cs361` เดิม
+> (ดู `v5-8-recreate.txt`)
 
 ## รายละเอียดคำสั่ง
 
@@ -233,7 +234,7 @@ aws ec2 revoke-security-group-ingress --group-id "$SG" \
 | Cognito | `aws cognito-idp list-user-pools --max-results 60` | เห็น `cstu-v5-auth` | PASS |
 | SSM/Secrets | ตาม V5-4 | parameter/secret ครบ | PASS |
 | Scheduler | `aws scheduler get-schedule --name cs361-backup` | ENABLED และ target ถูกต้อง | PASS |
-| CFN drift | ตาม V5-7b | ตรวจพบ/กลับเป็น IN_SYNC | PASS (MODIFIED); IN_SYNC TBD |
+| CFN drift | ตาม V5-7b | ตรวจพบ/กลับเป็น IN_SYNC | PASS (MODIFIED + IN_SYNC) |
 | Amplify create/branch | `aws amplify get-app`; `aws amplify list-branches` | app/branch มีจริง (ถ้ามี token) | PASS (API probe, no stack) |
 | Amplify build | `aws amplify get-job` | อาจ FAIL; ต้องบันทึกและใช้ fallback | N/A — not tested |
 | Fallback frontend | `curl "$FRONT/dashboard/public"` | 200 และ proxy API ได้ | PASS |
@@ -257,9 +258,10 @@ aws ec2 revoke-security-group-ingress --group-id "$SG" \
 - V5-3 ผ่านได้ด้วย fallback แม้ Amplify build ไม่ผ่าน แต่ต้องบันทึกว่า build ยังไม่ยืนยัน
 - V5-5 เป็น N/A เพราะปิดเป็น not planned; ต้องยืนยันว่าไม่มี OIDC provider
 - V5-6 ต้องมีหลักฐาน backup จริงและ restore จริงอย่างน้อยหนึ่งครั้ง
-- V5-7 ต้องมีหลักฐาน lint/guard ผ่าน; GitHub Actions และ IN_SYNC ที่ยังค้างให้ระบุ TBD
-- V5-8 ต้องมีตัวเลข before/after เท่าที่วัดได้ และระบุ TBD สำหรับ teardown/recreate/time ที่ยังไม่ได้จับ
-  เอกสารต้องลิงก์ครบ
+- V5-7 ต้องมีหลักฐาน lint/guard ผ่าน และ drift กลับเป็น IN_SYNC; GitHub Actions
+  ยังไม่รันเพราะไม่ push ให้ระบุ TBD
+- V5-8 ต้องมีตัวเลข before/after จาก Lab, teardown/recreate และลิงก์เอกสารครบ;
+  หลักฐาน cs361-v5r ครอบคลุมแล้ว
 
 ## ข้อควรระวัง
 

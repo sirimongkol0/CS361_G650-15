@@ -52,9 +52,14 @@ Timing notes:
   `aws cloudformation describe-stacks --query Stacks[0].CreationTime` to
   replace the "roughly 10 minutes" with an exact number.
 
-Pending in a fresh session:
-  - exact CloudFormation CreationTime for cs361/cs361-cognito/cs361-backup
-  - final drift detection IN_SYNC after revoking the temporary 9999 rule
-  - teardown + recreate from scratch:
-      deploy.sh teardown --yes --purge
-      (then repeat the 7 first-deploy commands and record wall-clock times)
+Follow-up in the same Lab session:
+  - Drift detection after revoking the temporary 9999 rule: IN_SYNC
+    (detection id d154d500-db8f-11f1-8bef-06f5d0a445c3)
+  - Clean recreate: cs361-v5r, run 1 = 7m59s, run 2 = 6m35s
+  - Teardown --purge: 179s; S3 bucket and Cognito pool removed
+  - Final state: only the original cs361 system remains
+  See v5-8-recreate.txt for the full timeline and outputs.
+
+Open item:
+  - exact CloudFormation CreationTime for the original cs361 stacks was not
+    captured; the cs361-v5r runs provide the measured end-to-end times.

@@ -84,7 +84,7 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 |---|---|---|
 | **Manual steps** | 8 commands + 8 Console interactions = **16 manual actions** ในการ deploy ครั้งแรก; รอบอัปเดต backend = 2 commands | **7 commands + 0 AWS Console interactions** ในการ deploy ครั้งแรก (ยืนยันจาก `v5-8-full-run.txt`); รอบอัปเดต backend = 1 command ตามการออกแบบ แต่ยังไม่ได้ทดสอบรอบอัปเดตจริง; ถ้าใช้ Amplify มี GitHub PAT 1 ครั้ง (อยู่นอก AWS) |
 | **System create time** | ประมาณ **13–15 นาที** (infra ~3 + Cognito ~1–2 + Amplify ~8–10) | **3m38s** — infra 72s + Cognito 57s + frontend fallback 89s (cs361-v5r, 16:17:34–16:23:10Z); ไม่รวม backend/seed/schedule |
-| **Full first deploy (end-to-end)** | **~25–32 นาที** (8 commands + 8 Console interactions; backend รัน 2 ครั้งเพื่อ CORS) | **7m59s** — cs361-v5r ตั้งแต่ `check` ถึง `status` (16:17:15–16:25:14Z); ไม่มี Console interaction และไม่มี backend รอบสอง |
+| **Full first deploy (end-to-end)** | **~25–32 นาที** (8 commands + 8 Console interactions; backend รัน 2 ครั้งเพื่อ CORS) | **7m59s** — cs361-v5r run 1 (16:17:15–16:25:14Z); teardown/recreate run 2 = **6m35s** (16:31:20–16:37:55Z); ไม่มี Console interaction และไม่มี backend รอบสอง |
 | **Backend deploy time** | ประมาณ **5–7 นาทีต่อครั้ง**; deploy ครั้งแรก **2 ครั้ง** (backend + CORS) = 10–14 นาที | **64s** — cs361-v5r backend step (16:20:27–16:21:31Z); CORS มาจาก SSM/output จึงไม่ต้อง deploy ซ้ำ (ยืนยันจาก `v5-3-cors.txt`) |
 | **Failures prevented** | **0** ที่ป้องกันอัตโนมัติ; CORS mismatch, backup ลืม, secret ผิด ต้องเจอเอง | **6 กลไกที่มีหลักฐานใน Lab**: ① CORS อัตโนมัติ ② secret/password handling ③ config จาก SSM ④ backup + alarm ⑤ drift detection ⑥ Lab mode ไม่สร้าง IAM (รายละเอียดใน `v5-validation.md`) |
 
@@ -97,9 +97,10 @@ V5 ใช้ลำดับจาก [สถาปัตยกรรม V5](../a
 > ยังไม่ได้ทดสอบรอบอัปเดต backend ปกติใน stack เดียวกัน
 > **H4 (ยืนยันบางส่วน):** มี 6 กลไกที่มีหลักฐาน; การจำลอง secret ผิดยังไม่ได้ทำ
 >
-> ตัวเลขที่วัดได้แล้ว: full first deploy **7m59s**, backend **64s**, backup **23s**,
-> restore **23s**, teardown **171s** (cs361-v5r, 8 พ.ย. 2026)
-> ที่ยังรอ: รอบอัปเดต backend ปกติ และการ recreate รอบที่สอง (กำลังเก็บหลักฐาน)
+> ตัวเลขที่วัดได้แล้ว: full first deploy **7m59s** (run 1) / **6m35s** (run 2),
+> backend **63–64s**, backup **23s**, restore **23s**, teardown **179s**
+> (cs361-v5r, 8 พ.ย. 2026; teardown รอบแรก 171s มีบั๊ก versioned bucket)
+> ที่ยังรอ: รอบอัปเดต backend ปกติ และ GitHub Actions run (ไม่ push)
 
 ## ผลจริงจาก Lab (8 พฤศจิกายน 2026)
 

@@ -23,10 +23,15 @@ Test:
          --protocol tcp --port 9999 --cidr 203.0.113.0/24
      -> succeeded
 
-Pending:
-  A second drift detection after the revoke was not completed because the Lab
-  credentials expired (InvalidClientTokenId). The ingress rule was already
-  revoked. Re-run `detect-stack-drift` in a fresh session and expect IN_SYNC.
+Follow-up drift detection after the revoke:
+  Detection id: d154d500-db8f-11f1-8bef-06f5d0a445c3
+  Poll result: DETECTION_COMPLETE
+  Stack drift status: IN_SYNC
+  No MODIFIED or DELETED resources.
+
+Conclusion:
+  CloudFormation drift detection reported the temporary manual change and then
+  returned to IN_SYNC after the security group was restored.
 
 CLI note:
   `aws cloudformation wait stack-drift-detection-complete` does not exist in
