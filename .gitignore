@@ -50,4 +50,3 @@ docs-th/**/*.docx
 
 # Load-test credentials and generated results
 loadtest/accounts.tsv
-loadtest/results/

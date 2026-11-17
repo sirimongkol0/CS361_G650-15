@@ -1,8 +1,0 @@
-# Load-test accounts (fictional only).
-# Copy this file to loadtest/accounts.tsv and replace the placeholders.
-# Format: email<TAB>password (CSV with commas also works).
-student@example.test	CHANGE_ME
-coordinator@example.test	CHANGE_ME
-staff@example.test	CHANGE_ME
-admin@example.test	CHANGE_ME
-student2@example.test	CHANGE_ME
