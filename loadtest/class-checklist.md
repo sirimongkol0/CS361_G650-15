@@ -116,23 +116,18 @@ aws cloudformation describe-stacks \
 Add a target-tracking policy (example: 48% CPU, from 68% at the knee × 0.7):
 
 ```bash
-ASG=$(aws cloudformation describe-stacks \
-  --stack-name cs361-scaling-fallback \
-  --query "Stacks[0].Outputs[?OutputKey=='AutoScalingGroupName'].OutputValue" \
-  --output text)
+bash loadtest/fallback-policy.sh
+# or: TARGET=48 STACK=cs361-scaling-fallback bash loadtest/fallback-policy.sh
+```
 
-aws autoscaling put-scaling-policy \
-  --auto-scaling-group-name "$ASG" \
-  --policy-name cs361-cpu-target \
-  --policy-type TargetTrackingScaling \
-  --target-tracking-configuration '{
-    "TargetValue": 48.0,
-    "PredefinedMetricSpecification": {
-      "PredefinedMetricType": "ASGCAverageCPUUtilization"
-    },
-    "ScaleInCooldown": 120,
-    "ScaleOutCooldown": 60
-  }'
+The script reads `AutoScalingGroupName` from the stack and applies:
+
+```text
+metric  ASGCAverageCPUUtilization
+target  48%
+min     1–2
+max     3–4
+warm-up 60 s (measure it)
 ```
 
 Policy card:
