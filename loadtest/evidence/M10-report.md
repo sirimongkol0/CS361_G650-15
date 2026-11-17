@@ -73,6 +73,11 @@ Max: 4
 Warm-up: 90 s ASG health-check grace (configured; instance became healthy within the 80-user step)
 ```
 
+Why 48%: the last passing step was around 68% CPU; the slide's rule of thumb is
+`target ≈ 70% × CPU at last passing step` → `0.7 × 68% ≈ 48%`. This leaves
+headroom for traffic spikes and instance warm-up. Instances ran at ~48–56% CPU
+after scaling, so the target behaved as intended.
+
 Command: `bash loadtest/fallback-policy.sh` (target 48%).
 
 ## Q5 — After scaling
