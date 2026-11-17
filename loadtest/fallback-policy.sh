@@ -26,10 +26,8 @@ aws autoscaling put-scaling-policy \
   --target-tracking-configuration "{
     \"TargetValue\": ${TARGET}.0,
     \"PredefinedMetricSpecification\": {
-      \"PredefinedMetricType\": \"ASGCAverageCPUUtilization\"
-    },
-    \"ScaleInCooldown\": 120,
-    \"ScaleOutCooldown\": 60
+      \"PredefinedMetricType\": \"ASGAverageCPUUtilization\"
+    }
   }"
 
 echo "Policy $POLICY applied."
