@@ -15,7 +15,7 @@ Region: us-west-2
 | บัญชีทดสอบ | 8 บัญชี Cognito (ข้อมูลสมมติ) |
 | ข้อมูลทดสอบ | partners/documents/activities และ feedback ที่ขึ้นต้นด้วย `[LT]` |
 
-## Q1 — Baseline (CS361 ในภาวะปกติ)
+## Q1 — NORMAL (Baseline: CS361 ในภาวะปกติ)
 
 | ตัวชี้วัด | ค่า |
 |---|---|
@@ -29,7 +29,7 @@ Region: us-west-2
 
 Dashboard ที่ใช้: `CS361-LoadTest` (CPU, network, CPU credits, disk, status checks)
 
-## Q2/Q3 — Step test ของ CS361 (overload + bottleneck)
+## Q2 — OVERLOAD / Q3 — BOTTLENECK (Step test ของ CS361)
 
 รูปแบบ: 10 users → 20 → 40 (ขั้นละ 2 นาที) → 80 users (6 นาที)
 
@@ -52,7 +52,7 @@ Dashboard ที่ใช้: `CS361-LoadTest` (CPU, network, CPU credits, disk,
 - `cs361-cpu.png`
 - `cs361/steps.html`, `cs361/steps_stats_history.csv`
 
-## Q4 — Fallback ก่อนเปิด scaling
+## Q4 — DECIDE (Fallback ก่อนเปิด scaling)
 
 รูปแบบ: 10 → 20 → 40 (ขั้นละ 2 นาที) → 80 users (6 นาที) โดยยังไม่มี policy
 
@@ -80,7 +80,7 @@ Warm-up: 90 s (ASG health-check grace)
 
 คำสั่ง: `bash loadtest/fallback-policy.sh` (target 48%)
 
-## Q5 — หลังเปิด scaling
+## Q5 — VERIFY (หลังเปิด scaling)
 
 | Users | P95 ก่อน | P95 หลัง | จำนวน instance หลัง |
 |---:|---:|---:|---:|
