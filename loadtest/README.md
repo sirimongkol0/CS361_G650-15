@@ -3,6 +3,9 @@
 Prepared for the class load-test session. Fictional data only; never point these
 scripts at a real database.
 
+> Module 10 checklist (Q1–Q5, dashboard, submission template, fallback stack):
+> [`class-checklist.md`](class-checklist.md)
+
 ## Target system
 
 ```
@@ -134,6 +137,16 @@ locust -f loadtest/locustfile.py \
   --csv loadtest/results/run-100 \
   --html loadtest/results/run-100.html
 ```
+
+Module 10 uses a fixed 12-minute shape instead of manual stages:
+
+```bash
+export LOADTEST_STEPS=1
+locust -f loadtest/locustfile.py --headless
+```
+
+That shape is 10/20/40 users for 2 minutes each, then 80 users for 6 minutes.
+Do not exceed 80 users in class.
 
 Stop a stage when any of these happens:
 

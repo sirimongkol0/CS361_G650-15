@@ -9,12 +9,21 @@ Environment:
   LOADTEST_HOST           default http://localhost:3000
   LOADTEST_ACCOUNTS_FILE  optional TSV/CSV: email,password (one account per line)
   LOADTEST_EMAIL          fallback single account
+  LOADTEST_USER           alias for LOADTEST_EMAIL (course template)
   LOADTEST_PASSWORD       fallback single account
+  LOADTEST_STEPS=1        use the 12-minute class shape: 10/20/40 users for
+                          2 minutes each, then 80 users for 6 minutes
 
-Example:
+Examples:
+  # one-user smoke test
   LOADTEST_HOST=https://32.189.5.234.sslip.io \
   LOADTEST_ACCOUNTS_FILE=loadtest/accounts.tsv \
-  locust -f loadtest/locustfile.py --headless -u 100 -r 10 -t 5m
+  locust -f loadtest/locustfile.py --headless -u 1 -r 1 -t 30s
+
+  # class step test (12 minutes)
+  LOADTEST_STEPS=1 LOADTEST_HOST=http://<alb-dns> \
+  LOADTEST_ACCOUNTS_FILE=loadtest/accounts.tsv \
+  locust -f loadtest/locustfile.py --headless
 """
 
 from __future__ import annotations
@@ -26,7 +35,7 @@ from itertools import count
 from pathlib import Path
 from uuid import uuid4
 
-from locust import HttpUser, between, task
+from locust import HttpUser, LoadTestShape, between, task
 
 PREFIX = "[LT] "
 _account_counter = count()
@@ -49,7 +58,10 @@ def _read_accounts() -> list[tuple[str, str]]:
                 if len(row) >= 2 and row[0].strip() and row[1].strip():
                     accounts.append((row[0].strip(), row[1].strip()))
     if not accounts:
-        email = os.getenv("LOADTEST_EMAIL", "").strip()
+        email = (
+            os.getenv("LOADTEST_EMAIL", "").strip()
+            or os.getenv("LOADTEST_USER", "").strip()
+        )
         password = os.getenv("LOADTEST_PASSWORD", "").strip()
         if email and password:
             accounts.append((email, password))
@@ -136,3 +148,17 @@ class CstuUser(HttpUser):
                 "activity_id": activity_id,
             },
         )
+
+
+if os.getenv("LOADTEST_STEPS", "").lower() in {"1", "true", "yes", "steps"}:
+    class StepLoad(LoadTestShape):
+        """12-minute class shape: 10/20/40 users for 2 min, then 80 for 6 min."""
+
+        steps = [(120, 10), (240, 20), (360, 40), (720, 80)]
+
+        def tick(self):
+            elapsed = self.get_run_time()
+            for end, users in self.steps:
+                if elapsed < end:
+                    return (users, 5)
+            return None
