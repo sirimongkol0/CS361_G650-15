@@ -47,3 +47,7 @@ docs-th/*.docx
 docs-th/**/*.docx
 
 *.pre-v2-*.bak
+
+# Load-test credentials and generated results
+loadtest/accounts.tsv
+loadtest/results/
