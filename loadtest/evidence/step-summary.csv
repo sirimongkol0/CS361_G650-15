@@ -1,0 +1,13 @@
+run,users,rps,p95_ms,failures
+cs361,10,4.400000,600,0
+cs361,20,8.500000,600,0
+cs361,40,16.700000,650,0
+cs361,80,29.300000,1500,3
+fallback_before,10,3.800000,430,0
+fallback_before,20,9.100000,380,0
+fallback_before,40,16.400000,480,0
+fallback_before,80,24.700000,1700,0
+fallback_after,10,4.300000,340,0
+fallback_after,20,9.000000,350,0
+fallback_after,40,17.500000,330,0
+fallback_after,80,34.700000,430,0
