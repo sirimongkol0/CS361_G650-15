@@ -70,7 +70,7 @@ Metric: ASGAverageCPUUtilization
 Target: 48%
 Min: 1
 Max: 4
-Warm-up: measured by ASG health check (60 s grace)
+Warm-up: 90 s ASG health-check grace (configured; instance became healthy within the 80-user step)
 ```
 
 Command: `bash loadtest/fallback-policy.sh` (target 48%).

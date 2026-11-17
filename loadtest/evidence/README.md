@@ -14,6 +14,7 @@ Generated during the class load test on 2026-11-18 (UTC).
 | `fallback-before-p95.png` | CloudWatch ALB P95 before scaling |
 | `fallback-after-p95.png` | CloudWatch ALB P95 after scaling |
 | `fallback-asg-capacity.png` | ASG desired capacity during the run |
+| `fallback-dashboard-scalein.png` | CloudWatch dashboard: requests, P95, 5xx, capacity and healthy hosts, including scale-in |
 
 Raw Locust files are kept outside the repository in the class evidence folder;
 the report contains the measured values and the commands to reproduce them.
